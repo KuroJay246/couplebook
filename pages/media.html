@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Media Gallery — MemoryBook</title>
+  <meta name="description" content="Browse your local photos and video memories in a beautiful gallery.">
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/global.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/pages.css">
+</head>
+<body>
+  <div id="app-shell">
+    <div id="navigation-shell"></div>
+
+    <main class="main-content">
+      <div style="text-align: center; margin-bottom: 2rem;">
+        <h1 style="font-family: var(--font-accent); font-weight: 700;">🖼️ Our Shared Gallery</h1>
+        <p style="color: var(--color-secondary-text); font-size: 0.9rem;">Browse through photos and clips from our special moments.</p>
+      </div>
+
+      <!-- Gallery Filter Tabs -->
+      <div class="media-tabs">
+        <button class="tab-btn active" data-filter="all">All Media</button>
+        <button class="tab-btn" data-filter="photos">📷 Photos</button>
+        <button class="tab-btn" data-filter="videos">🎥 Videos</button>
+      </div>
+
+      <!-- Gallery Grid -->
+      <div class="gallery-grid" id="gallery-container">
+        <!-- Dynamically populated from JS -->
+        <p style="grid-column: span 3; text-align: center; color: var(--color-muted); padding: 3rem 0;">Loading gallery...</p>
+      </div>
+    </main>
+
+    <!-- Photo Lightbox Overlay -->
+    <div class="lightbox-overlay" id="gallery-lightbox">
+      <button class="lightbox-close" id="btn-close-lightbox">&times;</button>
+      <img src="" alt="Lightbox image" class="lightbox-content" id="lightbox-image">
+      <div class="lightbox-caption-container" style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem; margin-top: 1rem;">
+        <div class="lightbox-caption" id="lightbox-caption">Caption text</div>
+        <div style="display: flex; gap: 0.5rem;">
+          <button class="btn btn-danger" id="btn-delete-lightbox" style="font-size: 0.8rem; padding: 0.4rem 1.25rem;">🗑️ Delete</button>
+          <button class="btn btn-secondary" id="btn-edit-lightbox" style="font-size: 0.8rem; padding: 0.4rem 1.25rem; border-color: var(--color-shared); color: var(--color-shared);">✏️ Edit</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Video Player Modal Overlay -->
+    <div class="modal-overlay" id="gallery-video-modal">
+      <div class="modal-container" style="max-width: 700px; background: #000000; border-color: rgba(255,255,255,0.15);">
+        <div class="modal-header" style="background: #0d0f14; border-bottom: 1px solid rgba(255,255,255,0.08);">
+          <h3 class="modal-title" id="video-modal-title" style="color: white;">Play Video Clip</h3>
+          <button class="modal-close" id="btn-close-video-modal" style="color: white;">&times;</button>
+        </div>
+        <div class="modal-body" style="padding: 0; line-height: 0; background: #000000;">
+          <video id="gallery-video-player" controls style="width: 100%; height: auto; max-height: 70vh; outline: none;">
+            Your browser does not support the video tag.
+          </video>
+        </div>
+        <div class="modal-footer" style="background: #0d0f14; border-top: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; width: 100%;">
+          <span style="font-size: 0.85rem; color: var(--color-muted);" id="video-modal-date">Date</span>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn btn-danger" id="btn-delete-video" style="font-size: 0.8rem; padding: 0.4rem 1.25rem;">🗑️ Delete</button>
+            <button class="btn btn-secondary" id="btn-edit-video" style="font-size: 0.8rem; padding: 0.4rem 1.25rem; border-color: var(--color-shared); color: var(--color-shared);">✏️ Edit</button>
+          </div>
+          <button class="btn btn-secondary" id="btn-close-video-modal-footer">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Memory Modal (Same as timeline page for consistency) -->
+    <div class="modal-overlay" id="add-memory-modal">
+      <div class="modal-container">
+        <div class="modal-header">
+          <h3 class="modal-title">Edit Memory</h3>
+          <button class="modal-close" id="btn-close-add-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <form id="add-memory-form">
+            <input type="hidden" id="edit-mem-id">
+            <div class="form-group">
+              <label class="form-label" for="mem-title">Memory Title</label>
+              <input type="text" class="form-input" id="mem-title" required>
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label" for="mem-date">Date of Memory</label>
+              <input type="date" class="form-input" id="mem-date" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="mem-desc">Description</label>
+              <textarea class="form-textarea" id="mem-desc" required></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="mem-media-select">Select Local Media Asset</label>
+              <select class="form-select" id="mem-media-select">
+                <option value="/assets/photos/anniversary_2025.png">Anniversary Photo (anniversary_2025.png)</option>
+                <option value="/assets/photos/sunset_walk.png">Sunset Walk Photo (sunset_walk.png)</option>
+                <option value="/assets/photos/starlit_camp.png">Star Camping Photo (starlit_camp.png)</option>
+                <option value="/assets/videos/sample_video.mp4">Game Night Video (sample_video.mp4)</option>
+                <option value="custom">Custom File Path...</option>
+              </select>
+            </div>
+
+            <div class="form-group" id="custom-media-path-group" style="display: none;">
+              <label class="form-label" for="mem-media-custom">Custom Local Media Path</label>
+              <input type="text" class="form-input" id="mem-media-custom" placeholder="e.g. /assets/photos/my_custom_image.jpg">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="mem-tags">Tags (comma-separated)</label>
+              <input type="text" class="form-input" id="mem-tags" placeholder="e.g. date night, roadtrip">
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" id="btn-cancel-memory">Cancel</button>
+          <button class="btn btn-primary" type="submit" form="add-memory-form">Save Changes</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script type="module" src="../js/app.js"></script>
+  <script type="module" src="../js/media.js"></script>
+</body>
+</html>

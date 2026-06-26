@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Memories Timeline — MemoryBook</title>
+  <meta name="description" content="Scroll through your beautiful shared timeline of relationship memories.">
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/global.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/pages.css">
+</head>
+<body>
+  <div id="app-shell">
+    <div id="navigation-shell"></div>
+
+    <main class="main-content">
+      <div class="timeline-header">
+        <div>
+          <h1 style="font-family: var(--font-accent); font-weight: 700;">📖 Our Story</h1>
+          <p style="color: var(--color-secondary-text); font-size: 0.9rem;">A chronological collection of our special milestones.</p>
+        </div>
+        <button class="btn btn-primary" id="btn-open-add-memory">+ Add Memory</button>
+      </div>
+
+      <!-- Tag Filter Bar -->
+      <div class="glass-card" style="margin-bottom: 2rem; padding: 1rem 1.5rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+        <span style="font-size: 0.85rem; font-weight: 600; color: var(--color-secondary-text);">Filter by Tag:</span>
+        <div id="tags-filter-container" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <button class="tab-btn active" data-tag="all">All</button>
+          <!-- Dynamic tags will be injected here -->
+        </div>
+      </div>
+
+      <!-- Timeline Structure -->
+      <div class="timeline-container">
+        <div class="timeline-line"></div>
+        <div id="timeline-cards-wrapper">
+          <!-- Dynamically populated timeline cards -->
+          <p style="text-align: center; color: var(--color-muted); padding: 3rem 0;">Loading timeline...</p>
+        </div>
+      </div>
+    </main>
+
+    <!-- 1. Add Memory Modal -->
+    <div class="modal-overlay" id="add-memory-modal">
+      <div class="modal-container">
+        <div class="modal-header">
+          <h3 class="modal-title">Capture New Memory</h3>
+          <button class="modal-close" id="btn-close-add-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <form id="add-memory-form">
+            <input type="hidden" id="edit-mem-id">
+            <div class="form-group">
+              <label class="form-label" for="mem-title">Memory Title</label>
+              <input type="text" class="form-input" id="mem-title" placeholder="Give this moment a name..." required>
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label" for="mem-date">Date of Memory</label>
+              <input type="date" class="form-input" id="mem-date" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="mem-desc">What happened? (Description)</label>
+              <textarea class="form-textarea" id="mem-desc" placeholder="Describe the laughs, the feelings, the details..." required></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="mem-media-select">Select Local Media Asset</label>
+              <select class="form-select" id="mem-media-select">
+                <option value="/assets/photos/anniversary_2025.png">Anniversary Photo (anniversary_2025.png)</option>
+                <option value="/assets/photos/sunset_walk.png">Sunset Walk Photo (sunset_walk.png)</option>
+                <option value="/assets/photos/starlit_camp.png">Star Camping Photo (starlit_camp.png)</option>
+                <option value="/assets/videos/sample_video.mp4">Game Night Video (sample_video.mp4)</option>
+                <option value="custom">Custom File Path...</option>
+              </select>
+            </div>
+
+            <div class="form-group" id="custom-media-path-group" style="display: none;">
+              <label class="form-label" for="mem-media-custom">Custom Local Media Path</label>
+              <input type="text" class="form-input" id="mem-media-custom" placeholder="e.g. /assets/photos/my_custom_image.jpg">
+              <span style="font-size: 0.75rem; color: var(--color-muted);">Place files inside your assets/photos or assets/videos folder first.</span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="mem-tags">Tags (comma-separated)</label>
+              <input type="text" class="form-input" id="mem-tags" placeholder="e.g. date night, funny, roadtrip">
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" id="btn-cancel-memory">Cancel</button>
+          <button class="btn btn-primary" type="submit" form="add-memory-form">Save Memory</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Memory Detail Lightbox/Modal -->
+    <div class="modal-overlay" id="detail-memory-modal">
+      <div class="modal-container" style="max-width: 600px;">
+        <div class="modal-header" style="border-bottom: none;">
+          <h3 class="modal-title" id="detail-title" style="font-size: 1.4rem;">Memory Details</h3>
+          <button class="modal-close" id="btn-close-detail-modal">&times;</button>
+        </div>
+        <div class="modal-body" style="padding-top: 0;">
+          <div id="detail-media-container" style="border-radius: 12px; overflow: hidden; margin-bottom: 1rem; border: 1px solid var(--border-glass);">
+            <!-- Image or Video tag will go here -->
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+            <span id="detail-date" style="font-size: 0.85rem; font-weight: 600; color: var(--color-muted);">Date</span>
+            <div id="detail-tags" style="display: flex; gap: 0.4rem;"></div>
+          </div>
+          <p id="detail-desc" style="color: var(--color-secondary-text); font-size: 0.95rem; line-height: 1.6; white-space: pre-wrap;"></p>
+        </div>
+        <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+          <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <button class="btn btn-danger" id="btn-delete-memory">🗑️ Delete</button>
+            <button class="btn btn-secondary" id="btn-edit-memory" style="border-color: var(--color-shared); color: var(--color-shared);">✏️ Edit</button>
+            <a href="#" target="_blank" class="btn btn-primary" id="btn-interactive-project" style="display: none; text-decoration: none; align-items: center; gap: 0.25rem; font-size: 0.85rem; padding: 0.45rem 1rem;">
+              <span>✨</span> Open Project
+            </a>
+          </div>
+          <button class="btn btn-secondary" id="btn-close-detail">Close</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script type="module" src="../js/app.js"></script>
+  <script type="module" src="../js/timeline.js"></script>
+</body>
+</html>

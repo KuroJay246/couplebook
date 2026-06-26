@@ -1,0 +1,40 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // MemoryBook — Private Couple Application
+    // Database has exactly 2 accounts: Jaylan & Omia.
+    // ─────────────────────────────────────────────────────────────────────────
+
+    // ── users/{uid} — private user data ──────────────────────────────────────
+    // Any authenticated user can READ (needed for partner profile/signature sync).
+    // Owner can write. Any authenticated user can DELETE (for admin cleanup).
+    match /users/{userId} {
+      allow read:  if request.auth != null;
+      allow create, update: if request.auth != null && request.auth.uid == userId;
+      allow delete: if request.auth != null;
+    }
+
+    // ── usernames/{username} — public email lookup for login by username ──────
+    // Public read so the login form can resolve username → email.
+    // Authenticated users can write/delete (for admin cleanup).
+    match /usernames/{username} {
+      allow read:  if true;
+      allow write: if request.auth != null;
+    }
+
+    // ── devices/{deviceId} — session management ──────────────────────────────
+    match /devices/{deviceId} {
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+
+    // ── Deny everything else ──────────────────────────────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
