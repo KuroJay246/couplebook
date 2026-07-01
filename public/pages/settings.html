@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings — MemoryBook</title>
+  <meta name="description" content="Customize your MemoryBook theme, layouts, and data privacy options.">
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/global.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/pages.css">
+</head>
+<body>
+  <div id="app-shell">
+    <div id="navigation-shell"></div>
+
+    <main class="main-content">
+      <div style="text-align: center; margin-bottom: 2rem;">
+        <h1 style="font-family: var(--font-accent); font-weight: 700;">⚙️ Application Settings</h1>
+        <p style="color: var(--color-secondary-text); font-size: 0.9rem;">Tailor your theme preference, anniversary views, and local metadata sync.</p>
+      </div>
+
+      <div class="settings-grid">
+        
+        <!-- Sidebar Menu -->
+        <div class="settings-menu">
+          <div class="settings-menu-item active" data-target="panel-appearance">🎨 Appearance & Theme</div>
+          <div class="settings-menu-item" data-target="panel-anniversary">💞 Anniversary Config</div>
+          <div class="settings-menu-item" data-target="panel-privacy">🔒 Privacy & Security</div>
+          <div class="settings-menu-item" data-target="panel-accounts">🔐 Account Management</div>
+          <div class="settings-menu-item" data-target="panel-data">💾 Data Management</div>
+        </div>
+
+        <!-- Panels Container -->
+        <div class="glass-card">
+          
+          <!-- PANEL 1: Appearance -->
+          <div class="settings-panel active" id="panel-appearance">
+            <h3 style="font-family: var(--font-accent); margin-bottom: 0.5rem;">Appearance Theme</h3>
+            <p style="font-size: 0.85rem; color: var(--color-secondary-text); margin-bottom: 1.25rem;">Change how MemoryBook looks on your device.</p>
+            
+            <div class="theme-picker-grid">
+              <div class="theme-card-option" id="theme-dark" onclick="selectTheme('dark')">
+                <div class="theme-preview-color">
+                  <div class="color-dot" style="background: #ff4a6b;"></div>
+                  <div class="color-dot" style="background: #8b5cf6;"></div>
+                  <div class="color-dot" style="background: #0a0c10; border: 1.5px solid var(--border-glass);"></div>
+                </div>
+                <div class="theme-card-option-name">Glassmorphism Dark</div>
+              </div>
+
+              <div class="theme-card-option" id="theme-light" onclick="selectTheme('light')">
+                <div class="theme-preview-color">
+                  <div class="color-dot" style="background: #ff4a6b;"></div>
+                  <div class="color-dot" style="background: #8b5cf6;"></div>
+                  <div class="color-dot" style="background: #f8fafc; border: 1.5px solid var(--border-glass);"></div>
+                </div>
+                <div class="theme-card-option-name">Crisp Light</div>
+              </div>
+
+              <div class="theme-card-option" id="theme-sunset" onclick="selectTheme('sunset')">
+                <div class="theme-preview-color">
+                  <div class="color-dot" style="background: #140d1a;"></div>
+                  <div class="color-dot" style="background: #f97316;"></div>
+                  <div class="color-dot" style="background: #ec4899;"></div>
+                </div>
+                <div class="theme-card-option-name">Warm Sunset</div>
+              </div>
+
+              <!-- Kuromi Gothic Theme Option -->
+              <div class="theme-card-option" id="theme-kuromi" onclick="selectTheme('kuromi')">
+                <div class="theme-preview-color">
+                  <div class="color-dot" style="background: #1a0b2e;"></div>
+                  <div class="color-dot" style="background: #c026d3;"></div>
+                  <div class="color-dot" style="background: #ff77ff;"></div>
+                </div>
+                <div class="theme-card-option-name">Kuromi Gothic</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- PANEL 2: Anniversary Config -->
+          <div class="settings-panel" id="panel-anniversary">
+            <h3 style="font-family: var(--font-accent); margin-bottom: 0.5rem;">Anniversary View Preference</h3>
+            <p style="font-size: 0.85rem; color: var(--color-secondary-text); margin-bottom: 1.25rem;">Select which anniversary views are visible on the dashboard by default.</p>
+            
+            <div class="form-group">
+              <label class="form-label" for="setting-anniversary-view">Primary Dashboard View</label>
+              <select class="form-select" id="setting-anniversary-view">
+                <option value="dual">Show Both Perspectives (Simultaneously)</option>
+                <option value="jaylan">Jaylan's View (Dec 28, 2025)</option>
+                <option value="omia">Omia's View (Dec 29, 2025)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- PANEL 3: Privacy & Security -->
+          <div class="settings-panel" id="panel-privacy">
+            <h3 style="font-family: var(--font-accent); margin-bottom: 0.5rem;">Privacy Toggles</h3>
+            <p style="font-size: 0.85rem; color: var(--color-secondary-text); margin-bottom: 1.25rem;">Adjust the security levels of your relationship vault.</p>
+            
+            <div class="toggle-item">
+              <div class="toggle-label-container">
+                <span class="toggle-title">Strict Local-First Mode</span>
+                <span class="toggle-desc">Disables all Firebase metadata synchronization, reading purely from client-side localStorage.</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="privacy-local-only">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="toggle-item">
+              <div class="toggle-label-container">
+                <span class="toggle-title">Hide Offline Alerts</span>
+                <span class="toggle-desc">Suppress system warnings when database connection falls back to local mode.</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="privacy-hide-offline">
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <!-- PANEL 4: Account Management -->
+          <div class="settings-panel" id="panel-accounts">
+            <h3 style="font-family: var(--font-accent); margin-bottom: 0.5rem;">Account Management</h3>
+            <p style="font-size: 0.85rem; color: var(--color-secondary-text); margin-bottom: 1.25rem;">Manage active sessions, account metadata, and connected devices.</p>
+            
+            <!-- Beautiful Account Details & Live Sync Status Card -->
+            <div class="glass-card" style="margin-bottom: 1.25rem;">
+              <h4 style="font-weight: 700; margin-bottom: 0.25rem;">Account Details & Sync</h4>
+              <p style="font-size: 0.8rem; color: var(--color-secondary-text); margin-bottom: 1.25rem;">Live metadata, active session state, and real-time database synchronization status.</p>
+              
+              <div class="account-stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                <div class="stat-item" style="background: rgba(255,255,255,0.02); padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid var(--border-glass);">
+                  <div style="font-size: 0.7rem; color: var(--color-muted); text-transform: uppercase; letter-spacing: 0.5px;">Username</div>
+                  <div id="stat-username" style="font-weight: 600; font-size: 1.1rem; color: var(--color-primary-text); margin-top: 0.25rem;">Loading...</div>
+                </div>
+                <div class="stat-item" style="background: rgba(255,255,255,0.02); padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid var(--border-glass);">
+                  <div style="font-size: 0.7rem; color: var(--color-muted); text-transform: uppercase; letter-spacing: 0.5px;">Email</div>
+                  <div id="stat-email" style="font-weight: 600; font-size: 1rem; color: var(--color-primary-text); margin-top: 0.25rem; word-break: break-all;">Loading...</div>
+                </div>
+                <div class="stat-item" style="background: rgba(255,255,255,0.02); padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid var(--border-glass);">
+                  <div style="font-size: 0.7rem; color: var(--color-muted); text-transform: uppercase; letter-spacing: 0.5px;">Account Created</div>
+                  <div id="stat-created" style="font-weight: 500; font-size: 0.85rem; color: var(--color-secondary-text); margin-top: 0.25rem;">Loading...</div>
+                </div>
+                <div class="stat-item" style="background: rgba(255,255,255,0.02); padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid var(--border-glass);">
+                  <div style="font-size: 0.7rem; color: var(--color-muted); text-transform: uppercase; letter-spacing: 0.5px;">Last Login</div>
+                  <div id="stat-last-login" style="font-weight: 500; font-size: 0.85rem; color: var(--color-secondary-text); margin-top: 0.25rem;">Loading...</div>
+                </div>
+                <div class="stat-item" style="background: rgba(255,255,255,0.02); padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid var(--border-glass);">
+                  <div style="font-size: 0.7rem; color: var(--color-muted); text-transform: uppercase; letter-spacing: 0.5px;">Session Status</div>
+                  <div id="stat-session-status" style="font-weight: 600; font-size: 0.85rem; margin-top: 0.25rem;">Loading...</div>
+                </div>
+                <div class="stat-item" style="background: rgba(255,255,255,0.02); padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid var(--border-glass);">
+                  <div style="font-size: 0.7rem; color: var(--color-muted); text-transform: uppercase; letter-spacing: 0.5px;">Cloud Status</div>
+                  <div id="stat-cloud-connected" style="font-weight: 600; font-size: 0.85rem; margin-top: 0.25rem;">Loading...</div>
+                </div>
+                <div class="stat-item" style="background: rgba(255,255,255,0.02); padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid var(--border-glass);">
+                  <div style="font-size: 0.7rem; color: var(--color-muted); text-transform: uppercase; letter-spacing: 0.5px;">Firestore Sync</div>
+                  <div id="stat-sync-status" style="font-weight: 600; font-size: 0.85rem; margin-top: 0.25rem;">Loading...</div>
+                </div>
+                <div class="stat-item" style="background: rgba(255,255,255,0.02); padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid var(--border-glass);">
+                  <div style="font-size: 0.75rem; color: var(--color-muted); text-transform: uppercase; letter-spacing: 0.5px;">Last Successful Sync</div>
+                  <div id="stat-last-sync" style="font-weight: 500; font-size: 0.85rem; color: var(--color-secondary-text); margin-top: 0.25rem;">Loading...</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="glass-card" style="margin-bottom: 1.25rem;">
+              <h4 style="font-weight: 700; margin-bottom: 0.25rem;">Active Devices</h4>
+              <p style="font-size: 0.8rem; color: var(--color-secondary-text); margin-bottom: 1rem;">Devices currently logged into your account.</p>
+              
+              <div id="device-list" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                <div style="text-align: center; color: var(--color-muted); padding: 1rem;">Loading devices...</div>
+              </div>
+            </div>
+
+
+          </div>
+
+          <!-- PANEL 5: Data Management & Admin -->
+          <div class="settings-panel" id="panel-data">
+            <h3 style="font-family: var(--font-accent); margin-bottom: 0.5rem; color: #ef4444;">Admin Cleanup Tools</h3>
+            <p style="font-size: 0.85rem; color: var(--color-secondary-text); margin-bottom: 1.25rem;">Remove test accounts and orphaned records.</p>
+            
+            <div class="glass-card" style="margin-bottom: 1.25rem;">
+              <h4 style="font-weight: 700; margin-bottom: 0.25rem;">Registered Users</h4>
+              <p style="font-size: 0.8rem; color: var(--color-secondary-text); margin-bottom: 1rem;">Accounts registered in the Firestore database.</p>
+              
+              <div id="admin-user-list" style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 300px; overflow-y: auto;">
+                <div style="text-align: center; color: var(--color-muted); padding: 1rem;">Loading users...</div>
+              </div>
+            </div>
+
+            <div class="glass-card" style="border-color: rgba(239, 68, 68, 0.2); background: rgba(239, 68, 68, 0.05); margin-bottom: 1.25rem;">
+              <h4 style="font-weight: 700; color: #f87171; margin-bottom: 0.25rem;">Reset Local Device Data</h4>
+              <p style="font-size: 0.8rem; color: var(--color-secondary-text); margin-bottom: 1rem;">Clears localStorage completely. Does not delete Cloud data.</p>
+              <button class="btn btn-danger" id="btn-reset-data">Clear Local Storage</button>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </main>
+
+    <!-- Settings Security Unlock Modal -->
+    <div id="settings-auth-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); z-index: 9999; align-items: center; justify-content: center;">
+      <div class="glass-card" style="width: 100%; max-width: 360px; padding: 2rem; text-align: center; border-color: rgba(239, 68, 68, 0.4); animation: fadeIn 0.2s ease;">
+        <div style="font-size: 2rem; margin-bottom: 0.5rem;">🔒</div>
+        <h3 style="font-family: var(--font-accent); color: #f87171; margin-bottom: 0.5rem;">Security Lock</h3>
+        <p style="font-size: 0.85rem; color: var(--color-secondary-text); margin-bottom: 1.5rem;">Enter your password to access sensitive settings.</p>
+        <input type="password" id="settings-auth-password" class="form-input" placeholder="Your Password" style="margin-bottom: 0.75rem; text-align: center;">
+        <div id="settings-auth-error" style="color: #ef4444; font-size: 0.8rem; min-height: 1.2rem; margin-bottom: 0.75rem;"></div>
+        <div style="display: flex; gap: 0.75rem;">
+          <button class="btn btn-secondary" id="btn-settings-auth-cancel" style="flex: 1;">Cancel</button>
+          <button class="btn btn-primary" id="btn-settings-auth-submit" style="flex: 1;">🔓 Unlock</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="../js/app.js"></script>
+  <script type="module" src="../js/settings.js"></script>
+</body>
+</html>

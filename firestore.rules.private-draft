@@ -1,0 +1,100 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /*
+      PRIVATE DRAFT RULES FOR MEMORYBOOK
+
+      This file is a draft only. Do not deploy it unchanged.
+
+      Before deployment:
+      1. Replace the placeholder approved UIDs below.
+      2. Update the login flow so username lookup does not require public reads.
+      3. Add collection-specific rules only for collections that actually exist.
+    */
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isApprovedUid() {
+      return isSignedIn() && request.auth.uid in [
+        "REPLACE_WITH_JAYLAN_UID",
+        "REPLACE_WITH_OMIA_UID"
+      ];
+    }
+
+    function isOwner(userId) {
+      return isApprovedUid() && request.auth.uid == userId;
+    }
+
+    // Private user records: each person can read/write only their own document.
+    match /users/{userId} {
+      allow read, create, update, delete: if isOwner(userId);
+    }
+
+    // Username lookup should become private after auth flow is refactored.
+    // Keep denied by default in this draft to avoid accidental public exposure.
+    match /usernames/{username} {
+      allow read, write: if false;
+    }
+
+    // Device sessions remain per-user only.
+    match /devices/{deviceId} {
+      allow read, create, update, delete: if isApprovedUid()
+        && (
+          resource == null
+          || resource.data.userId == request.auth.uid
+          || request.resource.data.userId == request.auth.uid
+        );
+    }
+
+    // Shared couple data collections: only the approved two accounts can access.
+    match /memories/{memoryId} {
+      allow read, write: if isApprovedUid();
+    }
+
+    match /media/{mediaId} {
+      allow read, write: if isApprovedUid();
+    }
+
+    match /profiles/{profileId} {
+      allow read, write: if isApprovedUid();
+    }
+
+    match /favorites/{favoriteId} {
+      allow read, write: if isApprovedUid();
+    }
+
+    match /anniversaryConfig/{docId} {
+      allow read, write: if isApprovedUid();
+    }
+
+    match /birthdayConfig/{docId} {
+      allow read, write: if isApprovedUid();
+    }
+
+    match /specialPages/{docId} {
+      allow read, write: if isApprovedUid();
+    }
+
+    match /settings/{docId} {
+      allow read, write: if isApprovedUid();
+    }
+
+    match /tags/{tagId} {
+      allow read, write: if isApprovedUid();
+    }
+
+    match /auditLogs/{logId} {
+      allow read: if isApprovedUid();
+      allow create: if isApprovedUid();
+      allow update, delete: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

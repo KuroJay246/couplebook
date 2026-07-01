@@ -10,6 +10,7 @@ const path = require('path');
 
 const PORT = 3000;
 const ROOT = __dirname;
+const PUBLIC_ROOT = path.join(ROOT, 'public');
 
 const PHOTO_EXTS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'];
 const VIDEO_EXTS = ['.mp4', '.mov', '.webm', '.mkv', '.avi'];
@@ -86,6 +87,36 @@ function scanMediaFiles() {
 
 // ─── Static File Server ───────────────────────────────────────────────────────
 
+function resolveWithin(baseDir, relativePath) {
+  const safeRelative = relativePath.replace(/^\/+/, '');
+  const resolved = path.resolve(baseDir, safeRelative);
+  const normalizedBase = path.resolve(baseDir);
+
+  if (resolved === normalizedBase || resolved.startsWith(normalizedBase + path.sep)) {
+    return resolved;
+  }
+
+  return null;
+}
+
+function resolvePrivateMediaPath(urlPath) {
+  const decodedPath = decodeURIComponent(urlPath);
+
+  if (decodedPath.startsWith('/assets/')) {
+    return resolveWithin(ROOT, decodedPath);
+  }
+
+  if (decodedPath.startsWith('/pages/confession/') && !decodedPath.endsWith('/index.html')) {
+    return resolveWithin(ROOT, decodedPath);
+  }
+
+  if (decodedPath.startsWith('/pages/valentine/') && !decodedPath.endsWith('/index.html')) {
+    return resolveWithin(ROOT, decodedPath);
+  }
+
+  return null;
+}
+
 function serveFile(res, filePath) {
   fs.readFile(filePath, (err, data) => {
     if (err) {
@@ -133,16 +164,28 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  const privateMediaPath = resolvePrivateMediaPath(url);
+  if (privateMediaPath && fs.existsSync(privateMediaPath) && fs.statSync(privateMediaPath).isFile()) {
+    serveFile(res, privateMediaPath);
+    return;
+  }
+
   // ── Static Files ──
-  let filePath = path.join(ROOT, url === '/' ? 'index.html' : url);
+  let filePath = resolveWithin(PUBLIC_ROOT, url === '/' ? 'index.html' : url);
 
   // Handle SPA-style pages: if requesting a page without extension, try .html
-  if (!path.extname(filePath) && !fs.existsSync(filePath)) {
+  if (filePath && !path.extname(filePath) && !fs.existsSync(filePath)) {
     filePath = filePath + '.html';
   }
 
-  if (fs.existsSync(filePath) && fs.statSync(filePath).isDirectory()) {
+  if (filePath && fs.existsSync(filePath) && fs.statSync(filePath).isDirectory()) {
     filePath = path.join(filePath, 'index.html');
+  }
+
+  if (!filePath || !fs.existsSync(filePath)) {
+    res.writeHead(404, { 'Content-Type': 'text/plain' });
+    res.end('Not Found');
+    return;
   }
 
   serveFile(res, filePath);
@@ -150,6 +193,8 @@ const server = http.createServer((req, res) => {
 
 server.listen(PORT, () => {
   console.log(`\n🌹 MemoryBook is running at http://localhost:${PORT}`);
+  console.log(`📦 App shell served from: ${PUBLIC_ROOT}`);
   console.log(`📁 Auto-scanning: assets/photos + assets/videos`);
+  console.log(`🛡️ Private local media stays outside public/ and is only resolved for local dev requests.`);
   console.log(`💡 Drop new photos or videos into those folders and refresh the page!\n`);
 });
