@@ -178,8 +178,19 @@
     const card = document.querySelector(".card");
 
     // Sounds (optional)
+    function createOptionalAudio(src) {
+      const audio = new Audio(src);
+      audio.preload = "none";
+      audio.addEventListener("error", () => {
+        audio.dataset.unavailable = "true";
+        console.warn(`Optional local-only audio is unavailable: ${src}`);
+      }, { once: true });
+      return audio;
+    }
+
     const hoverSound = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-cartoon-voice-laugh-343.mp3");
-    const yesSound = new Audio("Alkaline-High-Props-Prod.-By-ArmzHouse-Records.mp3");
+    // Private acceptance audio is intentionally excluded from Git/public hosting for now.
+    const yesSound = createOptionalAudio("Alkaline-High-Props-Prod.-By-ArmzHouse-Records.mp3");
 
     // Sneaky messages array
     const flirtyMessages = [
@@ -212,7 +223,10 @@
 
     // Yes button clicked
     yesBtn.addEventListener("click", () => {
-      yesSound.play();
+      if (yesSound.dataset.unavailable !== "true") {
+        yesSound.currentTime = 0;
+        yesSound.play().catch(() => {});
+      }
 
       // Confetti
       confetti({

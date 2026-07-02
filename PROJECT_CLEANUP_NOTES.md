@@ -16,6 +16,7 @@ This project is a private couple memory book. Privacy and local memory preservat
 - Original private photo and video libraries
 - Duplicated raw media folders used for backup or manual organization
 - Special-page private media assets that should not be committed to source control
+- Confession and Valentine companion media files that are intentionally excluded from `public/` and Git
 - Browser-local state until the app is refactored into cleaner Firestore and Storage-backed domains
 
 ## What Should Later Move To Firebase Storage
@@ -36,6 +37,7 @@ Recommended future paths:
 - `.env.*`
 - service account JSON files
 - private keys, certificates, and signing material
+- `*.bundle` backups, including `C:\Users\Jaylan\Documents\couplebook-pre-filter.bundle`
 - private raw photo and video libraries
 - generated cache folders
 - build output
@@ -47,17 +49,18 @@ Recommended future paths:
 - local backup folders such as `OUR MEMORIES/`
 - source-control metadata or local export files
 - any private media that has not been intentionally migrated to Firebase Storage
+- special-page companion photos, videos, and audio that remain local-only
 
 ## Hosting Safety Recommendation
 
-Current Firebase Hosting publishes the repo root, which is unsafe for a private media-heavy workspace.
+Current Firebase Hosting publishes only `public/`, which is the safer structure for this project.
 
-Safer next phase:
+Current expectation:
 
-1. Create a dedicated deploy directory such as `public/` or `dist/`.
-2. Copy only the app runtime files needed for hosting into that directory.
-3. Keep private local media outside the hosting publish directory.
-4. Update `firebase.json` to publish only the dedicated deploy directory after the static app is verified there.
+1. Keep private local media outside `public/`.
+2. Keep backup bundles outside the repo and outside any deploy path.
+3. Treat special-page companion media as local-only until it is intentionally migrated to Firebase Storage.
+4. Re-check `firebase.json` before any future deploy to ensure it still publishes only `public/`.
 
 ## Firestore Rules Recommendation
 

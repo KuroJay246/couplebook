@@ -361,6 +361,16 @@ body {
   border: 2px solid rgba(219,39,119,0.4);
   box-shadow: 0 6px 18px rgba(0,0,0,0.25);
 }
+.local-media-note {
+  margin-top: 10px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.72);
+  color: #7b365a;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  box-shadow: 0 10px 24px rgba(123,54,90,0.12);
+}
 
 @media (max-width: 720px) {
   .note-top {
@@ -559,6 +569,10 @@ body {
     </div>
     <img class="note-face" src="IMG_20251225_183104_571.jpg" alt="Smiling face">
   </div>
+  <!-- Private companion images, video, and audio are intentionally kept out of Git/public hosting. -->
+  <div class="local-media-note">
+    Private companion media for this page stays local-only and is excluded from Git and Firebase Hosting until a later Firebase Storage migration.
+  </div>
 
   <div class="password-screen" id="passwordScreen">
     <h2>🔐 Unlock Your Card</h2>
@@ -655,6 +669,49 @@ const VALID_PASSWORDS = [
 
 let isUnlocked = false;
 const bgMusic = document.getElementById("bgMusic");
+
+function replaceMissingMedia(element, message) {
+  if (!element || element.dataset.localMediaHandled === "true") {
+    return;
+  }
+
+  element.dataset.localMediaHandled = "true";
+  const note = document.createElement("div");
+  note.className = "local-media-note";
+  note.textContent = message;
+  element.replaceWith(note);
+}
+
+function setupLocalOnlyMediaFallbacks() {
+  document.querySelectorAll('img[src$=".jpg"], img[src$=".jpeg"], img[src$=".png"], img[src$=".gif"], img[src$=".webp"]').forEach((img) => {
+    img.addEventListener("error", () => {
+      replaceMissingMedia(img, "Private companion image not included in this clean repo copy.");
+    }, { once: true });
+  });
+
+  const video = document.querySelector(".memory-video");
+  if (video) {
+    const videoFallback = () => replaceMissingMedia(
+      video,
+      "Private companion video is local-only and is not included in this clean repo copy."
+    );
+    video.addEventListener("error", videoFallback, { once: true });
+    const source = video.querySelector("source");
+    if (source) {
+      source.addEventListener("error", videoFallback, { once: true });
+    }
+  }
+
+  if (bgMusic) {
+    bgMusic.addEventListener("error", () => {
+      bgMusic.removeAttribute("src");
+      bgMusic.load();
+      console.warn("Optional local-only confession audio is unavailable in this clean repo copy.");
+    }, { once: true });
+  }
+}
+
+setupLocalOnlyMediaFallbacks();
 
 function createFloatingHeartsAndKisses(){
   const hearts = document.getElementById("hearts");
