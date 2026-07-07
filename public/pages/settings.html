@@ -170,7 +170,7 @@
 
             <div class="glass-card" style="margin-bottom: 1.25rem;">
               <h4 style="font-weight: 700; margin-bottom: 0.25rem;">Active Devices</h4>
-              <p style="font-size: 0.8rem; color: var(--color-secondary-text); margin-bottom: 1rem;">Devices currently logged into your account.</p>
+              <p style="font-size: 0.8rem; color: var(--color-secondary-text); margin-bottom: 1rem;">Devices currently logged into your account. Remote sign-out from the browser is disabled until a trusted backend flow exists.</p>
               
               <div id="device-list" style="display: flex; flex-direction: column; gap: 0.75rem;">
                 <div style="text-align: center; color: var(--color-muted); padding: 1rem;">Loading devices...</div>
@@ -182,22 +182,22 @@
 
           <!-- PANEL 5: Data Management & Admin -->
           <div class="settings-panel" id="panel-data">
-            <h3 style="font-family: var(--font-accent); margin-bottom: 0.5rem; color: #ef4444;">Admin Cleanup Tools</h3>
-            <p style="font-size: 0.85rem; color: var(--color-secondary-text); margin-bottom: 1.25rem;">Remove test accounts and orphaned records.</p>
+            <h3 style="font-family: var(--font-accent); margin-bottom: 0.5rem; color: #ef4444;">Restricted Account Controls</h3>
+            <p style="font-size: 0.85rem; color: var(--color-secondary-text); margin-bottom: 1.25rem;">Destructive cloud cleanup is intentionally blocked in the browser for this private app.</p>
             
             <div class="glass-card" style="margin-bottom: 1.25rem;">
-              <h4 style="font-weight: 700; margin-bottom: 0.25rem;">Registered Users</h4>
-              <p style="font-size: 0.8rem; color: var(--color-secondary-text); margin-bottom: 1rem;">Accounts registered in the Firestore database.</p>
+              <h4 style="font-weight: 700; margin-bottom: 0.25rem;">Protected Account Management</h4>
+              <p style="font-size: 0.8rem; color: var(--color-secondary-text); margin-bottom: 1rem;">Use Firebase Console or a future trusted admin tool for account cleanup after backup review.</p>
               
               <div id="admin-user-list" style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 300px; overflow-y: auto;">
-                <div style="text-align: center; color: var(--color-muted); padding: 1rem;">Loading users...</div>
+                <div style="text-align: center; color: var(--color-muted); padding: 1rem;">Client-side destructive controls disabled.</div>
               </div>
             </div>
 
             <div class="glass-card" style="border-color: rgba(239, 68, 68, 0.2); background: rgba(239, 68, 68, 0.05); margin-bottom: 1.25rem;">
               <h4 style="font-weight: 700; color: #f87171; margin-bottom: 0.25rem;">Reset Local Device Data</h4>
-              <p style="font-size: 0.8rem; color: var(--color-secondary-text); margin-bottom: 1rem;">Clears localStorage completely. Does not delete Cloud data.</p>
-              <button class="btn btn-danger" id="btn-reset-data">Clear Local Storage</button>
+              <p style="font-size: 0.8rem; color: var(--color-secondary-text); margin-bottom: 1rem;">Clears this app's `memorybook_*` data on this device only. Cloud data is not deleted.</p>
+              <button class="btn btn-danger" id="btn-reset-data">Clear This Device's App Data</button>
             </div>
           </div>
 

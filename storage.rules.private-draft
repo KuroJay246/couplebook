@@ -1,0 +1,103 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Private two-user storage draft for future Couple Book media migration.
+    // Replace the placeholder UIDs before any deploy.
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isApprovedUid() {
+      return isAuthenticated() && request.auth.uid in [
+        '<JAYLAN_UID>',
+        '<PARTNER_UID>'
+      ];
+    }
+
+    function isOwner(uid) {
+      return isApprovedUid() && request.auth.uid == uid;
+    }
+
+    function isPhotoUpload() {
+      return request.resource != null
+        && request.resource.contentType.matches('image/.*')
+        && request.resource.size < 15 * 1024 * 1024;
+    }
+
+    function isVideoUpload() {
+      return request.resource != null
+        && request.resource.contentType.matches('video/.*')
+        && request.resource.size < 150 * 1024 * 1024;
+    }
+
+    function isAudioUpload() {
+      return request.resource != null
+        && request.resource.contentType.matches('audio/.*')
+        && request.resource.size < 25 * 1024 * 1024;
+    }
+
+    match /users/{uid}/memories/{memoryId}/photos/{filename} {
+      allow read: if isApprovedUid();
+      allow create, update: if isOwner(uid)
+        && request.resource != null
+        && isPhotoUpload();
+      allow delete: if false;
+    }
+
+    match /users/{uid}/memories/{memoryId}/videos/{filename} {
+      allow read: if isApprovedUid();
+      allow create, update: if isOwner(uid)
+        && request.resource != null
+        && isVideoUpload();
+      allow delete: if false;
+    }
+
+    match /special-pages/birthday/{filename} {
+      allow read: if isApprovedUid();
+      allow create, update: if isApprovedUid()
+        && request.resource != null
+        && isPhotoUpload();
+      allow delete: if false;
+    }
+
+    match /special-pages/valentines/{filename} {
+      allow read: if isApprovedUid();
+      allow create, update: if isApprovedUid()
+        && request.resource != null
+        && (isPhotoUpload() || isAudioUpload());
+      allow delete: if false;
+    }
+
+    match /special-pages/confessions/{filename} {
+      allow read: if isApprovedUid();
+      allow create, update: if isApprovedUid()
+        && request.resource != null
+        && (isPhotoUpload() || isAudioUpload() || isVideoUpload());
+      allow delete: if false;
+    }
+
+    match /gallery/photos/{filename} {
+      allow read: if isApprovedUid();
+      allow create, update: if isApprovedUid()
+        && request.resource != null
+        && isPhotoUpload();
+      allow delete: if false;
+    }
+
+    match /gallery/videos/{filename} {
+      allow read: if isApprovedUid();
+      allow create, update: if isApprovedUid()
+        && request.resource != null
+        && isVideoUpload();
+      allow delete: if false;
+    }
+
+    // Fail closed for every path not explicitly modeled.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

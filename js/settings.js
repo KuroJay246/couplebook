@@ -25,8 +25,8 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!Auth.isGuest()) {
     loadAccountStats();
     loadDevices();
-    loadAdminUsers();
   }
+  loadAdminUsers();
 });
 
 // 1. Vertical Sidebar Tab Swapping
@@ -257,7 +257,7 @@ async function loadDevices() {
     const { db } = await import('../firebase/firebase-config.js');
     if (!db) throw new Error('Offline');
 
-    const { collection, query, where, getDocs, deleteDoc, doc } = await import(
+    const { collection, query, where, getDocs } = await import(
       'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js'
     );
 
@@ -311,21 +311,16 @@ async function loadDevices() {
         '<div style="font-size: 0.7rem; color: var(--color-muted);">' + (browserDisplay || 'Browser') + ' / ' + data.platform + '</div>' +
         '</div>' +
         (!isCurrent
-          ? '<button class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;" onclick="window.revokeDevice(\'' + data.deviceId + '\')">Sign Out</button>'
+          ? '<span style="font-size:0.75rem; color:var(--color-muted);">Remote revoke disabled</span>'
           : '');
 
       container.appendChild(div);
     });
 
-    window.revokeDevice = async (deviceId) => {
-      if (!confirm('Are you sure you want to sign out this device?')) return;
-      try {
-        await deleteDoc(doc(db, 'devices', deviceId));
-        loadDevices();
-      } catch (e) {
-        alert('Failed to revoke device: ' + e.message);
-      }
-    };
+    const note = document.createElement('div');
+    note.style.cssText = 'font-size: 0.75rem; color: var(--color-muted); padding-top: 0.25rem;';
+    note.textContent = 'Remote device sign-out is disabled in the browser client until a trusted backend session-management flow exists.';
+    container.appendChild(note);
   } catch (e) {
     container.innerHTML = '<div style="text-align: center; color: var(--color-muted);">Failed to load devices (Offline).</div>';
   }
@@ -336,73 +331,11 @@ async function loadAdminUsers() {
   const container = document.getElementById('admin-user-list');
   if (!container) return;
 
-  const session = localStorage.getItem('memorybook_active_session');
-  if (session !== 'Jaylan' && session !== 'Omia') {
-    container.innerHTML = '<div style="text-align: center; color: var(--color-muted);">Unauthorized.</div>';
-    return;
-  }
-
-  try {
-    const { db } = await import('../firebase/firebase-config.js');
-    if (!db) throw new Error('Offline');
-
-    const { collection, getDocs, deleteDoc, doc } = await import(
-      'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js'
-    );
-
-    const snap = await getDocs(collection(db, 'usernames'));
-    if (snap.empty) {
-      container.innerHTML = '<div style="text-align: center; color: var(--color-muted);">No registered users.</div>';
-      return;
-    }
-
-    container.innerHTML = '';
-
-    snap.forEach(userSnap => {
-      const data = userSnap.data();
-      const username = userSnap.id;
-      const isProtected = username === 'jaylan' || username === 'omia';
-
-      const div = document.createElement('div');
-      div.style.cssText =
-        'background: rgba(255,255,255,0.03); border: 1px solid var(--border-glass); padding: 0.75rem; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;';
-
-      div.innerHTML =
-        '<div>' +
-        '<div style="font-weight: 600;">' + username + (isProtected ? ' 👑' : '') + '</div>' +
-        '<div style="font-size: 0.75rem; color: var(--color-secondary-text);">' + data.email + '</div>' +
-        '<div style="font-size: 0.7rem; color: var(--color-muted);">UID: ' + (data.uid ? data.uid.substr(0, 8) : 'N/A') + '...</div>' +
-        '</div>' +
-        (!isProtected
-          ? '<button class="btn btn-danger" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;" onclick="window.deleteUserRecord(\'' + username + '\', \'' + data.uid + '\')">Delete</button>'
-          : '<span style="font-size:0.75rem; color:var(--color-muted);">Protected</span>');
-
-      container.appendChild(div);
-    });
-
-    window.deleteUserRecord = async (username, uid) => {
-      if (username === 'jaylan' || username === 'omia') {
-        alert("Cannot delete protected accounts.");
-        return;
-      }
-      if (!confirm('Are you sure you want to delete ' + username + '? This removes their Firestore access completely.')) return;
-
-      try {
-        const { db: freshDb } = await import('../firebase/firebase-config.js');
-        const { deleteDoc: freshDeleteDoc, doc: freshDoc } = await import(
-          'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js'
-        );
-        await freshDeleteDoc(freshDoc(freshDb, 'usernames', username));
-        await freshDeleteDoc(freshDoc(freshDb, 'users', uid));
-        alert('User removed from database. (Note: Firebase Auth account must be deleted in console)');
-        loadAdminUsers();
-      } catch (e) {
-        alert('Failed to delete user: ' + e.message);
-      }
-    };
-  } catch (e) {
-    container.innerHTML = '<div style="text-align: center; color: var(--color-muted);">Failed to load admin data.</div>';
-  }
+  container.innerHTML =
+    '<div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-glass); padding: 0.9rem; border-radius: 8px; color: var(--color-secondary-text); line-height: 1.5;">' +
+    '<strong style="display:block; color: var(--color-primary-text); margin-bottom: 0.35rem;">Client-side cleanup disabled</strong>' +
+    'Approved-user management, legacy username cleanup, and account deletion are intentionally blocked in the browser for this private app. Use Firebase Console or a future Admin SDK tool after backup review if account cleanup is ever required.' +
+    '</div>';
 }
 
 // ── Account Stats ─────────────────────────────────────────────────────────────

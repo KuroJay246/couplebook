@@ -113,13 +113,14 @@
 
         <div class="auth-tabs">
           <div class="auth-tab active" onclick="window.AuthUI.switchTab('login')" id="tab-login">Sign In</div>
-          <div class="auth-tab" onclick="window.AuthUI.switchTab('register')" id="tab-register">Sign Up</div>
+          <div class="auth-tab" onclick="window.AuthUI.switchTab('register')" id="tab-register" style="display: none;">Sign Up</div>
         </div>
 
         <!-- Registration locked notice -->
         <div class="registration-locked-msg" id="registration-locked-msg">
           🔒 MemoryBook is a private invitation-only application.
         </div>
+        <p style="color: var(--color-secondary-text); font-size: 0.82rem; margin: 0.75rem 0 0;">Approved couple accounts only. Sign in with your account email.</p>
 
         <div class="auth-error" id="auth-error-msg"></div>
 
@@ -129,8 +130,8 @@
             <input type="text" id="auth-username" class="form-input" placeholder="e.g. Jaylan or Omia" autocomplete="username">
           </div>
           <div class="form-group">
-            <label for="auth-email" id="label-email">Email or Username</label>
-            <input type="text" id="auth-email" class="form-input" required placeholder="Enter email or username" autocomplete="email">
+            <label for="auth-email" id="label-email">Account Email</label>
+            <input type="email" id="auth-email" class="form-input" required placeholder="Enter your account email" autocomplete="email">
           </div>
           <div class="form-group">
             <label for="auth-password">Password</label>
@@ -140,8 +141,8 @@
         </form>
 
         <div class="divider" style="margin-top: 1.25rem;">or</div>
-        <button class="btn-guest" id="btn-guest-access" onclick="window.AuthUI.continueAsGuest()">
-          👀 Continue as Guest (Read-Only)
+        <button class="btn-guest" id="btn-guest-access" onclick="window.AuthUI.continueAsGuest()" disabled aria-disabled="true" style="opacity: 0.65; cursor: not-allowed;">
+          🔒 Guest Access Disabled
         </button>
 
       </div>

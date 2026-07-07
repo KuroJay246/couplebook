@@ -52,7 +52,7 @@ export async function runHealthCheck() {
     ok: !!username && !isGuest,
     warn: isGuest,
     detail: isGuest
-      ? 'Guest mode (read-only) — sign in for full access'
+      ? 'Guest mode is disabled for this private app — sign in with an approved account'
       : username
         ? `Logged in as: ${username}`
         : 'No active session'
@@ -122,27 +122,12 @@ export async function runHealthCheck() {
     results.push({ label: 'Cloud Checks', ok: false, detail: 'Skipped — no active session' });
   }
 
-  // ── 10. Registration Count (Locks at 2 accounts) ─────────────────────────────
-  if (db) {
-    try {
-      const { collection, getDocs } = await import('https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js');
-      const snap = await Promise.race([
-        getDocs(collection(db, 'usernames')),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 4000))
-      ]);
-      const count = snap.size;
-      const locked = count >= 2;
-      results.push({
-        label: 'Registration Status',
-        ok: true,
-        detail: locked
-          ? `🔒 Locked — ${count}/2 accounts registered`
-          : `🟢 Open — ${count}/2 accounts registered`
-      });
-    } catch (e) {
-      results.push({ label: 'Registration Status', ok: false, detail: e.message });
-    }
-  }
+  // ── 10. Private Registration Model ────────────────────────────────────────────
+  results.push({
+    label: 'Registration Status',
+    ok: true,
+    detail: '🔒 Registration is closed for this private couple app.'
+  });
 
   // ── 11. Active Devices Check ────────────────────────────────────────────────
   if (db && uid && !isGuest) {

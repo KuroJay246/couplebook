@@ -42,13 +42,15 @@ async function waitForAuthThenRoute() {
 
   const isGuest = Auth.isGuest();
   if (isGuest) {
-    if (isLoginPage) {
-       window.location.replace('dashboard.html');
-       return;
+    try {
+      sessionStorage.setItem('memorybook_auth_notice', 'Guest access is disabled for this private MemoryBook.');
+    } catch { /* ignore */ }
+    Auth.clearSessionState();
+    if (!isLoginPage) {
+      window.location.replace('login.html');
+      return;
     }
-    renderNavigation();
-    highlightActiveNav();
-    _enforceGuestReadOnly();
+    window.__MEMORYBOOK_AUTH_LOCK__ = false;
     return;
   }
 
