@@ -254,17 +254,10 @@ async function loadDevices() {
   }
 
   try {
-    const { db } = await import('../firebase/firebase-config.js');
-    if (!db) throw new Error('Offline');
+    const { listDevicesForUser } = await import('../services/deviceService.js');
+    const devices = await listDevicesForUser(activeUid);
 
-    const { collection, query, where, getDocs } = await import(
-      'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js'
-    );
-
-    const q = query(collection(db, 'devices'), where('userId', '==', activeUid));
-    const snap = await getDocs(q);
-
-    if (snap.empty) {
+    if (devices.length === 0) {
       container.innerHTML = '<div style="text-align: center; color: var(--color-muted);">No devices found.</div>';
       return;
     }
@@ -282,8 +275,7 @@ async function loadDevices() {
       };
     }
 
-    snap.forEach(deviceSnap => {
-      const rawData = deviceSnap.data();
+    devices.forEach(rawData => {
       const data = formatDevice(rawData);
       const isCurrent = data.deviceId === currentDeviceId;
       const lastSeen = data.lastSeen ? new Date(data.lastSeen.seconds * 1000).toLocaleString() : 'Just now';

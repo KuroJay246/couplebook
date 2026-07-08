@@ -60,14 +60,10 @@ export async function runHealthCheck() {
 
   if (db && uid && username && username !== 'Guest') {
     try {
-      const { doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js');
+      const { getUserDoc } = await import('../services/userService.js');
 
       // ── 5. User Firestore Document ──────────────────────────────────
-      const userRef = doc(db, 'users', uid);
-      const userSnap = await Promise.race([
-        getDoc(userRef),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 4000))
-      ]);
+      const userSnap = await getUserDoc(uid, { timeoutMs: 4000 });
 
       const userExists = userSnap.exists();
       results.push({ label: 'User Cloud Document', ok: userExists, detail: userExists ? 'Document found' : 'No Firestore document for this user' });
@@ -132,16 +128,12 @@ export async function runHealthCheck() {
   // ── 11. Active Devices Check ────────────────────────────────────────────────
   if (db && uid && !isGuest) {
     try {
-      const { collection, query, where, getDocs } = await import('https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js');
-      const q = query(collection(db, 'devices'), where('userId', '==', uid));
-      const snap = await Promise.race([
-        getDocs(q),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 4000))
-      ]);
+      const { listDevicesForUser } = await import('../services/deviceService.js');
+      const devices = await listDevicesForUser(uid, { timeoutMs: 4000 });
       results.push({
         label: 'Active Devices',
         ok: true,
-        detail: `${snap.size} device(s) linked to this account`
+        detail: `${devices.length} device(s) linked to this account`
       });
     } catch (e) {
       results.push({ label: 'Active Devices', ok: false, detail: e.message });

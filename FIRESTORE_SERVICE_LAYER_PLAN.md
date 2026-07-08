@@ -1,7 +1,26 @@
 # Firestore Service Layer Plan
 
 Date: 2026-07-08
-Scope: future architecture cleanup only; no runtime refactor implemented in this phase
+Scope: future architecture cleanup with Phase 7B read-only foundation now implemented
+
+## Phase 7B Progress
+
+Implemented in this phase:
+
+- mirrored `services/userService.js`
+- mirrored `services/deviceService.js`
+- `core/healthCheck.js` now reads user/device data through services
+- `public/core/healthCheck.js` now reads user/device data through services
+- `js/settings.js` device list now reads through `deviceService.js`
+- `public/js/settings.js` device list now reads through `deviceService.js`
+
+Not implemented yet:
+
+- `services/firebaseClient.js`
+- `authService.js`
+- `settingsService.js`
+- `syncService.js`
+- any `core/firestoreSync.js` behavior change
 
 ## Goals
 
@@ -28,8 +47,14 @@ Scope: future architecture cleanup only; no runtime refactor implemented in this
 ### `services/userService.js`
 
 - Read `users/{uid}`
-- Write `users/{uid}` payloads in a rules-safe shape
-- Expose helpers for profile, favorites, signature, and settings hydration
+- Phase 7B status:
+  - read-only helpers added
+  - `getUserDoc(uid)`
+  - `userDocExists(uid)`
+  - `getUserProfileSummary(uid)`
+- Future:
+  - write `users/{uid}` payloads in a rules-safe shape only after the sync cleanup phase
+  - expose helpers for profile, favorites, signature, and settings hydration
 
 ### `services/syncService.js`
 
@@ -46,6 +71,8 @@ Scope: future architecture cleanup only; no runtime refactor implemented in this
 ### `services/deviceService.js`
 
 - Read owner-scoped device records
+- Phase 7B status:
+  - `listDevicesForUser(uid)` added and live in the mirrored runtime
 - Later own any safe device registration/revocation flow if a trusted backend exists
 
 ### `services/storageService.js`
@@ -90,6 +117,13 @@ Create a thin shared Firestore client/service wrapper without changing behavior:
 
 This sequence reduces duplication before changing the higher-risk sync behavior.
 
+Phase 7B result:
+
+- Step 2 is complete
+- diagnostics and settings device reads were moved first
+- auth verification is intentionally still direct
+- `firestoreSync.js` remains untouched
+
 ## How To Reduce Direct Firestore Calls
 
 - Centralize all `doc`, `collection`, `getDoc`, `getDocs`, `setDoc`, and `onSnapshot` usage in service files
@@ -121,3 +155,10 @@ This sequence reduces duplication before changing the higher-risk sync behavior.
 - Introduce service files in both root and `public/` in lockstep until the build/publish strategy changes
 - Keep function names and module boundaries identical between both trees
 - Use `npm run check:all` after each small step to catch route/rules regressions immediately
+
+## Next Safest Extraction Step
+
+1. Move `js/auth.js` owner-scoped `users/{uid}` reads behind `userService.js` or a thin `authService.js`.
+2. Keep behavior identical and fail closed if approved-account verification cannot complete.
+3. After auth reads are centralized, inventory the exact read/listen/write branches inside `core/firestoreSync.js`.
+4. Only then begin replacing collection-wide `users` reads/listeners with explicit document-oriented logic.

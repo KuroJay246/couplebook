@@ -3,6 +3,31 @@
 Date: 2026-07-08
 Scope: current active source files and mirrored `public/` runtime files that initialize, query, read, write, or orchestrate Firestore-backed behavior
 
+## Phase 7B Status
+
+The first read-only service-layer foundation is now in place.
+
+New mirrored service files:
+
+- `services/userService.js`
+- `services/deviceService.js`
+- `public/services/userService.js`
+- `public/services/deviceService.js`
+
+Low-risk runtime files migrated in this phase:
+
+- `core/healthCheck.js`
+- `public/core/healthCheck.js`
+- `js/settings.js`
+- `public/js/settings.js`
+
+Unchanged high-risk runtime files:
+
+- `core/firestoreSync.js`
+- `public/core/firestoreSync.js`
+- `js/auth.js`
+- `public/js/auth.js`
+
 ## Summary
 
 Current active Firestore domains are narrow:
@@ -29,6 +54,46 @@ The app no longer depends on the legacy `usernames` collection in active runtime
 - Move to service wrapper later:
   - yes, into a shared `firebaseClient.js` or `firestoreClient.js`
 
+### [C:\Users\Jaylan\Documents\couplebook\services\userService.js](C:\Users\Jaylan\Documents\couplebook\services\userService.js)
+### [C:\Users\Jaylan\Documents\couplebook\public\services\userService.js](C:\Users\Jaylan\Documents\couplebook\public\services\userService.js)
+
+- Operations:
+  - `getDoc(doc(db, 'users', uid))`
+- Paths:
+  - `users/{uid}`
+- Risk level:
+  - low
+- Rules compatibility:
+  - compatible; owner-scoped read only
+- Current callers:
+  - `core/healthCheck.js`
+  - `public/core/healthCheck.js`
+- Notes:
+  - no writes
+  - no collection-wide reads
+  - no username collection usage
+
+### [C:\Users\Jaylan\Documents\couplebook\services\deviceService.js](C:\Users\Jaylan\Documents\couplebook\services\deviceService.js)
+### [C:\Users\Jaylan\Documents\couplebook\public\services\deviceService.js](C:\Users\Jaylan\Documents\couplebook\public\services\deviceService.js)
+
+- Operations:
+  - `getDocs(query(collection(db, 'devices'), where('userId', '==', uid)))`
+- Paths:
+  - `devices/{deviceId}`
+- Risk level:
+  - low
+- Rules compatibility:
+  - compatible; owner-scoped read only
+- Current callers:
+  - `core/healthCheck.js`
+  - `public/core/healthCheck.js`
+  - `js/settings.js`
+  - `public/js/settings.js`
+- Notes:
+  - no writes
+  - no delete path
+  - no query outside owner UID
+
 ### [C:\Users\Jaylan\Documents\couplebook\js\auth.js](C:\Users\Jaylan\Documents\couplebook\js\auth.js)
 ### [C:\Users\Jaylan\Documents\couplebook\public\js\auth.js](C:\Users\Jaylan\Documents\couplebook\public\js\auth.js)
 
@@ -43,6 +108,8 @@ The app no longer depends on the legacy `usernames` collection in active runtime
   - compatible with current strict rules because reads are owner-scoped and use the authenticated UID
 - Move to service wrapper later:
   - yes; account verification and display-name resolution should move into `authService.js` / `userService.js`
+- Current status:
+  - still direct in Phase 7B by design to keep auth behavior unchanged
 
 ### [C:\Users\Jaylan\Documents\couplebook\core\firestoreSync.js](C:\Users\Jaylan\Documents\couplebook\core\firestoreSync.js)
 ### [C:\Users\Jaylan\Documents\couplebook\public\core\firestoreSync.js](C:\Users\Jaylan\Documents\couplebook\public\core\firestoreSync.js)
@@ -66,6 +133,8 @@ The app no longer depends on the legacy `usernames` collection in active runtime
   - merge logic mixes active-user settings with shared couple data
 - Move to service wrapper later:
   - yes; this is the highest-priority candidate for `syncService.js` and `userService.js`
+- Current status:
+  - unchanged in Phase 7B by design
 
 ### [C:\Users\Jaylan\Documents\couplebook\js\settings.js](C:\Users\Jaylan\Documents\couplebook\js\settings.js)
 ### [C:\Users\Jaylan\Documents\couplebook\public\js\settings.js](C:\Users\Jaylan\Documents\couplebook\public\js\settings.js)
@@ -82,7 +151,7 @@ The app no longer depends on the legacy `usernames` collection in active runtime
   - device reads remain in page-level UI code
   - any future device schema change would force a UI-file edit instead of a service-layer edit
 - Move to service wrapper later:
-  - yes; should move into `deviceService.js`
+  - completed in Phase 7B for read-only device listing
 
 ### [C:\Users\Jaylan\Documents\couplebook\core\healthCheck.js](C:\Users\Jaylan\Documents\couplebook\core\healthCheck.js)
 ### [C:\Users\Jaylan\Documents\couplebook\public\core\healthCheck.js](C:\Users\Jaylan\Documents\couplebook\public\core\healthCheck.js)
@@ -101,7 +170,7 @@ The app no longer depends on the legacy `usernames` collection in active runtime
   - diagnostics still duplicate production data-access logic
   - if the user-doc or device-doc rules/schema change, this health checker can drift
 - Move to service wrapper later:
-  - yes; should consume service functions rather than building its own Firestore queries
+  - completed in Phase 7B for read-only user/device diagnostics
 
 ## Indirect Firestore Boundaries
 
@@ -159,5 +228,5 @@ These remain localStorage-first today.
 
 1. Replace collection-wide `users` reads/listens in `firestoreSync.js` with targeted document reads plus explicit partner-document lookup logic.
 2. Move auth verification and username resolution into a dedicated service.
-3. Move device queries out of `settings.js` and `healthCheck.js`.
-4. Keep `state.js` localStorage-first and treat it as the stable compatibility boundary during migration.
+3. Keep `state.js` localStorage-first and treat it as the stable compatibility boundary during migration.
+4. Add thin service wrappers for any remaining read-only diagnostics before touching writes or listeners.
