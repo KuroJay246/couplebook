@@ -18,18 +18,23 @@
         </div>
 
         <nav class="nav">
-          <button class="nav-item nav-item-active" type="button">Home</button>
-          <button class="nav-item" type="button">Our Story</button>
-          <button class="nav-item" type="button">Gallery</button>
-          <button class="nav-item" type="button">Us</button>
-          <button class="nav-item" type="button">Favorites</button>
-          <button class="nav-item" type="button">Settings</button>
+          <button class="nav-item nav-item-active" type="button" data-view-target="home">Home</button>
+          <button class="nav-item" type="button" data-view-target="story">Our Story</button>
+          <button class="nav-item" type="button" data-view-target="gallery">Gallery</button>
+          <button class="nav-item" type="button" data-view-target="us">Us</button>
+          <button class="nav-item" type="button" data-view-target="favorites">Favorites</button>
+          <button class="nav-item" type="button" data-view-target="settings">Settings</button>
         </nav>
 
         <div class="side-card">
           <p class="eyebrow">Private Health</p>
           <p>Approved-account smoke is still pending.</p>
           <p class="muted">Storage remains future-only.</p>
+        </div>
+
+        <div class="side-card">
+          <p class="eyebrow">Special Moments</p>
+          <p>Birthday, Valentine’s, and confession stay distinct, but enter from curated story context.</p>
         </div>
       </aside>
 
@@ -42,53 +47,155 @@
           <div class="status-pill">Placeholder-only preview</div>
         </header>
 
-        <section class="hero">
-          <div class="hero-copy">
-            <p class="eyebrow">Story Hero</p>
-            <h3>Our private place for the moments we keep reaching back for.</h3>
-            <p>
-              This is a non-live concept for the future protected shell. It uses no Firebase,
-              no auth, no media, and no production routing.
-            </p>
-            <div class="hero-actions">
-              <button class="primary" type="button">Featured Memory</button>
-              <button class="secondary" type="button">Special Moments</button>
+        <section class="view is-visible" data-view="home">
+          <section class="hero">
+            <div class="hero-copy">
+              <p class="eyebrow">Story Hero</p>
+              <h3>Our private place for the moments we keep reaching back for.</h3>
+              <p>
+                This is a non-live concept for the future protected shell. It uses placeholder
+                content only and explores how the app can feel more like a shared keepsake.
+              </p>
+              <div class="hero-actions">
+                <button class="primary" type="button">Featured Memory</button>
+                <button class="secondary" type="button">Special Moments</button>
+              </div>
             </div>
-          </div>
 
-          <div class="hero-note">
-            <p class="eyebrow">Milestone</p>
-            <p class="metric">1,248 days</p>
-            <p class="muted">The milestone belongs inside the story, not above it.</p>
-          </div>
+            <div class="hero-note">
+              <p class="eyebrow">Milestone</p>
+              <p class="metric">1,248 days</p>
+              <p class="muted">The milestone belongs inside the story, not above it.</p>
+            </div>
+          </section>
+
+          <section class="grid">
+            <article class="card story-card">
+              <p class="eyebrow">Recent Memory</p>
+              <h4>The first night that started feeling like home.</h4>
+              <p class="muted">A future `MemoryCard` should carry tone, context, and a stronger sense of story.</p>
+            </article>
+
+            <article class="card story-card accent-card">
+              <p class="eyebrow">Special Entry</p>
+              <h4>Birthday, Valentine’s, and confession should stay distinct, but feel intentionally connected.</h4>
+              <p class="muted">This area stands in for future `SpecialPageEntry` cards.</p>
+            </article>
+
+            <article class="card utility-card">
+              <p class="eyebrow">Health Status</p>
+              <ul class="status-list">
+                <li>Private media stays local-only</li>
+                <li>Storage is not initialized</li>
+                <li>Rules are strict and deployed</li>
+              </ul>
+            </article>
+
+            <article class="card utility-card">
+              <p class="eyebrow">Gallery Direction</p>
+              <p class="muted">A future gallery should be curated and intimate, not just a raw media filter.</p>
+            </article>
+          </section>
         </section>
 
-        <section class="grid">
-          <article class="card story-card">
-            <p class="eyebrow">Recent Memory</p>
-            <h4>The first night that started feeling like home.</h4>
-            <p class="muted">A future `MemoryCard` should carry tone, context, and a stronger sense of story.</p>
-          </article>
+        <section class="view" data-view="story">
+          <section class="section-heading">
+            <p class="eyebrow">Our Story</p>
+            <h3>Timeline should read like chapters, not records.</h3>
+          </section>
+          <section class="stack">
+            <article class="card chapter-card">
+              <p class="eyebrow">Chapter One</p>
+              <h4>The beginning that keeps glowing in hindsight.</h4>
+              <p class="muted">Future timeline cards should lead with context, feeling, and progression before metadata.</p>
+            </article>
+            <article class="card chapter-card">
+              <p class="eyebrow">Chapter Two</p>
+              <h4>Shared routines becoming private rituals.</h4>
+              <p class="muted">This section stands in for milestone clusters, resurfaced memories, and authored captions.</p>
+            </article>
+          </section>
+        </section>
 
-          <article class="card story-card accent-card">
-            <p class="eyebrow">Special Entry</p>
-            <h4>Birthday, Valentine’s, and confession should stay distinct, but feel intentionally connected.</h4>
-            <p class="muted">This area stands in for future `SpecialPageEntry` cards.</p>
-          </article>
+        <section class="view" data-view="gallery">
+          <section class="section-heading">
+            <p class="eyebrow">Gallery</p>
+            <h3>A future gallery should feel curated, quiet, and intimate.</h3>
+          </section>
+          <section class="gallery-grid">
+            <article class="card gallery-card">
+              <span class="placeholder-chip">Placeholder spread</span>
+              <h4>Weekend scenes</h4>
+              <p class="muted">Reserved for future grouped photo storytelling.</p>
+            </article>
+            <article class="card gallery-card">
+              <span class="placeholder-chip">Placeholder reel</span>
+              <h4>Motion moments</h4>
+              <p class="muted">Reserved for future video-aware curation, not a raw file dump.</p>
+            </article>
+            <article class="card gallery-card wide-card">
+              <span class="placeholder-chip">Placeholder album</span>
+              <h4>Moments worth revisiting together</h4>
+              <p class="muted">Albums, themes, and story-led grouping can replace a flat media wall.</p>
+            </article>
+          </section>
+        </section>
 
-          <article class="card utility-card">
-            <p class="eyebrow">Health Status</p>
-            <ul class="status-list">
-              <li>Private media stays local-only</li>
-              <li>Storage is not initialized</li>
-              <li>Rules are strict and deployed</li>
-            </ul>
-          </article>
+        <section class="view" data-view="us">
+          <section class="section-heading">
+            <p class="eyebrow">Us</p>
+            <h3>The profile area should feel like two people in one shared frame.</h3>
+          </section>
+          <section class="pair-grid">
+            <article class="card person-card">
+              <p class="eyebrow">Jaylan Placeholder</p>
+              <h4>Warm details, not just editable fields.</h4>
+              <p class="muted">This future panel can hold personality, voice, and relationship context.</p>
+            </article>
+            <article class="card person-card">
+              <p class="eyebrow">Partner Placeholder</p>
+              <h4>Equal weight inside the same shared composition.</h4>
+              <p class="muted">The pair should feel intimate and balanced rather than like side-by-side forms.</p>
+            </article>
+          </section>
+        </section>
 
-          <article class="card utility-card">
-            <p class="eyebrow">Gallery Direction</p>
-            <p class="muted">A future gallery should be curated and intimate, not just a raw media filter.</p>
-          </article>
+        <section class="view" data-view="favorites">
+          <section class="section-heading">
+            <p class="eyebrow">Favorites</p>
+            <h3>Favorites should feel cherished, not like a raw prompt list.</h3>
+          </section>
+          <section class="grid favorites-grid">
+            <article class="card utility-card">
+              <p class="eyebrow">Shared Comforts</p>
+              <p class="muted">Future categories can center rituals, places, little jokes, and things worth returning to.</p>
+            </article>
+            <article class="card utility-card">
+              <p class="eyebrow">Layered Detail</p>
+              <p class="muted">A richer structure can show overlap, differences, and “why this matters to us.”</p>
+            </article>
+          </section>
+        </section>
+
+        <section class="view" data-view="settings">
+          <section class="section-heading">
+            <p class="eyebrow">Settings</p>
+            <h3>Health and privacy belong here, but lower in emotional emphasis.</h3>
+          </section>
+          <section class="stack">
+            <article class="card utility-card">
+              <p class="eyebrow">Private Health</p>
+              <ul class="status-list">
+                <li>Approved-account smoke still pending</li>
+                <li>Strict rules already live</li>
+                <li>Storage remains future-only</li>
+              </ul>
+            </article>
+            <article class="card utility-card">
+              <p class="eyebrow">Special Moments Entry</p>
+              <p class="muted">Settings should acknowledge the feature set without becoming the main doorway into it.</p>
+            </article>
+          </section>
         </section>
       </main>
     </div>
