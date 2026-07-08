@@ -5,6 +5,10 @@ const scripts = [
   'check-safety.js',
   'check-public.js',
   'check-rules.js',
+  'check-mirrors.js',
+  'check-services.js',
+  'check-prototype.js',
+  'check-docs.js',
   'check-routes.js'
 ];
 

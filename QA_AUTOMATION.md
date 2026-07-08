@@ -16,8 +16,20 @@ This repo now includes a small local QA lane for repeatable safety and route che
 - `npm run check:rules`
   Verifies the local Firestore live rules match the reviewed draft, confirms placeholder UIDs are gone, confirms Hosting still publishes only `public/`, confirms the Storage draft still blocks deletes, and runs a Firebase CLI dry-run for Firestore rules only.
 
+- `npm run check:mirrors`
+  Verifies the known root/public mirrored runtime files stay byte-equivalent after normalizing line endings, including the `services/` mirror set.
+
+- `npm run check:services`
+  Verifies read-only service helpers do not introduce forbidden writes, deletes, legacy `usernames` usage, broad `users` collection scans, or obvious hardcoded secrets.
+
+- `npm run check:prototype`
+  Verifies the non-live shell prototype stays outside `public/`, remains clearly labeled as non-live, and does not reference Firebase or private media paths/extensions.
+
+- `npm run check:docs`
+  Verifies the core status and planning documents for this private app still exist before longer autonomous runs depend on them.
+
 - `npm run check:all`
-  Runs the safety, public, rules, and route checks in sequence.
+  Runs the safety, public, rules, mirrors, services, prototype, docs, and route checks in sequence.
 
 ## When To Run
 
@@ -25,6 +37,7 @@ This repo now includes a small local QA lane for repeatable safety and route che
 - Before pushing after any auth, settings, or routing changes.
 - Before any future deploy review.
 - After any cleanup that touches Git tracking, `public/`, or Firebase rules.
+- Before committing mirror-sensitive service or prototype changes.
 
 ## What Failures Mean
 
@@ -40,6 +53,18 @@ This repo now includes a small local QA lane for repeatable safety and route che
 - `check:rules` failure:
   The local rules drifted, a placeholder UID remains, Hosting target drifted, Storage delete blocking regressed, or the Firestore rules dry-run no longer validates.
 
+- `check:mirrors` failure:
+  A mirrored root/public runtime file drifted. Stop and realign both trees before committing.
+
+- `check:services` failure:
+  A service helper crossed the allowed read-only boundary or now contains an unsafe pattern.
+
+- `check:prototype` failure:
+  A prototype leaked toward production boundaries or now references Firebase/private media.
+
+- `check:docs` failure:
+  A required planning or status document is missing, which weakens future autonomous review batches.
+
 ## Automated vs Manual
 
 Automated now:
@@ -48,6 +73,10 @@ Automated now:
 - Git history/tracked-file sensitive path checks
 - `public/` media boundary checks
 - Firestore rules drift and dry-run checks
+- Root/public mirror drift checks
+- Read-only service boundary checks
+- Prototype isolation checks
+- Core documentation presence checks
 
 Still manual:
 
