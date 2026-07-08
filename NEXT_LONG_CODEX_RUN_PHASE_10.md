@@ -28,6 +28,7 @@ Do not replace the live UI shell unless explicitly approved in a later batch.
 Phase 9A:
 - confirm repo clean and main matches origin/main
 - run npm run check:all
+- review `PROJECT_STATUS_AND_PHASES.md` and `DOCS_INDEX.md` first
 - review APPROVED_ACCOUNT_SMOKE_STATUS.md and APPROVED_ACCOUNT_SMOKE_RUNBOOK.md
 - if a real approved authenticated browser session is available, run Jaylan and partner smoke honestly
 - update smoke docs only with real observed evidence

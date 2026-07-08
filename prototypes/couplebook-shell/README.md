@@ -15,6 +15,12 @@ Purpose:
 - test story-first information hierarchy
 - keep design work separate from the live static app
 
+Reference docs:
+
+- `UI_REDESIGN_AND_PROTOTYPE_MASTER.md`
+- `PROJECT_STATUS_AND_PHASES.md`
+- `DOCS_INDEX.md`
+
 Boundaries:
 
 - do not route production users here
