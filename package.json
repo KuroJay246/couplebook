@@ -4,7 +4,12 @@
   "description": "Relationship Memory System for Jaylan and Omia",
   "main": "index.html",
   "scripts": {
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "check:routes": "node scripts/qa/check-routes.js",
+    "check:safety": "node scripts/qa/check-safety.js",
+    "check:public": "node scripts/qa/check-public.js",
+    "check:rules": "node scripts/qa/check-rules.js",
+    "check:all": "node scripts/qa/check-all.js"
   },
   "keywords": [
     "relationship",
