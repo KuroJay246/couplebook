@@ -9,10 +9,13 @@ Implemented in this phase:
 
 - mirrored `services/userService.js`
 - mirrored `services/deviceService.js`
+- mirrored `services/authService.js`
 - `core/healthCheck.js` now reads user/device data through services
 - `public/core/healthCheck.js` now reads user/device data through services
 - `js/settings.js` device list now reads through `deviceService.js`
 - `public/js/settings.js` device list now reads through `deviceService.js`
+- `js/auth.js` owner-scoped approved-user reads now go through `authService.js`
+- `public/js/auth.js` owner-scoped approved-user reads now go through `authService.js`
 
 Not implemented yet:
 
@@ -43,6 +46,16 @@ Not implemented yet:
 - Approved-account verification
 - Resolve the current user profile/username from `users/{uid}`
 - Sign-out
+- Phase 8B status:
+  - read-only approved-user helpers added
+  - `verifyApprovedUser(firebaseUser)`
+  - `getApprovedUserProfile(firebaseUser)`
+  - `resolveApprovedDisplayName(firebaseUser)`
+- Current boundary:
+  - no writes
+  - no deletes
+  - no `usernames` collection
+  - no full `users` collection reads
 
 ### `services/userService.js`
 
@@ -121,7 +134,7 @@ Phase 7B result:
 
 - Step 2 is complete
 - diagnostics and settings device reads were moved first
-- auth verification is intentionally still direct
+- auth verification and display-name reads are now wrapped in `authService.js`
 - `firestoreSync.js` remains untouched
 
 ## How To Reduce Direct Firestore Calls
@@ -158,7 +171,7 @@ Phase 7B result:
 
 ## Next Safest Extraction Step
 
-1. Move `js/auth.js` owner-scoped `users/{uid}` reads behind `userService.js` or a thin `authService.js`.
-2. Keep behavior identical and fail closed if approved-account verification cannot complete.
-3. After auth reads are centralized, inventory the exact read/listen/write branches inside `core/firestoreSync.js`.
+1. Inventory the exact read/listen/write branches inside `core/firestoreSync.js`.
+2. Add non-live read-only sync helpers for user-doc reads, listeners, and normalization where safe.
+3. Keep behavior identical and avoid touching sync writes in the same phase.
 4. Only then begin replacing collection-wide `users` reads/listeners with explicit document-oriented logic.

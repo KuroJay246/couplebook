@@ -11,8 +11,10 @@ New mirrored service files:
 
 - `services/userService.js`
 - `services/deviceService.js`
+- `services/authService.js`
 - `public/services/userService.js`
 - `public/services/deviceService.js`
+- `public/services/authService.js`
 
 Low-risk runtime files migrated in this phase:
 
@@ -25,8 +27,6 @@ Unchanged high-risk runtime files:
 
 - `core/firestoreSync.js`
 - `public/core/firestoreSync.js`
-- `js/auth.js`
-- `public/js/auth.js`
 
 ## Summary
 
@@ -94,22 +94,44 @@ The app no longer depends on the legacy `usernames` collection in active runtime
   - no delete path
   - no query outside owner UID
 
+### [C:\Users\Jaylan\Documents\couplebook\services\authService.js](C:\Users\Jaylan\Documents\couplebook\services\authService.js)
+### [C:\Users\Jaylan\Documents\couplebook\public\services\authService.js](C:\Users\Jaylan\Documents\couplebook\public\services\authService.js)
+
+- Operations:
+  - owner-scoped approved-user verification through `users/{uid}`
+  - owner-scoped display-name resolution through `users/{uid}`
+- Paths:
+  - `users/{uid}`
+- Risk level:
+  - low
+- Rules compatibility:
+  - compatible; uses only owner-scoped user document reads
+- Current callers:
+  - `js/auth.js`
+  - `public/js/auth.js`
+- Notes:
+  - no writes
+  - no deletes
+  - fail-closed verification behavior preserved
+  - username collection remains unused
+
 ### [C:\Users\Jaylan\Documents\couplebook\js\auth.js](C:\Users\Jaylan\Documents\couplebook\js\auth.js)
 ### [C:\Users\Jaylan\Documents\couplebook\public\js\auth.js](C:\Users\Jaylan\Documents\couplebook\public\js\auth.js)
 
 - Operations:
-  - `getDoc(doc(db, 'users', uid))` during approved-account verification
-  - `getDoc(doc(db, 'users', firebaseUser.uid))` to resolve `username`
+  - imports `authService.js`
+  - still signs in with Firebase Auth directly
 - Paths:
-  - `users/{uid}`
+  - no direct Firestore path access remains in this file for approved-user reads
 - Risk level:
   - medium
 - Rules compatibility:
-  - compatible with current strict rules because reads are owner-scoped and use the authenticated UID
+  - compatible; owner-scoped reads moved behind `authService.js`
 - Move to service wrapper later:
-  - yes; account verification and display-name resolution should move into `authService.js` / `userService.js`
+  - Phase 8B completed this read-only wrapper step
 - Current status:
-  - still direct in Phase 7B by design to keep auth behavior unchanged
+  - approved-user verification and display-name resolution are now behind `authService.js`
+  - login UX and route behavior are intended to remain unchanged
 
 ### [C:\Users\Jaylan\Documents\couplebook\core\firestoreSync.js](C:\Users\Jaylan\Documents\couplebook\core\firestoreSync.js)
 ### [C:\Users\Jaylan\Documents\couplebook\public\core\firestoreSync.js](C:\Users\Jaylan\Documents\couplebook\public\core\firestoreSync.js)
@@ -213,7 +235,7 @@ These remain localStorage-first today.
 
 ## Current Compatibility With Strict Rules
 
-- `users/{uid}` direct reads in auth and health check:
+- `users/{uid}` reads in auth and health check:
   - compatible
 - `users/{uid}` merge writes in sync layer:
   - compatible if payload shape remains within the allowed schema
@@ -227,6 +249,6 @@ These remain localStorage-first today.
 ## Recommended Priority
 
 1. Replace collection-wide `users` reads/listens in `firestoreSync.js` with targeted document reads plus explicit partner-document lookup logic.
-2. Move auth verification and username resolution into a dedicated service.
-3. Keep `state.js` localStorage-first and treat it as the stable compatibility boundary during migration.
-4. Add thin service wrappers for any remaining read-only diagnostics before touching writes or listeners.
+2. Keep `state.js` localStorage-first and treat it as the stable compatibility boundary during migration.
+3. Add thin non-live sync read helpers before touching writes or listeners.
+4. Only after the sync boundary is mapped in full should collection-wide listeners be replaced.

@@ -49,17 +49,9 @@ export const Auth = {
   // (i.e., a Firestore user document exists). Fail closed if that verification
   // cannot complete so unknown Firebase users are never allowed through.
   async verifyRegisteredAccount(uid, db) {
-    try {
-      const { doc, getDoc } = await import(`${FIREBASE_CDN}/firebase-firestore.js`);
-      const snap = await Promise.race([
-        getDoc(doc(db, 'users', uid)),
-        new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 5000))
-      ]);
-      return snap.exists();
-    } catch (e) {
-      console.warn('[MemoryBook] Account verification check failed:', e.message);
-      return false;
-    }
+    void db;
+    const { verifyApprovedUser } = await import('../services/authService.js');
+    return verifyApprovedUser({ uid }, { timeoutMs: 5000 });
   },
 
   // ── Register ───────────────────────────────────────────────────────────────
@@ -79,7 +71,7 @@ export const Auth = {
     if (!fbAuth || !db) throw new Error('Firebase is offline. Try again shortly.');
 
     const { signInWithEmailAndPassword } = await import(`${FIREBASE_CDN}/firebase-auth.js`);
-    const { doc, getDoc } = await import(`${FIREBASE_CDN}/firebase-firestore.js`);
+    const { resolveApprovedDisplayName } = await import('../services/authService.js');
 
     window.__LOGIN_IN_PROGRESS__ = true;
 
@@ -109,12 +101,7 @@ export const Auth = {
     }
 
     // Resolve display username from Firestore user doc
-    try {
-      const userSnap = await getDoc(doc(db, 'users', firebaseUser.uid));
-      if (userSnap.exists() && userSnap.data().username) {
-        resolvedUsername = userSnap.data().username;
-      }
-    } catch { /* fall through */ }
+    resolvedUsername = await resolveApprovedDisplayName(firebaseUser, { timeoutMs: 5000 });
 
     if (!resolvedUsername) {
       // Derive from email as fallback
