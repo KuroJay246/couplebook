@@ -1,16 +1,18 @@
 # Service Layer Migration Status
 
 Date: 2026-07-08
-Current status: Phase 7B read-only foundation added
+Current status: Phase 8C sync boundary mapped; read-only helper preparation added
 
 ## New Service Files Added
 
 - [services/userService.js](/C:/Users/Jaylan/Documents/couplebook/services/userService.js)
 - [services/deviceService.js](/C:/Users/Jaylan/Documents/couplebook/services/deviceService.js)
 - [services/authService.js](/C:/Users/Jaylan/Documents/couplebook/services/authService.js)
+- [services/syncReadService.js](/C:/Users/Jaylan/Documents/couplebook/services/syncReadService.js)
 - [public/services/userService.js](/C:/Users/Jaylan/Documents/couplebook/public/services/userService.js)
 - [public/services/deviceService.js](/C:/Users/Jaylan/Documents/couplebook/public/services/deviceService.js)
 - [public/services/authService.js](/C:/Users/Jaylan/Documents/couplebook/public/services/authService.js)
+- [public/services/syncReadService.js](/C:/Users/Jaylan/Documents/couplebook/public/services/syncReadService.js)
 
 ## Runtime Files Migrated
 
@@ -28,6 +30,7 @@ Current status: Phase 7B read-only foundation added
 - owner-scoped `devices` query in settings device list
 - owner-scoped approved-user verification reads in auth
 - owner-scoped display-name resolution reads in auth
+- document-scoped sync-read preparation helpers now exist outside the live sync path
 
 ## What Remains Direct
 
@@ -36,13 +39,29 @@ Current status: Phase 7B read-only foundation added
 
 ## core/firestoreSync.js Status
 
-`core/firestoreSync.js` remains unchanged in this phase.
+`core/firestoreSync.js` remains behavior-unchanged in this phase.
 
 It still needs:
 
 - targeted document-read cleanup
 - listener-scope reduction
 - separation of shared-couple data from active-user settings logic
+- authenticated approved-account smoke before live listener replacement
+
+## Phase 8C Additions
+
+- created [FIRESTORE_SYNC_BOUNDARY_MAP.md](/C:/Users/Jaylan/Documents/couplebook/FIRESTORE_SYNC_BOUNDARY_MAP.md)
+- added mirrored non-live read helpers:
+  - [services/syncReadService.js](/C:/Users/Jaylan/Documents/couplebook/services/syncReadService.js)
+  - [public/services/syncReadService.js](/C:/Users/Jaylan/Documents/couplebook/public/services/syncReadService.js)
+
+These helpers are intentionally limited to:
+
+- owner-scoped `users/{uid}` document reads
+- owner-scoped document listeners
+- cloud data normalization
+
+They are not wired into production yet.
 
 ## Why This Step Was Safe
 
@@ -55,7 +74,7 @@ It still needs:
 
 ## Next Safest Extraction Step
 
-Map `core/firestoreSync.js` in exact detail and add non-live read-only sync helpers before attempting any change to collection-wide reads or listeners.
+Use the new boundary map and non-live helpers to design a document-oriented replacement for `loadUserData(...)` and `listen(...)`, then wait for approved-account smoke before changing live listener scope.
 
 ## Approved-Account Smoke Status
 
