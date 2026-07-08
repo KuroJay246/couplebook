@@ -182,6 +182,14 @@ If Phase 9 finds a serious safety or runtime failure, it pauses Phase 10 and Pha
 
 Do not create new phase docs unless the master docs cannot handle the topic cleanly.
 
+### Reporting Rule
+
+Future long-run reports should be grouped by track:
+
+- Phase 9 track
+- Phase 10 track
+- Phase 11 track
+
 ## Next Run Queue
 
 ### Phase 9 Track
