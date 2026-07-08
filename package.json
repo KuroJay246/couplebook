@@ -11,6 +11,7 @@
     "check:rules": "node scripts/qa/check-rules.js",
     "check:mirrors": "node scripts/qa/check-mirrors.js",
     "check:services": "node scripts/qa/check-services.js",
+    "check:sync-model": "node scripts/qa/check-sync-model.js",
     "check:prototype": "node scripts/qa/check-prototype.js",
     "check:docs": "node scripts/qa/check-docs.js",
     "check:all": "node scripts/qa/check-all.js"

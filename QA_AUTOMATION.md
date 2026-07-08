@@ -22,6 +22,9 @@ This repo now includes a small local QA lane for repeatable safety and route che
 - `npm run check:services`
   Verifies read-only service helpers do not introduce forbidden writes, deletes, legacy `usernames` usage, broad `users` collection scans, or obvious hardcoded secrets.
 
+- `npm run check:sync-model`
+  Verifies the non-live sync model helpers normalize fixture user docs safely, preserve shared profile/favorites/signature expectations, and resolve active/partner docs without Firebase access.
+
 - `npm run check:prototype`
   Verifies the non-live shell prototype stays outside `public/`, remains clearly labeled as non-live, and does not reference Firebase or private media paths/extensions.
 
@@ -29,7 +32,7 @@ This repo now includes a small local QA lane for repeatable safety and route che
   Verifies the core status and planning documents for this private app still exist before longer autonomous runs depend on them.
 
 - `npm run check:all`
-  Runs the safety, public, rules, mirrors, services, prototype, docs, and route checks in sequence.
+  Runs the safety, public, rules, mirrors, services, sync-model, prototype, docs, and route checks in sequence.
 
 ## When To Run
 
@@ -59,6 +62,9 @@ This repo now includes a small local QA lane for repeatable safety and route che
 - `check:services` failure:
   A service helper crossed the allowed read-only boundary or now contains an unsafe pattern.
 
+- `check:sync-model` failure:
+  The non-live sync replacement helpers no longer preserve the expected fixture-based merge and partner-selection behavior.
+
 - `check:prototype` failure:
   A prototype leaked toward production boundaries or now references Firebase/private media.
 
@@ -75,6 +81,7 @@ Automated now:
 - Firestore rules drift and dry-run checks
 - Root/public mirror drift checks
 - Read-only service boundary checks
+- Non-live sync-model fixture checks
 - Prototype isolation checks
 - Core documentation presence checks
 

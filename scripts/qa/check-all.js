@@ -7,6 +7,7 @@ const scripts = [
   'check-rules.js',
   'check-mirrors.js',
   'check-services.js',
+  'check-sync-model.js',
   'check-prototype.js',
   'check-docs.js',
   'check-routes.js'
