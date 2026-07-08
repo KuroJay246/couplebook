@@ -29,7 +29,7 @@ This repo now includes a small local QA lane for repeatable safety and route che
   Verifies the non-live shell prototype stays outside `public/`, remains clearly labeled as non-live, and does not reference Firebase or private media paths/extensions.
 
 - `npm run check:docs`
-  Verifies the core status and planning documents for this private app still exist before longer autonomous runs depend on them.
+  Verifies the master handbook docs and the required standalone smoke/privacy docs still exist before longer autonomous runs depend on them.
 
 - `npm run check:all`
   Runs the safety, public, rules, mirrors, services, sync-model, prototype, docs, and route checks in sequence.
@@ -69,7 +69,7 @@ This repo now includes a small local QA lane for repeatable safety and route che
   A prototype leaked toward production boundaries or now references Firebase/private media.
 
 - `check:docs` failure:
-  A required planning or status document is missing, which weakens future autonomous review batches.
+  A required master handbook doc or essential standalone smoke/privacy doc is missing.
 
 ## Automated vs Manual
 
@@ -84,6 +84,7 @@ Automated now:
 - Non-live sync-model fixture checks
 - Prototype isolation checks
 - Core documentation presence checks
+- Consolidated master-doc presence checks
 
 Still manual:
 
