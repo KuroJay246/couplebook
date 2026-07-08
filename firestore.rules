@@ -3,36 +3,302 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // MemoryBook — Private Couple Application
-    // Database has exactly 2 accounts: Jaylan & Omia.
-    // ─────────────────────────────────────────────────────────────────────────
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // This draft is for a private two-person MemoryBook deployment.
+    // Replace the placeholder UIDs before any deploy.
+    //
+    // Current live collections used by the app:
+    //
+    // Collection: users
+    // Document ID: {uid}
+    // Fields:
+    //   - username: string, required, immutable, expected 'Jaylan' or 'Omia'
+    //   - email: string, required, immutable
+    //   - theme: string, required, one of dark|light|sunset|kuromi
+    //   - contractAccepted: bool, required
+    //   - migrationCompleted: bool, required, must remain true
+    //   - profile: map, required
+    //   - createdAt: timestamp, required, immutable
+    //   - settings: map, optional
+    //   - favorites: map, optional
+    //   - signature: map, optional
+    //   - lastSync: timestamp, optional
+    //
+    // Collection: usernames
+    // Document ID: {lowercaseUsername}
+    // Fields:
+    //   - email: string, required
+    //   - uid: string, required
+    //
+    // Collection: devices
+    // Document ID: {deviceId}
+    // Fields:
+    //   - userId: string, required, must match request.auth.uid
+    //   - deviceId: string, required, should match document id
+    //   - deviceName: string, optional
+    //   - browser: string, optional
+    //   - platform: string, optional
+    //   - createdAt: timestamp, optional
+    //   - lastSeen: timestamp, optional
+    //
+    // Planned future collections are explicitly denied until modeled:
+    //   memories, mediaMetadata, profiles, favorites, settings,
+    //   anniversaryConfig, birthdayConfig, specialPages, tags
+    //
+    // ===============================================================
 
-    // ── users/{uid} — private user data ──────────────────────────────────────
-    // Any authenticated user can READ (needed for partner profile/signature sync).
-    // Owner can write. Any authenticated user can DELETE (for admin cleanup).
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isApprovedUid() {
+      return isAuthenticated() && request.auth.uid in [
+        'oauPl1OU3TfNomvQ3kL3CnAD3Xr27',
+        'IvfHjC5wlPbMWZtMkXceqRTowPt1'
+      ];
+    }
+
+    function isApprovedUserId(userId) {
+      return userId in [
+        'oauPl1OU3TfNomvQ3kL3CnAD3Xr27',
+        'IvfHjC5wlPbMWZtMkXceqRTowPt1'
+      ];
+    }
+
+    function isOwner(userId) {
+      return isApprovedUid() && request.auth.uid == userId && isApprovedUserId(userId);
+    }
+
+    function isValidTheme(value) {
+      return value in ['dark', 'light', 'sunset', 'kuromi'];
+    }
+
+    function isValidAnniversaryView(value) {
+      return value in ['dual', 'jaylan', 'omia'];
+    }
+
+    function isValidDateOnly(value) {
+      return value is string && value.matches('^\\d{4}-\\d{2}-\\d{2}$');
+    }
+
+    function isValidEmail(value) {
+      return value is string
+        && value.size() >= 5
+        && value.size() <= 160
+        && value.matches('^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$');
+    }
+
+    function isValidOptionalString(value, maxLen) {
+      return value == null || (value is string && value.size() <= maxLen);
+    }
+
+    function isValidOptionalStringList(value, maxItems) {
+      return value == null || (value is list && value.size() <= maxItems);
+    }
+
+    function themeFieldsConsistent(data) {
+      return data.settings == null || data.settings.theme == null || data.settings.theme == data.theme;
+    }
+
+    function isValidPrivacyToggles(toggles) {
+      return toggles == null || (
+        toggles is map
+        && toggles.keys().hasOnly(['hideOfflineWarning', 'localOnlyMode'])
+        && (toggles.hideOfflineWarning == null || toggles.hideOfflineWarning is bool)
+        && (toggles.localOnlyMode == null || toggles.localOnlyMode is bool)
+      );
+    }
+
+    function isValidSettings(settings) {
+      return settings == null || (
+        settings is map
+        && settings.keys().hasOnly(['theme', 'anniversaryConfig', 'privacyToggles'])
+        && (settings.theme == null || isValidTheme(settings.theme))
+        && (settings.anniversaryConfig == null || isValidAnniversaryView(settings.anniversaryConfig))
+        && isValidPrivacyToggles(settings.privacyToggles)
+      );
+    }
+
+    function isValidProfile(profile) {
+      return profile is map
+        && profile.keys().hasOnly(['name', 'bio', 'avatar', 'anniversaryView', 'joinedDate', 'birthday'])
+        && profile.name is string
+        && profile.name.size() >= 1
+        && profile.name.size() <= 80
+        && isValidOptionalString(profile.bio, 500)
+        && isValidOptionalString(profile.avatar, 300)
+        && (profile.anniversaryView == null || isValidAnniversaryView(profile.anniversaryView))
+        && (profile.joinedDate == null || isValidDateOnly(profile.joinedDate))
+        && (profile.birthday == null || isValidDateOnly(profile.birthday));
+    }
+
+    function isValidFavorites(favorites) {
+      return favorites == null || (
+        favorites is map
+        && favorites.keys().size() <= 12
+      );
+    }
+
+    function isValidSignature(signature) {
+      return signature == null || (
+        signature is map
+        && signature.keys().hasOnly(['accepted', 'timestamp', 'version', 'history'])
+        && (signature.accepted == null || signature.accepted is bool)
+        && isValidOptionalString(signature.timestamp, 40)
+        && isValidOptionalString(signature.version, 20)
+        && isValidOptionalStringList(signature.history, 25)
+      );
+    }
+
+    function isValidUserDoc(data) {
+      return data is map
+        && data.keys().hasOnly([
+          'username',
+          'email',
+          'theme',
+          'contractAccepted',
+          'migrationCompleted',
+          'profile',
+          'createdAt',
+          'settings',
+          'favorites',
+          'signature',
+          'lastSync'
+        ])
+        && data.keys().hasAll([
+          'username',
+          'email',
+          'theme',
+          'contractAccepted',
+          'migrationCompleted',
+          'profile',
+          'createdAt'
+        ])
+        && data.username in ['Jaylan', 'Omia']
+        && isValidEmail(data.email)
+        && isValidTheme(data.theme)
+        && data.contractAccepted is bool
+        && data.migrationCompleted == true
+        && data.createdAt is timestamp
+        && (data.lastSync == null || data.lastSync is timestamp)
+        && isValidProfile(data.profile)
+        && isValidSettings(data.settings)
+        && themeFieldsConsistent(data)
+        && isValidFavorites(data.favorites)
+        && isValidSignature(data.signature);
+    }
+
+    function userDocImmutablesUnchanged() {
+      return request.resource.data.username == resource.data.username
+        && request.resource.data.email == resource.data.email
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.migrationCompleted == resource.data.migrationCompleted;
+    }
+
+    function isValidDeviceDoc(deviceId, data) {
+      return data is map
+        && data.keys().hasOnly([
+          'userId',
+          'deviceId',
+          'deviceName',
+          'browser',
+          'platform',
+          'createdAt',
+          'lastSeen'
+        ])
+        && data.keys().hasAll(['userId', 'deviceId'])
+        && data.userId == request.auth.uid
+        && data.deviceId == deviceId
+        && isValidOptionalString(data.deviceName, 80)
+        && isValidOptionalString(data.browser, 160)
+        && isValidOptionalString(data.platform, 80)
+        && (data.createdAt == null || data.createdAt is timestamp)
+        && (data.lastSeen == null || data.lastSeen is timestamp);
+    }
+
+    // ===============================================================
+    // Current collections
+    // ===============================================================
+
     match /users/{userId} {
-      allow read:  if request.auth != null;
-      allow create, update: if request.auth != null && request.auth.uid == userId;
-      allow delete: if request.auth != null;
+      // Only approved couple accounts may read the private user documents.
+      allow get: if isOwner(userId);
+
+      // Only the approved couple accounts may list/read the shared couple docs.
+      allow list: if isApprovedUid();
+
+      allow create: if isOwner(userId) && isValidUserDoc(request.resource.data);
+      allow update: if isOwner(userId)
+        && userDocImmutablesUnchanged()
+        && isValidUserDoc(request.resource.data);
+
+      // Client-side delete is blocked. Use the Firebase Console/Admin SDK for cleanup.
+      allow delete: if false;
     }
 
-    // ── usernames/{username} — public email lookup for login by username ──────
-    // Public read so the login form can resolve username → email.
-    // Authenticated users can write/delete (for admin cleanup).
     match /usernames/{username} {
-      allow read:  if true;
-      allow write: if request.auth != null;
+      // Legacy username lookup is disabled in the private email-only auth model.
+      allow read, write: if false;
     }
 
-    // ── devices/{deviceId} — session management ──────────────────────────────
     match /devices/{deviceId} {
-      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
-      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow read: if isOwner(resource.data.userId);
+      allow create: if isApprovedUid() && isValidDeviceDoc(deviceId, request.resource.data);
+      allow update: if isOwner(resource.data.userId)
+        && request.resource.data.userId == resource.data.userId
+        && request.resource.data.deviceId == resource.data.deviceId
+        && isValidDeviceDoc(deviceId, request.resource.data);
+      allow delete: if isOwner(resource.data.userId);
     }
 
-    // ── Deny everything else ──────────────────────────────────────────────────
+    // ===============================================================
+    // Planned future collections — explicit deny until modeled
+    // ===============================================================
+
+    match /memories/{memoryId} {
+      allow read, write: if false;
+    }
+
+    match /mediaMetadata/{mediaId} {
+      allow read, write: if false;
+    }
+
+    match /profiles/{profileId} {
+      allow read, write: if false;
+    }
+
+    match /favorites/{favoriteId} {
+      allow read, write: if false;
+    }
+
+    match /settings/{settingId} {
+      allow read, write: if false;
+    }
+
+    match /anniversaryConfig/{docId} {
+      allow read, write: if false;
+    }
+
+    match /birthdayConfig/{docId} {
+      allow read, write: if false;
+    }
+
+    match /specialPages/{docId} {
+      allow read, write: if false;
+    }
+
+    match /tags/{tagId} {
+      allow read, write: if false;
+    }
+
+    // Fail closed.
     match /{document=**} {
       allow read, write: if false;
     }

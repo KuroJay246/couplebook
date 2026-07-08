@@ -60,15 +60,15 @@ service cloud.firestore {
 
     function isApprovedUid() {
       return isAuthenticated() && request.auth.uid in [
-        '<JAYLAN_UID>',
-        '<PARTNER_UID>'
+        'oauPl1OU3TfNomvQ3kL3CnAD3Xr27',
+        'IvfHjC5wlPbMWZtMkXceqRTowPt1'
       ];
     }
 
     function isApprovedUserId(userId) {
       return userId in [
-        '<JAYLAN_UID>',
-        '<PARTNER_UID>'
+        'oauPl1OU3TfNomvQ3kL3CnAD3Xr27',
+        'IvfHjC5wlPbMWZtMkXceqRTowPt1'
       ];
     }
 
