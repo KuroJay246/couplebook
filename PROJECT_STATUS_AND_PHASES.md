@@ -27,6 +27,18 @@ Date: 2026-07-08
 | Private media touched | no |
 | Gather Savor modified | no |
 
+## System Health Audit Snapshot
+
+| Check | Status |
+| --- | --- |
+| `git status --short --branch` | clean |
+| `main` vs `origin/main` at run start | matched at `33cf73fb7dd0e636f1f3c58b0ed7df09c0c5633e` |
+| `npm run check:all` | pass |
+| Rules alignment/dry-run | pass |
+| Prototype boundary check | pass |
+| Route verification | pass |
+| Approved-account authenticated smoke | still `HOLD` |
+
 ## Approved-Account Smoke Status
 
 | Check | Status |
@@ -41,7 +53,7 @@ Date: 2026-07-08
 
 ### Why Smoke Is Still HOLD
 
-No authenticated browser session or human-entered approved credentials were available during the recent autonomous runs. Because of that, the project cannot honestly claim `PASS`.
+No authenticated browser session or human-entered approved credentials were available during the recent autonomous runs. The in-app browser also had no open tabs and no selected tab during the latest smoke attempt. Because of that, the project cannot honestly claim `PASS`.
 
 ## Open Gates
 
@@ -78,6 +90,20 @@ No authenticated browser session or human-entered approved credentials were avai
 - page-by-page redesign planning
 
 ## Recent Phase Closeout Summaries
+
+### Latest Workstream Run Summary
+
+- starting commit: `33cf73fb7dd0e636f1f3c58b0ed7df09c0c5633e`
+- Phase 9 track: safety baseline stayed green, `check:all` passed, and smoke remained honestly `HOLD`
+- Phase 10 track: skipped live sync work because smoke did not pass
+- Phase 11 track: continued non-live shell refinement only, outside `public/`
+- checks run: `git status --short --branch`, `git rev-parse main`, `git rev-parse origin/main`, `npm run check:all`, master-doc review, and in-app browser tab/session inspection
+- deploy activity: none
+- remaining top gate: real approved-account smoke for both approved users
+- next recommended track actions:
+  - Phase 9: run real approved-account smoke with real browser auth/session evidence
+  - Phase 10: keep live sync replacement blocked until smoke passes
+  - Phase 11: continue prototype-only shell/dashboard/mobile rhythm refinement
 
 ### Phase 8 Summary
 

@@ -133,6 +133,10 @@ body {
   padding: 1.5rem;
 }
 
+.mobile-dock {
+  display: none;
+}
+
 .view {
   display: none;
 }
@@ -240,6 +244,21 @@ body {
   margin-top: 1rem;
 }
 
+.special-moments-strip,
+.quiet-grid {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.special-moments-strip {
+  grid-template-columns: minmax(0, 1.4fr) minmax(260px, 0.8fr);
+}
+
+.quiet-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .section-heading {
   margin-top: 1rem;
   padding: 0.25rem 0;
@@ -276,8 +295,21 @@ body {
 
 .chapter-card,
 .person-card,
-.gallery-card {
+.gallery-card,
+.moment-card {
   background: var(--panel-strong);
+}
+
+.moment-card {
+  background:
+    linear-gradient(180deg, rgba(255, 248, 241, 0.98), rgba(248, 228, 235, 0.96));
+}
+
+.quiet-card {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .pair-grid,
@@ -312,6 +344,23 @@ body {
   background: rgba(159, 79, 101, 0.14);
 }
 
+.moment-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 1rem 0 0.9rem;
+}
+
+.moment-pills span {
+  border-radius: 999px;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--accent-deep);
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(92, 54, 63, 0.1);
+}
+
 .status-list {
   padding-left: 1.1rem;
   margin: 0.75rem 0 0;
@@ -331,8 +380,10 @@ body {
 
   .hero,
   .grid,
+  .special-moments-strip,
   .pair-grid,
-  .gallery-grid {
+  .gallery-grid,
+  .quiet-grid {
     grid-template-columns: 1fr;
   }
 
@@ -342,5 +393,24 @@ body {
 
   .topbar {
     flex-direction: column;
+  }
+
+  .mobile-dock {
+    position: sticky;
+    bottom: 0;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.5rem;
+    padding: 0.9rem 1rem 1rem;
+    border-top: 1px solid var(--line);
+    background: rgba(255, 248, 243, 0.92);
+    backdrop-filter: blur(14px);
+  }
+
+  .mobile-dock .nav-item {
+    min-height: 3.1rem;
+    padding: 0.7rem 0.55rem;
+    text-align: center;
+    font-size: 0.78rem;
   }
 }

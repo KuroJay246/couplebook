@@ -101,6 +101,15 @@ Current prototype direction already demonstrates:
 
 This prototype is not a direct code source for the live app.
 
+## Phase 11 Status
+
+Latest non-live work kept the redesign track moving without touching the deployed app:
+
+- smoke stayed `HOLD`, so no live shell replacement started
+- the prototype remains outside `public/` with placeholder-only content
+- mobile shell preview is the next safe proving ground for nav rhythm
+- special moments entry and private-health placement should keep getting refined in the prototype before any live CSS batch
+
 ## Production Implementation Checklist
 
 Safe concepts to move later:

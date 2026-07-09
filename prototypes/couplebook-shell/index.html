@@ -96,6 +96,24 @@
               <p class="muted">A future gallery should be curated and intimate, not just a raw media filter.</p>
             </article>
           </section>
+
+          <section class="special-moments-strip">
+            <article class="card moment-card">
+              <p class="eyebrow">Special Moments</p>
+              <h4>Three distinct doors, one shared story frame.</h4>
+              <div class="moment-pills">
+                <span>Birthday</span>
+                <span>Valentine’s</span>
+                <span>Confession</span>
+              </div>
+              <p class="muted">Future entries can feel ceremonial without taking over the main shell.</p>
+            </article>
+
+            <article class="card utility-card quiet-card">
+              <p class="eyebrow">Quiet Settings</p>
+              <p class="muted">Privacy, sync, and app-health should stay accessible while visually stepping behind the story.</p>
+            </article>
+          </section>
         </section>
 
         <section class="view" data-view="story">
@@ -182,7 +200,7 @@
             <p class="eyebrow">Settings</p>
             <h3>Health and privacy belong here, but lower in emotional emphasis.</h3>
           </section>
-          <section class="stack">
+          <section class="quiet-grid">
             <article class="card utility-card">
               <p class="eyebrow">Private Health</p>
               <ul class="status-list">
@@ -192,12 +210,24 @@
               </ul>
             </article>
             <article class="card utility-card">
+              <p class="eyebrow">Account Boundaries</p>
+              <p class="muted">Guest mode stays blocked, signup stays disabled, and destructive browser-only admin tools stay gone.</p>
+            </article>
+            <article class="card utility-card">
               <p class="eyebrow">Special Moments Entry</p>
-              <p class="muted">Settings should acknowledge the feature set without becoming the main doorway into it.</p>
+              <p class="muted">Settings can acknowledge the feature set without becoming the main doorway into it.</p>
             </article>
           </section>
         </section>
       </main>
+
+      <nav class="mobile-dock" aria-label="Prototype mobile navigation">
+        <button class="nav-item nav-item-active" type="button" data-view-target="home">Home</button>
+        <button class="nav-item" type="button" data-view-target="story">Story</button>
+        <button class="nav-item" type="button" data-view-target="gallery">Gallery</button>
+        <button class="nav-item" type="button" data-view-target="favorites">Favorites</button>
+        <button class="nav-item" type="button" data-view-target="settings">Settings</button>
+      </nav>
     </div>
 
     <script type="module" src="./shell-preview.js"></script>
