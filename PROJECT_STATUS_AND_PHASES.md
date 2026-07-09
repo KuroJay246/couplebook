@@ -94,13 +94,14 @@ Jaylan was successfully tested in a real browser session after correcting the li
 
 ### Latest Workstream Run Summary
 
-- starting commit: `1b48d7970b14c712acf7c82c3c38168dc9cce2fd`
-- Phase 9 track: safety baseline stayed green, `npm run check:all` passed again, and smoke remains honestly `HOLD` because only Jaylan has been authenticated in a real browser flow
-- Phase 10 track: live sync work stayed blocked and `core/firestoreSync.js` was intentionally left unchanged
-- Phase 11 track: applied the first live token/card/header cleanup batch across shared CSS and the six protected pages without touching auth, sync, routes, or data behavior
-- checks run: `git status --short --branch`, `git rev-parse main`, `git rev-parse origin/main`, `npm run check:all`, `npm run check:mirrors`, master-doc review, protected-page markup review, and local Playwright sanity checks for login, dashboard, and standalone special-page availability
+- starting commit: `2b2eae4ffa575e84b1247850b695ee01e9a0455c`
+- Phase 9 track: safety baseline stayed green again, `npm run check:all` passed before and after the dashboard pass, Jaylan approved-account smoke remains `PASS`, partner approved-account smoke remains not tested, and overall smoke remains honestly `HOLD`
+- Phase 10 track: live sync work was intentionally skipped again and both `core/firestoreSync.js` files remained untouched
+- Phase 11 track: refined the live dashboard only so it opens with a story-first hero, featured recent memories, milestone support, nearby special-page entry points, and lower quick navigation without touching auth, sync, routes, or data behavior
+- checks run: `git status --short --branch`, `git rev-parse main`, `git rev-parse origin/main`, `npm run check:all` twice, master-doc review, runtime dashboard markup/CSS review, and a local Playwright render sanity pass against `/pages/dashboard.html`
+- browser sanity result: partial but useful; the dashboard route rendered the new hierarchy and recent-memory surfaces, while the console still showed the pre-existing local-missing media fallback 404s plus missing `favicon.ico`
 - commits in this run:
-  - pending safe live UI cleanup commit
+  - `Refine dashboard story hierarchy`
 - deploy activity: none
 - Gather Savor inspected read-only: unchanged from prior comparison work
 - Couple Book browser inspected: yes
@@ -109,7 +110,7 @@ Jaylan was successfully tested in a real browser session after correcting the li
 - next recommended track actions:
   - Phase 9: keep smoke status honest and run the partner approved-account smoke when credentials/session are available
   - Phase 10: keep live sync replacement blocked until smoke passes
-  - Phase 11: if this token/header batch stays stable, move to the smallest dashboard story-hierarchy refinement pass only
+  - Phase 11: if this dashboard batch stays stable, continue only the next smallest reversible shell/content-structure refinement without touching sync or auth
 
 ### Phase 8 Summary
 

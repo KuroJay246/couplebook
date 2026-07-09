@@ -493,14 +493,105 @@ The first controlled live Phase 11 batch is now complete.
 
 If this batch stays stable, the next safe UI step is a small dashboard and section-hierarchy refinement pass only, still without touching sync or auth.
 
+## Phase 11 Dashboard Story-Hierarchy Scope
+
+This second live Phase 11 batch stays dashboard-only and keeps the previous token/header pass intact.
+
+### What Will Change
+
+- reorder the live dashboard so story surfaces appear before clocks, counters, and lower utility
+- elevate recent memories into a clearer featured story area
+- introduce a small dashboard-only hero band and supporting section framing
+- keep special-page entry points closer to the emotional flow without changing those pages themselves
+- push quick navigation lower so it behaves like supporting navigation instead of the first story beat
+
+### What Will Not Change
+
+- auth logic
+- sync logic
+- `core/firestoreSync.js`
+- `public/core/firestoreSync.js`
+- data model or localStorage behavior
+- routes
+- special-page internals
+- private media handling
+- Firebase rules
+- timeline, gallery, profile, favorites, or settings redesign work
+
+### Files Likely Touched
+
+- `pages/dashboard.html`
+- `public/pages/dashboard.html`
+- `css/pages.css`
+- `public/css/pages.css`
+- this master doc
+
+### Stop Conditions
+
+- any `npm run check:all` regression
+- any root/public mirror drift
+- any broken dashboard selector, route, or auth behavior
+- any sign the change is becoming a broad redesign instead of a small hierarchy pass
+
+## Phase 11 Dashboard Story-Hierarchy Pass Summary
+
+The second controlled live Phase 11 batch is now complete.
+
+### Files Touched
+
+- `pages/dashboard.html`
+- `public/pages/dashboard.html`
+- `css/pages.css`
+- `public/css/pages.css`
+- this master doc
+
+### What Changed Visually
+
+- added a dashboard-only story entrance band above the main grid
+- moved recent memories into a clear featured chapter area ahead of clocks and counters
+- lowered quick navigation so it behaves like support navigation instead of the first emotional beat
+- grouped anniversary counters and birthdays as supporting milestone context
+- pulled the birthday, Valentine, and confession entry points closer to the dashboard flow without changing those pages
+
+### What Did Not Change
+
+- auth logic
+- sync logic
+- `core/firestoreSync.js`
+- `public/core/firestoreSync.js`
+- routes
+- Firestore rules
+- private media handling
+- memory data or rendering logic
+- timeline, gallery, profile, favorites, and settings layout work
+
+### Browser And Sanity Result
+
+- `npm run check:all` passed before and after the hierarchy pass
+- root/public mirror alignment stayed green
+- local route checks stayed `200`
+- a local Playwright render pass confirmed the new story-first dashboard order and preserved recent-memory containers and quick-nav links
+- the render pass was unauthenticated, so it is layout sanity only and not a replacement for full approved-account smoke
+- console noise during the render matched known local gaps: missing local media fallback files and missing `favicon.ico`
+
+### Remaining Dashboard Risks
+
+- some recent-memory images still 404 locally when their private companion files are not present at the requested paths
+- the fallback asset path `/assets/photos/anniversary_2025.png` is still missing locally, so image fallback polish remains unfinished
+- the dashboard now reads more like a private memory book entrance, but the broader app still has page-by-page structure differences
+
+### Next Phase 11 Step
+
+If this batch stays stable, the next safe UI step should remain small and reversible: either a narrow dashboard polish pass for known local fallback rough edges or a non-live planning pass for timeline/gallery story structure, still without touching sync or auth.
+
 ## Next Safe UI Step
 
 While smoke is `HOLD`:
 
-- allow only small reversible live UI batches like token, header, and spacing cleanup
+- allow only small reversible live UI batches like token, header, hierarchy, and spacing cleanup
 - do not replace the live shell
 - do not mix UI redesign with live sync changes
 
 If smoke becomes `PASS` and sync risk is under control:
 
-- move from token/header cleanup into the first story-hierarchy dashboard pass
+- move from dashboard hierarchy cleanup into the first timeline/gallery content-structure pass

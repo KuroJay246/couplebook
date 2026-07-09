@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard — MemoryBook</title>
-  <meta name="description" content="View live clock, dual relationship counters, and your latest memories.">
+  <meta name="description" content="Open your private memory book through recent memories, milestones, and special moments.">
   <link rel="stylesheet" href="../css/variables.css">
   <link rel="stylesheet" href="../css/global.css">
   <link rel="stylesheet" href="../css/components.css">
@@ -28,38 +28,90 @@
         </div>
       </header>
       <div class="dashboard-grid">
-        
-        <!-- COLUMN 1: Clock and Recent Memories -->
-        <div class="dashboard-column">
-          
-          <!-- Live Clock Card -->
-          <div class="glass-card card-hero clock-card">
+        <section class="glass-card card-hero dashboard-story-band">
+          <div class="dashboard-story-copy">
+            <p class="dashboard-section-kicker">Story Entrance</p>
+            <h2 class="dashboard-story-title">Pick up where your story left off.</h2>
+            <p class="dashboard-story-text">This private home should open like the first page of your memory book: recent moments first, milestones close behind, and the sentimental pages always within reach.</p>
+            <div class="dashboard-story-actions">
+              <a href="timeline.html" class="btn btn-primary">Continue The Story</a>
+              <a href="media.html" class="btn btn-secondary">Open Gallery</a>
+            </div>
+          </div>
+          <div class="dashboard-story-aside">
+            <span class="utility-chip">Private and approved only</span>
+            <div class="dashboard-story-pill-list">
+              <span class="dashboard-story-pill">Recent memories first</span>
+              <span class="dashboard-story-pill">Milestones stay visible</span>
+              <span class="dashboard-story-pill">Special pages stay close</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="glass-card card-story recent-memories-card dashboard-feature-card">
+          <div class="recent-header">
+            <div>
+              <p class="dashboard-section-kicker">Latest Chapter</p>
+              <h2 class="recent-title">Recent memories worth reopening</h2>
+              <p class="dashboard-section-copy">The newest moments stay at the front so the book opens on what still feels closest.</p>
+            </div>
+            <a href="timeline.html" class="btn btn-secondary recent-link-button">View All</a>
+          </div>
+          <div class="recent-list" id="recent-memories-container">
+            <!-- Dynamically populated memories -->
+            <p style="grid-column: span 3; text-align: center; color: var(--color-muted); padding: 2rem 0;">Loading memories...</p>
+          </div>
+        </section>
+
+        <div class="dashboard-column dashboard-column--support">
+          <div class="glass-card card-utility clock-card">
+            <p class="dashboard-section-kicker">Right Now</p>
             <div id="dashboard-clock" class="live-time">00:00:00</div>
             <div id="dashboard-date" class="live-date">Loading date...</div>
           </div>
-          
-          <!-- Recent Memories Panel -->
-          <div class="glass-card card-story recent-memories-card">
-            <div class="recent-header">
-              <h2 class="recent-title">✨ Recent Memories</h2>
-              <a href="timeline.html" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 1rem;">View All</a>
+
+          <div class="glass-card card-story special-moments-card">
+            <div>
+              <p class="dashboard-section-kicker">Special Pages</p>
+              <h3 class="dashboard-subtitle">Moments with their own page</h3>
+              <p class="dashboard-section-copy">Jump back into the birthday, Valentine, and confession spaces without digging through the full archive.</p>
             </div>
-            <div class="recent-list" id="recent-memories-container">
-              <!-- Dynamically populated memories -->
-              <p style="grid-column: span 3; text-align: center; color: var(--color-muted); padding: 2rem 0;">Loading memories...</p>
+            <div class="special-moment-list">
+              <a href="omnia-happy-birthday.html" class="special-moment-link">
+                <div class="special-moment-copy">
+                  <span class="special-moment-title">Birthday Page</span>
+                  <span class="special-moment-subtitle">A dedicated celebration space that still lives outside the main feed.</span>
+                </div>
+                <span class="special-moment-arrow">↗</span>
+              </a>
+              <a href="valentine/index.html" class="special-moment-link">
+                <div class="special-moment-copy">
+                  <span class="special-moment-title">Valentine Page</span>
+                  <span class="special-moment-subtitle">Return to the quieter date-night page without changing the app flow.</span>
+                </div>
+                <span class="special-moment-arrow">↗</span>
+              </a>
+              <a href="legacy.html?module=confession/index.html" class="special-moment-link">
+                <div class="special-moment-copy">
+                  <span class="special-moment-title">Confession Page</span>
+                  <span class="special-moment-subtitle">Keep the preserved special chapter nearby while the shell stays private-first.</span>
+                </div>
+                <span class="special-moment-arrow">↗</span>
+              </a>
             </div>
           </div>
-
         </div>
 
-        <!-- COLUMN 2: Anniversary Counters & Info -->
-        <div class="dashboard-column">
-          
-          <div class="glass-card card-utility">
-            <h3 style="font-family: var(--font-accent); font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
-              <span>💞</span> Dual Anniversary Counters
-            </h3>
-            
+        <div class="dashboard-column dashboard-column--milestones">
+          <div class="glass-card card-story">
+            <div class="dashboard-section-heading">
+              <div>
+                <p class="dashboard-section-kicker">Milestones</p>
+                <h3 class="dashboard-subtitle">Dual anniversary counters</h3>
+                <p class="dashboard-section-copy">Relationship time stays present as supporting context instead of the first thing the dashboard says.</p>
+              </div>
+            </div>
+
             <div class="anniversaries-container">
               
               <!-- Jaylan's Anniversary Card -->
@@ -126,59 +178,68 @@
           </div>
 
           <!-- Birthdays Card -->
-          <div class="glass-card card-utility" style="margin-top: 1rem;">
-            <h3 style="font-family: var(--font-accent); font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
-              <span>🎂</span> Upcoming Birthdays
-            </h3>
-            <div style="display: flex; flex-direction: column; gap: 1rem;">
+          <div class="glass-card card-story birthdays-card">
+            <div class="dashboard-section-heading">
+              <div>
+                <p class="dashboard-section-kicker">Special Dates</p>
+                <h3 class="dashboard-subtitle">Upcoming birthdays</h3>
+              </div>
+            </div>
+            <div class="birthday-list">
               <!-- Omia's Birthday Card -->
-              <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; border-radius: 8px; background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.2);">
-                <div>
-                  <div style="font-weight: 600; color: var(--color-omia);">Omia's Birthday</div>
-                  <div style="font-size: 0.75rem; color: var(--color-muted);" id="omia-birthday-date">September 16, 2006</div>
+              <div class="birthday-row birthday-row--omia">
+                <div class="birthday-copy">
+                  <div class="birthday-title birthday-title--omia">Omia's Birthday</div>
+                  <div class="birthday-meta" id="omia-birthday-date">September 16, 2006</div>
                 </div>
-                <div style="text-align: right;">
-                  <div style="font-weight: bold; font-size: 1.1rem; color: var(--color-omia);" id="omia-birthday-countdown">-- Days</div>
-                  <div style="font-size: 0.7rem; color: var(--color-muted);" id="omia-birthday-age">Turning --</div>
+                <div class="birthday-countdown">
+                  <div class="birthday-count birthday-count--omia" id="omia-birthday-countdown">-- Days</div>
+                  <div class="birthday-age" id="omia-birthday-age">Turning --</div>
                 </div>
               </div>
               
               <!-- Jaylan's Birthday Card -->
-              <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; border-radius: 8px; background: rgba(255, 74, 107, 0.1); border: 1px solid rgba(255, 74, 107, 0.2);">
-                <div>
-                  <div style="font-weight: 600; color: var(--color-jaylan);">Jaylan's Birthday</div>
-                  <div style="font-size: 0.75rem; color: var(--color-muted);" id="jaylan-birthday-date">December 13, 2006</div>
+              <div class="birthday-row birthday-row--jaylan">
+                <div class="birthday-copy">
+                  <div class="birthday-title birthday-title--jaylan">Jaylan's Birthday</div>
+                  <div class="birthday-meta" id="jaylan-birthday-date">December 13, 2006</div>
                 </div>
-                <div style="text-align: right;">
-                  <div style="font-weight: bold; font-size: 1.1rem; color: var(--color-jaylan);" id="jaylan-birthday-countdown">-- Days</div>
-                  <div style="font-size: 0.7rem; color: var(--color-muted);" id="jaylan-birthday-age">Turning --</div>
+                <div class="birthday-countdown">
+                  <div class="birthday-count birthday-count--jaylan" id="jaylan-birthday-countdown">-- Days</div>
+                  <div class="birthday-age" id="jaylan-birthday-age">Turning --</div>
                 </div>
               </div>
             </div>
           </div>
-          
         </div>
 
-        <!-- QUICK NAV ROWS -->
-        <div class="quick-nav-container">
-          <a href="timeline.html" class="glass-card card-utility nav-card">
-            <div class="nav-card-icon">📖</div>
-            <div class="nav-card-title">Memories Book</div>
-          </a>
-          <a href="media.html" class="glass-card card-utility nav-card">
-            <div class="nav-card-icon">🖼️</div>
-            <div class="nav-card-title">Media Gallery</div>
-          </a>
-          <a href="profile.html" class="glass-card card-utility nav-card">
-            <div class="nav-card-icon">👤</div>
-            <div class="nav-card-title">Profiles & Contract</div>
-          </a>
-          <a href="settings.html" class="glass-card card-utility nav-card">
-            <div class="nav-card-icon">⚙️</div>
-            <div class="nav-card-title">Settings & Theme</div>
-          </a>
-        </div>
-
+        <section class="dashboard-nav-shell">
+          <div class="dashboard-section-heading">
+            <div>
+              <p class="dashboard-section-kicker">Lower Navigation</p>
+              <h3 class="dashboard-subtitle">Everything else stays one step down</h3>
+              <p class="dashboard-section-copy">The deeper utility pages still matter, but they no longer compete with the story on first load.</p>
+            </div>
+          </div>
+          <div class="quick-nav-container">
+            <a href="timeline.html" class="glass-card card-utility nav-card">
+              <div class="nav-card-icon">📖</div>
+              <div class="nav-card-title">Memories Book</div>
+            </a>
+            <a href="media.html" class="glass-card card-utility nav-card">
+              <div class="nav-card-icon">🖼️</div>
+              <div class="nav-card-title">Media Gallery</div>
+            </a>
+            <a href="profile.html" class="glass-card card-utility nav-card">
+              <div class="nav-card-icon">👤</div>
+              <div class="nav-card-title">Profiles & Contract</div>
+            </a>
+            <a href="settings.html" class="glass-card card-utility nav-card">
+              <div class="nav-card-icon">⚙️</div>
+              <div class="nav-card-title">Settings & Theme</div>
+            </a>
+          </div>
+        </section>
       </div>
     </main>
   </div>
