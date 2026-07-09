@@ -2,19 +2,19 @@
 
 /* 1. Glassmorphism Card */
 .glass-card {
-  background: var(--bg-glass);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01)), var(--bg-glass);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--border-glass);
-  border-radius: 16px;
-  padding: 1.5rem;
+  border-radius: var(--radius-card);
+  padding: 1.35rem;
   box-shadow: var(--shadow-glass);
   transition: var(--transition-smooth);
 }
 
 .glass-card:hover {
   border-color: var(--border-glass-hover);
-  transform: translateY(-2px);
+  transform: translateY(-3px);
 }
 
 .glass-card.glow-jaylan {
@@ -25,6 +25,81 @@
 .glass-card.glow-omia {
   box-shadow: var(--shadow-glow-violet), var(--shadow-glass);
   border-color: rgba(139, 92, 246, 0.2);
+}
+
+.card-hero {
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02)), var(--bg-glass);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.card-story {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.015)), var(--bg-glass);
+}
+
+.card-utility {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0.01)), var(--bg-glass);
+}
+
+.page-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin-bottom: 1.75rem;
+}
+
+.page-header--split {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.page-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.page-eyebrow {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-jaylan);
+}
+
+.page-title {
+  font-family: var(--font-accent);
+  font-size: clamp(2rem, 3vw, 2.6rem);
+  font-weight: 700;
+  line-height: 1.05;
+}
+
+.page-subtitle {
+  max-width: 46rem;
+  font-size: 0.98rem;
+  color: var(--color-secondary-text);
+}
+
+.page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.utility-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid var(--border-glass);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-secondary-text);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 /* 2. Custom Buttons */
@@ -339,4 +414,15 @@
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid var(--border-glass);
   color: var(--color-secondary-text);
+}
+
+@media (max-width: 768px) {
+  .page-header--split {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .page-title {
+    font-size: 1.8rem;
+  }
 }

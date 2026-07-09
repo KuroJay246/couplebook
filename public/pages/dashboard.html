@@ -16,19 +16,30 @@
     <div id="navigation-shell"></div>
 
     <main class="main-content animate-fade-in">
+      <header class="page-header page-header--split">
+        <div class="page-heading">
+          <p class="page-eyebrow">Private Home</p>
+          <h1 class="page-title">A place for the moments that still feel alive.</h1>
+          <p class="page-subtitle">Your shared story, gallery, and relationship milestones stay together here in one protected keepsake space.</p>
+        </div>
+        <div class="page-actions">
+          <span class="utility-chip">Approved couple app</span>
+          <a href="timeline.html" class="btn btn-secondary">Open Story</a>
+        </div>
+      </header>
       <div class="dashboard-grid">
         
         <!-- COLUMN 1: Clock and Recent Memories -->
-        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+        <div class="dashboard-column">
           
           <!-- Live Clock Card -->
-          <div class="glass-card clock-card">
+          <div class="glass-card card-hero clock-card">
             <div id="dashboard-clock" class="live-time">00:00:00</div>
             <div id="dashboard-date" class="live-date">Loading date...</div>
           </div>
           
           <!-- Recent Memories Panel -->
-          <div class="glass-card recent-memories-card">
+          <div class="glass-card card-story recent-memories-card">
             <div class="recent-header">
               <h2 class="recent-title">✨ Recent Memories</h2>
               <a href="timeline.html" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 1rem;">View All</a>
@@ -42,9 +53,9 @@
         </div>
 
         <!-- COLUMN 2: Anniversary Counters & Info -->
-        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+        <div class="dashboard-column">
           
-          <div class="glass-card">
+          <div class="glass-card card-utility">
             <h3 style="font-family: var(--font-accent); font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
               <span>💞</span> Dual Anniversary Counters
             </h3>
@@ -52,7 +63,7 @@
             <div class="anniversaries-container">
               
               <!-- Jaylan's Anniversary Card -->
-              <div class="glass-card anniversary-card jaylan-side" id="card-jaylan-anniversary">
+              <div class="glass-card card-story anniversary-card jaylan-side" id="card-jaylan-anniversary">
                 <div class="anniversary-title">
                   <span class="anniversary-owner">❤️ Jaylan's View</span>
                   <span class="anniversary-date">Dec 28, 2025</span>
@@ -82,7 +93,7 @@
               </div>
 
               <!-- Omia's Anniversary Card -->
-              <div class="glass-card anniversary-card omia-side" id="card-omia-anniversary">
+              <div class="glass-card card-story anniversary-card omia-side" id="card-omia-anniversary">
                 <div class="anniversary-title">
                   <span class="anniversary-owner">💜 Omia's View</span>
                   <span class="anniversary-date">Dec 29, 2025</span>
@@ -115,7 +126,7 @@
           </div>
 
           <!-- Birthdays Card -->
-          <div class="glass-card" style="margin-top: 1rem;">
+          <div class="glass-card card-utility" style="margin-top: 1rem;">
             <h3 style="font-family: var(--font-accent); font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
               <span>🎂</span> Upcoming Birthdays
             </h3>
@@ -150,19 +161,19 @@
 
         <!-- QUICK NAV ROWS -->
         <div class="quick-nav-container">
-          <a href="timeline.html" class="glass-card nav-card">
+          <a href="timeline.html" class="glass-card card-utility nav-card">
             <div class="nav-card-icon">📖</div>
             <div class="nav-card-title">Memories Book</div>
           </a>
-          <a href="media.html" class="glass-card nav-card">
+          <a href="media.html" class="glass-card card-utility nav-card">
             <div class="nav-card-icon">🖼️</div>
             <div class="nav-card-title">Media Gallery</div>
           </a>
-          <a href="profile.html" class="glass-card nav-card">
+          <a href="profile.html" class="glass-card card-utility nav-card">
             <div class="nav-card-icon">👤</div>
             <div class="nav-card-title">Profiles & Contract</div>
           </a>
-          <a href="settings.html" class="glass-card nav-card">
+          <a href="settings.html" class="glass-card card-utility nav-card">
             <div class="nav-card-icon">⚙️</div>
             <div class="nav-card-title">Settings & Theme</div>
           </a>

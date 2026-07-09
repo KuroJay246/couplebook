@@ -1,13 +1,13 @@
 # Project Status And Phases
 
-Date: 2026-07-08
+Date: 2026-07-09
 
 ## Current Repo Status
 
 | Item | Status |
 | --- | --- |
 | Current branch | `main` |
-| Latest verified commit at consolidation start | `308b23b1394d5099d7cdd8556ddc908063d889dc` |
+| Latest verified commit at consolidation start | `1b48d7970b14c712acf7c82c3c38168dc9cce2fd` |
 | Repo clean at consolidation start | yes |
 | `main` matches `origin/main` at consolidation start | yes |
 | App type | static multi-page HTML/CSS/JS |
@@ -32,7 +32,7 @@ Date: 2026-07-08
 | Check | Status |
 | --- | --- |
 | `git status --short --branch` | clean |
-| `main` vs `origin/main` at latest run start | matched at `308b23b1394d5099d7cdd8556ddc908063d889dc` |
+| `main` vs `origin/main` at latest run start | matched at `1b48d7970b14c712acf7c82c3c38168dc9cce2fd` |
 | `npm run check:all` | pass |
 | Rules alignment/dry-run | pass |
 | Prototype boundary check | pass |
@@ -94,22 +94,22 @@ Jaylan was successfully tested in a real browser session after correcting the li
 
 ### Latest Workstream Run Summary
 
-- starting commit: `308b23b1394d5099d7cdd8556ddc908063d889dc`
+- starting commit: `1b48d7970b14c712acf7c82c3c38168dc9cce2fd`
 - Phase 9 track: safety baseline stayed green, `npm run check:all` passed again, and smoke remains honestly `HOLD` because only Jaylan has been authenticated in a real browser flow
 - Phase 10 track: live sync work stayed blocked and `core/firestoreSync.js` was intentionally left unchanged
-- Phase 11 track: completed a full Couple Book versus Gather Savor structure/product comparison, updated the master redesign docs, and refined the non-live prototype to better model the future protected shell direction
-- checks run: `git status --short --branch`, `git rev-parse main`, `git rev-parse origin/main`, `npm run check:all`, master-doc review, read-only Gather Savor structure review, local Couple Book page inspection via terminal Playwright, and prototype/master-doc boundary review
+- Phase 11 track: applied the first live token/card/header cleanup batch across shared CSS and the six protected pages without touching auth, sync, routes, or data behavior
+- checks run: `git status --short --branch`, `git rev-parse main`, `git rev-parse origin/main`, `npm run check:all`, `npm run check:mirrors`, master-doc review, protected-page markup review, and local Playwright sanity checks for login, dashboard, and standalone special-page availability
 - commits in this run:
-  - pending safe docs/prototype comparison commit
+  - pending safe live UI cleanup commit
 - deploy activity: none
-- Gather Savor inspected read-only: yes
+- Gather Savor inspected read-only: unchanged from prior comparison work
 - Couple Book browser inspected: yes
 - private media touched: no
 - remaining top gate: partner approved-account smoke plus blocked-behavior re-check in a fresh post-rules browser session
 - next recommended track actions:
   - Phase 9: keep smoke status honest and run the partner approved-account smoke when credentials/session are available
   - Phase 10: keep live sync replacement blocked until smoke passes
-  - Phase 11: start the smallest live token/page-header/shell cleanup batch only after the smoke and sync gates are explicitly accepted for that work
+  - Phase 11: if this token/header batch stays stable, move to the smallest dashboard story-hierarchy refinement pass only
 
 ### Phase 8 Summary
 
@@ -237,11 +237,11 @@ Future long-run reports should be grouped by track:
 
 ### Phase 11 Track
 
-- continue structure-led redesign planning and prototype refinement
-- do not change live UI behavior while sync and smoke gates remain unresolved
+- allow small reversible live UI cleanup batches
+- keep redesign work away from sync/auth/service changes while smoke and sync gates remain unresolved
 
 ## Recommended Immediate Order
 
 1. Run real approved-account smoke if credentials/session are available.
-2. If both accounts pass, decide whether the next safe batch should be the smallest live sync read replacement or the first reversible live shell/token cleanup.
-3. Otherwise continue Phase 9 and Phase 11 planning work without changing live sync or live shell behavior.
+2. If both accounts pass, decide whether the next safe batch should be the smallest live sync read replacement or the first dashboard story-hierarchy cleanup.
+3. Otherwise continue Phase 9 and only small reversible Phase 11 UI cleanup without changing live sync behavior.

@@ -1,6 +1,6 @@
 # UI Redesign And Prototype Master
 
-Date: 2026-07-08
+Date: 2026-07-09
 
 ## Product Identity
 
@@ -382,6 +382,50 @@ Use Option B now.
 - move to Vite/React only after the product shell, service boundaries, and sync direction are already clear
 - treat framework migration as an implementation upgrade, not as the first design fix
 
+## Phase 11 Live Token Pass Scope
+
+This first live Phase 11 batch is intentionally small, shared, and reversible.
+
+### Files Likely Touched
+
+- shared live CSS in `css/` and `public/css/`
+- protected page markup in:
+  - `dashboard.html`
+  - `timeline.html`
+  - `media.html`
+  - `profile.html`
+  - `favorites.html`
+  - `settings.html`
+- both root and `public/` mirrors for any touched runtime file
+
+### What Will Change
+
+- shared token refinement for spacing, card rhythm, and page-header hierarchy
+- additive card tiers for hero, story, and utility surfaces
+- one reusable protected-page header pattern
+- slightly calmer shell rhythm so the app feels more like one product and less like isolated screens
+- lower visual emphasis for utility/settings-heavy blocks where safe
+
+### What Will Not Change
+
+- auth behavior
+- sync or Firestore behavior
+- `core/firestoreSync.js`
+- `public/core/firestoreSync.js`
+- data model or localStorage behavior
+- routes
+- special-page content
+- private media handling
+- Firebase rules
+- framework/runtime architecture
+
+### Stop Conditions
+
+- any `check:all` regression
+- any mirror drift that cannot be corrected safely
+- any route or auth regression
+- any sign that the batch is turning into a broad redesign instead of a shared token/header pass
+
 ## Current UI Risks
 
 - dashboard still feels utility-led
@@ -390,14 +434,73 @@ Use Option B now.
 - legacy special-page loading is not a long-term product solution
 - root/public duplication makes live UI refactors more fragile
 
+## Phase 11 Live Token And Header Pass Summary
+
+The first controlled live Phase 11 batch is now complete.
+
+### Files Touched
+
+- `css/variables.css`
+- `css/global.css`
+- `css/components.css`
+- `css/pages.css`
+- `pages/dashboard.html`
+- `pages/timeline.html`
+- `pages/media.html`
+- `pages/profile.html`
+- `pages/favorites.html`
+- `pages/settings.html`
+- mirrored `public/` versions of the same runtime files
+
+### What Changed Visually
+
+- added a shared protected-page header pattern for the main protected pages
+- introduced additive card tiers for hero, story, and utility surfaces
+- tightened shared shell spacing and max-width rhythm
+- softened the generic glass-card sameness without changing app behavior
+- gave settings and other utility-heavy areas slightly calmer visual emphasis
+- made the dashboard first impression more intentional through header framing, not through a broad layout rewrite
+
+### What Did Not Change
+
+- auth logic
+- sync behavior
+- Firestore rules
+- data model
+- localStorage behavior
+- routes
+- special-page content
+- private media handling
+- prototype location and non-live boundaries
+
+### Browser And Sanity Result
+
+- `npm run check:all` passed after the live UI cleanup
+- mirror alignment stayed green
+- login page still renders correctly
+- protected dashboard header cleanup was visually observed in a live browser render during this batch
+- later protected-route jumps in the automation browser fell back to login once an approved authenticated session was no longer maintained, so protected-page visual verification should still be treated as partial rather than full smoke
+- standalone Valentine and confession pages still load, and the confession page still shows the known local-only companion media 404s rather than any new UI regression
+
+### Remaining UI Risks
+
+- the dashboard is more coherent, but it is still not story-first enough
+- timeline and gallery content still read too much like memory inventory
+- favorites still needs deeper structural improvement beyond this rhythm pass
+- settings is calmer, but its internals still rely heavily on page-local markup and inline styling
+
+### Next Phase 11 Step
+
+If this batch stays stable, the next safe UI step is a small dashboard and section-hierarchy refinement pass only, still without touching sync or auth.
+
 ## Next Safe UI Step
 
 While smoke is `HOLD`:
 
-- continue planning and checklist work only
+- allow only small reversible live UI batches like token, header, and spacing cleanup
 - do not replace the live shell
 - do not mix UI redesign with live sync changes
 
 If smoke becomes `PASS` and sync risk is under control:
 
-- start with the smallest token/CSS cleanup batch only
+- move from token/header cleanup into the first story-hierarchy dashboard pass

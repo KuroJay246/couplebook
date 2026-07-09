@@ -61,11 +61,11 @@ body {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: var(--bg-glass);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01)), var(--bg-glass);
   backdrop-filter: blur(15px);
   -webkit-backdrop-filter: blur(15px);
   border-bottom: 1px solid var(--border-glass);
-  padding: 1rem 2rem;
+  padding: 0.95rem 1.5rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -115,7 +115,7 @@ body {
 
 .nav-item a:hover, .nav-item.active a {
   color: var(--color-primary-text);
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .nav-item.active a {
@@ -129,7 +129,7 @@ body {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.04);
   padding: 0.4rem 1rem;
   border-radius: 30px;
   border: 1px solid var(--border-glass);
@@ -151,8 +151,8 @@ body {
 /* Page Main Container */
 main.main-content {
   flex: 1;
-  padding: 2rem;
-  max-width: 1200px;
+  padding: var(--space-page-y) var(--space-page-x);
+  max-width: var(--page-max-width);
   width: 100%;
   margin: 0 auto;
   padding-bottom: 5rem; /* Space for mobile bottom bar */

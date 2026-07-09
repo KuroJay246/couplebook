@@ -7,7 +7,28 @@
   display: grid;
   grid-template-columns: 1.5fr 1fr;
   gap: 1.5rem;
-  margin-top: 1rem;
+  margin-top: 0.5rem;
+}
+
+.dashboard-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.filter-toolbar {
+  margin-bottom: 2rem;
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.filter-toolbar-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-secondary-text);
 }
 
 /* Clock Card */
@@ -591,6 +612,23 @@
   grid-template-columns: 1fr 1.5fr;
   gap: 2rem;
   margin-top: 1rem;
+}
+
+.settings-panel-shell {
+  padding: 1.5rem;
+}
+
+.settings-subcard {
+  margin-bottom: 1.25rem;
+}
+
+.settings-subcard:last-child {
+  margin-bottom: 0;
+}
+
+.danger-card {
+  border-color: rgba(239, 68, 68, 0.2);
+  background: linear-gradient(180deg, rgba(239, 68, 68, 0.08), rgba(239, 68, 68, 0.04));
 }
 
 .settings-menu {

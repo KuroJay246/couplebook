@@ -15,17 +15,21 @@
     <div id="navigation-shell"></div>
 
     <main class="main-content">
-      <div class="timeline-header">
-        <div>
-          <h1 style="font-family: var(--font-accent); font-weight: 700;">📖 Our Story</h1>
-          <p style="color: var(--color-secondary-text); font-size: 0.9rem;">A chronological collection of our special milestones.</p>
+      <header class="page-header page-header--split">
+        <div class="page-heading">
+          <p class="page-eyebrow">Story Lane</p>
+          <h1 class="page-title">📖 Our Story</h1>
+          <p class="page-subtitle">A chronological collection of the milestones, clips, and small moments that shaped this relationship.</p>
         </div>
-        <button class="btn btn-primary" id="btn-open-add-memory">+ Add Memory</button>
-      </div>
+        <div class="page-actions">
+          <span class="utility-chip">Chronological view</span>
+          <button class="btn btn-primary" id="btn-open-add-memory">+ Add Memory</button>
+        </div>
+      </header>
 
       <!-- Tag Filter Bar -->
-      <div class="glass-card" style="margin-bottom: 2rem; padding: 1rem 1.5rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
-        <span style="font-size: 0.85rem; font-weight: 600; color: var(--color-secondary-text);">Filter by Tag:</span>
+      <div class="glass-card card-utility filter-toolbar">
+        <span class="filter-toolbar-label">Filter by Tag:</span>
         <div id="tags-filter-container" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
           <button class="tab-btn active" data-tag="all">All</button>
           <!-- Dynamic tags will be injected here -->

@@ -3,6 +3,13 @@
   /* Fonts */
   --font-primary: 'Outfit', sans-serif;
   --font-accent: 'Playfair Display', serif;
+  --page-max-width: 1180px;
+  --space-page-x: 2rem;
+  --space-page-y: 2rem;
+  --space-section: 1.5rem;
+  --space-stack: 1rem;
+  --radius-card: 20px;
+  --radius-soft: 14px;
 
   /* Theme: Glassmorphism Dark (Default) */
   --bg-main: #0a0c10;
