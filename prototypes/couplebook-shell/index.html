@@ -18,11 +18,14 @@
         </div>
 
         <nav class="nav">
+          <p class="nav-group-label">Journey</p>
           <button class="nav-item nav-item-active" type="button" data-view-target="home">Home</button>
           <button class="nav-item" type="button" data-view-target="story">Our Story</button>
           <button class="nav-item" type="button" data-view-target="gallery">Gallery</button>
+          <p class="nav-group-label">Shared Space</p>
           <button class="nav-item" type="button" data-view-target="us">Us</button>
           <button class="nav-item" type="button" data-view-target="favorites">Favorites</button>
+          <p class="nav-group-label">Care</p>
           <button class="nav-item" type="button" data-view-target="settings">Settings</button>
         </nav>
 
@@ -36,6 +39,11 @@
           <p class="eyebrow">Special Moments</p>
           <p>Birthday, Valentine’s, and confession stay distinct, but enter from curated story context.</p>
         </div>
+
+        <div class="side-card">
+          <p class="eyebrow">Structure Direction</p>
+          <p>One protected shell, one page-header rhythm, one calmer path from home to story to gallery.</p>
+        </div>
       </aside>
 
       <main class="content">
@@ -44,7 +52,10 @@
             <p class="eyebrow">Protected Shell Direction</p>
             <h2>Home should feel like a shared keepsake, not a utility dashboard.</h2>
           </div>
-          <div class="status-pill">Placeholder-only preview</div>
+          <div class="topbar-actions">
+            <div class="status-pill">Placeholder-only preview</div>
+            <button class="secondary shell-action" type="button">Open story lane</button>
+          </div>
         </header>
 
         <section class="view is-visible" data-view="home">
@@ -67,6 +78,31 @@
               <p class="metric">1,248 days</p>
               <p class="muted">The milestone belongs inside the story, not above it.</p>
             </div>
+          </section>
+
+          <section class="context-rail">
+            <article class="card rail-summary-card">
+              <p class="eyebrow">Page Rhythm</p>
+              <h4>Open with warmth, then guide the next step.</h4>
+              <p class="muted">A future live header should always establish where the person is, why this page matters, and where to go next.</p>
+            </article>
+            <article class="card rail-queue-card">
+              <p class="eyebrow">Next In Flow</p>
+              <div class="queue-list">
+                <div>
+                  <strong>Featured memory</strong>
+                  <p class="muted">One resurfaced moment, not three unrelated cards fighting for attention.</p>
+                </div>
+                <div>
+                  <strong>Story chapter</strong>
+                  <p class="muted">A direct bridge into the timeline.</p>
+                </div>
+                <div>
+                  <strong>Curated gallery set</strong>
+                  <p class="muted">A softer path into photos and motion moments.</p>
+                </div>
+              </div>
+            </article>
           </section>
 
           <section class="grid">
@@ -94,6 +130,24 @@
             <article class="card utility-card">
               <p class="eyebrow">Gallery Direction</p>
               <p class="muted">A future gallery should be curated and intimate, not just a raw media filter.</p>
+            </article>
+          </section>
+
+          <section class="workflow-strip">
+            <article class="card workflow-card">
+              <p class="eyebrow">Step One</p>
+              <h4>Arrive in the story.</h4>
+              <p class="muted">The dashboard should frame one feeling and one reason to keep reading.</p>
+            </article>
+            <article class="card workflow-card">
+              <p class="eyebrow">Step Two</p>
+              <h4>Move into a chapter.</h4>
+              <p class="muted">Timeline should feel like a narrative lane instead of repeated file cards.</p>
+            </article>
+            <article class="card workflow-card">
+              <p class="eyebrow">Step Three</p>
+              <h4>Revisit the gallery quietly.</h4>
+              <p class="muted">Media belongs after the story hook, not as the first product identity.</p>
             </article>
           </section>
 
@@ -168,6 +222,9 @@
             <p class="eyebrow">Our Story</p>
             <h3>Timeline should read like chapters, not records.</h3>
           </section>
+          <section class="section-note">
+            <p class="muted">Gather Savor is useful here as a structure reference: one shell, one page context, one deliberate reading path. Couple Book should use that discipline for emotional storytelling rather than admin workflows.</p>
+          </section>
           <section class="stack">
             <article class="card chapter-card">
               <p class="eyebrow">Chapter One</p>
@@ -193,6 +250,9 @@
           <section class="section-heading">
             <p class="eyebrow">Gallery</p>
             <h3>A future gallery should feel curated, quiet, and intimate.</h3>
+          </section>
+          <section class="section-note">
+            <p class="muted">The current live gallery proves the media volume exists. The future version should organize it like a scrapbook collection, not a mixed media inventory.</p>
           </section>
           <section class="gallery-grid">
             <article class="card gallery-card">
@@ -231,6 +291,9 @@
             <p class="eyebrow">Us</p>
             <h3>The profile area should feel like two people in one shared frame.</h3>
           </section>
+          <section class="section-note">
+            <p class="muted">The live contract concept is worth preserving. The redesign target is to make it feel intimate and authored instead of like a static profile editor.</p>
+          </section>
           <section class="pair-grid">
             <article class="card person-card">
               <p class="eyebrow">Jaylan Placeholder</p>
@@ -256,6 +319,9 @@
           <section class="section-heading">
             <p class="eyebrow">Favorites</p>
             <h3>Favorites should feel cherished, not like a raw prompt list.</h3>
+          </section>
+          <section class="section-note">
+            <p class="muted">The current live feature is functional, but the future version should turn it into a richer shared language feature with meaning, overlap, and memory context.</p>
           </section>
           <section class="grid favorites-grid">
             <article class="card utility-card">
@@ -285,6 +351,9 @@
             <p class="eyebrow">Settings</p>
             <h3>Health and privacy belong here, but lower in emotional emphasis.</h3>
           </section>
+          <section class="section-note">
+            <p class="muted">This area should stay safe and informative, but it should not visually overpower the memory-book identity of the product.</p>
+          </section>
           <section class="quiet-grid">
             <article class="card utility-card">
               <p class="eyebrow">Private Health</p>
@@ -311,8 +380,8 @@
         <button class="nav-item" type="button" data-view-target="story">Story</button>
         <button class="nav-item" type="button" data-view-target="gallery">Gallery</button>
         <button class="nav-item" type="button" data-view-target="us">Us</button>
-        <button class="nav-item" type="button" data-view-target="favorites">Favorites</button>
-        <button class="nav-item" type="button" data-view-target="settings">Settings</button>
+        <button class="nav-item" type="button" data-view-target="favorites">Saved</button>
+        <button class="nav-item" type="button" data-view-target="settings">Care</button>
       </nav>
     </div>
 

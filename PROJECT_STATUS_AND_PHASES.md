@@ -7,7 +7,7 @@ Date: 2026-07-08
 | Item | Status |
 | --- | --- |
 | Current branch | `main` |
-| Latest verified commit at consolidation start | `9bc974dc41ff5042ab5d6f450479e9ccb520d346` |
+| Latest verified commit at consolidation start | `308b23b1394d5099d7cdd8556ddc908063d889dc` |
 | Repo clean at consolidation start | yes |
 | `main` matches `origin/main` at consolidation start | yes |
 | App type | static multi-page HTML/CSS/JS |
@@ -32,7 +32,7 @@ Date: 2026-07-08
 | Check | Status |
 | --- | --- |
 | `git status --short --branch` | clean |
-| `main` vs `origin/main` at latest run start | matched at `9204f87b8decfb8cab567caac0309605db33525f` |
+| `main` vs `origin/main` at latest run start | matched at `308b23b1394d5099d7cdd8556ddc908063d889dc` |
 | `npm run check:all` | pass |
 | Rules alignment/dry-run | pass |
 | Prototype boundary check | pass |
@@ -94,20 +94,22 @@ Jaylan was successfully tested in a real browser session after correcting the li
 
 ### Latest Workstream Run Summary
 
-- starting commit: `a87effdd1742bf52be2efe53b8b26d3494c6ecaf`
-- Phase 9 track: safety baseline stayed green, live Firestore rules were corrected for the real Jaylan UID, Jaylan approved-account smoke passed in a real browser session, and overall smoke remained honestly `HOLD` because the partner account was not tested
-- Phase 10 track: skipped live sync work because smoke did not pass
-- Phase 11 track: no new prototype work in this human-assisted smoke batch
-- checks run: `git status --short --branch`, `git rev-parse main`, `git rev-parse origin/main`, `npm run check:all`, `npm run check:rules`, master-doc review, smoke runbook review, Firestore rules-only deploy, and real browser-authenticated Jaylan page checks
+- starting commit: `308b23b1394d5099d7cdd8556ddc908063d889dc`
+- Phase 9 track: safety baseline stayed green, `npm run check:all` passed again, and smoke remains honestly `HOLD` because only Jaylan has been authenticated in a real browser flow
+- Phase 10 track: live sync work stayed blocked and `core/firestoreSync.js` was intentionally left unchanged
+- Phase 11 track: completed a full Couple Book versus Gather Savor structure/product comparison, updated the master redesign docs, and refined the non-live prototype to better model the future protected shell direction
+- checks run: `git status --short --branch`, `git rev-parse main`, `git rev-parse origin/main`, `npm run check:all`, master-doc review, read-only Gather Savor structure review, local Couple Book page inspection via terminal Playwright, and prototype/master-doc boundary review
 - commits in this run:
-  - pending smoke/status documentation commit
-- deploy activity: Firestore rules only
+  - pending safe docs/prototype comparison commit
+- deploy activity: none
+- Gather Savor inspected read-only: yes
+- Couple Book browser inspected: yes
 - private media touched: no
-- remaining top gate: partner approved-account smoke plus blocked-behavior re-check in the post-fix browser session
+- remaining top gate: partner approved-account smoke plus blocked-behavior re-check in a fresh post-rules browser session
 - next recommended track actions:
-  - Phase 9: run the partner approved-account smoke and finish the blocked-behavior check
+  - Phase 9: keep smoke status honest and run the partner approved-account smoke when credentials/session are available
   - Phase 10: keep live sync replacement blocked until smoke passes
-  - Phase 11: stay paused until the smoke gate is fully closed or explicitly deprioritized
+  - Phase 11: start the smallest live token/page-header/shell cleanup batch only after the smoke and sync gates are explicitly accepted for that work
 
 ### Phase 8 Summary
 
@@ -235,10 +237,11 @@ Future long-run reports should be grouped by track:
 
 ### Phase 11 Track
 
-- keep redesign in planning/checklist mode until sync and smoke gates are clearer
+- continue structure-led redesign planning and prototype refinement
+- do not change live UI behavior while sync and smoke gates remain unresolved
 
 ## Recommended Immediate Order
 
 1. Run real approved-account smoke if credentials/session are available.
-2. If both accounts pass, start the smallest live document-scoped sync read replacement only.
+2. If both accounts pass, decide whether the next safe batch should be the smallest live sync read replacement or the first reversible live shell/token cleanup.
 3. Otherwise continue Phase 9 and Phase 11 planning work without changing live sync or live shell behavior.

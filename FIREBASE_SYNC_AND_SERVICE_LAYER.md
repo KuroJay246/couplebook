@@ -248,3 +248,14 @@ If approved-account smoke becomes `PASS`:
 
 - attempt only the smallest reversible live active-user read replacement
 - do not combine it with listener or write refactors in the same batch
+
+## Gather Savor Service Structure Reference
+
+Gather Savor is useful as a structural reference because its Firebase and app wiring is clearly layered:
+
+- one frontend entry bootstraps the app and providers
+- auth state and protected access are centralized instead of page-scattered
+- Firebase config lives behind one app/bootstrap module
+- pages consume services inside a routed shell instead of owning infrastructure directly
+
+Couple Book should copy that boundary discipline later without copying Gather Savor's event-specific data model or workflows.

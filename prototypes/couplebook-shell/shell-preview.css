@@ -110,6 +110,15 @@ body {
   margin: 1.25rem 0;
 }
 
+.nav-group-label {
+  margin: 0.75rem 0 0.1rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
 .nav-item {
   border: 0;
   border-radius: 16px;
@@ -159,6 +168,14 @@ body {
   margin-top: 0.35rem;
   max-width: 46rem;
   font-size: clamp(1.4rem, 2.6vw, 2.2rem);
+}
+
+.topbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: end;
+  gap: 0.75rem;
+  align-items: center;
 }
 
 .status-pill {
@@ -221,6 +238,10 @@ body {
   font-weight: 700;
 }
 
+.shell-action {
+  min-height: 2.9rem;
+}
+
 .primary {
   color: white;
   background: linear-gradient(135deg, #9f4f65, #6d2f42);
@@ -236,6 +257,21 @@ body {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
   margin-top: 1rem;
+}
+
+.context-rail,
+.workflow-strip {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.context-rail {
+  grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
+}
+
+.workflow-strip {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .stack {
@@ -274,6 +310,19 @@ body {
   padding: 0.25rem 0;
 }
 
+.section-note {
+  margin-top: 0.35rem;
+  padding: 0.95rem 1rem;
+  border: 1px solid rgba(92, 54, 63, 0.08);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.58);
+}
+
+.section-note p {
+  margin: 0;
+  line-height: 1.6;
+}
+
 .section-heading h3 {
   margin: 0.35rem 0 0;
   font-family: var(--serif);
@@ -308,6 +357,9 @@ body {
 .gallery-card,
 .moment-card,
 .flow-card,
+.workflow-card,
+.rail-summary-card,
+.rail-queue-card,
 .rail-card,
 .curation-card,
 .promise-card,
@@ -354,6 +406,14 @@ body {
   margin-top: 1rem;
 }
 
+.rail-summary-card h4,
+.workflow-card h4 {
+  margin: 0.45rem 0 0.75rem;
+  font-family: var(--serif);
+  font-size: 1.4rem;
+  line-height: 1.15;
+}
+
 .flow-card h4,
 .rail-card h4,
 .curation-card h4,
@@ -370,6 +430,25 @@ body {
   flex-wrap: wrap;
   gap: 0.65rem;
   margin: 0.95rem 0 0.85rem;
+}
+
+.queue-list {
+  display: grid;
+  gap: 0.8rem;
+  margin-top: 0.85rem;
+}
+
+.queue-list div {
+  padding: 0.9rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(92, 54, 63, 0.08);
+}
+
+.queue-list strong {
+  display: block;
+  margin-bottom: 0.4rem;
+  color: var(--accent-deep);
 }
 
 .curation-chips span {
@@ -503,6 +582,8 @@ body {
   }
 
   .hero,
+  .context-rail,
+  .workflow-strip,
   .grid,
   .special-moments-strip,
   .pair-grid,
