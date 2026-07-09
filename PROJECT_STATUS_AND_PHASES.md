@@ -32,7 +32,7 @@ Date: 2026-07-08
 | Check | Status |
 | --- | --- |
 | `git status --short --branch` | clean |
-| `main` vs `origin/main` at latest run start | matched at `041192fbd7c787adf69990bc7944fe92cadb5554` |
+| `main` vs `origin/main` at latest run start | matched at `9204f87b8decfb8cab567caac0309605db33525f` |
 | `npm run check:all` | pass |
 | Rules alignment/dry-run | pass |
 | Prototype boundary check | pass |
@@ -94,21 +94,21 @@ No authenticated browser session or human-entered approved credentials were avai
 
 ### Latest Workstream Run Summary
 
-- starting commit: `041192fbd7c787adf69990bc7944fe92cadb5554`
-- Phase 9 track: safety baseline stayed green, `check:all` passed, the sync-model QA warning was removed safely, and smoke remained honestly `HOLD`
+- starting commit: `9204f87b8decfb8cab567caac0309605db33525f`
+- Phase 9 track: safety baseline stayed green, `check:all` passed again, and smoke remained honestly `HOLD` because no authenticated browser session was available in the in-app browser
 - Phase 10 track: skipped live sync work because smoke did not pass
-- Phase 11 track: continued non-live shell refinement only, outside `public/`, with stronger story flow and shared-state placeholder previews
-- checks run: `git status --short --branch`, `git rev-parse main`, `git rev-parse origin/main`, `npm run check:sync-model`, `npm run check:all`, master-doc review, prototype review, and in-app browser tab/session inspection
+- Phase 11 track: continued deeper non-live shell refinement only, outside `public/`, with stronger gallery/profile/favorites previews and keyboard-safe navigation behavior
+- checks run: `git status --short --branch`, `git rev-parse main`, `git rev-parse origin/main`, `npm run check:all`, master-doc review, prototype review, smoke runbook review, and in-app browser tab/session inspection
 - commits in this run:
-  - `baa1b2a` `Clean up sync-model QA warning`
-  - pending status/prototype closeout commit
+  - `093f5a2` `Update approved-account smoke gate`
+  - pending prototype/status closeout commits
 - deploy activity: none
 - private media touched: no
 - remaining top gate: real approved-account smoke for both approved users
 - next recommended track actions:
   - Phase 9: run real approved-account smoke with real browser auth/session evidence
   - Phase 10: keep live sync replacement blocked until smoke passes
-  - Phase 11: continue prototype-only shell/dashboard/mobile rhythm refinement and shared-state pattern refinement
+  - Phase 11: continue prototype-only shell/dashboard/mobile rhythm refinement plus deeper gallery/profile/favorites state design
 
 ### Phase 8 Summary
 
