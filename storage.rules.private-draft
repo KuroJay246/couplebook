@@ -12,7 +12,7 @@ service firebase.storage {
 
     function isApprovedUid() {
       return isAuthenticated() && request.auth.uid in [
-        'oauPl1OU3TfNomvQ3kL3CnAD3Xr27',
+        'oauPl1OU3TfNomvQ3kL3CnAD3Xr2',
         'IvfHjC5wlPbMWZtMkXceqRTowPt1'
       ];
     }

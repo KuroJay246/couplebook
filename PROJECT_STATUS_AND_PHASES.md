@@ -45,7 +45,7 @@ Date: 2026-07-08
 | Check | Status |
 | --- | --- |
 | Overall gate | `HOLD` |
-| Jaylan authenticated smoke actually run | no |
+| Jaylan authenticated smoke actually run | yes |
 | Partner authenticated smoke actually run | no |
 | Guest blocked in current source/unsigned checks | yes |
 | Signup disabled | yes |
@@ -54,7 +54,7 @@ Date: 2026-07-08
 
 ### Why Smoke Is Still HOLD
 
-No authenticated browser session or human-entered approved credentials were available during the recent autonomous runs. The in-app browser also had no open tabs and no selected tab during the latest smoke attempt at commit `9204f87b8decfb8cab567caac0309605db33525f`. Because of that, the project cannot honestly claim `PASS`.
+Jaylan was successfully tested in a real browser session after correcting the live Jaylan UID mismatch in Firestore rules. The smoke gate is still `HOLD` because the partner account was not available for testing, so the project still cannot honestly claim `PASS`.
 
 ## Open Gates
 
@@ -94,21 +94,20 @@ No authenticated browser session or human-entered approved credentials were avai
 
 ### Latest Workstream Run Summary
 
-- starting commit: `9204f87b8decfb8cab567caac0309605db33525f`
-- Phase 9 track: safety baseline stayed green, `check:all` passed again, and smoke remained honestly `HOLD` because no authenticated browser session was available in the in-app browser
+- starting commit: `a87effdd1742bf52be2efe53b8b26d3494c6ecaf`
+- Phase 9 track: safety baseline stayed green, live Firestore rules were corrected for the real Jaylan UID, Jaylan approved-account smoke passed in a real browser session, and overall smoke remained honestly `HOLD` because the partner account was not tested
 - Phase 10 track: skipped live sync work because smoke did not pass
-- Phase 11 track: continued deeper non-live shell refinement only, outside `public/`, with stronger gallery/profile/favorites previews and keyboard-safe navigation behavior
-- checks run: `git status --short --branch`, `git rev-parse main`, `git rev-parse origin/main`, `npm run check:all`, master-doc review, prototype review, smoke runbook review, and in-app browser tab/session inspection
+- Phase 11 track: no new prototype work in this human-assisted smoke batch
+- checks run: `git status --short --branch`, `git rev-parse main`, `git rev-parse origin/main`, `npm run check:all`, `npm run check:rules`, master-doc review, smoke runbook review, Firestore rules-only deploy, and real browser-authenticated Jaylan page checks
 - commits in this run:
-  - `093f5a2` `Update approved-account smoke gate`
-  - pending prototype/status closeout commits
-- deploy activity: none
+  - pending smoke/status documentation commit
+- deploy activity: Firestore rules only
 - private media touched: no
-- remaining top gate: real approved-account smoke for both approved users
+- remaining top gate: partner approved-account smoke plus blocked-behavior re-check in the post-fix browser session
 - next recommended track actions:
-  - Phase 9: run real approved-account smoke with real browser auth/session evidence
+  - Phase 9: run the partner approved-account smoke and finish the blocked-behavior check
   - Phase 10: keep live sync replacement blocked until smoke passes
-  - Phase 11: continue prototype-only shell/dashboard/mobile rhythm refinement plus deeper gallery/profile/favorites state design
+  - Phase 11: stay paused until the smoke gate is fully closed or explicitly deprioritized
 
 ### Phase 8 Summary
 
