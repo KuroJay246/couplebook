@@ -15,7 +15,9 @@ function showView(viewName) {
   });
 
   navItems.forEach((item) => {
-    item.classList.toggle('nav-item-active', item.dataset.viewTarget === viewName);
+    const isActive = item.dataset.viewTarget === viewName;
+    item.classList.toggle('nav-item-active', isActive);
+    item.setAttribute('aria-pressed', String(isActive));
   });
 }
 

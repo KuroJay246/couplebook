@@ -245,7 +245,8 @@ body {
 }
 
 .special-moments-strip,
-.quiet-grid {
+.quiet-grid,
+.states-grid {
   display: grid;
   gap: 1rem;
   margin-top: 1rem;
@@ -256,6 +257,10 @@ body {
 }
 
 .quiet-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.states-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
@@ -296,7 +301,9 @@ body {
 .chapter-card,
 .person-card,
 .gallery-card,
-.moment-card {
+.moment-card,
+.flow-card,
+.rail-card {
   background: var(--panel-strong);
 }
 
@@ -329,6 +336,78 @@ body {
 
 .wide-card {
   grid-column: span 2;
+}
+
+.story-flow,
+.chapter-rail {
+  margin-top: 1rem;
+}
+
+.flow-card h4,
+.rail-card h4 {
+  margin: 0.45rem 0 0.75rem;
+  font-family: var(--serif);
+  font-size: 1.45rem;
+  line-height: 1.15;
+}
+
+.flow-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.flow-steps div {
+  padding: 0.95rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(92, 54, 63, 0.08);
+}
+
+.flow-steps span {
+  display: inline-flex;
+  width: 2rem;
+  height: 2rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: white;
+  background: linear-gradient(135deg, #9f4f65, #6d2f42);
+}
+
+.flow-steps strong {
+  display: block;
+  margin-top: 0.85rem;
+  font-size: 1rem;
+  color: var(--accent-deep);
+}
+
+.flow-steps p {
+  margin-bottom: 0;
+}
+
+.state-skeletons {
+  display: grid;
+  gap: 0.55rem;
+  margin: 1rem 0 0.85rem;
+}
+
+.state-skeletons span {
+  display: block;
+  height: 0.8rem;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(159, 79, 101, 0.14), rgba(255, 255, 255, 0.82), rgba(159, 79, 101, 0.14));
+}
+
+.state-skeletons span:nth-child(2) {
+  width: 82%;
+}
+
+.state-skeletons span:nth-child(3) {
+  width: 68%;
 }
 
 .placeholder-chip {
@@ -383,7 +462,9 @@ body {
   .special-moments-strip,
   .pair-grid,
   .gallery-grid,
-  .quiet-grid {
+  .quiet-grid,
+  .states-grid,
+  .flow-steps {
     grid-template-columns: 1fr;
   }
 

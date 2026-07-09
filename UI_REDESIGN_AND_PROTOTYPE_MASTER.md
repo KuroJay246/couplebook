@@ -107,8 +107,10 @@ Latest non-live work kept the redesign track moving without touching the deploye
 
 - smoke stayed `HOLD`, so no live shell replacement started
 - the prototype remains outside `public/` with placeholder-only content
-- mobile shell preview is the next safe proving ground for nav rhythm
-- special moments entry and private-health placement should keep getting refined in the prototype before any live CSS batch
+- mobile shell preview remains the safe proving ground for nav rhythm and active-state behavior
+- special moments entry and private-health placement keep getting refined in the prototype before any live CSS batch
+- shared loading/empty/error placeholders now have prototype-only examples, which should later map to real shared UI states
+- the home view now previews a clearer dashboard-to-story-to-gallery flow instead of isolated cards only
 
 ## Production Implementation Checklist
 
