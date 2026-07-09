@@ -23,7 +23,7 @@ This repo now includes a small local QA lane for repeatable safety and route che
   Verifies read-only service helpers do not introduce forbidden writes, deletes, legacy `usernames` usage, broad `users` collection scans, or obvious hardcoded secrets.
 
 - `npm run check:sync-model`
-  Verifies the non-live sync model helpers normalize fixture user docs safely, preserve shared profile/favorites/signature expectations, and resolve active/partner docs without Firebase access.
+  Verifies the non-live sync model helpers normalize fixture user docs safely, preserve shared profile/favorites/signature expectations, and resolve active/partner docs without Firebase access. The QA loader evaluates the helper through an ephemeral ESM data URL so the repo can stay CommonJS-default without the `MODULE_TYPELESS_PACKAGE_JSON` warning.
 
 - `npm run check:prototype`
   Verifies the non-live shell prototype stays outside `public/`, remains clearly labeled as non-live, and does not reference Firebase or private media paths/extensions.

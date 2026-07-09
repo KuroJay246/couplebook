@@ -1,9 +1,12 @@
 const path = require('path');
 const { pathToFileURL } = require('url');
+const fs = require('fs/promises');
 const { REPO_ROOT, fail, log } = require('./lib');
 
 async function main() {
-  const moduleUrl = pathToFileURL(path.join(REPO_ROOT, 'services', 'syncModelService.js')).href;
+  const modulePath = path.join(REPO_ROOT, 'services', 'syncModelService.js');
+  const moduleSource = await fs.readFile(modulePath, 'utf8');
+  const moduleUrl = `data:text/javascript;base64,${Buffer.from(moduleSource, 'utf8').toString('base64')}`;
   const syncModel = await import(moduleUrl);
 
   const rawDocs = [
