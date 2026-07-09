@@ -246,7 +246,8 @@ body {
 
 .special-moments-strip,
 .quiet-grid,
-.states-grid {
+.states-grid,
+.matrix-grid {
   display: grid;
   gap: 1rem;
   margin-top: 1rem;
@@ -262,6 +263,10 @@ body {
 
 .states-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.matrix-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .section-heading {
@@ -303,7 +308,10 @@ body {
 .gallery-card,
 .moment-card,
 .flow-card,
-.rail-card {
+.rail-card,
+.curation-card,
+.promise-card,
+.matrix-card {
   background: var(--panel-strong);
 }
 
@@ -339,16 +347,39 @@ body {
 }
 
 .story-flow,
-.chapter-rail {
+.chapter-rail,
+.gallery-curation,
+.pair-story,
+.favorites-matrix {
   margin-top: 1rem;
 }
 
 .flow-card h4,
-.rail-card h4 {
+.rail-card h4,
+.curation-card h4,
+.promise-card h4,
+.matrix-card h4 {
   margin: 0.45rem 0 0.75rem;
   font-family: var(--serif);
   font-size: 1.45rem;
   line-height: 1.15;
+}
+
+.curation-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin: 0.95rem 0 0.85rem;
+}
+
+.curation-chips span {
+  border-radius: 999px;
+  padding: 0.55rem 0.8rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--accent-deep);
+  background: rgba(159, 79, 101, 0.12);
+  border: 1px solid rgba(92, 54, 63, 0.08);
 }
 
 .flow-steps {
@@ -408,6 +439,20 @@ body {
 
 .state-skeletons span:nth-child(3) {
   width: 68%;
+}
+
+.matrix-grid div {
+  min-height: 8rem;
+  padding: 1rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(92, 54, 63, 0.08);
+}
+
+.matrix-grid strong {
+  display: block;
+  margin-bottom: 0.45rem;
+  color: var(--accent-deep);
 }
 
 .placeholder-chip {
@@ -480,8 +525,8 @@ body {
     position: sticky;
     bottom: 0;
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 0.5rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.45rem;
     padding: 0.9rem 1rem 1rem;
     border-top: 1px solid var(--line);
     background: rgba(255, 248, 243, 0.92);
@@ -493,5 +538,9 @@ body {
     padding: 0.7rem 0.55rem;
     text-align: center;
     font-size: 0.78rem;
+  }
+
+  .matrix-grid {
+    grid-template-columns: 1fr;
   }
 }

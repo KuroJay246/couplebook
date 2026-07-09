@@ -111,6 +111,8 @@ Latest non-live work kept the redesign track moving without touching the deploye
 - special moments entry and private-health placement keep getting refined in the prototype before any live CSS batch
 - shared loading/empty/error placeholders now have prototype-only examples, which should later map to real shared UI states
 - the home view now previews a clearer dashboard-to-story-to-gallery flow instead of isolated cards only
+- gallery, profile-pair, and favorites previews now model more specific future content groupings instead of generic filler cards
+- keyboard-safe nav behavior is now prototyped so future shell work has a clearer accessibility baseline
 
 ## Production Implementation Checklist
 
