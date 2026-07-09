@@ -18,7 +18,7 @@ Because of that, the approved-account flow was not fully exercised and cannot ho
 ## What Was Verified In This Batch
 
 - `git status --short --branch` showed a clean repo before the smoke-status update.
-- `git rev-parse main` and `git rev-parse origin/main` matched at `2c92c410969b87ce344e1296acfc4792f2f3ace5` before this phase.
+- `git rev-parse main` and `git rev-parse origin/main` matched at `9204f87b8decfb8cab567caac0309605db33525f` before this phase.
 - `npm run check:all` passed before this update.
 - Required local routes returned `200`.
 - The in-app browser had no open tabs and no selected tab, so there was no saved authenticated browser session available for either approved account.

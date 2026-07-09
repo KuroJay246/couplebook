@@ -54,7 +54,7 @@ Date: 2026-07-08
 
 ### Why Smoke Is Still HOLD
 
-No authenticated browser session or human-entered approved credentials were available during the recent autonomous runs. The in-app browser also had no open tabs and no selected tab during the latest smoke attempt. Because of that, the project cannot honestly claim `PASS`.
+No authenticated browser session or human-entered approved credentials were available during the recent autonomous runs. The in-app browser also had no open tabs and no selected tab during the latest smoke attempt at commit `9204f87b8decfb8cab567caac0309605db33525f`. Because of that, the project cannot honestly claim `PASS`.
 
 ## Open Gates
 
