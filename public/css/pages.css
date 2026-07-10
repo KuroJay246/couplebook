@@ -335,6 +335,12 @@
   border-color: var(--border-glass-hover);
 }
 
+.recent-item--media-unavailable {
+  background:
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.12), transparent 34%),
+    linear-gradient(160deg, rgba(255, 74, 107, 0.22), rgba(139, 92, 246, 0.18) 48%, rgba(17, 24, 39, 0.96));
+}
+
 .recent-img {
   width: 100%;
   height: 100%;
@@ -344,6 +350,27 @@
 
 .recent-item:hover .recent-img {
   transform: scale(1.05);
+}
+
+.recent-item--media-unavailable .recent-img {
+  filter: saturate(0.82) brightness(0.88);
+}
+
+.recent-item-status {
+  position: absolute;
+  top: 0.85rem;
+  left: 0.85rem;
+  z-index: 2;
+  max-width: calc(100% - 1.7rem);
+  padding: 0.4rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(8, 11, 20, 0.72);
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  backdrop-filter: blur(8px);
 }
 
 .recent-overlay {
@@ -358,6 +385,11 @@
   justify-content: flex-end;
 }
 
+.recent-item--media-unavailable .recent-overlay {
+  min-height: 62%;
+  background: linear-gradient(to top, rgba(4, 6, 12, 0.94) 0%, rgba(4, 6, 12, 0.5) 58%, transparent 100%);
+}
+
 .recent-item-title {
   font-weight: 600;
   font-size: 0.95rem;
@@ -367,6 +399,20 @@
 .recent-item-date {
   font-size: 0.75rem;
   color: rgba(255,255,255,0.7);
+}
+
+.recent-item-missing-note {
+  margin-top: 0.6rem;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.96);
+}
+
+.recent-item-missing-detail {
+  margin-top: 0.22rem;
+  font-size: 0.68rem;
+  line-height: 1.35;
+  color: rgba(255, 255, 255, 0.76);
 }
 
 .special-moments-card {

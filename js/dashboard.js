@@ -21,6 +21,27 @@ const RECENT_MEMORY_FALLBACK = `data:image/svg+xml;charset=UTF-8,${encodeURIComp
     </g>
   </svg>
 `)}`;
+const RECENT_MEMORY_UNAVAILABLE_BADGE = 'Story preserved - media stays private';
+const RECENT_MEMORY_UNAVAILABLE_NOTE = 'Private memory stored locally';
+const RECENT_MEMORY_UNAVAILABLE_DETAIL = 'Media unavailable in this environment';
+
+function markRecentMemoryUnavailable(node) {
+  const card = node?.closest?.('.recent-item');
+  if (!card || card.dataset.mediaUnavailable === 'true') return;
+
+  card.dataset.mediaUnavailable = 'true';
+  card.classList.add('recent-item--media-unavailable');
+
+  const badge = card.querySelector('.recent-item-status');
+  const note = card.querySelector('.recent-item-missing-note');
+  const detail = card.querySelector('.recent-item-missing-detail');
+
+  if (badge) badge.hidden = false;
+  if (note) note.hidden = false;
+  if (detail) detail.hidden = false;
+}
+
+window.__memoryBookHandleRecentMediaMissing = markRecentMemoryUnavailable;
 
 document.addEventListener('DOMContentLoaded', () => {
   initClock();
@@ -147,20 +168,23 @@ async function initRecentMemories() {
   recent.forEach(mem => {
     let mediaEl = '';
     if (mem.isVideo) {
-      mediaEl = `<video preload="metadata" muted playsinline class="recent-img" style="filter: brightness(0.65);" onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling && (this.nextElementSibling.style.display='block');">
+      mediaEl = `<video preload="metadata" muted playsinline class="recent-img" style="filter: brightness(0.65);" onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling && (this.nextElementSibling.style.display='block'); window.__memoryBookHandleRecentMediaMissing && window.__memoryBookHandleRecentMediaMissing(this);">
         <source src="${mem.media}#t=0.5" type="video/mp4">
       </video>
       <img src="${RECENT_MEMORY_FALLBACK}" class="recent-img" alt="Private memory placeholder for ${escapeHTML(mem.title)}" style="display:none;">`;
     } else {
-      mediaEl = `<img src="${mem.media}" alt="${escapeHTML(mem.title)}" class="recent-img" onerror="this.onerror=null; this.src='${RECENT_MEMORY_FALLBACK}';">`;
+      mediaEl = `<img src="${mem.media}" alt="${escapeHTML(mem.title)}" class="recent-img" onerror="this.onerror=null; this.src='${RECENT_MEMORY_FALLBACK}'; window.__memoryBookHandleRecentMediaMissing && window.__memoryBookHandleRecentMediaMissing(this);">`;
     }
     
     html += `
       <div class="recent-item" onclick="window.location.href='timeline.html'">
         ${mediaEl}
+        <div class="recent-item-status" hidden>${RECENT_MEMORY_UNAVAILABLE_BADGE}</div>
         <div class="recent-overlay">
           <div class="recent-item-title">${escapeHTML(mem.title)}</div>
           <div class="recent-item-date">${formatDate(mem.date)}</div>
+          <div class="recent-item-missing-note" hidden>${RECENT_MEMORY_UNAVAILABLE_NOTE}</div>
+          <div class="recent-item-missing-detail" hidden>${RECENT_MEMORY_UNAVAILABLE_DETAIL}</div>
         </div>
       </div>
     `;

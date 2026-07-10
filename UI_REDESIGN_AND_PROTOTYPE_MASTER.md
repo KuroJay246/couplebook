@@ -673,6 +673,89 @@ The third controlled live Phase 11 batch is now complete.
 
 If this batch stays stable, the next safe UI step should stay narrow: either a review of how to present data-owned missing local media more gracefully without mutating memory records, or a non-live planning pass for timeline/gallery story structure.
 
+## Phase 11 Missing Local Media Presentation Scope
+
+This fourth controlled live Phase 11 batch stays dashboard-focused and presentational.
+
+### Missing-Media States Found
+
+- dashboard recent-memory cards can still fall back from real local image paths to the safe inline placeholder
+- dashboard recent-memory video cards can silently collapse into a placeholder image when the local file is unavailable
+- the current fallback preserves card structure, but it does not clearly tell the user that the original media remains private and local-only
+
+### What Will Be Improved
+
+- keep dashboard memory cards stable when local media is missing
+- reveal clear, warm missing-media copy only when a real local file fails
+- keep the story title and date visible while making the unavailable state intentional instead of ambiguous
+
+### What Will Not Be Changed
+
+- memory data or `core/memories.json`
+- routes
+- auth or sync logic
+- `core/firestoreSync.js`
+- `public/core/firestoreSync.js`
+- private media handling
+- timeline, gallery, profile, favorites, or settings redesign
+
+### Files Likely Touched
+
+- `js/dashboard.js`
+- `public/js/dashboard.js`
+- `css/pages.css`
+- `public/css/pages.css`
+- this master doc
+
+### Stop Conditions
+
+- any `npm run check:all` regression
+- any root/public mirror drift
+- any memory-data mutation
+- any route, auth, sync, or selector regression
+
+## Phase 11 Missing Local Media Presentation Summary
+
+The fourth controlled live Phase 11 batch is now complete.
+
+### Files Touched
+
+- `js/dashboard.js`
+- `public/js/dashboard.js`
+- `css/pages.css`
+- `public/css/pages.css`
+- this master doc
+
+### What Was Improved
+
+- dashboard recent-memory cards now mark failed local media as an intentional unavailable state instead of only swapping the image silently
+- missing local image and video cards keep their structure, title, and date while surfacing warm copy that explains the media remains private and local-only
+- the unavailable state now uses explicit card styling and copy so the placeholder reads as preserved story context instead of a broken thumbnail
+
+### What Remains Intentionally Local-Only
+
+- actual private media files under `/assets/photos/` and `/assets/videos/` remain excluded and unfixed in Git/public
+- memory records that point at those local-only files still make the browser request the original path first
+- special-page companion media remains intentionally local-only and outside this dashboard batch
+
+### Browser And Sanity Result
+
+- `npm run check:all` passed before and after the presentation pass
+- root/public mirror alignment stayed green
+- local route checks for login, dashboard, Valentine, confession, and birthday stayed `200`
+- Playwright confirmed the dashboard route still renders its recent-memory cards before unauthenticated routing returns to login
+- remaining console noise stayed honest and limited to the real local-only missing media paths plus the expected no-session health-check warning
+
+### Remaining UI And Media Risks
+
+- the browser still requests the original memory path first, so local-only missing media will continue to log real 404s until the data model or media strategy changes
+- unauthenticated browser sanity cannot stand in for full approved-account protected-route smoke
+- this pass is dashboard-only and does not yet extend the same presentation pattern to timeline or gallery
+
+### Next Phase 11 Step
+
+If this batch stays stable, the next safe UI step should remain narrow: either apply the same graceful missing-local-media presentation pattern to another already-approved surface without mutating data, or move into non-live planning for timeline/gallery story structure.
+
 ## Next Safe UI Step
 
 While smoke is `HOLD`:

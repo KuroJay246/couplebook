@@ -94,14 +94,14 @@ Jaylan was successfully tested in a real browser session after correcting the li
 
 ### Latest Workstream Run Summary
 
-- starting commit: `f6c884d18d3f59059d7679e2fb9592415f4a2f6f`
-- Phase 9 track: safety baseline stayed green again, `npm run check:all` passed before and after the fallback pass, Jaylan approved-account smoke remains `PASS`, partner approved-account smoke remains not tested, and overall smoke remains honestly `HOLD`
+- starting commit: `ec9774e590975219e12a71c0a41e9487958809a9`
+- Phase 9 track: safety baseline stayed green again, `npm run check:all` passed before and after the missing-media presentation pass, Jaylan approved-account smoke remains `PASS`, partner approved-account smoke remains not tested, and overall smoke remains honestly `HOLD`
 - Phase 10 track: live sync work was intentionally skipped again and both `core/firestoreSync.js` files remained untouched
-- Phase 11 track: polished the dashboard’s safe fallback behavior by removing the missing favicon request and replacing avoidable dashboard fallback-image misses with public-safe inline placeholders, without touching auth, sync, routes, or memory data
-- checks run: `git status --short --branch`, `git rev-parse main`, `git rev-parse origin/main`, `npm run check:all` twice, fallback reference review, dev-server verification, and local Playwright sanity checks for login and dashboard route rendering
-- browser sanity result: login rendered without the prior missing-favicon noise, and the unauthenticated dashboard console dropped to the true local-only missing memory paths instead of also logging avoidable fallback/favicons misses
+- Phase 11 track: improved the dashboard’s missing-local-media presentation by marking failed recent-memory cards as intentionally local-only, keeping card layout stable, and surfacing warm fallback copy without touching auth, sync, routes, or memory data
+- checks run: `git status --short --branch`, `git rev-parse main`, `git rev-parse origin/main`, `npm run check:all` twice, dashboard renderer/CSS review, master-doc review, dev-server verification, and local Playwright sanity checks for login and dashboard route rendering
+- browser sanity result: the dashboard route still rendered its recent-memory cards before unauthenticated routing returned the session to login, the route checks stayed green, and the remaining console errors continued to reflect true local-only missing media paths rather than new UI regressions
 - commits in this run:
-  - `Polish dashboard fallback assets`
+  - `Improve dashboard missing-media presentation`
 - deploy activity: none
 - Gather Savor inspected read-only: unchanged from prior comparison work
 - Couple Book browser inspected: yes
@@ -110,7 +110,7 @@ Jaylan was successfully tested in a real browser session after correcting the li
 - next recommended track actions:
   - Phase 9: keep smoke status honest and run the partner approved-account smoke when credentials/session are available
   - Phase 10: keep live sync replacement blocked until smoke passes
-  - Phase 11: if this fallback batch stays stable, either clean up the remaining data-owned local-only dashboard media gaps non-destructively or move into non-live planning for timeline/gallery story structure
+  - Phase 11: if this presentation batch stays stable, decide whether the next safe step is a similar non-data fallback pass on another surface or non-live planning for timeline/gallery story structure
 
 ### Phase 8 Summary
 
