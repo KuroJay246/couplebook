@@ -2,6 +2,20 @@
 import { state } from '../core/state.js';
 import { Auth } from './auth.js';
 
+const SHARED_AVATAR_FALLBACK = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+    <defs>
+      <linearGradient id="avatar-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#ff4a6b" />
+        <stop offset="100%" stop-color="#8b5cf6" />
+      </linearGradient>
+    </defs>
+    <rect width="120" height="120" rx="30" fill="url(#avatar-gradient)" />
+    <circle cx="60" cy="44" r="18" fill="rgba(255,255,255,0.92)" />
+    <path d="M30 96c5-18 18-27 30-27s25 9 30 27" fill="rgba(255,255,255,0.92)" />
+  </svg>
+`)}`;
+
 document.addEventListener('DOMContentLoaded', () => {
   // Apply theme immediately — synchronous, no async delay
   document.documentElement.setAttribute('data-theme', state.getTheme());
@@ -246,7 +260,7 @@ function renderNavigation() {
   const shell = document.getElementById('navigation-shell');
   if (!shell) return;
 
-  const activeUser = state.getActiveUser() || { name: 'Guest', avatar: '/assets/photos/anniversary_2025.png' };
+  const activeUser = state.getActiveUser() || { name: 'Guest', avatar: SHARED_AVATAR_FALLBACK };
   const nameLabel = activeUser.name;
   
   // Build Desktop Nav Links (Main Nav Only)
@@ -290,7 +304,7 @@ function renderNavigation() {
         </ul>
       </nav>
       <div class="user-badge-header" style="cursor: pointer;" id="header-user-badge">
-        <img src="${activeUser.avatar || '/assets/photos/anniversary_2025.png'}" alt="Avatar" class="avatar-small" id="header-user-avatar">
+        <img src="${activeUser.avatar || SHARED_AVATAR_FALLBACK}" alt="Avatar" class="avatar-small" id="header-user-avatar">
         <span class="badge-name" id="header-user-name">${nameLabel}</span>
       </div>
     </header>

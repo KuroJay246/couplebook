@@ -2,6 +2,26 @@
 import { state } from '../core/state.js';
 import { getDurationSince, getBirthdayDetails, formatDate, escapeHTML } from '../core/utils.js';
 
+const RECENT_MEMORY_FALLBACK = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 520">
+    <defs>
+      <linearGradient id="memory-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#ff4a6b" />
+        <stop offset="50%" stop-color="#8b5cf6" />
+        <stop offset="100%" stop-color="#111827" />
+      </linearGradient>
+    </defs>
+    <rect width="800" height="520" fill="url(#memory-gradient)" />
+    <circle cx="660" cy="110" r="72" fill="rgba(255,255,255,0.12)" />
+    <circle cx="145" cy="415" r="94" fill="rgba(255,255,255,0.08)" />
+    <g fill="#ffffff" font-family="Georgia, serif" text-anchor="middle">
+      <text x="400" y="228" font-size="36" font-weight="700">Private memory placeholder</text>
+      <text x="400" y="276" font-size="18" fill="rgba(255,255,255,0.82)">The original local media is unavailable here,</text>
+      <text x="400" y="304" font-size="18" fill="rgba(255,255,255,0.82)">so this card stays graceful without exposing private files.</text>
+    </g>
+  </svg>
+`)}`;
+
 document.addEventListener('DOMContentLoaded', () => {
   initClock();
   initAnniversaries();
@@ -127,12 +147,12 @@ async function initRecentMemories() {
   recent.forEach(mem => {
     let mediaEl = '';
     if (mem.isVideo) {
-      mediaEl = `<video preload="metadata" muted playsinline class="recent-img" style="filter: brightness(0.65);" onerror="this.onerror=null; this.style.display='none';">
+      mediaEl = `<video preload="metadata" muted playsinline class="recent-img" style="filter: brightness(0.65);" onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling && (this.nextElementSibling.style.display='block');">
         <source src="${mem.media}#t=0.5" type="video/mp4">
       </video>
-      <img src="/assets/photos/anniversary_2025.png" class="recent-img" alt="${escapeHTML(mem.title)}" style="display:none;">`;
+      <img src="${RECENT_MEMORY_FALLBACK}" class="recent-img" alt="Private memory placeholder for ${escapeHTML(mem.title)}" style="display:none;">`;
     } else {
-      mediaEl = `<img src="${mem.media}" alt="${escapeHTML(mem.title)}" class="recent-img" onerror="this.onerror=null; this.src='/assets/photos/anniversary_2025.png';">`;
+      mediaEl = `<img src="${mem.media}" alt="${escapeHTML(mem.title)}" class="recent-img" onerror="this.onerror=null; this.src='${RECENT_MEMORY_FALLBACK}';">`;
     }
     
     html += `

@@ -584,6 +584,95 @@ The second controlled live Phase 11 batch is now complete.
 
 If this batch stays stable, the next safe UI step should remain small and reversible: either a narrow dashboard polish pass for known local fallback rough edges or a non-live planning pass for timeline/gallery story structure, still without touching sync or auth.
 
+## Phase 11 Dashboard Fallback Polish Scope
+
+This third controlled live Phase 11 batch stays narrow and presentational.
+
+### Safe Fallback Issues Found
+
+- the dashboard recent-memory fallback still points at `/assets/photos/anniversary_2025.png`, which is not present and creates avoidable extra 404 noise
+- the app currently has no favicon file at `/favicon.ico`, so the browser always requests a missing asset during sanity checks
+
+### Private Or Local-Only Media Issues That Must Stay Unfixed Here
+
+- recent-memory cards can still reference real local private media paths under `/assets/photos/` and `/assets/videos/`
+- if those private files are absent in the local environment, those original requests may still 404 and should not be “fixed” by recommitting relationship media
+- special-page companion media remains local-only and outside this polish pass
+
+### Files Likely Touched
+
+- `js/app.js`
+- `public/js/app.js`
+- `js/dashboard.js`
+- `public/js/dashboard.js`
+- `favicon.ico`
+- `public/favicon.ico`
+- this master doc
+
+### What Will Not Change
+
+- auth logic
+- sync logic
+- `core/firestoreSync.js`
+- `public/core/firestoreSync.js`
+- memory data
+- routes
+- Firestore rules
+- private media handling
+- timeline, gallery, profile, favorites, and settings redesign work
+
+### Stop Conditions
+
+- any `npm run check:all` regression
+- any root/public mirror drift
+- any sign private media would need to be recommitted
+- any route, auth, or dashboard selector regression
+
+## Phase 11 Dashboard Fallback Polish Summary
+
+The third controlled live Phase 11 batch is now complete.
+
+### Files Touched
+
+- `js/app.js`
+- `public/js/app.js`
+- `js/dashboard.js`
+- `public/js/dashboard.js`
+- `favicon.ico`
+- `public/favicon.ico`
+- this master doc
+
+### What Fallback Issue Was Fixed
+
+- replaced the dashboard’s avoidable recent-memory fallback path with a public-safe inline SVG placeholder
+- made recent video cards reveal that safe placeholder instead of silently collapsing if a local video file is missing
+- added a real favicon response so the app no longer emits the avoidable missing `/favicon.ico` request during browser sanity checks
+- replaced the shared shell’s guest/default avatar fallback with a public-safe inline avatar so the dashboard no longer asks for that missing bitmap while unauthenticated
+
+### What Private Or Local Media Issue Remains Intentionally Unfixed
+
+- the dashboard can still hit 404s for actual local-only memory records whose `mem.media` path points at excluded private files
+- one remaining dashboard 404 still points at `/assets/photos/anniversary_2025.png` because that file is referenced directly by current memory data, and this pass did not change memory records or recommit media
+- special-page companion media remains local-only and outside this cleanup batch
+
+### Browser And Sanity Result
+
+- `npm run check:all` passed before and after the fallback polish
+- root/public mirror alignment stayed green
+- local route checks for login, dashboard, Valentine, confession, and birthday stayed `200`
+- a Playwright login render no longer reported the prior missing favicon asset
+- a Playwright dashboard render kept the story hierarchy intact and reduced console noise to the true local-only missing memory paths plus the expected health-check warning for no active session
+
+### Remaining Dashboard Risks
+
+- the remaining dashboard 404s now come from data-owned local-only media references, not from public-safe fallback assets
+- the unauthenticated dashboard still logs the expected health-check warning because there is no active session during this sanity path
+- broader timeline/gallery/profile/favorites/settings structure work is still out of scope for this batch
+
+### Next Phase 11 Step
+
+If this batch stays stable, the next safe UI step should stay narrow: either a review of how to present data-owned missing local media more gracefully without mutating memory records, or a non-live planning pass for timeline/gallery story structure.
+
 ## Next Safe UI Step
 
 While smoke is `HOLD`:
