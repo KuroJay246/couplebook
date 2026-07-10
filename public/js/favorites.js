@@ -7,13 +7,48 @@ const defaultFavorites = {
   omia: { food: [], places: [], hobbies: [], activities: [] }
 };
 
+const FAVORITE_PEOPLE = Object.keys(defaultFavorites);
+const FAVORITE_CATEGORIES = Object.keys(defaultFavorites.jaylan);
+
+function isPlainObject(value) {
+  return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
+function normalizeFavorites(raw) {
+  const normalized = isPlainObject(raw) ? { ...raw } : {};
+
+  FAVORITE_PEOPLE.forEach((person) => {
+    const existingPerson = isPlainObject(normalized[person]) ? normalized[person] : {};
+    normalized[person] = { ...existingPerson };
+
+    FAVORITE_CATEGORIES.forEach((category) => {
+      normalized[person][category] = Array.isArray(existingPerson[category]) ? existingPerson[category] : [];
+    });
+  });
+
+  return normalized;
+}
+
 function getFavorites() {
   const stored = localStorage.getItem(STORAGE_KEY);
   if (!stored) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultFavorites));
     return defaultFavorites;
   }
-  return JSON.parse(stored);
+
+  try {
+    const parsed = JSON.parse(stored);
+    const normalized = normalizeFavorites(parsed);
+
+    if (JSON.stringify(normalized) !== stored) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
+    }
+
+    return normalized;
+  } catch {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultFavorites));
+    return defaultFavorites;
+  }
 }
 
 function saveFavorites(data) {

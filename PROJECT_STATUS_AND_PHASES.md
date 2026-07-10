@@ -94,6 +94,27 @@ Jaylan was successfully tested in a real browser session after correcting the li
 
 ### Latest Workstream Run Summary
 
+- starting commit: `de9f6965c46fd951eb21f3a78f88530dc7595181`
+- Phase 9 track: safety baseline stayed green, `npm run check:all` passed before and after the fix, the authenticated Favorites runtime error was reproduced as `TypeError: Cannot read properties of undefined (reading 'food')` in `js/favorites.js:36`, and the root cause was confirmed as an existing `memorybook_favorites` value present as `{}` instead of the expected person/category schema
+- Phase 9 correction: both Favorites runtime files now normalize the stored object on read, preserve unknown branches, self-heal empty or partial favorites data back to the expected `jaylan` / `omia` category arrays, and render the empty state without changing storage keys, auth, sync, or Firestore rules
+- Phase 10 track: live sync work was intentionally skipped again and both `core/firestoreSync.js` files remained untouched
+- Phase 11 track: still pending in this run until the Favorites correction is committed cleanly
+- checks run so far: `git status --short --branch`, `git rev-parse main`, `git rev-parse origin/main`, `npm run check:all` twice, Favorites source review, authenticated Chrome repro, authenticated Chrome re-check, and route verification through the existing local server
+- browser sanity result: the Favorites page previously rendered its outer cards while crashing before list population; after the fix it renders all eight `Nothing added yet.` empty states with no error or warning logs on load
+- commits planned in this run:
+  - `Fix Favorites runtime error`
+- deploy activity: none
+- Gather Savor inspected read-only: unchanged from prior comparison work
+- Couple Book browser inspected: authenticated Chrome session reused for Favorites repro and verification
+- private media touched: no
+- remaining top gate: commit the Favorites fix cleanly, then begin the narrow timeline card-language/class pass only if the repo returns to a safe green state
+- next recommended track actions:
+  - Phase 9: keep smoke status honest and leave partner approved-account testing as the remaining overall gate
+  - Phase 10: keep live sync replacement blocked until smoke passes
+  - Phase 11: after the Favorites commit, proceed with the already-approved narrow live timeline card-language/class pass only
+
+### Prior Workstream Run Summary
+
 - starting commit: `bf29ec112a33de6dbb34a98411594757c1ee4226`
 - Phase 9 track: safety baseline stayed green, `npm run check:all` passed before planning and will be re-run for closeout, Jaylan approved-account smoke remains `PASS`, partner approved-account smoke remains not tested, and overall smoke remains honestly `HOLD`
 - Phase 10 track: live sync work was intentionally skipped again and both `core/firestoreSync.js` files remained untouched
@@ -112,7 +133,7 @@ Jaylan was successfully tested in a real browser session after correcting the li
   - Phase 10: keep live sync replacement blocked until smoke passes
   - Phase 11: if this planning batch stays stable, use the documented next live batch for a narrow timeline card-language/class pass only
 
-### Prior Workstream Run Summary
+### Earlier Workstream Run Summary
 
 - starting commit: `ec9774e590975219e12a71c0a41e9487958809a9`
 - Phase 9 track: safety baseline stayed green again, `npm run check:all` passed before and after the missing-media presentation pass, Jaylan approved-account smoke remains `PASS`, partner approved-account smoke remains not tested, and overall smoke remains honestly `HOLD`
