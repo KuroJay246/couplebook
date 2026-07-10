@@ -1029,3 +1029,74 @@ Remaining risks:
 Next recommended Phase 11 batch:
 
 - begin the controlled live gallery refinement batch, focused on hierarchy, collection framing, and graceful local-only media states without touching data, media storage, auth, or sync
+
+## Phase 11 Live Gallery Refinement Scope
+
+Current structure:
+
+- `pages/media.html` and `public/pages/media.html` still open with one simple header, one `.media-tabs` filter row, one `#gallery-container` grid, one photo lightbox, one video modal, and one shared edit modal
+- `js/media.js` and `public/js/media.js` still derive the gallery directly from `state.getMemories()` by filtering to entries with `mem.media`, then splitting presentation into photo tiles or video tiles through `openLightbox` and `openVideoPlayer`
+- `css/pages.css` and `public/css/pages.css` still frame the page as a uniform tile grid with hover-only overlays, square-ish aspect ratios, and little visible story context before interaction
+
+Exact reasons the live gallery still feels empty or broken:
+
+- many photo entries fall back to `/assets/photos/anniversary_2025.png`, but that fallback itself is not a public-safe runtime image in the hosted shell, so the UI degrades into blank gray tiles with broken-image chrome instead of an intentional private-memory state
+- the first visible gallery labels are still raw import titles such as `Photo from 2026-05-27T02:55:14.617Z`, which makes the page read like a media export or file browser
+- `.gallery-overlay` only reveals title and date on hover, so the page hides nearly all story context at rest
+- the filter tabs are still the first strong structural element, which reinforces “browse files by type” before any curated relationship framing appears
+- failed video loads currently append ` (Unable to load video)` directly to the modal title and emit a warning from `js/media.js`, which is honest but not yet emotionally curated
+
+Files likely touched in the live gallery batch:
+
+- `pages/media.html`
+- `public/pages/media.html`
+- `js/media.js`
+- `public/js/media.js`
+- `css/pages.css`
+- `public/css/pages.css`
+- `css/components.css`
+- `public/css/components.css`
+
+Selectors and behavior that must remain stable:
+
+- `#gallery-container`
+- `.media-tabs .tab-btn`
+- `#gallery-lightbox`
+- `#lightbox-image`
+- `#lightbox-caption`
+- `#gallery-video-modal`
+- `#gallery-video-player`
+- `#video-modal-title`
+- `#video-modal-date`
+- `#add-memory-modal`
+- `#add-memory-form`
+- `#btn-delete-lightbox`
+- `#btn-edit-lightbox`
+- `#btn-delete-video`
+- `#btn-edit-video`
+- globals `openLightbox` and `openVideoPlayer`
+- current filter behavior for `all`, `photos`, and `videos`
+- current modal/edit wiring and memory ordering from `state.getMemories()`
+
+Allowed presentational changes in the live gallery batch:
+
+- introduce a clearer gallery entrance and collection framing above the tabs
+- reduce the dominance of file-type tabs by turning them into quieter supporting controls
+- add display-only language for raw import titles and dates without mutating saved memory data
+- improve card rhythm, proportions, and visible-at-rest context so the grid feels curated instead of vacant
+- replace blank or broken-looking local-media states with warm, explicit private-memory placeholders
+- improve photo/video distinction, empty-state language, and mobile layout within the gallery page only
+
+Forbidden changes:
+
+- do not change `core/memories.json` or `public/core/memories.json`
+- do not rewrite `mem.media` paths or mutate saved memory records
+- do not change auth, sync, localStorage schema, routes, Firestore rules, Storage rules, or Firebase Hosting
+- do not add private media into tracked files or `public/`
+- do not broaden this batch into timeline, profile, favorites, settings, dashboard, or special-page redesign
+
+Stop conditions:
+
+- stop if the batch requires changing memory data, private media placement, auth, sync, rules, or routes
+- stop if gallery filter behavior, lightbox behavior, video modal behavior, or edit/delete entry points regress
+- stop if the root/public mirrors drift or if real available media stops rendering normally
