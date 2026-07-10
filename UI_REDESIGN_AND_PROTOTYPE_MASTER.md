@@ -1100,3 +1100,77 @@ Stop conditions:
 - stop if the batch requires changing memory data, private media placement, auth, sync, rules, or routes
 - stop if gallery filter behavior, lightbox behavior, video modal behavior, or edit/delete entry points regress
 - stop if the root/public mirrors drift or if real available media stops rendering normally
+
+## Phase 11 Live Gallery Refinement Summary
+
+Files touched:
+
+- `pages/media.html`
+- `public/pages/media.html`
+- `js/media.js`
+- `public/js/media.js`
+- `css/pages.css`
+- `public/css/pages.css`
+
+Why the blank boxes appeared:
+
+- the current dataset still points at private local media files that do not exist in this clean workspace
+- the older fallback path was not a usable public-safe hosted image, so failed loads degraded into broken or empty-looking tiles instead of an intentional private-memory state
+
+Gallery entrance and hierarchy changes:
+
+- added a gallery-specific story entrance above the grid with “Our visual archive” framing and dynamic media counts
+- moved the filter tabs into a quieter supporting toolbar so the page starts with relationship context before file-type controls
+- improved spacing and section rhythm between the page header, story entrance, toolbar, and grid
+
+Card-language and display-only changes:
+
+- raw imported titles such as `Photo from ...` now display as calmer language like `A photo from May 27, 2026`
+- generic `Video Clip` titles now display as `A video memory from ...`
+- generic import-style descriptions now display as `Saved in our private archive.`
+- photo and video cards now expose type, date, title, and support copy at rest instead of hiding context until hover
+- these are display-only transforms; saved memory data, edit fields, and media paths remain unchanged
+
+Missing-media presentation:
+
+- cards now request the original saved media path first and only switch into an unavailable state after the real load fails
+- unavailable photos use an inline SVG placeholder, clear private-memory status text, and warm supporting copy
+- unavailable videos keep their card structure, then open a calm unavailable panel in the modal instead of appending a harsh technical suffix to the emotional title
+- the video viewer still logs the real failed media path with `[Media] Video failed to load: ...`
+
+Filter and viewer results:
+
+- authenticated Jaylan verification confirmed `114` total media memories, `79` photos, and `35` videos
+- the protected route stayed on `/pages/media.html` with no auth redirect loop and no permission-denied state
+- the photo lightbox opened from the first unavailable photo with the display title preserved, a meaningful private-photo status, and both edit/delete controls still present
+- the video modal opened from the first unavailable video with the display title/date preserved, the unavailable panel visible, and both edit/delete controls still present
+- modal close controls continued working
+
+Authenticated browser result:
+
+- the refined gallery now reads more like a curated private archive than a raw media inventory on desktop
+- no auth, sync, rules, route, or memory-data changes were introduced
+- no private media was added to tracked files or `public/`
+- after a real reload, the gallery console stayed limited to the honest video-load warning; the earlier autoplay-noise log was removed
+
+Mobile result:
+
+- a `390x844` mobile snapshot was generated from the authenticated rendered gallery DOM and reviewed in a separate headless Chrome pass
+- the gallery stayed at one column with no horizontal overflow
+- the toolbar stacked vertically, tabs left-aligned cleanly, and the card width stayed within the viewport
+
+What remained unchanged:
+
+- `core/memories.json` and `public/core/memories.json`
+- auth, sync, Firestore rules, Storage rules, routes, and localStorage schema
+- gallery filter logic, memory ordering, edit/delete wiring, and the global `openLightbox` / `openVideoPlayer` contracts
+
+Remaining gallery risks:
+
+- in this local workspace, none of the `79` photo refs or `35` video refs currently exist on disk, so only the unavailable-media path was truly runtime-tested
+- the normal available-media lightbox/video path remains behaviorally preserved in code, but it was not re-proven with a real local file in this run
+- Chrome still surfaced a generic extension-style “message channel closed” error during one earlier browser-control pass; it did not trace to app source and did not reproduce after the final reload path
+
+Next recommended Phase 11 batch:
+
+- pause further gallery changes until this live refinement is visually approved, then choose either a narrow gallery viewer/mobile polish pass or the next isolated surface cleanup without touching sync, auth, or memory data

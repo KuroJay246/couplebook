@@ -23,12 +23,42 @@
         </div>
       </header>
 
-      <!-- Gallery Filter Tabs -->
-      <div class="media-tabs">
-        <button class="tab-btn active" data-filter="all">All Media</button>
-        <button class="tab-btn" data-filter="photos">📷 Photos</button>
-        <button class="tab-btn" data-filter="videos">🎥 Videos</button>
-      </div>
+      <section class="glass-card gallery-story-entrance">
+        <div class="gallery-story-copy">
+          <p class="gallery-story-label">Our visual archive</p>
+          <h2 class="gallery-story-title">Moments we kept close</h2>
+          <p class="gallery-story-text">Photos, videos, and private keepsakes from your story stay visible here, even when the original media lives only on the original device.</p>
+        </div>
+        <div class="gallery-story-stats">
+          <div class="gallery-story-stat">
+            <span class="gallery-story-stat-value" id="gallery-stat-all">0</span>
+            <span class="gallery-story-stat-label">moments with media</span>
+          </div>
+          <div class="gallery-story-stat">
+            <span class="gallery-story-stat-value" id="gallery-stat-photos">0</span>
+            <span class="gallery-story-stat-label">photos</span>
+          </div>
+          <div class="gallery-story-stat">
+            <span class="gallery-story-stat-value" id="gallery-stat-videos">0</span>
+            <span class="gallery-story-stat-label">video memories</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="glass-card gallery-toolbar">
+        <div class="gallery-toolbar-copy">
+          <p class="gallery-toolbar-label">Collection view</p>
+          <h2 class="gallery-filter-summary" id="gallery-filter-summary">Loading your archive...</h2>
+          <p class="gallery-filter-detail" id="gallery-filter-detail">Photos, videos and private memories from your story.</p>
+        </div>
+
+        <!-- Gallery Filter Tabs -->
+        <div class="media-tabs" aria-label="Gallery filters">
+          <button class="tab-btn active" data-filter="all">All Media</button>
+          <button class="tab-btn" data-filter="photos">📷 Photos</button>
+          <button class="tab-btn" data-filter="videos">🎥 Videos</button>
+        </div>
+      </section>
 
       <!-- Gallery Grid -->
       <div class="gallery-grid" id="gallery-container">
@@ -43,6 +73,7 @@
       <img src="" alt="Lightbox image" class="lightbox-content" id="lightbox-image">
       <div class="lightbox-caption-container" style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem; margin-top: 1rem;">
         <div class="lightbox-caption" id="lightbox-caption">Caption text</div>
+        <div class="gallery-lightbox-status" id="lightbox-status" hidden>Story preserved — image stays private.</div>
         <div style="display: flex; gap: 0.5rem;">
           <button class="btn btn-danger" id="btn-delete-lightbox" style="font-size: 0.8rem; padding: 0.4rem 1.25rem;">🗑️ Delete</button>
           <button class="btn btn-secondary" id="btn-edit-lightbox" style="font-size: 0.8rem; padding: 0.4rem 1.25rem; border-color: var(--color-shared); color: var(--color-shared);">✏️ Edit</button>
@@ -61,9 +92,19 @@
           <video id="gallery-video-player" controls style="width: 100%; height: auto; max-height: 70vh; outline: none;">
             Your browser does not support the video tag.
           </video>
+          <div class="gallery-video-unavailable" id="video-modal-unavailable" hidden>
+            <div class="gallery-video-unavailable-copy">
+              <p class="gallery-video-unavailable-label">Private video stored locally</p>
+              <h4 class="gallery-video-unavailable-title">This video remains on the original device.</h4>
+              <p class="gallery-video-unavailable-text">The story stays visible here without copying the original private file into the clean app shell.</p>
+            </div>
+          </div>
         </div>
         <div class="modal-footer" style="background: #0d0f14; border-top: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; width: 100%;">
-          <span style="font-size: 0.85rem; color: var(--color-muted);" id="video-modal-date">Date</span>
+          <div class="gallery-video-meta">
+            <span style="font-size: 0.85rem; color: var(--color-muted);" id="video-modal-date">Date</span>
+            <span class="gallery-video-status" id="video-modal-status" hidden>Media unavailable in this environment.</span>
+          </div>
           <div style="display: flex; gap: 0.5rem;">
             <button class="btn btn-danger" id="btn-delete-video" style="font-size: 0.8rem; padding: 0.4rem 1.25rem;">🗑️ Delete</button>
             <button class="btn btn-secondary" id="btn-edit-video" style="font-size: 0.8rem; padding: 0.4rem 1.25rem; border-color: var(--color-shared); color: var(--color-shared);">✏️ Edit</button>

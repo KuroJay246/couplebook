@@ -94,6 +94,29 @@ Jaylan was successfully tested in a real browser session after correcting the li
 
 ### Latest Workstream Run Summary
 
+- starting commit: `e34591a3eaeac2007203aaf058c43dd7c8d92346`
+- Phase 9 track: the repo started with exactly one approved dirty file in `UI_REDESIGN_AND_PROTOTYPE_MASTER.md`, the gallery-scope checkpoint diff was reviewed cleanly, `npm run check:all` passed before implementation, and that planning checkpoint was closed and pushed as `Document live gallery refinement scope`
+- Phase 10 track: live sync work was intentionally skipped again and both `core/firestoreSync.js` files remained untouched throughout the gallery batch
+- Phase 11 track: the controlled live gallery refinement shipped as a presentation-only pass across the media page structure, renderer language, unavailable-media states, and gallery-specific responsive layout
+- Phase 11 result: `/pages/media.html` stayed on the protected route in the authenticated Jaylan session with no redirect loop or permission-denied state, `photos` still showed `79`, `videos` still showed `35`, visible-at-rest card context replaced hover-only metadata, and unavailable local media now resolves into intentional private-memory placeholders instead of blank gray boxes
+- checks run in this run: `git status --short --branch`, `git diff --stat`, repeated `npm run check:all`, source review for gallery contracts, authenticated Chrome verification for gallery filters/lightbox/video modal, route verification through the local server, and a separate `390x844` mobile snapshot review generated from the authenticated rendered DOM
+- browser sanity result: the gallery now feels much less like a raw import wall, the unavailable photo lightbox and unavailable video modal both present graceful private-memory states, desktop overflow stayed clean, and the mobile snapshot showed no horizontal overflow
+- commits completed in this run:
+  - `Document live gallery refinement scope`
+  - `Refine live gallery experience`
+- deploy activity: none
+- Gather Savor inspected read-only: unchanged
+- Couple Book browser inspected: authenticated Chrome session reused for gallery verification
+- private media touched: no
+- smoke status: Jaylan approved-account smoke remains `PASS`, partner remains not tested, and overall approved-account smoke remains honestly `HOLD`
+- remaining top gate: partner approved-account smoke plus the still-blocked live sync replacement
+- next recommended track actions:
+  - Phase 9: keep smoke status honest and continue rejecting any unapproved private-media/runtime drift
+  - Phase 10: keep live sync replacement blocked until partner smoke passes
+  - Phase 11: wait for visual approval of this gallery batch, then choose the next narrow surface-specific polish without touching auth, sync, or memory data
+
+### Prior Workstream Run Summary
+
 - starting commit: `de9f6965c46fd951eb21f3a78f88530dc7595181`
 - Phase 9 track: safety baseline stayed green, `npm run check:all` passed across the Favorites correction and the timeline closeout gate, the authenticated Favorites runtime error was reproduced as `TypeError: Cannot read properties of undefined (reading 'food')` in `js/favorites.js:36`, and the fix was already committed cleanly as `Fix Favorites runtime error`
 - Phase 9 correction: both Favorites runtime files now normalize the stored object on read, preserve unknown branches, self-heal empty or partial favorites data back to the expected `jaylan` / `omia` category arrays, and render the empty state without changing storage keys, auth, sync, or Firestore rules
@@ -116,7 +139,7 @@ Jaylan was successfully tested in a real browser session after correcting the li
   - Phase 10: keep live sync replacement blocked until smoke passes
   - Phase 11: begin the controlled live gallery refinement baseline now that the timeline batch is documented and landed cleanly
 
-### Prior Workstream Run Summary
+### Earlier Workstream Run Summary
 
 - starting commit: `bf29ec112a33de6dbb34a98411594757c1ee4226`
 - Phase 9 track: safety baseline stayed green, `npm run check:all` passed before planning and will be re-run for closeout, Jaylan approved-account smoke remains `PASS`, partner approved-account smoke remains not tested, and overall smoke remains honestly `HOLD`
@@ -136,7 +159,7 @@ Jaylan was successfully tested in a real browser session after correcting the li
   - Phase 10: keep live sync replacement blocked until smoke passes
   - Phase 11: if this planning batch stays stable, use the documented next live batch for a narrow timeline card-language/class pass only
 
-### Earlier Workstream Run Summary
+### Older Workstream Run Summary
 
 - starting commit: `ec9774e590975219e12a71c0a41e9487958809a9`
 - Phase 9 track: safety baseline stayed green again, `npm run check:all` passed before and after the missing-media presentation pass, Jaylan approved-account smoke remains `PASS`, partner approved-account smoke remains not tested, and overall smoke remains honestly `HOLD`
