@@ -13,6 +13,7 @@ Purpose:
 
 - explore the future protected Couple Book shell direction
 - test story-first information hierarchy
+- model chapter-led timeline and curated gallery ideas safely before live edits
 - keep design work separate from the live static app
 
 Reference docs:

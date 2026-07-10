@@ -767,3 +767,156 @@ While smoke is `HOLD`:
 If smoke becomes `PASS` and sync risk is under control:
 
 - move from dashboard hierarchy cleanup into the first timeline/gallery content-structure pass
+
+## Phase 11 Timeline And Gallery Structure Findings
+
+Current live surface inventory:
+
+- `pages/timeline.html` and `public/pages/timeline.html` are still built around one flat `#timeline-cards-wrapper` list plus a top-level `#tags-filter-container` filter bar and the add/detail modal pair
+- `js/timeline.js` pulls every memory through `state.getMemories()`, renders tags directly from `mem.tags`, and binds live behavior through `openMemoryDetails`, `#btn-open-add-memory`, `#add-memory-form`, and the detail/edit/delete button IDs
+- timeline media previews are embedded directly from `mem.media`; image fallback still points at `/assets/photos/anniversary_2025.png`, while special pages depend on the existing `legacy.html?module=${pageUrl}` entry path
+- `pages/media.html` and `public/pages/media.html` are built around one `#gallery-container` grid, one `.media-tabs` filter row, one photo lightbox, one video modal, and one shared edit modal
+- `js/media.js` derives gallery entries by filtering memories that already have `mem.media`, then branches into photo or video presentation through `openLightbox` and `openVideoPlayer`
+- current CSS in `css/pages.css` and `public/css/pages.css` treats both pages as repeated utility cards and hover overlays; the selectors that matter most today are `.timeline-card`, `.timeline-dot`, `.timeline-media-preview`, `.media-tabs`, `.gallery-grid`, `.gallery-item`, `.gallery-overlay`, `.modal-overlay`, and `.lightbox-overlay`
+
+Why the current live experience still reads like inventory:
+
+- the dataset is mostly import-shaped: `core/memories.json` currently holds `114` entries, but `111` still use auto-generated titles and generic descriptions
+- timeline cards are chronological, but every item is rendered with nearly the same weight, so the page reads like a stack of records instead of chapters or milestones
+- the add/edit/delete controls and preset local media picker are useful, but they make both surfaces feel more like tools than a keepsake experience
+- gallery presentation is primarily “all media with tabs,” so photos and videos are separated by type only, not by emotional meaning, collection, or relationship context
+- hover-led gallery overlays keep caption context hidden until interaction, which reinforces the feeling of browsing files rather than revisiting a story
+
+What already feels worth preserving:
+
+- chronology already exists, so the future timeline does not need a different source of truth to become more story-led
+- special-page memories already act like real milestone beats and should remain distinct inside the story flow
+- the current lightbox/video modal split is still a usable behavioral base for later curated gallery work
+- the existing local-only boundary is honest: the app still requests real `mem.media` paths first and then falls back when files are absent
+
+Safest future improvement points:
+
+- reorder visual emphasis before rewriting behavior: featured chapter framing, milestone grouping, and softer section language can happen before any data-model work
+- keep filters/search as quiet support below the main story or collection framing rather than the first thing the page announces
+- improve empty and missing-media presentation before deeper gallery or timeline restructuring if the next live batch needs to stay small
+- keep special-page entries wired through the current `legacy.html` path until a later approved route strategy exists
+
+Selectors, contracts, and behaviors that must not break in later live work:
+
+- timeline: `#timeline-cards-wrapper`, `#tags-filter-container`, `#add-memory-modal`, `#detail-memory-modal`, `#add-memory-form`, `#btn-open-add-memory`, `#btn-close-add-modal`, `#btn-delete-memory`, `#btn-edit-memory`, and the global `openMemoryDetails`
+- gallery: `#gallery-container`, `.media-tabs .tab-btn`, `#gallery-lightbox`, `#gallery-video-modal`, `#gallery-video-player`, `#add-memory-modal`, `#add-memory-form`, `#btn-delete-lightbox`, `#btn-delete-video`, and the globals `openLightbox` / `openVideoPlayer`
+- data assumptions: `mem.id`, `mem.title`, `mem.description`, `mem.date`, `mem.media`, `mem.isVideo`, `mem.tags`, `mem.isSpecialPage`, and `mem.pageUrl`
+- route and module assumptions: `legacy.html?module=...`, the existing static route layout, and the current localStorage-first state flow
+
+Missing-media considerations:
+
+- timeline and gallery still attempt the original local media path first, so real absent private files will continue to produce honest 404s until the data and media strategy change later
+- the gallery already degrades more gracefully than the timeline because it can fall back to `UserStore.FALLBACK_IMAGE` and hide failed video thumbnails
+- timeline still needs a later approved presentation pass if missing local media should read as intentional rather than broken
+
+Stop conditions for future live timeline/gallery work:
+
+- stop if any batch requires changing `core/memories.json`, `public/core/memories.json`, auth logic, route behavior, localStorage behavior, or either `core/firestoreSync.js`
+- stop if a batch would require recommitting private media, creating public copies of local-only assets, or widening Firebase permissions
+- stop if root/public mirrors drift or if a change breaks the existing selectors and modal bindings listed above
+- authenticated visual smoke was not re-claimed in this planning pass; route checks and source review were used instead
+
+## Phase 11 Timeline And Gallery Story Model
+
+Timeline should feel like:
+
+- a featured chapter entrance instead of a flat first card
+- “this season of us” sections that cluster related memories without mutating the underlying dataset yet
+- milestone moments that give special-page entries and real relationship beats more ceremonial weight
+- everyday memories that still preserve smaller imported entries, but with calmer card language and better context framing
+- resurfaced moments that can bring one older memory forward without rebuilding the whole renderer
+- quiet filters and future search that support browsing without becoming the product identity
+
+Gallery should feel like:
+
+- a curated visual archive that starts with one collection or featured spread
+- photo and video grouping that reflects mood, chapter, or collection before raw file type alone
+- preserved private-media placeholders that keep story context visible when a local-only asset is unavailable
+- a browsing flow that points back to story chapters and special moments instead of behaving like a detached media wall
+- special-page media references that acknowledge birthday, Valentine’s, and confession without copying their excluded companion assets
+
+Suggested future structure:
+
+Timeline:
+
+- Featured chapter
+- This season of us
+- Milestone moments
+- Everyday memories
+- Special pages / legacy moments
+- Quiet filters/search
+
+Gallery:
+
+- Featured collection
+- Photos
+- Videos
+- Local-only/private placeholders
+- Special-page media references
+- Empty/missing-media states
+
+Do Not Do Yet:
+
+- do not change memory data
+- do not migrate media
+- do not initialize Storage
+- do not rewrite timeline/gallery renderers wholesale
+- do not introduce React/Vite
+- do not create public copies of private media
+
+## Next Small Live Timeline/Gallery Batch Plan
+
+Chosen option: Option A, timeline card-language/class pass only.
+
+Why this is the safest next live batch:
+
+- it can improve the page that most directly needs story framing without touching gallery media behavior at the same time
+- it should stay limited to markup/class language inside the existing timeline renderer and shared page CSS
+- it does not require data migration, new routes, media uploads, or changes to the current modal/edit flow
+
+Likely files touched:
+
+- `js/timeline.js`
+- `public/js/timeline.js`
+- `css/pages.css`
+- `public/css/pages.css`
+- optionally `pages/timeline.html` and `public/pages/timeline.html` only if a small non-breaking section wrapper is truly needed
+
+What must not change:
+
+- `state.getMemories()` usage and the current memory-field contract
+- add/edit/delete modal behavior and button IDs
+- `legacy.html?module=...` special-page entry behavior
+- local-only media boundaries and current route structure
+- auth, sync, localStorage, Firestore, and dataset files
+
+Selectors and IDs to preserve:
+
+- `#timeline-cards-wrapper`
+- `#tags-filter-container`
+- `#add-memory-modal`
+- `#detail-memory-modal`
+- `#add-memory-form`
+- `#btn-open-add-memory`
+- `#btn-delete-memory`
+- `#btn-edit-memory`
+- `.timeline-card`
+- `.timeline-media-preview`
+
+QA checks required:
+
+- `npm run check:all`
+- route checks for `/pages/timeline.html`, `/pages/media.html`, and the existing protected-path sanity set
+- mirror alignment review between root and `public/`
+- quick local browser sanity on timeline rendering, without claiming partner smoke that was not run
+
+Stop conditions:
+
+- stop if the batch starts requiring memory-record rewrites, new media copies, route changes, or renderer rewrites
+- stop if timeline selector contracts need to be broken to achieve the layout
+- stop if a “language-only” pass starts expanding into gallery behavior, sync, or auth work

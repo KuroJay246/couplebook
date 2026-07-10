@@ -94,6 +94,26 @@ Jaylan was successfully tested in a real browser session after correcting the li
 
 ### Latest Workstream Run Summary
 
+- starting commit: `bf29ec112a33de6dbb34a98411594757c1ee4226`
+- Phase 9 track: safety baseline stayed green, `npm run check:all` passed before planning and will be re-run for closeout, Jaylan approved-account smoke remains `PASS`, partner approved-account smoke remains not tested, and overall smoke remains honestly `HOLD`
+- Phase 10 track: live sync work was intentionally skipped again and both `core/firestoreSync.js` files remained untouched
+- Phase 11 track: inspected the live timeline/gallery structure, documented why both pages still feel closer to raw inventory than a curated memory-book flow, and aligned the non-live shell prototype around chapter-led timeline and collection-led gallery direction without editing live timeline/gallery files or memory data
+- checks run so far: `git status --short --branch`, `git rev-parse main`, `git rev-parse origin/main`, `npm run check:all`, master-doc review, live timeline/gallery source review, prototype review, local dataset shape review, and dev-server verification
+- browser sanity result: route and source review were used for this planning batch; an in-app browser attempt initially hit localhost connection refusal before the dev server was restarted, so authenticated visual smoke was not re-claimed or overstated
+- commits planned in this run:
+  - `Plan timeline and gallery story structure`
+- deploy activity: none
+- Gather Savor inspected read-only: unchanged from prior comparison work
+- Couple Book browser inspected: limited planning-only check
+- private media touched: no
+- remaining top gate: partner approved-account smoke plus blocked-behavior re-check in a fresh post-rules browser session
+- next recommended track actions:
+  - Phase 9: keep smoke status honest and run the partner approved-account smoke when credentials/session are available
+  - Phase 10: keep live sync replacement blocked until smoke passes
+  - Phase 11: if this planning batch stays stable, use the documented next live batch for a narrow timeline card-language/class pass only
+
+### Prior Workstream Run Summary
+
 - starting commit: `ec9774e590975219e12a71c0a41e9487958809a9`
 - Phase 9 track: safety baseline stayed green again, `npm run check:all` passed before and after the missing-media presentation pass, Jaylan approved-account smoke remains `PASS`, partner approved-account smoke remains not tested, and overall smoke remains honestly `HOLD`
 - Phase 10 track: live sync work was intentionally skipped again and both `core/firestoreSync.js` files remained untouched

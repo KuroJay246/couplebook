@@ -260,7 +260,12 @@ body {
 }
 
 .context-rail,
-.workflow-strip {
+.workflow-strip,
+.story-lead,
+.story-columns,
+.memory-lane,
+.gallery-lead,
+.gallery-support-grid {
   display: grid;
   gap: 1rem;
   margin-top: 1rem;
@@ -272,6 +277,17 @@ body {
 
 .workflow-strip {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.story-lead,
+.gallery-lead {
+  grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+}
+
+.story-columns,
+.memory-lane,
+.gallery-support-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .stack {
@@ -353,6 +369,10 @@ body {
 }
 
 .chapter-card,
+.featured-story-card,
+.featured-collection-card,
+.story-lane-card,
+.memory-example-card,
 .person-card,
 .gallery-card,
 .moment-card,
@@ -398,6 +418,22 @@ body {
   grid-column: span 2;
 }
 
+.featured-story-card,
+.featured-collection-card {
+  background:
+    linear-gradient(180deg, rgba(255, 248, 241, 0.98), rgba(248, 228, 235, 0.96));
+}
+
+.featured-story-card h4,
+.featured-collection-card h4,
+.story-lane-card h4,
+.memory-example-card h4 {
+  margin: 0.45rem 0 0.75rem;
+  font-family: var(--serif);
+  font-size: 1.55rem;
+  line-height: 1.12;
+}
+
 .story-flow,
 .chapter-rail,
 .gallery-curation,
@@ -430,6 +466,62 @@ body {
   flex-wrap: wrap;
   gap: 0.65rem;
   margin: 0.95rem 0 0.85rem;
+}
+
+.story-meta-pills,
+.prototype-toolbar,
+.memory-example-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.story-meta-pills {
+  margin-top: 1rem;
+}
+
+.prototype-toolbar {
+  margin: 0.95rem 0 0.85rem;
+}
+
+.memory-example-meta {
+  margin-top: 1rem;
+}
+
+.story-meta-pills span,
+.memory-example-meta span,
+.toolbar-chip {
+  border-radius: 999px;
+  padding: 0.55rem 0.8rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--accent-deep);
+  background: rgba(255, 255, 255, 0.76);
+  border: 1px solid rgba(92, 54, 63, 0.08);
+}
+
+.toolbar-chip-active {
+  color: white;
+  background: linear-gradient(135deg, #9f4f65, #6d2f42);
+  border-color: transparent;
+}
+
+.placeholder-frame {
+  display: grid;
+  place-items: center;
+  min-height: 12rem;
+  margin: 1rem 0 0.85rem;
+  border-radius: 22px;
+  border: 1px dashed rgba(92, 54, 63, 0.22);
+  background:
+    linear-gradient(135deg, rgba(255, 247, 241, 0.9), rgba(247, 227, 234, 0.76));
+  color: var(--accent-deep);
+  text-align: center;
+  font-weight: 700;
+}
+
+.quiet-toolbar-card {
+  align-self: stretch;
 }
 
 .queue-list {
@@ -584,6 +676,11 @@ body {
   .hero,
   .context-rail,
   .workflow-strip,
+  .story-lead,
+  .story-columns,
+  .memory-lane,
+  .gallery-lead,
+  .gallery-support-grid,
   .grid,
   .special-moments-strip,
   .pair-grid,
