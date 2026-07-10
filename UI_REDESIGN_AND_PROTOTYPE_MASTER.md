@@ -920,3 +920,112 @@ Stop conditions:
 - stop if the batch starts requiring memory-record rewrites, new media copies, route changes, or renderer rewrites
 - stop if timeline selector contracts need to be broken to achieve the layout
 - stop if a “language-only” pass starts expanding into gallery behavior, sync, or auth work
+
+## Phase 11 Live Timeline Card Pass Scope
+
+Exact files likely touched:
+
+- `js/timeline.js`
+- `public/js/timeline.js`
+- `css/pages.css`
+- `public/css/pages.css`
+- `pages/timeline.html`
+- `public/pages/timeline.html`
+
+Exact card-language changes allowed in this batch:
+
+- calmer page-header wording so the page reads more like a shared chronology than a utility list
+- display-only title treatment for clearly imported entries such as `Photo from ...` and `Video Clip ...`
+- display-only supporting text for generic archive descriptions without mutating saved memory content
+- quieter status labels for chronology, tags, controls, and special-page entry points
+- warm missing-local-media wording that preserves title and date while making the private-local boundary explicit
+
+Selectors and behaviors that must remain unchanged:
+
+- `#timeline-cards-wrapper`
+- `#tags-filter-container`
+- `#add-memory-modal`
+- `#detail-memory-modal`
+- `#add-memory-form`
+- `#btn-open-add-memory`
+- `#btn-close-add-modal`
+- `#btn-delete-memory`
+- `#btn-edit-memory`
+- `.timeline-card`
+- `.timeline-media-preview`
+- global `openMemoryDetails`
+- chronological ordering from `state.getMemories()`
+- tag filter behavior
+- add/edit/delete modal flow
+- `legacy.html?module=${pageUrl}` special-page routing
+
+Missing-media behavior to preserve or improve:
+
+- keep requesting the original local media path first so the app remains honest about local-only files
+- do not copy private media into `public/`
+- image and video failures may switch into a warm placeholder treatment similar to the dashboard
+- title, date, tags, and controls must stay visible even when media is unavailable
+
+Stop conditions:
+
+- stop if the batch requires mutating `core/memories.json` or writing transformed wording back to storage
+- stop if filters, chronology, CRUD controls, or special-page links regress
+- stop if the work expands into gallery redesign, mobile redesign, sync/auth changes, or new route changes
+
+## Phase 11 Live Timeline Card Pass Summary
+
+Files touched:
+
+- `js/timeline.js`
+- `public/js/timeline.js`
+- `css/pages.css`
+- `public/css/pages.css`
+- `pages/timeline.html`
+- `public/pages/timeline.html`
+
+What changed visually:
+
+- the page header now reads more like a story entrance than a utility screen
+- generic imported titles such as `Photo from ...` and `Video Clip ...` are rewritten for display only into calmer memory language
+- generic archive descriptions now read as private archive copy instead of raw import text
+- cards now use quieter status chips, cleaner actions, and a more deliberate internal hierarchy
+- missing local media now degrades into a warm private-memory placeholder instead of a cold broken preview
+
+Authenticated verification result:
+
+- the approved Jaylan session stayed on `/pages/timeline.html` with no redirect loop and no permission-denied state
+- chronology remained newest-first in the checked card sequence
+- the `special` filter still reduced the list to the three special entries and `all` restored the full list
+- the add-memory modal still opened from `#btn-open-add-memory`
+- the detail modal still opened from the card action and still exposed `#btn-edit-memory` and `#btn-delete-memory`
+- special-page entries still rendered through the existing `legacy.html?module=...` path
+- browser console logs stayed clean during the authenticated checks
+
+Missing-media behavior:
+
+- unavailable local photo and video files still attempt the original saved path first
+- failed previews now switch into an intentional private-memory fallback state with preserved title, date, tags, and actions
+- no private media was copied into `public/` and no saved media paths were rewritten
+
+Mobile-width observation:
+
+- the phone-width check at `390x844` showed no horizontal overflow
+- timeline cards stayed inside the viewport and action controls remained usable
+- the filter toolbar wraps correctly, but it becomes tall and visually heavy on mobile, so its rhythm can still be improved in a later gallery/timeline batch
+
+What remained unchanged:
+
+- `core/memories.json` and `public/core/memories.json`
+- auth, sync, Firestore rules, Storage rules, routes, and localStorage schema
+- chronological ordering logic and existing CRUD wiring
+- special-page routing and legacy module behavior
+
+Remaining risks:
+
+- the timeline is calmer, but 114 cards still make the page feel repetitive over long scroll depth
+- the mobile filter block still takes too much vertical space
+- the gallery remains the weakest main-app surface and is still the next highest-value presentational target
+
+Next recommended Phase 11 batch:
+
+- begin the controlled live gallery refinement batch, focused on hierarchy, collection framing, and graceful local-only media states without touching data, media storage, auth, or sync

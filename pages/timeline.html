@@ -19,17 +19,17 @@
         <div class="page-heading">
           <p class="page-eyebrow">Story Lane</p>
           <h1 class="page-title">📖 Our Story</h1>
-          <p class="page-subtitle">A chronological collection of the milestones, clips, and small moments that shaped this relationship.</p>
+          <p class="page-subtitle">A quieter chronology of milestones, saved clips, and little moments that still shape this relationship.</p>
         </div>
         <div class="page-actions">
-          <span class="utility-chip">Chronological view</span>
+          <span class="utility-chip">Story order</span>
           <button class="btn btn-primary" id="btn-open-add-memory">+ Add Memory</button>
         </div>
       </header>
 
       <!-- Tag Filter Bar -->
-      <div class="glass-card card-utility filter-toolbar">
-        <span class="filter-toolbar-label">Filter by Tag:</span>
+      <div class="glass-card card-utility filter-toolbar timeline-filter-toolbar">
+        <span class="filter-toolbar-label">Browse by tag:</span>
         <div id="tags-filter-container" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
           <button class="tab-btn active" data-tag="all">All</button>
           <!-- Dynamic tags will be injected here -->
@@ -41,7 +41,7 @@
         <div class="timeline-line"></div>
         <div id="timeline-cards-wrapper">
           <!-- Dynamically populated timeline cards -->
-          <p style="text-align: center; color: var(--color-muted); padding: 3rem 0;">Loading timeline...</p>
+          <p style="text-align: center; color: var(--color-muted); padding: 3rem 0;">Opening your story...</p>
         </div>
       </div>
     </main>
