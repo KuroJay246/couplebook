@@ -10,6 +10,7 @@ const scripts = [
   'check-sync-model.js',
   'check-prototype.js',
   'check-docs.js',
+  'check-privacy.js',
   'check-routes.js'
 ];
 

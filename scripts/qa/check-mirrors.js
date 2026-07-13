@@ -5,10 +5,13 @@ const { REPO_ROOT, fail, log } = require('./lib');
 const explicitPairs = [
   ['js/app.js', 'public/js/app.js'],
   ['js/auth.js', 'public/js/auth.js'],
+  ['js/legacy.js', 'public/js/legacy.js'],
   ['js/settings.js', 'public/js/settings.js'],
   ['core/healthCheck.js', 'public/core/healthCheck.js'],
   ['core/firestoreSync.js', 'public/core/firestoreSync.js'],
-  ['core/state.js', 'public/core/state.js']
+  ['core/state.js', 'public/core/state.js'],
+  ['pages/contract.html', 'public/pages/contract.html'],
+  ['pages/legacy.html', 'public/pages/legacy.html']
 ];
 
 function normalizeText(text) {
