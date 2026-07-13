@@ -232,7 +232,7 @@ function buildHeroSection({ approvedUser, participants, recentMemories, sourceSt
       { href: '/gallery', label: 'Open gallery', tone: 'secondary' },
     ],
     notes: [
-      `${participantCount || 0} ${pluralize(participantCount || 0, 'voice')} in view`,
+      participantCount >= 2 ? `${participantCount} voices in view` : 'Shared profile still pending',
       `${unavailableCount} ${pluralize(unavailableCount, 'source')} still pending`,
       'Approved archive access only',
     ],

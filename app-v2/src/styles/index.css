@@ -305,6 +305,416 @@ code {
     repeating-linear-gradient(90deg, rgba(140, 97, 71, 0.03) 0 1px, transparent 1px 26px);
 }
 
+.dashboard-page {
+  display: grid;
+  gap: 18px;
+}
+
+.dashboard-hero {
+  display: grid;
+  gap: 20px;
+}
+
+.dashboard-hero-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.82fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.dashboard-hero-copy {
+  display: grid;
+  gap: 16px;
+}
+
+.dashboard-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.dashboard-hero-aside {
+  display: grid;
+  gap: 14px;
+}
+
+.dashboard-now-card,
+.source-card,
+.milestone-card,
+.supporting-link-card,
+.story-link-card,
+.memory-card,
+.birthday-card,
+.dashboard-inline-alert {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255, 252, 246, 0.84);
+}
+
+.dashboard-now-card,
+.dashboard-inline-alert {
+  padding: 16px 18px;
+}
+
+.dashboard-now-card {
+  display: grid;
+  gap: 8px;
+}
+
+.dashboard-now-card strong {
+  font-family: "Georgia", "Times New Roman", serif;
+  font-size: clamp(1.85rem, 4vw, 2.45rem);
+  line-height: 1;
+}
+
+.dashboard-now-card p {
+  color: var(--ink-soft);
+}
+
+.dashboard-note-list,
+.warning-ledger ul,
+.birthday-card-list,
+.memory-card-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dashboard-note-list {
+  display: grid;
+  gap: 10px;
+}
+
+.dashboard-note-list li {
+  padding: 12px 14px;
+  border-left: 3px solid var(--accent-soft);
+  background: rgba(232, 221, 206, 0.54);
+  color: var(--graphite);
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.34fr) minmax(0, 1fr);
+  gap: 18px;
+}
+
+.dashboard-panel {
+  display: grid;
+  gap: 18px;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(251, 247, 241, 0.98), rgba(244, 237, 228, 0.98)),
+    repeating-linear-gradient(0deg, rgba(111, 93, 74, 0.03) 0 1px, transparent 1px 24px);
+  box-shadow: var(--shadow-soft);
+}
+
+.dashboard-panel-supporting {
+  grid-column: 1 / -1;
+}
+
+.dashboard-section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.dashboard-section-heading > div {
+  display: grid;
+  gap: 10px;
+}
+
+.dashboard-section-heading h2 {
+  font-size: clamp(1.55rem, 3vw, 2.15rem);
+  line-height: 1.08;
+}
+
+.dashboard-section-heading p,
+.milestone-group-heading p,
+.story-link-card p,
+.source-card p,
+.supporting-link-card p,
+.memory-card p,
+.dashboard-empty-block p,
+.dashboard-inline-alert p,
+.warning-ledger li {
+  color: var(--ink-soft);
+  line-height: 1.66;
+}
+
+.dashboard-empty-block {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+  border: 1px dashed var(--line-strong);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.38);
+}
+
+.memory-card-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.memory-card {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+}
+
+.memory-card-meta,
+.source-card-header,
+.milestone-card-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.memory-card-date,
+.memory-card-kind,
+.source-card-status,
+.milestone-card-header span,
+.birthday-card span,
+.source-card-meta,
+.supporting-link-label {
+  color: var(--muted);
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.memory-card h3,
+.milestone-group-heading h3,
+.warning-ledger h3 {
+  font-size: 1.16rem;
+  line-height: 1.18;
+}
+
+.memory-card-footnote,
+.milestone-summary {
+  color: var(--graphite);
+  font-size: 0.88rem;
+}
+
+.milestone-stack,
+.milestone-group {
+  display: grid;
+  gap: 14px;
+}
+
+.milestone-card-grid,
+.source-status-grid,
+.supporting-link-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.milestone-card-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.milestone-card {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+}
+
+.milestone-card-header strong,
+.birthday-card strong,
+.story-link-card strong,
+.source-card strong,
+.supporting-link-card strong {
+  font-family: "Georgia", "Times New Roman", serif;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.milestone-counter-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.milestone-counter-box {
+  display: grid;
+  gap: 4px;
+  padding: 12px 8px;
+  border-radius: 12px;
+  background: rgba(232, 221, 206, 0.6);
+  text-align: center;
+}
+
+.milestone-counter-box span {
+  font-family: "Georgia", "Times New Roman", serif;
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.milestone-counter-box small {
+  color: var(--muted);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.birthday-card-list {
+  display: grid;
+  gap: 12px;
+}
+
+.birthday-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+}
+
+.birthday-card > div,
+.birthday-card-countdown {
+  display: grid;
+  gap: 6px;
+}
+
+.birthday-card-countdown {
+  justify-items: end;
+  text-align: right;
+}
+
+.story-link-list {
+  display: grid;
+  gap: 12px;
+}
+
+.story-link-card,
+.supporting-link-card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 18px;
+  transition: border-color 160ms ease, background-color 160ms ease, transform 160ms ease;
+}
+
+.story-link-card:hover,
+.supporting-link-card:hover {
+  transform: translateY(-1px);
+  border-color: var(--accent-olive);
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.story-link-arrow {
+  color: var(--accent);
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.source-status-toolbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.source-status-copy {
+  display: grid;
+  gap: 8px;
+}
+
+.source-status-pill {
+  display: inline-flex;
+  width: fit-content;
+  padding: 5px 9px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: rgba(232, 221, 206, 0.62);
+  color: var(--graphite);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.source-status-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.source-card {
+  display: grid;
+  gap: 12px;
+  padding: 16px 18px;
+}
+
+.source-card-status {
+  text-align: right;
+}
+
+.source-card-status-ready {
+  color: var(--success);
+}
+
+.source-card-status-empty {
+  color: var(--muted);
+}
+
+.source-card-status-unavailable {
+  color: var(--warning);
+}
+
+.source-card-status-invalid {
+  color: var(--danger);
+}
+
+.source-card-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.warning-ledger {
+  display: grid;
+  gap: 10px;
+  padding-top: 6px;
+  border-top: 1px solid var(--line);
+}
+
+.warning-ledger ul {
+  display: grid;
+  gap: 8px;
+}
+
+.warning-ledger li {
+  padding-left: 16px;
+  position: relative;
+}
+
+.warning-ledger li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.76em;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--warning);
+}
+
+.supporting-link-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.supporting-link-card {
+  display: grid;
+  gap: 8px;
+}
+
 .app-shell h2,
 .brand-panel h1,
 .shell-header h2,
@@ -569,6 +979,15 @@ code {
   .login-hero h1 {
     max-width: none;
   }
+
+  .dashboard-hero-layout,
+  .dashboard-grid,
+  .memory-card-list,
+  .milestone-card-grid,
+  .source-status-grid,
+  .supporting-link-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 860px) {
@@ -603,6 +1022,22 @@ code {
 
   .mobile-nav {
     display: flex;
+  }
+
+  .dashboard-panel {
+    padding: 20px;
+  }
+
+  .dashboard-section-heading,
+  .source-status-toolbar,
+  .birthday-card,
+  .story-link-card {
+    flex-direction: column;
+  }
+
+  .birthday-card-countdown {
+    justify-items: start;
+    text-align: left;
   }
 }
 
@@ -641,6 +1076,14 @@ code {
   .shell-header h2,
   .page-frame h1 {
     font-size: clamp(1.75rem, 8vw, 2.45rem);
+  }
+
+  .dashboard-now-card strong {
+    font-size: clamp(1.7rem, 9vw, 2.15rem);
+  }
+
+  .milestone-counter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

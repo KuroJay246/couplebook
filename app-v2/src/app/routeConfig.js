@@ -2,7 +2,7 @@ export const LOGIN_PATH = '/login'
 export const DEFAULT_AUTHENTICATED_PATH = '/dashboard'
 
 export const protectedRouteMeta = [
-  { path: '/dashboard', label: 'Dashboard', shortLabel: 'Home', title: 'Dashboard', summary: 'A warmer private landing space for the day-to-day story.' },
+  { path: '/dashboard', label: 'Dashboard', shortLabel: 'Home', title: 'Dashboard', summary: 'A story-led private home built on the editorial shell and narrow read-only inputs.' },
   { path: '/timeline', label: 'Timeline', shortLabel: 'Story', title: 'Timeline', summary: 'The relationship story will settle here once legacy reads are connected.' },
   { path: '/gallery', label: 'Gallery', shortLabel: 'Gallery', title: 'Gallery', summary: 'Curated visual memories will move here after the compatibility layer is wired.' },
   { path: '/profile', label: 'Profile', shortLabel: 'Us', title: 'Profile', summary: 'Shared identity and paired profiles stay intentionally private here.' },

@@ -1,11 +1,15 @@
-import { PlaceholderPage } from '../components/PlaceholderPage'
+import { DashboardView } from '../features/dashboard/DashboardView'
+import { useDashboardModel } from '../features/dashboard/useDashboardModel'
 
 export function DashboardPage() {
+  const { compatibilityError, compatibilityState, model, refreshCompatibility } = useDashboardModel()
+
   return (
-    <PlaceholderPage
-      eyebrow="Dashboard"
-      title="Private dashboard placeholder"
-      description="The story-led landing page will be wired after the protected shell is in place."
+    <DashboardView
+      compatibilityError={compatibilityError}
+      compatibilityState={compatibilityState}
+      model={model}
+      onRefresh={refreshCompatibility}
     />
   )
 }
