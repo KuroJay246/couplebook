@@ -1,6 +1,6 @@
 # Firebase Sync And Service Layer
 
-Date: 2026-07-12
+Date: 2026-07-13
 
 ## Current Firestore Surface
 
@@ -28,6 +28,36 @@ The isolated React migration track now has its own Firebase client boundary in `
 
 This migration track does not add a custom backend. The backend/cloud posture remains Firebase Auth plus Firestore with narrow client service modules.
 
+## 2026-07-13 Targeted React Domain-Service Boundary
+
+The app-v2 service layer now separates compatibility reads from future Firestore reads:
+
+- `src/services/userService.js`
+  targeted `users/{uid}` lookup only via `getApprovedUserByUid`
+- `src/services/coupleService.js`
+  future couple-document path contract only; no document creation or reads
+- `src/services/memoryService.js`
+  read-only legacy adapter access plus future memory collection path builder
+- `src/services/favoritesService.js`
+  read-only compatibility access plus future user-document path helper
+- `src/services/profileService.js`
+  read-only compatibility access plus future user-document path helper
+- `src/services/settingsService.js`
+  read-only compatibility access plus future user-document path helper
+- `src/services/contractService.js`
+  read-only compatibility access plus future user-document path helper
+- `src/services/deviceService.js`
+  interface only; no device registration writes
+- `src/services/syncService.js`
+  read-only orchestration contract only; no live sync or write-back
+
+Guardrails now in effect inside app-v2:
+
+- no `getDocs(collection(db, 'users'))`
+- no `onSnapshot(collection(db, 'users'))`
+- no automatic write-back from compatibility reads
+- no reintroduction of the old broad sync model
+
 ## 2026-07-12 Verified Auth And Data Findings
 
 - Firebase identity is email/password only in the current Couple Book runtime.
@@ -47,6 +77,17 @@ This migration track does not add a custom backend. The backend/cloud posture re
 - The public special-page routes now publish neutral placeholder content only. Their original sensitive source files remain outside the Hosting root for later routed reintegration.
 - This branch deliberately does not fake privacy for the old static special pages. The full sensitive content remains deferred to the future protected app architecture.
 
+## 2026-07-13 Secured Static Baseline
+
+That privacy branch is now merged into `main`.
+
+Current baseline truth:
+
+- `contract.html` no longer accepts spoofed `localStorage` as authentication proof
+- the public special-page routes now expose neutral placeholders only
+- the original sensitive special-page source remains preserved outside Hosting in the root `pages/` tree
+- the old collection-wide Firestore sync layer still exists in the rollback app, but it is no longer the approved pattern for app-v2
+
 ## 2026-07-12 Domain Ownership Snapshot
 
 | Domain | Current source of truth | Local state | Firestore state | Notes |
@@ -61,6 +102,23 @@ This migration track does not add a custom backend. The backend/cloud posture re
 | contract acceptance | per-user local flag | `memorybook_contract_accepted_{username}` | `users/{uid}.contractAccepted` | one true anywhere stays true via merge logic |
 | signatures | shared local signature ledger | `memorybook_contract_signatures` | `users/{uid}.signature` | projected from both user docs |
 | devices | mostly cloud-only | optional `memorybook_device_id` read in settings | `devices/{deviceId}` | device registration is currently disabled in auth flow |
+
+## 2026-07-13 Compatibility Source Matrix
+
+| Source | Class | Sensitivity | Current format | Normalized output | Auth requirement | Production eligibility | Read-only | Future owner | Retirement condition |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `memorybook_favorites` | A | private preference data | shared localStorage JSON object | favorites categories by owner | approved shell only | yes, browser-only compatibility read | yes | `favoritesService` | retire when a reviewed routed favorites model replaces legacy storage |
+| `memorybook_profiles` | A | private relationship profile data | shared localStorage JSON object | normalized paired profiles | approved shell only | yes, browser-only compatibility read | yes | `profileService` | retire when profile reads move to the routed domain model only |
+| `memorybook_settings_{username}` | A | private per-user preferences | user-scoped localStorage JSON object | normalized settings state | approved shell only | yes, browser-only compatibility read | yes | `settingsService` | retire when scoped settings live only behind the routed service layer |
+| `memorybook_theme_{username}` / `memorybook_theme` | A | low-to-moderate preference data | raw localStorage strings | normalized theme with explicit fallback warning | approved shell only | yes, browser-only compatibility read | yes | `settingsService` | retire when the shared fallback key is no longer needed |
+| `memorybook_contract_accepted_{username}` | A | private contract status | user-scoped localStorage string flag | normalized contract acceptance state | approved shell only | yes, browser-only compatibility read | yes | `contractService` | retire when contract state is re-owned by the routed domain only |
+| `memorybook_contract_signatures` | A | private signature history | shared localStorage JSON object | normalized signatures by username | approved shell only | yes, browser-only compatibility read | yes | `contractService` | retire when signature history moves to a reviewed protected model |
+| `memorybook_custom_memories` / `memorybook_deleted_memories` / `memorybook_overridden_memories` | A | high sensitivity | shared localStorage JSON objects/arrays | local memory overlays only | approved shell only | yes, browser-only compatibility read | yes | `memoryService` | retire when protected memory reads no longer depend on local overlays |
+| root `core/memories.json` | B | high sensitivity | root JSON file outside app-v2 | normalized memory records through a local-only bridge | approved shell plus localhost-only bridge | no, disabled by default and blocked in production | yes | `memoryService` | retire once protected narrow memory reads replace the file bridge |
+| `users/{uid}` doc fields (`profile`, `favorites`, `settings`, `theme`, `contractAccepted`, `signature`) | C | high sensitivity | targeted Firestore document fields | doc-scoped read models | Firebase Auth plus approved-user gate | yes, only through narrow reads | yes in this phase | corresponding app-v2 domain services | keep until a reviewed Couple Book schema replaces the current user-doc fields |
+| `memorybook_active_session` / `memorybook_active_user` / `memorybook_active_uid` | D | auth-sensitive | raw session residue in localStorage | none; never a compatibility data source | never as auth proof | no | read only for retirement audits only | auth boundary cleanup | retire when routed auth no longer needs legacy session residue |
+| `public/core/memories.json` | D | high sensitivity and publicly exposed | mirrored Hosting JSON file | none; app-v2 must not consume it | not applicable because it is public | no | yes, but do not use | static rollback retirement plan | retire when the static rollback no longer serves mirrored memory JSON |
+| collection-wide `core/firestoreSync.js` `users` reads/listeners | D | high risk | broad list/read/listener pattern | none; forbidden in app-v2 | not allowed | no | no | static rollback retirement plan | retire when the static rollback app is cut over or the old sync layer is removed |
 
 ## Service Files
 
@@ -310,9 +368,9 @@ Smallest useful future boundaries:
 
 The Gather & Savor lesson worth copying is not its event schema. It is the separation between routed UI, auth/provider state, Firebase bootstrap, service calls, and pure helpers.
 
-## Compatibility Adapter Boundary Stubs
+## Compatibility Adapter Boundaries
 
-The React migration track now includes read-only-first adapter stubs in `app-v2/src/data/`:
+The React migration track now includes real read-only adapter boundaries in `app-v2/src/data/`:
 
 - `legacyMemoryAdapter.js`
 - `legacyFavoritesAdapter.js`
@@ -320,7 +378,14 @@ The React migration track now includes read-only-first adapter stubs in `app-v2/
 - `legacySettingsAdapter.js`
 - `legacyContractAdapter.js`
 
-These files currently document the real legacy sources and expected normalized outputs only.
+These files now:
+
+- use dependency-injected browser storage or fetch access
+- normalize malformed values safely
+- return explicit `ready` / `empty` / `unavailable` / `invalid` states
+- stay read-only
+- never grant auth
+- never write back to localStorage or Firestore
 
 They do not:
 
@@ -329,6 +394,17 @@ They do not:
 - rewrite `core/memories.json`
 - grant route access
 - move or upload private media
+
+## Query Safety
+
+app-v2 now includes test guardrails that fail if it introduces:
+
+- `getDocs(collection(db, 'users'))`
+- `onSnapshot(collection(db, 'users'))`
+- compatibility-layer storage writes
+- compatibility-layer Firestore writes
+
+The old static `core/firestoreSync.js` remains part of the rollback app only. It is explicitly not permitted inside app-v2.
 
 ## Next Safe Sync Step
 

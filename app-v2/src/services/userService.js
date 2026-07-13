@@ -11,19 +11,29 @@ export function getUserDocumentRef(uid, firestore = db) {
   return doc(firestore, 'users', uid)
 }
 
-export async function readUserProfileByUid(uid, options = {}) {
-  const getDocument = options.getDocument || getDoc
-  const reference = getUserDocumentRef(uid, options.firestore || db)
-  const snapshot = await getDocument(reference)
-
-  if (!snapshot.exists()) return null
-  const data = snapshot.data() || {}
-
+export function normalizeApprovedUserRecord(uid, data = {}) {
   return {
     uid,
     username: data.username || '',
     profileName: data.profile?.name || '',
     contractAccepted: data.contractAccepted === true,
+    theme: data.theme || null,
+    hasFavorites: !!(data.favorites && Object.keys(data.favorites).length > 0),
+    hasProfile: !!(data.profile && Object.keys(data.profile).length > 0),
     raw: data,
   }
 }
+
+export async function getApprovedUserByUid(uid, options = {}) {
+  const getDocument = options.getDocument || getDoc
+  const getDocumentReference = options.getUserDocumentRef || getUserDocumentRef
+  const reference = getDocumentReference(uid, options.firestore || db)
+  const snapshot = await getDocument(reference)
+
+  if (!snapshot.exists()) return null
+  const data = snapshot.data() || {}
+
+  return normalizeApprovedUserRecord(uid, data)
+}
+
+export const readUserProfileByUid = getApprovedUserByUid

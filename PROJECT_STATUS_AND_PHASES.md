@@ -1,6 +1,6 @@
 # Project Status And Phases
 
-Date: 2026-07-12
+Date: 2026-07-13
 
 ## Current Repo Status
 
@@ -20,15 +20,27 @@ Date: 2026-07-12
 | Lane | Branch | Status |
 | --- | --- | --- |
 | Audit checkpoint | `main` | pushed to `origin/main` at `f8cf2214ee0598f903d1fa6d2e5a585295837e4b` |
-| Static privacy containment | `hotfix/static-privacy-boundaries` | pushed review branch at `b2e4345`; not merged, not deployed |
-| React migration foundation | `migration/react-foundation` | isolated `app-v2/` track created from `f8cf221`; no Hosting switch, no deploy |
+| Static privacy containment | `hotfix/static-privacy-boundaries` | merged into `main` at `4466567`; hotfix branch still retained, not deployed |
+| React migration foundation | `migration/react-foundation` | merged secured `main` baseline at `fa98253`, then advanced through read-only compatibility adapters and initial domain-service boundaries; no Hosting switch, no deploy |
 
 Key outcomes from this execution batch:
 
-- `main` is now a clean synchronized audit baseline.
+- `main` is now a clean synchronized secured static rollback baseline.
 - the static hotfix branch closes the contract localStorage auth bypass and replaces direct public special-page exposure with neutral placeholders under `public/`
 - the new React app lives only in `app-v2/` and builds only to `app-v2/dist`
-- the React shell currently contains protected placeholder routes only; no legacy couple data or private media has been migrated
+- the React shell now includes read-only compatibility adapters, a protected compatibility provider, and initial narrow domain-service contracts without restoring broad Firestore synchronization
+- no legacy private memory file is bundled into the Vite build
+
+## 2026-07-13 Baseline Merge And Compatibility Execution
+
+- `main` absorbed `hotfix/static-privacy-boundaries` through merge commit `4466567b23e1c626cba5608ba20ac87582a2f951`
+- `migration/react-foundation` absorbed the secured static baseline through merge commit `fa982530722b596371725ef46af2a02143b5f1f7`
+- `migration/react-foundation` then added:
+  - read-only localStorage compatibility adapters
+  - a production-disabled local-only memory bridge contract
+  - a protected compatibility provider
+  - targeted domain-service contracts and query guardrails
+- no deployment, Hosting switch, rules change, schema creation, or production data write occurred
 
 ## 2026-07-12 Recovery Audit Snapshot
 
@@ -157,16 +169,22 @@ What must wait:
 
 ### R3 — Compatibility Data Adapter
 
-- adapter boundaries are now stubbed in `app-v2/src/data/`
-- current sources are documented for memories, favorites, profiles, settings, and contract state
-- no legacy reads are wired yet
+- completed on `migration/react-foundation`
+- localStorage adapters now normalize favorites, profiles, settings, and contract state through injected storage objects only
+- the legacy memory bridge is disabled by default, local-development-only, localhost-gated, and production-blocked
+- sanitized test fixtures validate the memory normalization path without committing private memory content
+- the compatibility provider now exposes loading, empty, ready, and error states inside the protected shell only
 - no destructive conversion
+- no writes to localStorage or Firestore
 
 ### R4 — Domain Services
 
-- split auth, user, couple, profile, settings, favorites, contract, sync, and media boundaries
-- remove collection-wide `users` reads in the new architecture
-- keep offline-safe fallbacks explicit
+- initial boundary set completed on `migration/react-foundation`
+- `userService`, `coupleService`, `memoryService`, `favoritesService`, `profileService`, `settingsService`, `contractService`, `deviceService`, and `syncService` now exist in app-v2
+- app-v2 approved-user reads remain targeted to `users/{uid}` only
+- compatibility-backed reads stay read-only and explicit
+- collection-wide `users` reads/listeners remain forbidden in app-v2
+- live synchronization and production writes remain disabled
 
 ### R5 — Core Page Migration
 
@@ -217,6 +235,7 @@ What must wait:
 | Firestore indexes deploy | no |
 | Firebase Storage initialized | no |
 | Private media touched | no |
+| Private memory data bundled into `app-v2` | no |
 | Gather Savor modified | no |
 
 ## System Health Audit Snapshot
@@ -238,6 +257,7 @@ What must wait:
 | --- | --- |
 | Overall gate | `HOLD` |
 | Jaylan authenticated smoke actually run | yes |
+| app-v2 Jaylan authenticated browser smoke actually run | no safe local session provided |
 | Partner authenticated smoke actually run | no |
 | Guest blocked in current source/unsigned checks | yes |
 | Signup disabled | yes |
@@ -246,7 +266,7 @@ What must wait:
 
 ### Why Smoke Is Still HOLD
 
-Jaylan was successfully tested in a real browser session after correcting the live Jaylan UID mismatch in Firestore rules. The smoke gate is still `HOLD` because the partner account was not available for testing, so the project still cannot honestly claim `PASS`.
+Jaylan was successfully tested in a real browser session after correcting the live Jaylan UID mismatch in Firestore rules. The smoke gate is still `HOLD` because the partner account was not available for testing, and the new app-v2 shell still does not have a safe approved-user browser session available for honest routed smoke confirmation.
 
 ## Open Gates
 

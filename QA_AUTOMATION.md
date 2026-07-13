@@ -10,6 +10,13 @@ The modernization track adds a second validation lane inside `app-v2/`:
 
 Those commands validate the isolated React shell without changing the current static baseline.
 
+As of 2026-07-13, the app-v2 lane now also covers:
+
+- legacy compatibility adapters
+- production-disabled memory bridge gating
+- targeted domain-service contracts
+- broad-query guardrails
+
 ## Scripts
 
 - `npm run check:routes`
@@ -99,6 +106,9 @@ Automated now:
 - `app-v2` linting for the isolated React track
 - `app-v2` auth/route contract tests
 - `app-v2` production build generation into `app-v2/dist`
+- `app-v2` legacy compatibility adapter tests
+- `app-v2` domain-service contract tests
+- `app-v2` broad-query and no-write guardrails
 - Browser privacy/auth-containment checks for the static contract and retired public special pages
 
 Still manual:
@@ -117,9 +127,10 @@ Still manual:
   - `core/memories.json` media paths
   - profile/contract avatar paths
   - direct special-page companion media
+  - other non-retired page-level local-only asset assumptions
 - The `app-v2` auth tests are intentionally non-live. They do not log into production Firebase or prove approved-user behavior in a browser without a safe local test configuration.
 - The root `npm run check:all` lane still validates the static rollback app only. It does not exercise the React migration routes.
-  - other non-retired page-level local-only asset assumptions
+- The app-v2 memory bridge tests validate localhost gating, production blocking, and sanitized fixture normalization only. They do not fetch or snapshot real private memory content in CI-style runs.
 
 ## Next QA Upgrade Targets
 
@@ -127,3 +138,4 @@ Still manual:
 - add a browser-console/media-request smoke that fails on unexpected 404s for the current clean local baseline
 - add a headless browser smoke for `app-v2` signed-out route protection and approved-user restoration once a safe local test configuration exists
 - add an approved-user credential-injected smoke path for the retired public special-page placeholders only when it can run without storing secrets in repo files
+- add an approved-user React browser smoke for the compatibility-backed dashboard only after the first real page migration lands

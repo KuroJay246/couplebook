@@ -1,6 +1,6 @@
 # Memory Media And Storage Master
 
-Date: 2026-07-12
+Date: 2026-07-13
 
 ## Current Memory Dataset
 
@@ -64,6 +64,46 @@ What this means:
 - placeholder UX now softens the failure, but the current clean repo copy cannot render the actual memory media set
 - the memory dataset and the private local archive are currently out of sync with the path structure expected by the static app
 - any future migration must separate content preservation from path cleanup and upload/storage decisions
+
+## 2026-07-13 Legacy Memory Bridge Safety
+
+The React migration track now treats legacy memory sources with explicit safety classes:
+
+- root `core/memories.json`
+  development-only source for the local compatibility bridge
+- `public/core/memories.json`
+  unsafe publicly exposed mirror that app-v2 must never consume
+- `memorybook_custom_memories`
+  safe authenticated browser compatibility read
+- `memorybook_deleted_memories`
+  safe authenticated browser compatibility read
+- `memorybook_overridden_memories`
+  safe authenticated browser compatibility read
+
+The new app-v2 memory adapter enforces these rules:
+
+- no static import of `core/memories.json`
+- no copy of legacy memory JSON into `app-v2/src`
+- no copy into `app-v2/public`
+- no bundled snapshot containing private memories
+- local bridge disabled by default
+- local bridge allowed only when:
+  - `VITE_ENABLE_LEGACY_LOCAL_BRIDGE=true`
+  - `VITE_LEGACY_LOCAL_BASE_URL` resolves to `localhost` or `127.0.0.1`
+  - the browser itself is running on `localhost` or `127.0.0.1`
+  - the runtime is not a production build
+- bridge failures close safely and do not persist fetched memory data
+
+Safe defaults now documented in `app-v2/.env.example`:
+
+- `VITE_ENABLE_LEGACY_LOCAL_BRIDGE=false`
+- `VITE_LEGACY_LOCAL_BASE_URL=` blank until local development explicitly opts in
+
+Fixture policy:
+
+- app-v2 tests use only sanitized fictional memory fixtures
+- no real private memory entries were copied into app-v2
+- no private media paths were added to app-v2
 
 ## Future Memory Model
 
@@ -189,6 +229,7 @@ Keep local-only:
 - special-page companion media
 - backup / manual organization folders
 - `OUR MEMORIES/` archive content until a deliberate reviewed mapping exists
+- root `core/memories.json` compatibility access unless and until the explicit localhost-only bridge is enabled by a developer
 
 Do not move these during planning.
 
@@ -220,4 +261,5 @@ While approved-account smoke is `HOLD`:
 - do not initialize Storage
 - do not move private media
 - do not rewrite `core/memories.json`
+- do not consume `public/core/memories.json` from app-v2
 - first restore or map the expected local asset-path contract before claiming any gallery/media runtime is fully healthy

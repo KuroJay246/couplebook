@@ -1,8 +1,8 @@
-import { readLegacyContractState } from '../../data/legacyContractAdapter.js'
-import { readLegacyFavorites } from '../../data/legacyFavoritesAdapter.js'
-import { readLegacyMemories } from '../../data/legacyMemoryAdapter.js'
-import { readLegacyProfiles } from '../../data/legacyProfileAdapter.js'
-import { readLegacySettings } from '../../data/legacySettingsAdapter.js'
+import { getLegacyContract } from '../../services/contractService.js'
+import { getLegacyFavorites } from '../../services/favoritesService.js'
+import { getLegacyMemories } from '../../services/memoryService.js'
+import { getLegacyProfile } from '../../services/profileService.js'
+import { getLegacySettings } from '../../services/settingsService.js'
 
 function collectWarnings(results) {
   return results.flatMap((result) => result.warnings || [])
@@ -37,11 +37,11 @@ export async function loadCompatibilitySnapshot(options = {}) {
   }
 
   const [favorites, profile, settings, contract, memories] = await Promise.all([
-    readLegacyFavorites(options),
-    readLegacyProfiles(options),
-    readLegacySettings(options),
-    readLegacyContractState(options),
-    readLegacyMemories(options),
+    getLegacyFavorites(options),
+    getLegacyProfile(options),
+    getLegacySettings(options),
+    getLegacyContract(options),
+    getLegacyMemories(options),
   ])
 
   const sources = { favorites, profile, settings, contract, memories }
