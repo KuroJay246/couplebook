@@ -1,6 +1,6 @@
 # Firebase Sync And Service Layer
 
-Date: 2026-07-08
+Date: 2026-07-12
 
 ## Current Firestore Surface
 
@@ -10,6 +10,31 @@ Current active Firestore domains are narrow:
 - `devices/{deviceId}`
 
 The active runtime no longer depends on the legacy `usernames` collection. The main remaining risk is the sync layer still performing collection-wide `users` reads/listeners.
+
+## 2026-07-12 Verified Auth And Data Findings
+
+- Firebase identity is email/password only in the current Couple Book runtime.
+- Approved access is verified by checking that `users/{uid}` exists after Firebase Auth succeeds.
+- `js/app.js` owns the real protected-shell route gate through `onAuthStateChanged`, but not every page uses that path.
+- `pages/contract.html` is a boundary exception: it trusts `memorybook_active_session` / `memorybook_active_user` in `localStorage` and can be opened without a real Firebase-authenticated user if those keys are spoofed in-browser.
+- The special pages under `pages/confession/`, `pages/valentine/`, and `pages/omnia-happy-birthday.html` are outside the centralized protected-shell flow when opened directly.
+- `core/firestoreSync.js` still mixes active-user preferences with couple-shared projection rebuilding in one module.
+- `core/memories.json` remains local-only and is not represented in Firestore.
+
+## 2026-07-12 Domain Ownership Snapshot
+
+| Domain | Current source of truth | Local state | Firestore state | Notes |
+| --- | --- | --- | --- | --- |
+| approved users | Firebase Auth + `users/{uid}` existence + hardcoded rules allowlist | `memorybook_active_uid`, `memorybook_active_session`, `memorybook_active_user` | `users/{uid}` | approved-user-only boundary is partly in runtime and partly in rules |
+| profiles | shared localStorage projection | `memorybook_profiles` | `users/{uid}.profile` | rebuilt across both user docs |
+| memories | static dataset plus local overrides | `core/memories.json`, `memorybook_custom_memories`, `memorybook_deleted_memories`, `memorybook_overridden_memories` | none | not yet a Firestore domain |
+| media refs | memory records and special-page file references | path strings only | none | current clean repo lacks the referenced `/assets/photos` and `/assets/videos` folders |
+| favorites | mixed shared projection | `memorybook_favorites` | `users/{uid}.favorites` | backward-compatible merge keeps multiple shapes alive |
+| settings | per-user local preference record | `memorybook_settings_{username}` | `users/{uid}.settings` | merged with Firestore per active user |
+| theme | per-user local key plus legacy shared fallback | `memorybook_theme_{username}`, `memorybook_theme` | `users/{uid}.theme` | active user only |
+| contract acceptance | per-user local flag | `memorybook_contract_accepted_{username}` | `users/{uid}.contractAccepted` | one true anywhere stays true via merge logic |
+| signatures | shared local signature ledger | `memorybook_contract_signatures` | `users/{uid}.signature` | projected from both user docs |
+| devices | mostly cloud-only | optional `memorybook_device_id` read in settings | `devices/{deviceId}` | device registration is currently disabled in auth flow |
 
 ## Service Files
 
@@ -237,6 +262,27 @@ Stop any future live sync implementation immediately if:
 - collection-wide `users` list/read is still on the critical path
 - username-keyed local structures still drive shared merge behavior
 - root/public mirroring still increases maintenance cost
+- direct special pages and `contract.html` are not fully governed by the same auth boundary as the protected shell
+- favorites and signatures still rely on compatibility merge shapes rather than clear domain contracts
+
+## Candidate Future Service Boundaries
+
+Smallest useful future boundaries:
+
+- `firebaseClient`
+- `authService`
+- `userService`
+- `coupleService`
+- `profileService`
+- `settingsService`
+- `favoritesService`
+- `contractService`
+- `memoryService`
+- `mediaService`
+- `syncService`
+- `deviceService`
+
+The Gather & Savor lesson worth copying is not its event schema. It is the separation between routed UI, auth/provider state, Firebase bootstrap, service calls, and pure helpers.
 
 ## Next Safe Sync Step
 

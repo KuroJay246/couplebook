@@ -1,6 +1,6 @@
 # Memory Media And Storage Master
 
-Date: 2026-07-08
+Date: 2026-07-12
 
 ## Current Memory Dataset
 
@@ -38,6 +38,32 @@ Most common tags:
 - repeated raw media references
 
 This confirms the current dataset behaves more like an import dump than a curated memory book.
+
+## 2026-07-12 Verified Local Media Reality
+
+| Area | Current reality |
+| --- | --- |
+| `assets/photos/` | missing in the current clean workspace |
+| `assets/videos/` | missing in the current clean workspace |
+| `assets/thumbnails/` | present but empty |
+| `OUR MEMORIES/` | present as a large local-only private archive |
+| `public/` media tracking | still clean; no private media was found in Hosting root |
+| `core/memories.json` references | still point broadly at `/assets/photos/*` and `/assets/videos/*` |
+
+Runtime audit evidence from the clean workspace:
+
+- dashboard emitted 3 missing-media 404s
+- timeline emitted 84 missing-media 404s
+- gallery emitted 44 missing-media 404s
+- profile emitted 4 missing avatar/media 404s
+- contract emitted 2 missing avatar/media 404s
+- direct confession page emitted 6 missing companion-file 404s
+
+What this means:
+
+- placeholder UX now softens the failure, but the current clean repo copy cannot render the actual memory media set
+- the memory dataset and the private local archive are currently out of sync with the path structure expected by the static app
+- any future migration must separate content preservation from path cleanup and upload/storage decisions
 
 ## Future Memory Model
 
@@ -162,6 +188,7 @@ Keep local-only:
 - excluded private videos
 - special-page companion media
 - backup / manual organization folders
+- `OUR MEMORIES/` archive content until a deliberate reviewed mapping exists
 
 Do not move these during planning.
 
@@ -193,3 +220,4 @@ While approved-account smoke is `HOLD`:
 - do not initialize Storage
 - do not move private media
 - do not rewrite `core/memories.json`
+- first restore or map the expected local asset-path contract before claiming any gallery/media runtime is fully healthy

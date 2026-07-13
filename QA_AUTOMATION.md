@@ -92,3 +92,23 @@ Still manual:
 - Approved partner account login smoke
 - Browser verification that normal signed-in flows do not hit permission-denied after live rules changes
 - Final visual confirmation for special pages that intentionally excluded companion media still degrade gracefully
+
+## Known Coverage Gaps After 2026-07-12 Recovery Audit
+
+- `check:routes` proves HTTP `200` only. It does not assert the final browser location after client-side auth redirects.
+- The current QA lane does not fail when direct special pages are reachable without the protected shell:
+  - `/pages/confession/index.html`
+  - `/pages/valentine/index.html`
+  - `/pages/omnia-happy-birthday.html`
+- The current QA lane does not detect that `pages/contract.html` can be opened with only spoofed `localStorage` session keys while `/pages/dashboard.html` still rejects the same fake session.
+- The current QA lane does not fail on browser-console/runtime asset 404s from:
+  - `core/memories.json` media paths
+  - profile/contract avatar paths
+  - direct special-page companion media
+
+## Next QA Upgrade Targets
+
+- add a headless browser smoke that verifies protected routes end on the login page when the session is missing
+- add a headless browser smoke that proves direct special pages are either retired or protected
+- add a headless browser smoke that confirms `contract.html` cannot open from `localStorage` spoofing alone
+- add a browser-console/media-request smoke that fails on unexpected 404s for the current clean local baseline

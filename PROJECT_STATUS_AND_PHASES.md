@@ -1,19 +1,168 @@
 # Project Status And Phases
 
-Date: 2026-07-09
+Date: 2026-07-12
 
 ## Current Repo Status
 
 | Item | Status |
 | --- | --- |
 | Current branch | `main` |
-| Latest verified commit at consolidation start | `1b48d7970b14c712acf7c82c3c38168dc9cce2fd` |
-| Repo clean at consolidation start | yes |
-| `main` matches `origin/main` at consolidation start | yes |
-| App type | static multi-page HTML/CSS/JS |
+| Latest verified commit at recovery audit start | `11b3324701207ffa72f9be3de6aa78749534ea7f` |
+| Repo clean at recovery audit start | yes |
+| `main` matches `origin/main` at recovery audit start | yes |
+| App type | static multi-page HTML/CSS/JS with manual root/public mirroring |
 | Runtime publish root | `public/` only |
-| Primary local state | `localStorage` |
+| Primary local state | `localStorage` plus `core/memories.json` |
 | Cloud sync boundary | `core/firestoreSync.js` |
+
+## 2026-07-12 Recovery Audit Snapshot
+
+| Item | Status |
+| --- | --- |
+| Starting HEAD | `11b3324701207ffa72f9be3de6aa78749534ea7f` |
+| `git status --short --branch` | clean `main...origin/main` |
+| `git diff --stat` | none |
+| Modified files at audit start | none |
+| Staged files at audit start | none |
+| Untracked files at audit start | none |
+| Last completed pushed batch | `Refine live gallery experience` |
+| Incomplete Git batch found | none in the worktree |
+| Private tracked-media risk found | none tracked; private archive remains outside Git |
+
+## 2026-07-12 Verified Runtime Reality
+
+- `npm run check:all` passed cleanly at audit time.
+- The current live baseline is still the static/public mirrored app served by `server.js` from `public/`.
+- Protected shell routes redirected an unauthenticated fresh browser session to `/pages/login.html`:
+  - `/pages/dashboard.html`
+  - `/pages/timeline.html`
+  - `/pages/media.html`
+  - `/pages/profile.html`
+  - `/pages/favorites.html`
+  - `/pages/settings.html`
+  - `/pages/legacy.html?module=confession/index.html`
+- Direct special pages remain publicly reachable outside the protected shell:
+  - `/pages/confession/index.html`
+  - `/pages/valentine/index.html`
+  - `/pages/omnia-happy-birthday.html`
+- `contract.html` is not fail-closed enough: a fake `localStorage` session opened `/pages/contract.html` while `/pages/dashboard.html` still redirected to login under the same spoofed local state.
+- The current clean workspace does not contain `assets/photos/` or `assets/videos/`. Runtime asset 404s were therefore real, not hypothetical:
+  - dashboard: 3 failed media requests
+  - timeline: 84 failed media requests
+  - media gallery: 44 failed media requests
+  - profile: 4 failed media requests
+  - contract: 2 failed avatar/media requests
+  - confession special page: 6 failed companion-file requests
+- Mobile login rendering stayed inside the viewport with no horizontal overflow in a fresh `iPhone 13` browser emulation.
+- Full approved-account browser review is still blocked in this audit because no reusable authenticated approved session was available for the headless runtime pass.
+
+## 2026-07-12 Architecture Decision
+
+Selected direction: `Option C` as the long-term target, with a short `Option B` compatibility bridge and the current static app preserved as the temporary live baseline.
+
+Why:
+
+- the current static app already preserves real product content and some private-account guardrails, so it should remain the rollback baseline for now
+- the current implementation pays high maintenance cost for manual root/public mirroring, page-scattered auth/runtime logic, and a mixed sync model
+- Gather & Savor proves the engineering stack we want: Vite build output, one routed shell, centralized auth/bootstrap, domain services, lint/test/build discipline, and `dist`-only Hosting
+- Couple Book should copy that engineering discipline without copying the event product model, staff-role density, or admin-dashboard identity
+
+What to preserve:
+
+- approved-account-only scope
+- Firebase Auth as the identity system
+- private, two-person product boundary
+- current memory content, special-page concepts, and romantic product voice
+- existing live static app as a rollback baseline until cutover
+
+What to replace:
+
+- manual root/public mirroring
+- page-by-page auth/routing ownership
+- collection-wide `users` reads/listeners in `core/firestoreSync.js`
+- direct unauthenticated special-page exposure
+- `contract.html` localStorage-only gate
+- media-path assumptions that currently point to missing local asset folders
+
+What must wait:
+
+- Firebase Storage initialization
+- any destructive Firestore or localStorage migration
+- live couple-data schema replacement
+- Hosting cutover to a React build
+
+## 2026-07-12 Migration Track
+
+### R0 — Recovery Baseline
+
+- keep the current static app as the live rollback point
+- close the documentation truth gap
+- keep `npm run check:all` green
+- do not rewrite data, rules, or media paths
+
+### R1 — Modern Foundation
+
+- create a separate Vite/React app track
+- add lint, test, build, and Hosting-ready `dist/` output
+- centralize Firebase bootstrap
+- no production switch
+
+### R2 — Auth And Protected Shell
+
+- add `AuthProvider`, `ProtectedRoute`, and one `AppShell`
+- preserve approved-account-only enforcement
+- do not migrate couple data yet
+
+### R3 — Compatibility Data Adapter
+
+- read current `localStorage` keys and `core/memories.json`
+- keep the old product content visible inside the new shell
+- no destructive conversion
+
+### R4 — Domain Services
+
+- split auth, user, couple, profile, settings, favorites, contract, sync, and media boundaries
+- remove collection-wide `users` reads in the new architecture
+- keep offline-safe fallbacks explicit
+
+### R5 — Core Page Migration
+
+- dashboard
+- timeline
+- gallery
+- profile
+- favorites
+- settings
+
+### R6 — Special Page Integration
+
+- move birthday, Valentine, and confession behind the protected routed shell
+- preserve their content while retiring direct public entry paths
+
+### R7 — Responsive System
+
+- keep one mobile/desktop shell
+- formalize loading, empty, error, and missing-media states
+- remove page-specific nav duplication
+
+### R8 — Data Migration Planning
+
+- define future two-user Firestore domains
+- dry-run map current local keys and `users/{uid}` data
+- no destructive writes
+
+### R9 — Media/Storage Decision
+
+- only after explicit approval
+- only after schema and rule review
+- first-upload test must be small, reversible, and private
+
+### R10 — Cutover
+
+- parallel verification against the static baseline
+- approved-account smoke
+- rollback checkpoint
+- Hosting switch only after explicit approval
 
 ## Safety And Deploy Status
 

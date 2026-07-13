@@ -1,6 +1,6 @@
 # Docs Index
 
-Date: 2026-07-08
+Date: 2026-07-12
 
 ## Master Docs
 
@@ -11,6 +11,8 @@ Date: 2026-07-08
 | `UI_REDESIGN_AND_PROTOTYPE_MASTER.md` | redesign direction, shell blueprint, component map, prototype rules, production implementation checklist, live redesign batches |
 | `MEMORY_MEDIA_AND_STORAGE_MASTER.md` | memory dataset state, future memory/gallery/favorites model, storage decision, media migration plan, curation checklist |
 | `QA_AUTOMATION.md` | all QA scripts, failure meanings, manual gaps, long-run safety support |
+
+The 2026-07-12 recovery audit baseline, migration recommendation, verified auth/runtime risks, and media-boundary findings are now folded back into these same master docs instead of being split into new audit files.
 
 ## Standalone Docs Kept On Purpose
 
