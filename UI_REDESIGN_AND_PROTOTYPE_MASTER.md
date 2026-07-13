@@ -175,6 +175,176 @@ Gather Savor visual patterns that must not be inherited:
 - identical visual weight for every route and panel
 - startup CTA styling, glossy chips, or decorative glow
 
+## App-v2 Product Experience Architecture Lock
+
+### Product identity
+
+- Couple Book is a private digital book for exactly two people
+- the routed shell should feel like a shared journal, private archive, and relationship keepsake
+- the product center of gravity is the couple story, not controls, counters, or settings
+
+### Final navigation hierarchy
+
+- primary chapters:
+  - Home -> `/dashboard`
+  - Story -> `/timeline`
+  - Gallery -> `/gallery`
+  - Us -> `/profile`
+- secondary relationship routes:
+  - Favorites
+  - Contract
+- special moments:
+  - Birthday
+  - Valentine
+  - Confession
+- quiet utilities:
+  - Settings
+  - Sign out
+
+### Desktop navigation
+
+- a restrained paper rail remains on wide screens
+- only the four primary chapters receive top-level emphasis
+- shared details and special moments sit in clearly separated lower groups
+- utilities stay lowest in the rail and should never compete with the core relationship journey
+- active state should read like a marked chapter tab, not a SaaS sidebar badge
+
+### Mobile navigation
+
+- the fixed bottom bar remains capped at four primary items:
+  - Home
+  - Story
+  - Gallery
+  - Us
+- everything else moves behind a single secondary entry point
+- the secondary surface should expose shared details, special moments, utilities, and sign out without duplicating the whole product hierarchy
+- safe-area spacing, readable labels, and no horizontal overflow are non-negotiable
+
+### Page architecture patterns
+
+- Chapter page:
+  - editorial opening
+  - emotional heading
+  - supporting introduction
+  - main story-led content
+  - quieter supporting context below
+- Shared-space page:
+  - one shared relationship opening
+  - paired or collective framing
+  - meaningful content before editing or system status
+  - lower-emphasis compatibility notes
+- Special-moment page:
+  - same protected shell family
+  - distinct accent and composition
+  - obvious return to the main book
+  - no isolated mini-site feeling
+- Utility page:
+  - calm heading
+  - grouped preferences
+  - clear privacy/data language
+  - danger actions visually separated from ordinary reading controls
+
+### Settings structure
+
+- Your account
+- Appearance
+- Privacy and access
+- Data and compatibility
+- Advanced
+- Danger zone
+
+Settings must remain intentionally secondary, plain-language, and free of unrelated product content.
+
+### Special-moment integration
+
+- Birthday, Valentine, and Confession stay inside the protected routed shell
+- each keeps its own accent identity:
+  - Birthday -> warm gold / candlelight
+  - Valentine -> dusty rose / restrained note-paper warmth
+  - Confession -> deep ink / oxblood / sealed-letter restraint
+- typography, navigation, and return patterns stay shared even when page composition shifts
+- private content migration for these moments remains deferred in the current run
+
+### Final color blend
+
+- editorial base:
+  - paper
+  - parchment
+  - linen
+  - warm stone
+  - ink
+  - warm charcoal
+- controlled accents:
+  - muted clay
+  - terracotta
+  - faded olive
+  - sage
+  - old gold
+  - dusty blush
+  - muted plum
+  - oxblood
+- blush and romantic color may appear in milestones, quotations, shared-space details, and special-moment hints, but never as the whole application identity
+
+### Typography
+
+- editorial serif for chapter openings, shared-space headings, and emotional anchors
+- readable sans-serif for navigation, settings, metadata, and utility copy
+- hierarchy must come from type scale, spacing, and composition before additional cards or decorative treatment
+
+### Component hierarchy
+
+- shell:
+  - `AppShell`
+  - `MobileNavigation`
+  - route registry groups
+- page structure:
+  - `ChapterHeader`
+  - `SharedSpaceHeader`
+  - `UtilityPageHeader`
+  - `EditorialSection`
+  - `UtilitySection`
+  - `PageDivider`
+  - `QuietStatus`
+  - `EditorialEmptyState`
+- utility structure:
+  - `SettingsGroup`
+- feature layers keep their own read models and page-specific components on top of these primitives
+
+### Accessibility principles
+
+- clear heading order per route
+- explicit nav labels for primary and secondary destinations
+- high-contrast paper/ink text relationships
+- reduced-motion support for non-essential transitions
+- touch targets large enough for one-handed mobile use
+
+### Responsive principles
+
+- chapter rail on desktop only when it still has room to breathe
+- compact header plus bottom navigation on tablet and mobile before the rail becomes crowded
+- page templates must stack cleanly at `390x844` without clipped copy or dead space
+- section grids may collapse, but route hierarchy and shell identity must remain obvious
+
+### Prohibited patterns
+
+- pink SaaS framing
+- copied Gather Savor or Event Hub branding
+- every section becoming the same bordered card
+- equal navigation weight for settings and the main journey
+- special moments presented as detached public-looking pages
+- file-browser-first timeline or gallery structure
+
+### Migration order
+
+1. Dashboard remains the stabilized first migrated page
+2. lock navigation and page-layout primitives
+3. establish the Settings utility structure without live writes
+4. migrate Profile as the next real read-only page
+5. migrate Favorites next
+6. return to Timeline and Gallery only after the shell and shared-space patterns are proven
+7. reintroduce special-moment page content later through the protected routed family
+8. keep deployment and Hosting cutover blocked until the broader migration gates are cleared
+
 ## 2026-07-13 Reference Review
 
 Reviewed in the controllable browser:

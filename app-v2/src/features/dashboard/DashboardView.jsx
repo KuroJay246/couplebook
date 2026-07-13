@@ -1,21 +1,5 @@
 import { Link } from 'react-router-dom'
-
-function SectionHeader({ action, description, eyebrow, title }) {
-  return (
-    <div className="dashboard-section-heading">
-      <div>
-        <span className="eyebrow">{eyebrow}</span>
-        <h2>{title}</h2>
-        <p>{description}</p>
-      </div>
-      {action ? (
-        <Link className={`button ${action.tone === 'secondary' ? 'button-secondary' : 'button-primary'}`} to={action.href}>
-          {action.label}
-        </Link>
-      ) : null}
-    </div>
-  )
-}
+import { ChapterHeader, EditorialEmptyState, EditorialSection } from '../../components/PageLayout'
 
 function renderCompatibilityStateLabel(compatibilityState) {
   if (compatibilityState === 'loading') return 'Refreshing'
@@ -26,14 +10,13 @@ function renderCompatibilityStateLabel(compatibilityState) {
 
 function RecentMemoriesSection({ section }) {
   return (
-    <section className="dashboard-panel dashboard-panel-recent">
-      <SectionHeader
-        action={section.action}
-        description={section.description}
-        eyebrow={section.eyebrow}
-        title={section.title}
-      />
-
+    <EditorialSection
+      action={section.action}
+      className="dashboard-panel dashboard-panel-recent"
+      description={section.description}
+      eyebrow={section.eyebrow}
+      title={section.title}
+    >
       {section.state === 'ready' && section.items.length > 0 ? (
         <ul className="memory-card-list">
           {section.items.map((item) => (
@@ -49,12 +32,9 @@ function RecentMemoriesSection({ section }) {
           ))}
         </ul>
       ) : (
-        <div className="dashboard-empty-block">
-          <h3>{section.emptyState.title}</h3>
-          <p>{section.emptyState.description}</p>
-        </div>
+        <EditorialEmptyState description={section.emptyState.description} title={section.emptyState.title} titleAs="h3" />
       )}
-    </section>
+    </EditorialSection>
   )
 }
 
@@ -105,9 +85,12 @@ function BirthdayCard({ card }) {
 
 function MilestonesSection({ section }) {
   return (
-    <section className="dashboard-panel dashboard-panel-milestones">
-      <SectionHeader description={section.description} eyebrow={section.eyebrow} title={section.title} />
-
+    <EditorialSection
+      className="dashboard-panel dashboard-panel-milestones"
+      description={section.description}
+      eyebrow={section.eyebrow}
+      title={section.title}
+    >
       {section.hasContent ? (
         <div className="milestone-stack">
           {section.anniversaryCards.length > 0 ? (
@@ -139,19 +122,20 @@ function MilestonesSection({ section }) {
           ) : null}
         </div>
       ) : (
-        <div className="dashboard-empty-block">
-          <h3>{section.emptyState.title}</h3>
-          <p>{section.emptyState.description}</p>
-        </div>
+        <EditorialEmptyState description={section.emptyState.description} title={section.emptyState.title} titleAs="h3" />
       )}
-    </section>
+    </EditorialSection>
   )
 }
 
 function SpecialMomentsSection({ section }) {
   return (
-    <section className="dashboard-panel dashboard-panel-special">
-      <SectionHeader description={section.description} eyebrow={section.eyebrow} title={section.title} />
+    <EditorialSection
+      className="dashboard-panel dashboard-panel-special"
+      description={section.description}
+      eyebrow={section.eyebrow}
+      title={section.title}
+    >
       <div className="story-link-list">
         {section.items.map((item) => (
           <Link className="story-link-card" key={item.href} to={item.href}>
@@ -165,15 +149,18 @@ function SpecialMomentsSection({ section }) {
           </Link>
         ))}
       </div>
-    </section>
+    </EditorialSection>
   )
 }
 
 function SourceStateSection({ compatibilityError, compatibilityState, onRefresh, section }) {
   return (
-    <section className="dashboard-panel dashboard-panel-source">
-      <SectionHeader description={section.description} eyebrow={section.eyebrow} title={section.title} />
-
+    <EditorialSection
+      className="dashboard-panel dashboard-panel-source"
+      description={section.description}
+      eyebrow={section.eyebrow}
+      title={section.title}
+    >
       <div className="source-status-toolbar">
         <div className="source-status-copy">
           <span className="source-status-pill">{renderCompatibilityStateLabel(compatibilityState)}</span>
@@ -217,14 +204,18 @@ function SourceStateSection({ compatibilityError, compatibilityState, onRefresh,
           </ul>
         </div>
       ) : null}
-    </section>
+    </EditorialSection>
   )
 }
 
 function SupportingNavigationSection({ section }) {
   return (
-    <section className="dashboard-panel dashboard-panel-supporting">
-      <SectionHeader description={section.description} eyebrow={section.eyebrow} title={section.title} />
+    <EditorialSection
+      className="dashboard-panel dashboard-panel-supporting"
+      description={section.description}
+      eyebrow={section.eyebrow}
+      title={section.title}
+    >
       <div className="supporting-link-grid">
         {section.items.map((item) => (
           <Link className="supporting-link-card" key={item.href} to={item.href}>
@@ -234,35 +225,17 @@ function SupportingNavigationSection({ section }) {
           </Link>
         ))}
       </div>
-    </section>
+    </EditorialSection>
   )
 }
 
 export function DashboardView({ compatibilityError, compatibilityState, model, onRefresh }) {
   return (
     <section className="dashboard-page">
-      <header className="hero-card hero-card-compact page-frame dashboard-hero">
-        <div className="page-frame-meta">
-          <span className="eyebrow">{model.hero.eyebrow}</span>
-          <span className="folio-mark">{model.hero.dateLabel}</span>
-        </div>
-        <div className="dashboard-hero-layout">
-          <div className="dashboard-hero-copy">
-            <h1>{model.hero.title}</h1>
-            <p>{model.hero.description}</p>
-            <div className="dashboard-hero-actions">
-              {model.hero.actions.map((action) => (
-                <Link
-                  className={`button ${action.tone === 'secondary' ? 'button-secondary' : 'button-primary'}`}
-                  key={action.href}
-                  to={action.href}
-                >
-                  {action.label}
-                </Link>
-              ))}
-            </div>
-          </div>
-          <aside className="dashboard-hero-aside">
+      <ChapterHeader
+        actions={model.hero.actions}
+        aside={
+          <>
             <div className="dashboard-now-card">
               <span className="folio-mark">Right now</span>
               <strong>{model.hero.timestampLabel}</strong>
@@ -273,9 +246,14 @@ export function DashboardView({ compatibilityError, compatibilityState, model, o
                 <li key={note}>{note}</li>
               ))}
             </ul>
-          </aside>
-        </div>
-      </header>
+          </>
+        }
+        className="dashboard-hero"
+        description={model.hero.description}
+        eyebrow={model.hero.eyebrow}
+        folio={model.hero.dateLabel}
+        title={model.hero.title}
+      />
 
       <div className="dashboard-grid">
         <RecentMemoriesSection section={model.recentMemories} />
