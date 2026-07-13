@@ -1,4 +1,4 @@
-import { DEFAULT_AUTHENTICATED_PATH, LOGIN_PATH } from '../app/routeConfig'
+import { DEFAULT_AUTHENTICATED_PATH, LOGIN_PATH } from '../app/routeConfig.js'
 
 export function sanitizeReturnPath(candidate, defaultPath = DEFAULT_AUTHENTICATED_PATH) {
   if (!candidate || typeof candidate !== 'string') return defaultPath

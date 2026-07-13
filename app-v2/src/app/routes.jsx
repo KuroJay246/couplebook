@@ -1,31 +1,39 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { DEFAULT_AUTHENTICATED_PATH, LOGIN_PATH } from './routeConfig'
+import { ProtectedRoute } from '../auth/ProtectedRoute'
+import { AppShell } from '../layout/AppShell'
+import { BirthdayPage } from '../pages/BirthdayPage'
+import { ConfessionPage } from '../pages/ConfessionPage'
+import { ContractPage } from '../pages/ContractPage'
+import { DashboardPage } from '../pages/DashboardPage'
+import { FavoritesPage } from '../pages/FavoritesPage'
+import { GalleryPage } from '../pages/GalleryPage'
 import { LoginPage } from '../pages/LoginPage'
 import { NotFoundPage } from '../pages/NotFoundPage'
-
-function FoundationPage() {
-  return (
-    <div className="shell-root">
-      <main className="shell-main shell-main-center">
-        <section className="hero-card">
-          <span className="eyebrow">Migration Foundation</span>
-          <h1>Couple Book v2 is scaffolded and isolated.</h1>
-          <p>
-            This app lives in <code>app-v2/</code> and will receive the routed auth shell in the next
-            commit without touching the current static site.
-          </p>
-        </section>
-      </main>
-    </div>
-  )
-}
+import { ProfilePage } from '../pages/ProfilePage'
+import { SettingsPage } from '../pages/SettingsPage'
+import { TimelinePage } from '../pages/TimelinePage'
+import { ValentinePage } from '../pages/ValentinePage'
 
 export function AppRoutes() {
   return (
     <Routes>
       <Route path={LOGIN_PATH} element={<LoginPage />} />
-      <Route path="/" element={<Navigate to={DEFAULT_AUTHENTICATED_PATH} replace />} />
-      <Route path={DEFAULT_AUTHENTICATED_PATH} element={<FoundationPage />} />
+      <Route element={<ProtectedRoute />}>
+        <Route element={<AppShell />}>
+          <Route index element={<Navigate replace to={DEFAULT_AUTHENTICATED_PATH} />} />
+          <Route path={DEFAULT_AUTHENTICATED_PATH} element={<DashboardPage />} />
+          <Route path="/timeline" element={<TimelinePage />} />
+          <Route path="/gallery" element={<GalleryPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/favorites" element={<FavoritesPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/contract" element={<ContractPage />} />
+          <Route path="/birthday" element={<BirthdayPage />} />
+          <Route path="/valentine" element={<ValentinePage />} />
+          <Route path="/confession" element={<ConfessionPage />} />
+        </Route>
+      </Route>
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   )

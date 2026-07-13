@@ -6,7 +6,7 @@ import {
   persistentLocalCache,
   persistentMultipleTabManager,
 } from 'firebase/firestore'
-import { firebaseConfig, isFirebaseConfigured, missingFirebaseConfigMessage } from './firebaseConfig'
+import { firebaseConfig, isFirebaseConfigured, missingFirebaseConfigMessage } from './firebaseConfig.js'
 
 export let firebaseInitializationError = ''
 

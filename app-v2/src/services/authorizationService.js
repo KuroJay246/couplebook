@@ -1,4 +1,4 @@
-import { readUserProfileByUid } from './userService'
+import { readUserProfileByUid } from './userService.js'
 
 export function deriveDisplayName(firebaseUser, approvedUser) {
   if (approvedUser?.username) return approvedUser.username

@@ -47,6 +47,12 @@ code {
   min-height: 100vh;
 }
 
+.app-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 320px 1fr;
+}
+
 .shell-main {
   width: min(1120px, calc(100vw - 32px));
   margin: 0 auto;
@@ -60,7 +66,12 @@ code {
 }
 
 .hero-card,
-.state-card {
+.state-card,
+.login-card,
+.account-panel,
+.shell-header,
+.shell-sidebar,
+.shell-content {
   width: min(100%, 760px);
   border-radius: 32px;
   border: 1px solid var(--line);
@@ -120,19 +131,314 @@ code {
   background: var(--surface-strong);
 }
 
+.state-action {
+  margin-top: 18px;
+}
+
+.state-support {
+  margin-top: 14px;
+  color: var(--ink-soft);
+  font-family: "Segoe UI", sans-serif;
+  line-height: 1.6;
+}
+
 .page-stack {
   display: grid;
   gap: 20px;
 }
 
+.shell-sidebar {
+  width: auto;
+  min-height: 100vh;
+  border-radius: 0;
+  border-left: none;
+  border-top: none;
+  border-bottom: none;
+  padding: 28px 20px;
+  background: linear-gradient(180deg, rgba(72, 34, 47, 0.94), rgba(47, 20, 31, 0.96));
+  color: #fff5f7;
+}
+
+.shell-sidebar-desktop {
+  position: sticky;
+  top: 0;
+}
+
+.shell-sidebar-mobile {
+  position: relative;
+  z-index: 2;
+  width: min(320px, calc(100vw - 32px));
+  min-height: 100vh;
+}
+
+.brand-panel {
+  margin-bottom: 24px;
+}
+
+.brand-panel h1,
+.account-panel strong,
+.shell-header-user strong {
+  margin: 0 0 10px;
+  display: block;
+}
+
+.brand-panel p,
+.account-panel span,
+.shell-header-user span,
+.nav-link small,
+.mobile-nav-link span,
+.sidebar-heading,
+.account-label {
+  margin: 0;
+  font-family: "Segoe UI", sans-serif;
+  line-height: 1.6;
+}
+
+.brand-panel p,
+.account-panel span,
+.shell-header-user span,
+.nav-link small,
+.mobile-nav-link span {
+  color: rgba(255, 236, 241, 0.7);
+}
+
+.sidebar-heading,
+.account-label {
+  margin-bottom: 10px;
+  color: rgba(255, 236, 241, 0.74);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sidebar-group + .sidebar-group {
+  margin-top: 18px;
+}
+
+.sidebar-links {
+  display: grid;
+  gap: 10px;
+}
+
+.nav-link,
+.mobile-nav-link {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  border-radius: 20px;
+  text-decoration: none;
+  transition: background 180ms ease, transform 180ms ease, color 180ms ease;
+}
+
+.nav-link {
+  background: rgba(255, 255, 255, 0.04);
+  color: #fff5f7;
+}
+
+.nav-link-active,
+.nav-link:hover,
+.mobile-nav-link-active {
+  background: rgba(255, 226, 233, 0.16);
+  transform: translateY(-1px);
+}
+
+.account-panel {
+  width: 100%;
+  margin-top: 24px;
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff5f7;
+}
+
+.shell-frame {
+  min-width: 0;
+  padding: 24px 24px 92px;
+}
+
+.shell-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 22px 24px;
+  margin-bottom: 20px;
+}
+
+.shell-header-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.shell-header h2 {
+  margin: 0 0 8px;
+  font-size: clamp(1.6rem, 3vw, 2.25rem);
+}
+
+.shell-header p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-family: "Segoe UI", sans-serif;
+  line-height: 1.6;
+}
+
+.shell-header-user {
+  min-width: 220px;
+  padding: 14px 16px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.shell-content {
+  width: 100%;
+  padding: 20px;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  border-radius: 999px;
+  padding: 12px 18px;
+  font: 600 0.95rem/1 "Segoe UI", sans-serif;
+  cursor: pointer;
+  transition: transform 180ms ease, opacity 180ms ease, background 180ms ease;
+}
+
+.button:hover {
+  transform: translateY(-1px);
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+  transform: none;
+}
+
+.button-primary {
+  background: linear-gradient(135deg, var(--rose) 0%, var(--berry) 100%);
+  color: #fff8fa;
+}
+
+.button-secondary {
+  background: rgba(255, 255, 255, 0.64);
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+
+.login-card {
+  width: min(100%, 760px);
+  padding: 28px;
+}
+
+.login-card-copy {
+  margin-bottom: 22px;
+}
+
+.login-card h2 {
+  margin: 0 0 12px;
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+}
+
+.auth-form {
+  display: grid;
+  gap: 16px;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+  font-family: "Segoe UI", sans-serif;
+}
+
+.field span {
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.field input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 14px 16px;
+  font: 400 1rem/1.4 "Segoe UI", sans-serif;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--ink);
+}
+
+.field input:focus {
+  outline: 2px solid rgba(184, 106, 121, 0.28);
+  outline-offset: 2px;
+}
+
+.form-error {
+  margin: 16px 0 0;
+  color: var(--rose-deep);
+  font: 600 0.92rem/1.6 "Segoe UI", sans-serif;
+}
+
+.shell-menu-button {
+  display: none;
+}
+
+.shell-overlay {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  justify-content: start;
+  background: rgba(27, 10, 17, 0.4);
+  backdrop-filter: blur(12px);
+}
+
+.shell-overlay-dismiss {
+  position: absolute;
+  inset: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.mobile-nav {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  display: none;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 24px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: var(--shadow);
+}
+
+.mobile-nav-link {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--ink);
+  font: inherit;
+}
+
 @media (max-width: 720px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+
   .shell-main {
     width: min(100vw - 24px, 1120px);
     padding: 24px 0 48px;
   }
 
   .hero-card,
-  .state-card {
+  .state-card,
+  .login-card,
+  .shell-header,
+  .shell-content {
     border-radius: 24px;
   }
 
@@ -140,7 +446,40 @@ code {
     padding: 24px;
   }
 
-  .state-card {
+  .state-card,
+  .login-card,
+  .shell-header,
+  .shell-content {
     padding: 22px;
+  }
+
+  .shell-frame {
+    padding: 16px 12px 104px;
+  }
+
+  .shell-sidebar-desktop {
+    display: none;
+  }
+
+  .shell-menu-button {
+    display: inline-flex;
+  }
+
+  .shell-header {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .shell-header-user {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .shell-content {
+    padding: 16px;
+  }
+
+  .mobile-nav {
+    display: flex;
   }
 }

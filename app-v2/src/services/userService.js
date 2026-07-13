@@ -1,5 +1,5 @@
 import { doc, getDoc } from 'firebase/firestore'
-import { db } from '../lib/firebaseClient'
+import { db } from '../lib/firebaseClient.js'
 
 export function buildUserDocumentPath(uid) {
   if (!uid) throw new Error('A Firebase user uid is required.')

@@ -9,7 +9,15 @@ function resolveAuthDomain(configuredDomain) {
   return configuredDomain
 }
 
-export function createFirebaseConfig(env = import.meta.env) {
+function readEnv() {
+  if (typeof import.meta !== 'undefined' && import.meta.env) {
+    return import.meta.env
+  }
+
+  return {}
+}
+
+export function createFirebaseConfig(env = readEnv()) {
   return {
     apiKey: env.VITE_FIREBASE_API_KEY || '',
     authDomain: resolveAuthDomain(env.VITE_FIREBASE_AUTH_DOMAIN || ''),
