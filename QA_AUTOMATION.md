@@ -17,8 +17,13 @@ As of 2026-07-13, the app-v2 lane now also covers:
 - targeted domain-service contracts
 - broad-query guardrails
 - shell design-system structure and token retirement checks
+- navigation hierarchy and grouped-route coverage
+- shared editorial page-layout primitives
+- Settings grouping and utility-page coverage
 - Dashboard read-model coverage
 - Dashboard route source coverage
+- Profile read-model coverage
+- Profile route source coverage
 
 ## Scripts
 
@@ -177,6 +182,32 @@ Still manual:
   - desktop and `390x844` mobile widths stayed free of horizontal overflow
   - the new Dashboard section headings, source-state cards, and special-route links rendered cleanly
   - browser console logs stayed empty during the final Dashboard pass
+
+## 2026-07-13 app-v2 Navigation, Settings, and Profile Validation
+
+- the navigation, layout, Settings, and Profile batch passed:
+  - `npm run lint`
+  - `npm test`
+  - `npm run build`
+  - root `npm run check:all`
+- the final app-v2 suite now passes with `48` tests
+- automated app-v2 coverage now also verifies:
+  - primary versus secondary route grouping
+  - mobile navigation limits and labels
+  - editorial page-layout primitives
+  - Settings grouping structure
+  - Profile read-model unavailable and partial states
+  - immutable Profile inputs and read-only behavior
+  - Profile route source coverage
+- in-browser validation for the approved Jaylan session confirmed:
+  - `/settings` stayed readable at desktop and mobile widths
+  - `/profile` stayed inside the protected shell and stacked cleanly at `390x844`
+  - the mobile `More` entry exposed secondary relationship routes, special moments, and utilities without horizontal overflow
+  - `/dashboard` remained stable after the navigation and Profile work
+  - no login redirect, loading stall, or `permission-denied` state appeared during the final pass
+  - fresh browser-console logs remained clean after a timestamped cutoff separated stale historical Vite hot-reload noise from the final run
+  - the observed authorization check remained targeted to `users/{uid}` only
+  - no private-media requests or production writes were introduced by the migrated routes
 
 ## Known Coverage Gaps After 2026-07-12 Static Privacy Containment
 

@@ -511,6 +511,65 @@ Browser result:
 - desktop and mobile checks stayed free of horizontal overflow
 - the Dashboard route showed the new section hierarchy, source-state cards, and protected special-route links with no browser-console warnings/errors
 
+## 2026-07-13 app-v2 Navigation, Settings, and Profile Checkpoint
+
+The shared product architecture is now locked tightly enough to support the next isolated page migrations without drifting back toward the static layout or Gather Savor visual weight.
+
+Product structure now fixed:
+
+- the routed shell now treats the product as one private book with four primary chapters:
+  - Home
+  - Story
+  - Gallery
+  - Us
+- secondary relationship entries now sit below the main journey instead of competing with it:
+  - Favorites
+  - Contract
+- special moments now live inside the same protected family instead of reading like isolated mini-sites:
+  - Birthday
+  - Valentine
+  - Confession
+- utilities now remain explicitly subordinate:
+  - Settings
+  - Sign out
+
+Layout and placeholder direction now fixed:
+
+- a reusable editorial layout system now defines:
+  - Chapter pages
+  - Shared-space pages
+  - Utility pages
+- the Settings route now previews the future grouped information architecture instead of repeating admin-style shell blocks
+- the Settings placeholder stays migration-safe:
+  - no fake account data
+  - no destructive writes
+  - no legacy settings migration
+
+Profile migration result:
+
+- Profile is now the second real app-v2 page
+- it reads through a dedicated compatibility read model rather than page-local storage assumptions
+- the route now renders one shared relationship space instead of two isolated account cards
+- unavailable and partial states remain explicit and calm instead of inventing names, dates, or highlights
+- contract and favorites stay visible as lower-emphasis connected entries, not as the dominant framing
+
+Browser result:
+
+- desktop `1440x1024`, tablet `1024x768`, and mobile `390x844` checks stayed inside the protected shell with no redirect loop, loading stall, or horizontal overflow
+- mobile keeps only four fixed primary destinations plus one secondary `More` entry
+- `/settings` remained readable at desktop and mobile widths
+- `/profile` stacked cleanly on mobile and preserved the shared-space structure
+- `/dashboard` stayed stable after the shared-shell and Profile work
+- fresh browser-console logs stayed clean after historical Vite hot-reload noise was isolated by timestamp
+
+Safety preserved:
+
+- auth and approval still rely on Firebase Auth plus the targeted `users/{uid}` read only
+- no localStorage-only session proof was reintroduced
+- no broad Firestore `users` query was introduced
+- no production writes, deploy, merge, private-media copy, or private-data bundle were introduced
+- only Dashboard and Profile have been migrated as real app-v2 product pages so far
+
 ## Phase 11 Browser Experience Findings
 
 The live Couple Book browser pass confirmed that the product already has emotional material worth preserving, but the protected experience still feels more like a collection of static themed pages than one coherent private app.

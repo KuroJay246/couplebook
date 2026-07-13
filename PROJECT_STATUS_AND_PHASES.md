@@ -68,6 +68,29 @@ Key outcomes from this execution batch:
 - Dashboard continues to read only through approved auth, the existing compatibility provider, and narrow read-only feature inputs
 - no broad Firestore query, write-back path, deploy, merge, rules change, or private-memory bundle was introduced
 
+## 2026-07-13 Navigation, Layout, and Profile Execution
+
+- the final app-v2 product navigation is now locked around four primary destinations:
+  - Home (`/dashboard`)
+  - Story (`/timeline`)
+  - Gallery (`/gallery`)
+  - Us (`/profile`)
+- secondary relationship routes now sit below the primary journey instead of sharing equal weight:
+  - Favorites
+  - Contract
+- Birthday, Valentine, and Confession now remain integrated as protected special moments inside the same routed family
+- quiet utilities now stay lower in the hierarchy:
+  - Settings
+  - Sign out
+- the reusable editorial page-layout system and utility-page structure landed and were pushed as `c3c6e22`
+- the Settings route now previews the correct future grouped architecture without fake account data, destructive actions, or any legacy settings write path
+- the read-only Profile compatibility model landed as `7738314`
+- the Profile route migrated as the second real app-v2 page in `787f982`
+- Profile now renders one shared relationship space, honest unavailable/partial states, and lower-emphasis contract/favorites entry links
+- browser validation confirmed `/settings`, `/profile`, and a stability recheck of `/dashboard` at desktop and mobile widths with no auth loop, no `permission-denied` state, and no horizontal overflow
+- fresh browser-console logs remained clean after stale historical Vite hot-reload noise was separated from the final pass
+- no deploy, merge, rules change, production write, private bundle, private media copy, or Gather Savor modification occurred
+
 ## 2026-07-12 Recovery Audit Snapshot
 
 | Item | Status |
@@ -229,8 +252,13 @@ What must wait:
 - timeline
 - gallery
 - profile
+  - completed on `migration/react-foundation` as the second real app-v2 page
+  - uses a dedicated read-only compatibility model with explicit unavailable/partial state handling
+  - browser-verified at desktop and `390x844` mobile widths with no auth loop, no permission-denied state, and no horizontal overflow
 - favorites
+  - next recommended page now that Dashboard and Profile are stable inside the locked shell
 - settings
+  - utility-page architecture preview completed; live settings data migration intentionally deferred
 
 ### R6 — Special Page Integration
 
@@ -356,9 +384,41 @@ Jaylan was successfully tested in a real browser session after correcting the li
 - non-live sync modeling
 - shared shell refinement inside app-v2
 - service-layer planning
-- after Dashboard, continue only the next isolated migrated page without widening auth, sync, or private-data scope
+- after Dashboard and Profile, continue only Favorites as the next isolated migrated page without widening auth, sync, or private-data scope
 
 ## Recent Phase Closeout Summaries
+
+### 2026-07-13 Product Architecture And Profile Summary
+
+- starting commit: `d4a0450f44a3cd00e197d16af7b6ee927f4ac50d`
+- work completed:
+  - locked the final product navigation and route hierarchy
+  - added the shared editorial page-layout system
+  - established the future Settings group structure without migrating live settings data
+  - added the read-only Profile compatibility model
+  - migrated Profile as the second real app-v2 page
+- browser verification completed in the approved Jaylan session for:
+  - `/dashboard`
+  - `/settings`
+  - `/profile`
+  - protected navigation and special-route entry points
+- responsive verification completed at:
+  - `1440x1024`
+  - `1024x768`
+  - `390x844`
+- checks run in this run:
+  - `app-v2 npm run lint`
+  - `app-v2 npm test`
+  - `app-v2 npm run build`
+  - root `npm run check:all`
+- commits completed in this run:
+  - `Refine Couple Book product navigation`
+  - `Add editorial page layout system`
+  - `Add Profile compatibility read model`
+  - `Migrate Profile into React app`
+- deploy activity: none
+- smoke status: approved Jaylan routed-browser smoke remains `PASS`, partner remains not tested, and overall approved-account smoke remains honestly `HOLD`
+- next recommended track action: migrate Favorites next inside the locked shell; do not begin Timeline or Gallery yet
 
 ### Latest Workstream Run Summary
 
