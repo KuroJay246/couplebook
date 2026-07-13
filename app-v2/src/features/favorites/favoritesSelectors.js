@@ -350,7 +350,7 @@ export function deriveFavoritesStatus({ favoritesSource, people, profileSource }
 
 export function describeFavoritesCounts(model) {
   const visiblePeople = pluralize(model.people.length, 'collection')
-  const visibleCategories = pluralize(model.categoryIndex.length, 'category')
+  const visibleCategories = pluralize(model.categoryIndex.length, 'category', 'categories')
 
   if (model.shared.exactMatches.length > 0) {
     return `${visiblePeople} visible, ${visibleCategories} preserved, and ${pluralize(model.shared.exactMatches.length, 'exact overlap')} ready.`

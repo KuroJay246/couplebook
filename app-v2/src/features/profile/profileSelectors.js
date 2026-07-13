@@ -226,11 +226,13 @@ export function selectFavoritesEntry(favoritesSource, sharedHighlights) {
   const status = favoritesSource?.status || 'empty'
   const count = sharedHighlights.length
 
-  let description = 'Shared favorites will reconnect here once the paired read-only surface is fully migrated.'
+  let description = 'The migrated Favorites page now keeps preserved tastes inside one read-only shared collection.'
   if (status === 'ready' && count > 0) {
-    description = `${count} favorite highlights are already available from the preserved shared lists.`
+    description = `${count} favorite highlights are visible here already, and the full shared collection now lives on the migrated Favorites page.`
+  } else if (status === 'ready') {
+    description = 'The migrated Favorites page is ready even while preserved highlights stay quiet.'
   } else if (status === 'empty') {
-    description = 'No preserved favorites are available for this profile view yet.'
+    description = 'The Favorites page is ready, but no preserved favorites are visible for this profile view yet.'
   } else if (status === 'invalid') {
     description = 'Stored favorites data needs review before it can be shown here.'
   }

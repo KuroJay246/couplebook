@@ -1,11 +1,15 @@
-import { PlaceholderPage } from '../components/PlaceholderPage'
+import { FavoritesView } from '../features/favorites/FavoritesView'
+import { useFavoritesData } from '../features/favorites/useFavoritesData'
 
 export function FavoritesPage() {
+  const { compatibilityError, compatibilityState, model, refreshCompatibility } = useFavoritesData()
+
   return (
-    <PlaceholderPage
-      eyebrow="Favorites"
-      title="Favorites placeholder"
-      description="The shared favorites surface stays reserved for the compatibility-boundary phase."
+    <FavoritesView
+      compatibilityError={compatibilityError}
+      compatibilityState={compatibilityState}
+      model={model}
+      onRefresh={refreshCompatibility}
     />
   )
 }

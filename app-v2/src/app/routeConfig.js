@@ -51,7 +51,7 @@ export const protectedRouteMeta = [
     navLabel: 'Favorites',
     title: 'Favorites',
     group: ROUTE_GROUPS.shared,
-    summary: 'Cherished things, rituals, and shared preferences will land here.',
+    summary: 'Read-only shared favorites now stay here, with exact overlap shown only when it is honestly preserved.',
   },
   {
     path: '/contract',
