@@ -24,6 +24,9 @@ As of 2026-07-13, the app-v2 lane now also covers:
 - Dashboard route source coverage
 - Profile read-model coverage
 - Profile route source coverage
+- Favorites read-model coverage
+- Favorites route source coverage
+- exact shared-overlap guardrails for Favorites
 
 ## Scripts
 
@@ -205,9 +208,37 @@ Still manual:
   - the mobile `More` entry exposed secondary relationship routes, special moments, and utilities without horizontal overflow
   - `/dashboard` remained stable after the navigation and Profile work
   - no login redirect, loading stall, or `permission-denied` state appeared during the final pass
-  - fresh browser-console logs remained clean after a timestamped cutoff separated stale historical Vite hot-reload noise from the final run
-  - the observed authorization check remained targeted to `users/{uid}` only
-  - no private-media requests or production writes were introduced by the migrated routes
+- fresh browser-console logs remained clean after a timestamped cutoff separated stale historical Vite hot-reload noise from the final run
+- the observed authorization check remained targeted to `users/{uid}` only
+- no private-media requests or production writes were introduced by the migrated routes
+
+## 2026-07-13 app-v2 Favorites Validation
+
+- the Favorites read-model and page batch passed:
+  - `npm run lint`
+  - `npm test`
+  - `npm run build`
+  - root `npm run check:all`
+- the final app-v2 suite now passes with `57` tests
+- automated app-v2 coverage now also verifies:
+  - Favorites read-model ready, partial, empty, unavailable, and invalid states
+  - exact-match-only shared overlap rules
+  - duplicate-value normalization for display
+  - no false fuzzy matches
+  - Favorites route source coverage
+  - Profile/Favorites integration copy after migration
+- in-browser validation for the approved Jaylan session confirmed:
+  - `/favorites` stayed inside the protected shell
+  - reload restored the approved session directly on `/favorites`
+  - `/profile` and `/contract` links from Favorites worked
+  - `/dashboard` and `/profile` remained stable after the Favorites migration
+  - desktop `1440x1024`, tablet `1024x768`, and mobile `390x844` stayed free of horizontal overflow
+  - mobile kept only four primary destinations plus `More`
+  - the mobile secondary menu exposed Favorites, Contract, special moments, and Settings correctly
+  - the actual approved-session Favorites source on this origin rendered an honest empty state instead of fabricated preferences
+  - fresh browser-console warnings/errors stayed empty during the final pass
+  - no static `/pages/favorites.html` or `js/favorites.js` runtime dependency was observed
+  - no private-media requests or production writes were observed during the validation pass
 
 ## Known Coverage Gaps After 2026-07-12 Static Privacy Containment
 

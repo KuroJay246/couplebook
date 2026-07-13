@@ -91,6 +91,34 @@ Key outcomes from this execution batch:
 - fresh browser-console logs remained clean after stale historical Vite hot-reload noise was separated from the final pass
 - no deploy, merge, rules change, production write, private bundle, private media copy, or Gather Savor modification occurred
 
+## 2026-07-13 Favorites Execution
+
+- the legacy Favorites inventory was verified before migration:
+  - source remains `memorybook_favorites`
+  - preserved categories remain food, places, hobbies, and activities
+  - legacy behavior was prompt-driven add/remove editing with localStorage persistence and fire-and-forget sync
+  - unknown categories remain preserved internally, but they are intentionally withheld from the migrated UI
+- the read-only Favorites compatibility model landed as `a8fa358`
+- shared overlap is now limited to exact normalized textual matches inside the same category only
+- the Favorites route migrated as the third real app-v2 page in `9b44b25`
+- Favorites now renders:
+  - a shared-space opening
+  - exact overlap only when it exists honestly
+  - one shared composition for individual favorites
+  - lower-emphasis links to Profile and Contract
+  - quiet source-state reporting with no raw adapter warnings
+- the approved Jaylan session currently exposes an honest empty Favorites collection on this routed origin, and the page keeps that state explicit instead of fabricating preferences
+- browser validation confirmed:
+  - `/favorites` stayed protected
+  - reload restored the approved session on `/favorites`
+  - `/profile` and `/contract` links from Favorites worked
+  - `/dashboard` and `/profile` remained stable after the migration
+  - desktop `1440x1024`, tablet `1024x768`, and mobile `390x844` stayed free of horizontal overflow
+  - mobile retained four primary destinations plus the secondary `More` menu
+  - fresh browser-console logs remained clean
+  - no static Favorites-page dependency or private-media request was observed
+- no deploy, merge, rules change, production write, localStorage mutation, private bundle, private media copy, or Gather Savor modification occurred
+
 ## 2026-07-12 Recovery Audit Snapshot
 
 | Item | Status |
@@ -256,9 +284,11 @@ What must wait:
   - uses a dedicated read-only compatibility model with explicit unavailable/partial state handling
   - browser-verified at desktop and `390x844` mobile widths with no auth loop, no permission-denied state, and no horizontal overflow
 - favorites
-  - next recommended page now that Dashboard and Profile are stable inside the locked shell
+  - completed on `migration/react-foundation` as the third real app-v2 page
+  - uses a dedicated read-only compatibility model with exact-match-only shared overlap rules
+  - browser-verified at desktop, tablet, and `390x844` mobile widths with stable reload behavior and working Profile/Contract integration
 - settings
-  - utility-page architecture preview completed; live settings data migration intentionally deferred
+  - utility-page architecture preview completed; read-only settings content migration is now the next recommended page
 
 ### R6 — Special Page Integration
 
@@ -384,9 +414,33 @@ Jaylan was successfully tested in a real browser session after correcting the li
 - non-live sync modeling
 - shared shell refinement inside app-v2
 - service-layer planning
-- after Dashboard and Profile, continue only Favorites as the next isolated migrated page without widening auth, sync, or private-data scope
+- after Dashboard, Profile, and Favorites, continue only the read-only Settings migration without widening auth, sync, or private-data scope
 
 ## Recent Phase Closeout Summaries
+
+### 2026-07-13 Favorites Migration Summary
+
+- starting commit: `2958de0b70afa1dfc53875c31dd60890452feb4e`
+- work completed:
+  - verified the legacy Favorites source format and deferred all editing behavior
+  - added the read-only Favorites compatibility model
+  - migrated Favorites as the third real app-v2 page
+  - updated Profile/Favorites integration copy to reflect the real migrated route
+- browser verification completed in the approved Jaylan session for:
+  - `/favorites`
+  - `/profile`
+  - `/dashboard`
+  - Favorites-to-Profile and Favorites-to-Contract route transitions
+- responsive verification completed at:
+  - `1440x1024`
+  - `1024x768`
+  - `390x844`
+- commits completed in this run:
+  - `Add Favorites compatibility read model`
+  - `Migrate Favorites into React app`
+- deploy activity: none
+- smoke status: approved Jaylan routed-browser smoke remains `PASS`, partner remains not tested, and overall approved-account smoke remains honestly `HOLD`
+- next recommended track action: migrate Settings as a read-only utility page; do not begin Timeline or Gallery yet
 
 ### 2026-07-13 Product Architecture And Profile Summary
 

@@ -570,6 +570,76 @@ Safety preserved:
 - no production writes, deploy, merge, private-media copy, or private-data bundle were introduced
 - only Dashboard and Profile have been migrated as real app-v2 product pages so far
 
+## 2026-07-13 app-v2 Favorites Migration Checkpoint
+
+Favorites is now the third real app-v2 page, and it finally reads like a shared collection instead of a two-column local editor.
+
+Legacy inventory locked:
+
+- the legacy source remains `memorybook_favorites`
+- the preserved owner structure is still person-keyed
+- the meaningful preserved categories remain:
+  - food
+  - places
+  - hobbies
+  - activities
+- legacy add/remove prompts, localStorage writes, and fire-and-forget sync calls are intentionally retired from the migrated page
+- unknown categories remain preserved internally, but they do not auto-render in the new UI
+
+Read-model rules now fixed:
+
+- the Favorites route reads only through the compatibility snapshot and approved routed shell context
+- overlap is shown only for exact normalized matches within the same category
+- case and whitespace normalization are allowed
+- fuzzy similarity is not
+- one-person data stays partial instead of inventing a second empty spread
+- unavailable, empty, and invalid states remain distinct
+
+Page structure now fixed:
+
+- shared-space opening
+- exact shared overlap only when it exists honestly
+- individual favorites inside one shared composition
+- lower-emphasis links back to Profile and Contract
+- quiet source-state explanation
+
+Current approved-session result:
+
+- this routed origin currently exposes an honest empty Favorites collection for the approved Jaylan session
+- the page states that the collection is ready for its first entries instead of pretending preserved favorites are present
+- Profile still links into Favorites, and Favorites links back to Profile and Contract without adding edit controls
+
+Browser result:
+
+- `/favorites` stayed protected at `1440x1024`, `1024x768`, and `390x844`
+- reload restored the approved session on `/favorites` with no redirect loop or loading stall
+- desktop, tablet, and mobile stayed free of horizontal overflow
+- mobile kept only:
+  - Home
+  - Story
+  - Gallery
+  - Us
+  - More
+- the mobile secondary menu exposed:
+  - Favorites
+  - Contract
+  - Birthday
+  - Valentine
+  - Confession
+  - Settings
+- `/profile` and `/dashboard` still rendered cleanly after the Favorites migration
+- fresh browser-console warnings/errors stayed empty during the validation pass
+- no static `/pages/favorites.html` or `js/favorites.js` dependency was observed
+- no private-media requests were observed
+
+Safety preserved:
+
+- Favorites remains read-only
+- no localStorage mutation was introduced
+- no Firestore write path was introduced
+- no broad Firestore `users` query was introduced
+- no deploy, merge, rules change, private bundle, private-media copy, or Gather Savor modification occurred
+
 ## Phase 11 Browser Experience Findings
 
 The live Couple Book browser pass confirmed that the product already has emotional material worth preserving, but the protected experience still feels more like a collection of static themed pages than one coherent private app.
