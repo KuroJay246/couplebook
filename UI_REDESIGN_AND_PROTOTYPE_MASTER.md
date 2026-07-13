@@ -83,6 +83,132 @@ Current boundaries:
 - no legacy couple data, private memories, or special-page content has been migrated into the React app yet
 - the current static app remains the rollback baseline and Hosting target
 
+## App-v2 Editorial Journal Design Lock
+
+Product mood:
+
+- private
+- literary
+- warm
+- restrained
+- archival
+- intimate for exactly two people
+
+Approved palette direction:
+
+- paper, parchment, linen, warm stone, graphite, and near-black ink for the base system
+- muted clay, tobacco, faded sage, restrained olive, and occasional oxblood for accent
+- high contrast without bright commercial saturation
+- romance should come from language and pacing, not pink branding
+
+Typography direction:
+
+- editorial serif for page titles, major shell headings, and emotional anchors
+- readable sans-serif for navigation, form controls, supporting copy, and metadata
+- optional handwritten-feeling accent only for tiny non-essential details if it can be done with safe system-available styling
+- no novelty script for primary content, controls, or accessibility-critical copy
+
+Surface treatment:
+
+- mostly opaque paper-like panels
+- thin warm-gray or ink-like borders
+- restrained shadows and occasional inset rules
+- modest radii instead of bubble cards
+- composition should create hierarchy; not every container should float the same way
+
+Button treatment:
+
+- primary controls should feel tactile, calm, and deliberate
+- solid ink, clay, or muted accent fills are preferred
+- secondary controls should stay paper-toned with quiet borders
+- no candy gradients, glow halos, or event-CTA styling
+
+Navigation treatment:
+
+- the shell should read like one private publication, not a bright product dashboard
+- primary story routes should carry more visual emphasis than utility routes
+- utility and settings routes should feel quieter and more structural
+- special moments should feel protected and deliberate, not promotional
+
+Spacing rhythm:
+
+- wider editorial spacing between major sections
+- tighter, quieter spacing inside controls
+- obvious separation between masthead, page heading, route content, and support status
+- avoid crowded grids and avoid oversized filler whitespace with no hierarchy
+
+Mobile principles:
+
+- keep the bottom navigation limited to the core journey only
+- place lower-frequency destinations behind a clearer menu surface
+- preserve safe-area comfort, readable stacking, and no horizontal overflow
+- mobile should feel like a portable journal, not a compressed admin app
+
+Motion principles:
+
+- minimal and purposeful
+- soft fade, slide, or elevation cues only where they help orientation
+- reduced-motion support is required for non-essential transitions
+- no decorative float, shimmer, or glow animation
+
+Icon principles:
+
+- simple, quiet, editorial icons only
+- icons should support wayfinding, not branding
+- no playful event or celebratory icon clutter
+
+Prohibited patterns:
+
+- bright pink, candy rose, or purple-berry-first branding
+- peach or pink glow backgrounds
+- heavy glassmorphism
+- oversized rounded bubbles and pill-heavy framing
+- dark wine SaaS sidebars
+- promotional hero copy or startup-style onboarding
+- event-operations language or dashboard-counter-first layouts
+
+Gather Savor visual patterns that must not be inherited:
+
+- branded rose/berry gradients as the primary identity
+- business-event polish or host/admin tone
+- glass-card repetition across every surface
+- identical visual weight for every route and panel
+- startup CTA styling, glossy chips, or decorative glow
+
+## 2026-07-13 Reference Review
+
+Reviewed in the controllable browser:
+
+- `https://vt.tiktok.com/ZSXjKNG28/`
+  - accessible: yes
+  - usable principles:
+    - restrained two-color framing
+    - large confident editorial type over generous whitespace
+    - very little decorative clutter
+    - composition led by hierarchy rather than effects
+  - rejected elements:
+    - the reference is a color-study slide, not a journal or product shell
+    - no direct layout copying
+    - no creator text, branding, or TikTok-specific composition should transfer
+
+- `https://vt.tiktok.com/ZSXjKExbx/`
+  - accessible: yes
+  - usable principles:
+    - hard-edged panel division
+    - strong typographic contrast
+    - deliberate asymmetry
+    - color restraint can make a composition feel more premium than layered gradients
+  - rejected elements:
+    - the purple-first palette is not appropriate for Couple Book
+    - no direct split-panel imitation
+    - no one-to-one copying of composition, logo treatment, or text
+
+Resulting design interpretation:
+
+- Couple Book should borrow editorial restraint, whitespace, and typographic confidence
+- it should not borrow the references as literal layouts or branded color studies
+- romance should come through private language and book-like pacing rather than decorative pink styling
+
 ## Component Map
 
 Future component families:
@@ -132,6 +258,53 @@ Latest non-live work kept the redesign track moving without touching the deploye
 - the home view now previews a clearer dashboard-to-story-to-gallery flow instead of isolated cards only
 - gallery, profile-pair, and favorites previews now model more specific future content groupings instead of generic filler cards
 - keyboard-safe nav behavior is now prototyped so future shell work has a clearer accessibility baseline
+
+## 2026-07-13 app-v2 Editorial Shell Checkpoint
+
+The shared app-v2 shell has now been restyled into the editorial-journal direction without changing auth or route behavior.
+
+Shared shell changes:
+
+- retired the rose/berry/glassmorphism visual baseline
+- replaced it with paper, parchment, graphite, clay, and muted olive tokens
+- removed the heavy wine sidebar treatment and replaced it with a quieter paper rail
+- reduced blur, gradients, glow, and oversized rounded-card styling
+- changed the login experience from a promotional hero to a book-opening composition
+- aligned placeholder routes and shared loading/error/empty states to the same editorial frame
+
+Navigation changes:
+
+- desktop navigation now separates:
+  - Primary story
+  - Shared space
+  - Quiet utilities
+  - Special moments
+- mobile navigation now keeps only:
+  - Home
+  - Story
+  - Gallery
+  - Us
+  - More
+
+Accessibility and responsive findings:
+
+- desktop shell verified in the browser at a true `1440x1024` viewport with the paper rail visible and no mobile-nav leakage
+- tablet verified at `1024x768` with no horizontal overflow
+- mobile verified at `390x844` with:
+  - no horizontal overflow
+  - visible menu trigger
+  - visible limited bottom navigation
+  - working overlay menu
+- shared focus states now use one explicit warm-ink outline
+- reduced-motion handling now disables non-essential transitions through `prefers-reduced-motion`
+
+Behavioral safety preserved:
+
+- approved-user auth smoke remained valid after the restyle
+- protected routes stayed protected
+- no broad Firestore `users` query was introduced
+- no localStorage auth proof was introduced
+- Dashboard remains a placeholder at this checkpoint; no real Dashboard data or page migration has landed yet
 
 ## Phase 11 Browser Experience Findings
 

@@ -5,7 +5,11 @@ import { useAuth } from '../auth/useAuth'
 import { MobileNavigation } from './MobileNavigation'
 
 const primaryRoutes = protectedRouteMeta.filter((route) => {
-  return ['/dashboard', '/timeline', '/gallery', '/profile', '/favorites'].includes(route.path)
+  return ['/dashboard', '/timeline', '/gallery'].includes(route.path)
+})
+
+const sharedRoutes = protectedRouteMeta.filter((route) => {
+  return ['/profile', '/favorites'].includes(route.path)
 })
 
 const quietRoutes = protectedRouteMeta.filter((route) => {
@@ -43,20 +47,22 @@ export function AppShell() {
   const { approvedUser, signOut, user } = useAuth()
   const currentRoute = protectedRouteMeta.find((route) => route.path === location.pathname) || protectedRouteMeta[0]
   const displayName = approvedUser?.displayName || approvedUser?.username || user?.email || 'Approved account'
+  const mobileRoutes = [...primaryRoutes, ...sharedRoutes.slice(0, 1)]
 
   return (
     <div className="app-shell">
       <aside className="shell-sidebar shell-sidebar-desktop">
         <div className="brand-panel">
-          <span className="eyebrow">Couple Book v2</span>
-          <h1>Private routed shell</h1>
-          <p>The next shell protects every route first and layers the legacy data bridge after that.</p>
+          <span className="eyebrow">Couple Book</span>
+          <h1>A private journal kept for two.</h1>
+          <p>The protected shell is being rebuilt as one quiet place, with legacy reads layered in only where they are safe.</p>
         </div>
-        <SidebarGroup onNavigate={() => setMenuOpen(false)} routes={primaryRoutes} title="Main" />
+        <SidebarGroup onNavigate={() => setMenuOpen(false)} routes={primaryRoutes} title="Primary story" />
+        <SidebarGroup onNavigate={() => setMenuOpen(false)} routes={sharedRoutes} title="Shared space" />
         <SidebarGroup onNavigate={() => setMenuOpen(false)} routes={quietRoutes} title="Quiet utilities" />
         <SidebarGroup onNavigate={() => setMenuOpen(false)} routes={specialRoutes} title="Special moments" />
         <div className="account-panel">
-          <p className="account-label">Approved account</p>
+          <p className="account-label">Private access</p>
           <strong>{displayName}</strong>
           <span>{user?.email || 'Awaiting sign-in'}</span>
           <button className="button button-secondary" onClick={() => signOut()} type="button">
@@ -75,11 +81,12 @@ export function AppShell() {
           />
           <aside className="shell-sidebar shell-sidebar-mobile">
             <div className="brand-panel">
-              <span className="eyebrow">Couple Book v2</span>
-              <h1>Private routed shell</h1>
-              <p>The static site remains untouched while this shell grows in parallel.</p>
+              <span className="eyebrow">Couple Book</span>
+              <h1>A private journal kept for two.</h1>
+              <p>The static site stays intact while this quieter shell grows in parallel.</p>
             </div>
-            <SidebarGroup onNavigate={() => setMenuOpen(false)} routes={primaryRoutes} title="Main" />
+            <SidebarGroup onNavigate={() => setMenuOpen(false)} routes={primaryRoutes} title="Primary story" />
+            <SidebarGroup onNavigate={() => setMenuOpen(false)} routes={sharedRoutes} title="Shared space" />
             <SidebarGroup onNavigate={() => setMenuOpen(false)} routes={quietRoutes} title="Quiet utilities" />
             <SidebarGroup onNavigate={() => setMenuOpen(false)} routes={specialRoutes} title="Special moments" />
           </aside>
@@ -92,13 +99,13 @@ export function AppShell() {
             Menu
           </button>
           <div className="shell-header-copy">
-            <span className="eyebrow">Protected route</span>
+            <span className="eyebrow">Current page</span>
             <h2>{currentRoute.title}</h2>
             <p>{currentRoute.summary}</p>
           </div>
           <div className="shell-header-user">
             <strong>{displayName}</strong>
-            <span>{approvedUser?.uid || 'Awaiting approved profile'}</span>
+            <span>{user?.email || 'Approved archive access'}</span>
           </div>
         </header>
 
@@ -106,7 +113,7 @@ export function AppShell() {
           <Outlet />
         </main>
 
-        <MobileNavigation items={primaryRoutes} onOpenMenu={() => setMenuOpen(true)} />
+        <MobileNavigation items={mobileRoutes} onOpenMenu={() => setMenuOpen(true)} />
       </div>
     </div>
   )

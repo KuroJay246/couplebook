@@ -15,7 +15,7 @@ export function MobileNavigation({ items, onOpenMenu }) {
           <span>{item.label}</span>
         </NavLink>
       ))}
-      <button className="mobile-nav-link" onClick={onOpenMenu} type="button">
+      <button aria-label="Open full navigation" className="mobile-nav-link" onClick={onOpenMenu} type="button">
         <strong>More</strong>
         <span>Menu</span>
       </button>

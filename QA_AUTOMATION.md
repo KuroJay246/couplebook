@@ -16,6 +16,7 @@ As of 2026-07-13, the app-v2 lane now also covers:
 - production-disabled memory bridge gating
 - targeted domain-service contracts
 - broad-query guardrails
+- shell design-system structure and token retirement checks
 
 ## Scripts
 
@@ -109,6 +110,7 @@ Automated now:
 - `app-v2` legacy compatibility adapter tests
 - `app-v2` domain-service contract tests
 - `app-v2` broad-query and no-write guardrails
+- `app-v2` shell-design tests for navigation grouping, shared-state framing, reduced-motion coverage, and retired rose/berry token usage
 - Browser privacy/auth-containment checks for the static contract and retired public special pages
 
 Still manual:
@@ -133,6 +135,28 @@ Still manual:
 - network observation stayed clean except for one expected aborted Firestore listen during sign-out
 - observed Firestore auth verification remained targeted to `users/{uid}`; no broad `users` collection query was observed
 
+## 2026-07-13 app-v2 Editorial Shell Validation
+
+- app-v2 shared shell changes were validated with:
+  - `npm run lint`
+  - `npm test`
+  - `npm run build`
+  - root `npm run check:all`
+- automated shell tests now verify:
+  - editorial navigation grouping
+  - mobile-nav route limits
+  - shared-state framing
+  - reduced-motion handling
+  - retirement of the prior rose/berry token dependency
+- browser validation confirmed:
+  - protected routes still render inside the approved shell
+  - desktop shell works at `1440x1024`
+  - tablet shell works at `1024x768`
+  - mobile shell works at `390x844`
+  - mobile menu overlay opens cleanly
+  - no horizontal overflow was observed
+  - no console errors remained after the stale Vite hot-reload log was cleared by a full reload
+
 ## Known Coverage Gaps After 2026-07-12 Static Privacy Containment
 
 - `check:routes` still proves HTTP `200` only. The redirect/privacy behavior coverage now lives in `check:privacy`, not `check:routes`.
@@ -146,6 +170,7 @@ Still manual:
 - The root `npm run check:all` lane still validates the static rollback app only. It does not exercise the React migration routes.
 - The app-v2 memory bridge tests validate localhost gating, production blocking, and sanitized fixture normalization only. They do not fetch or snapshot real private memory content in CI-style runs.
 - The app-v2 approved-user smoke is still manual, single-account, and browser-session-dependent. Partner verification and future page-specific migrated-route smoke remain outstanding.
+- The app-v2 shell visual checks are still targeted browser inspections, not full visual-regression snapshots.
 
 ## Next QA Upgrade Targets
 

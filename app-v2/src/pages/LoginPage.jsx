@@ -47,58 +47,67 @@ export function LoginPage() {
   return (
     <div className="shell-root">
       <main className="shell-main shell-main-center">
-        <section className="hero-card">
-          <span className="eyebrow">Private Entry</span>
-          <h1>Couple Book v2 private sign-in</h1>
-          <p>
-            This routed shell already protects direct navigation. The next phases will connect legacy reads,
-            page migrations, and couple-safe Firestore services without touching the live static app.
-          </p>
-        </section>
-
-        <section className="login-card">
-          <div className="login-card-copy">
-            <span className="eyebrow">Approved accounts only</span>
-            <h2>Sign in with your Couple Book email</h2>
+        <section className="login-layout">
+          <section className="hero-card login-hero">
+            <div className="hero-bookplate">
+              <span className="eyebrow">Private entry</span>
+              <span className="folio-mark">Routed edition</span>
+            </div>
+            <h1>Open the book kept between the two of you.</h1>
             <p>
-              No public signup, no guest route, and no localStorage-only shortcut. Approval still comes from a
-              targeted <code>users/{'{uid}'}</code> lookup after Firebase Auth succeeds.
+              This space opens only after Firebase sign-in and approved-user verification. The public web copy stays
+              separate while the protected archive is rebuilt here, page by page.
             </p>
-          </div>
+            <div className="login-hero-note">
+              <strong>Couple Book</strong>
+              <span>Quiet, shared, and intentionally private.</span>
+            </div>
+          </section>
 
-          <form className="auth-form" onSubmit={handleSubmit}>
-            <label className="field">
-              <span>Email</span>
-              <input
-                autoComplete="email"
-                onChange={(event) => setEmail(event.target.value)}
-                placeholder="approved-account@example.com"
-                type="email"
-                value={email}
-              />
-            </label>
+          <section className="login-card">
+            <div className="login-card-copy">
+              <span className="eyebrow">Approved accounts only</span>
+              <h2>Sign in with your Couple Book email</h2>
+              <p>
+                No public signup, no guest route, and no localStorage-only shortcut. Approval still comes from a
+                targeted <code>users/{'{uid}'}</code> lookup after Firebase Auth succeeds.
+              </p>
+            </div>
 
-            <label className="field">
-              <span>Password</span>
-              <input
-                autoComplete="current-password"
-                onChange={(event) => setPassword(event.target.value)}
-                placeholder="Enter your password"
-                type="password"
-                value={password}
-              />
-            </label>
+            <form className="auth-form" onSubmit={handleSubmit}>
+              <label className="field">
+                <span>Email</span>
+                <input
+                  autoComplete="email"
+                  onChange={(event) => setEmail(event.target.value)}
+                  placeholder="approved-account@example.com"
+                  type="email"
+                  value={email}
+                />
+              </label>
 
-            <button className="button button-primary" disabled={!isConfigured || loading || submitting} type="submit">
-              {submitting || loading ? 'Verifying private access...' : 'Sign in'}
-            </button>
-          </form>
+              <label className="field">
+                <span>Password</span>
+                <input
+                  autoComplete="current-password"
+                  onChange={(event) => setPassword(event.target.value)}
+                  placeholder="Enter your password"
+                  type="password"
+                  value={password}
+                />
+              </label>
 
-          {(submitError || authError) && (
-            <p aria-live="polite" className="form-error">
-              {submitError || authError}
-            </p>
-          )}
+              <button className="button button-primary" disabled={!isConfigured || loading || submitting} type="submit">
+                {submitting || loading ? 'Verifying private access...' : 'Enter Couple Book'}
+              </button>
+            </form>
+
+            {(submitError || authError) && (
+              <p aria-live="polite" className="form-error">
+                {submitError || authError}
+              </p>
+            )}
+          </section>
         </section>
 
         {user && !isAuthorized && authInitialized && (

@@ -42,6 +42,18 @@ Key outcomes from this execution batch:
   - targeted domain-service contracts and query guardrails
 - no deployment, Hosting switch, rules change, schema creation, or production data write occurred
 
+## 2026-07-13 Editorial Shell Execution
+
+- the approved Jaylan account now has an honest live app-v2 routed-browser smoke result on `migration/react-foundation`
+- local development required one ignored `app-v2/.env.local` file copied from the existing static Firebase config; no environment file was committed
+- the shared React shell was restyled into a paper/ink editorial-journal system
+- the login shell, protected AppShell, mobile navigation, placeholder pages, and shared states now use the new editorial foundation
+- the prior rose/berry/glass baseline was retired from app-v2 shared styling
+- responsive checks completed in-browser at desktop, tablet, and `390x844` mobile widths with no horizontal overflow
+- approved-user protected-route verification remained intact after the visual restyle
+- Dashboard is still a placeholder at this checkpoint; no real Dashboard data migration has landed yet
+- no deploy, merge, rules change, production write, private-memory bundle, or Gather Savor modification occurred
+
 ## 2026-07-12 Recovery Audit Snapshot
 
 | Item | Status |
@@ -186,6 +198,14 @@ What must wait:
 - collection-wide `users` reads/listeners remain forbidden in app-v2
 - live synchronization and production writes remain disabled
 
+### R4.5 — Editorial Shell Design System
+
+- completed on `migration/react-foundation`
+- app-v2 now uses an editorial-journal shell direction built around paper, ink, muted accent tones, and quieter navigation hierarchy
+- login, protected shell, mobile nav, placeholder routes, and shared loading/error/empty states now share one visual foundation
+- the design-system checkpoint preserved auth behavior, protected-route behavior, narrow Firestore lookup scope, and the static rollback baseline
+- no real Dashboard data implementation exists yet at this checkpoint
+
 ### R5 — Core Page Migration
 
 - dashboard
@@ -317,9 +337,9 @@ Jaylan was successfully tested in a real browser session after correcting the li
 - documentation cleanup and handbook consolidation
 - QA automation improvements
 - non-live sync modeling
-- non-live prototype refinement
+- shared shell refinement inside app-v2
 - service-layer planning
-- page-by-page redesign planning
+- Dashboard-only migration after the editorial shell checkpoint stays validated
 
 ## Recent Phase Closeout Summaries
 

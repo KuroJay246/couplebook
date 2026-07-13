@@ -1,13 +1,13 @@
 export function ErrorState({
   title = 'Something needs attention',
-  description = 'This part of the migration shell is not ready yet.',
+  description = 'This part of the protected shell is not ready yet.',
   actionLabel = '',
   onAction = null,
   children = null,
 }) {
   return (
     <section className="state-card state-card-error" aria-live="polite">
-      <div className="state-badge">Blocked</div>
+      <div className="state-badge">Notice</div>
       <h2>{title}</h2>
       <p>{description}</p>
       {children}
