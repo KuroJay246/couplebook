@@ -14,13 +14,20 @@ import { ProfilePage } from '../pages/ProfilePage'
 import { SettingsPage } from '../pages/SettingsPage'
 import { TimelinePage } from '../pages/TimelinePage'
 import { ValentinePage } from '../pages/ValentinePage'
+import { CompatibilityProvider } from '../features/compatibility/CompatibilityProvider'
 
 export function AppRoutes() {
   return (
     <Routes>
       <Route path={LOGIN_PATH} element={<LoginPage />} />
       <Route element={<ProtectedRoute />}>
-        <Route element={<AppShell />}>
+        <Route
+          element={
+            <CompatibilityProvider>
+              <AppShell />
+            </CompatibilityProvider>
+          }
+        >
           <Route index element={<Navigate replace to={DEFAULT_AUTHENTICATED_PATH} />} />
           <Route path={DEFAULT_AUTHENTICATED_PATH} element={<DashboardPage />} />
           <Route path="/timeline" element={<TimelinePage />} />
