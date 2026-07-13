@@ -89,6 +89,32 @@ test('legacy favorites adapter reports empty and invalid states safely', async (
   assert.match(invalidResult.warnings.join(' '), /malformed/i)
 })
 
+test('legacy favorites adapter keeps one-person data read-only while preserving unknown categories', async () => {
+  const storage = createStorage({
+    memorybook_favorites: JSON.stringify({
+      Jaylan: {
+        food: [' ramen ', '', null, 'ramen'],
+        places: ['Museum'],
+        hobbies: ['Reading'],
+        activities: ['Walks'],
+        keepsakes: ['preserve-but-do-not-render'],
+      },
+    }),
+  })
+
+  const before = storage.snapshot()
+  const result = await readLegacyFavorites({ storage: storage.storage })
+
+  assert.equal(result.status, 'ready')
+  assert.deepEqual(result.data.favoritesByOwner.Jaylan.categories.food, ['ramen', 'ramen'])
+  assert.deepEqual(result.data.favoritesByOwner.Jaylan.unknownCategories, {
+    keepsakes: ['preserve-but-do-not-render'],
+  })
+  assert.deepEqual(result.data.favoritesByOwner.Omia.categories.activities, [])
+  assert.deepEqual(storage.calls.setItem, [])
+  assert.deepEqual(storage.snapshot(), before)
+})
+
 test('legacy profile adapter preserves unknown fields and rejects malformed values', async () => {
   const storage = createStorage({
     memorybook_profiles: JSON.stringify({
