@@ -15,6 +15,9 @@ Those commands validate the isolated React shell without changing the current st
 - `npm run check:routes`
   Verifies the required app routes return `200`. It reuses an existing local server on `http://127.0.0.1:3000` if one is already running, otherwise it starts `server.js` temporarily.
 
+- `npm run check:privacy`
+  Uses headless Playwright against the local static app to prove that signed-out or spoofed localStorage cannot unlock `/pages/contract.html`, that direct public special-page routes expose only neutral placeholder content, and that spoofed localStorage does not unlock the legacy wrapper path.
+
 - `npm run check:safety`
   Verifies tracked files and reachable Git history do not contain the known private media, export, or backup bundle paths that were previously removed from the repo.
 
@@ -40,7 +43,7 @@ Those commands validate the isolated React shell without changing the current st
   Verifies the master handbook docs and the required standalone smoke/privacy docs still exist before longer autonomous runs depend on them.
 
 - `npm run check:all`
-  Runs the safety, public, rules, mirrors, services, sync-model, prototype, docs, and route checks in sequence.
+  Runs the safety, public, rules, mirrors, services, sync-model, prototype, docs, privacy, and route checks in sequence.
 
 ## When To Run
 
@@ -96,33 +99,31 @@ Automated now:
 - `app-v2` linting for the isolated React track
 - `app-v2` auth/route contract tests
 - `app-v2` production build generation into `app-v2/dist`
+- Browser privacy/auth-containment checks for the static contract and retired public special pages
 
 Still manual:
 
 - Approved Jaylan account login smoke
 - Approved partner account login smoke
 - Browser verification that normal signed-in flows do not hit permission-denied after live rules changes
-- Final visual confirmation for special pages that intentionally excluded companion media still degrade gracefully
+- Approved-user placeholder-path confirmation for the retired public special pages unless safe local credentials are supplied to the privacy check
+- Final visual confirmation for current missing-media fallbacks outside the retired public special pages
 
-## Known Coverage Gaps After 2026-07-12 Recovery Audit
+## Known Coverage Gaps After 2026-07-12 Static Privacy Containment
 
-- `check:routes` proves HTTP `200` only. It does not assert the final browser location after client-side auth redirects.
-- The current QA lane does not fail when direct special pages are reachable without the protected shell:
-  - `/pages/confession/index.html`
-  - `/pages/valentine/index.html`
-  - `/pages/omnia-happy-birthday.html`
-- The current QA lane does not detect that `pages/contract.html` can be opened with only spoofed `localStorage` session keys while `/pages/dashboard.html` still rejects the same fake session.
-- The current QA lane does not fail on browser-console/runtime asset 404s from:
+- `check:routes` still proves HTTP `200` only. The redirect/privacy behavior coverage now lives in `check:privacy`, not `check:routes`.
+- The privacy lane does not exercise the approved-user path unless safe local test credentials are deliberately provided through environment variables.
+- The current QA lane still does not fail on browser-console/runtime asset 404s from:
   - `core/memories.json` media paths
   - profile/contract avatar paths
   - direct special-page companion media
 - The `app-v2` auth tests are intentionally non-live. They do not log into production Firebase or prove approved-user behavior in a browser without a safe local test configuration.
 - The root `npm run check:all` lane still validates the static rollback app only. It does not exercise the React migration routes.
+  - other non-retired page-level local-only asset assumptions
 
 ## Next QA Upgrade Targets
 
 - add a headless browser smoke that verifies protected routes end on the login page when the session is missing
-- add a headless browser smoke that proves direct special pages are either retired or protected
-- add a headless browser smoke that confirms `contract.html` cannot open from `localStorage` spoofing alone
 - add a browser-console/media-request smoke that fails on unexpected 404s for the current clean local baseline
 - add a headless browser smoke for `app-v2` signed-out route protection and approved-user restoration once a safe local test configuration exists
+- add an approved-user credential-injected smoke path for the retired public special-page placeholders only when it can run without storing secrets in repo files

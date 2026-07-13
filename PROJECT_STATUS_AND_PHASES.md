@@ -71,6 +71,24 @@ Key outcomes from this execution batch:
 - Mobile login rendering stayed inside the viewport with no horizontal overflow in a fresh `iPhone 13` browser emulation.
 - Full approved-account browser review is still blocked in this audit because no reusable authenticated approved session was available for the headless runtime pass.
 
+## 2026-07-12 Static Privacy Containment Branch
+
+- Branch created: `hotfix/static-privacy-boundaries`
+- Purpose: reviewable non-deployed containment for the static app while `main` remains the migration baseline.
+- `pages/contract.html` and `public/pages/contract.html` now wait for Firebase Auth plus approved-user verification before any contract content renders.
+- A spoofed-only `localStorage` session no longer opens `/pages/contract.html`; the route now fails closed back to `/pages/login.html`.
+- The public special-page routes:
+  - `/pages/confession/index.html`
+  - `/pages/valentine/index.html`
+  - `/pages/omnia-happy-birthday.html`
+  now serve neutral placeholder shells only.
+- The original sensitive special-page source files remain preserved outside the Hosting publish root in the root `pages/` tree for later protected reintegration.
+- Static limitation that remains honest: the hotfix branch does not pretend the old static shell can privately serve those sensitive pages. Their protected product return is deferred to the routed React migration.
+- Branch validation after containment changes:
+  - `npm run check:all` passed
+  - new browser privacy smoke proved signed-out contract redirect, spoofed-session contract lockout, neutral public special-page placeholders, and spoofed-session lockout on the legacy wrapper
+  - approved-user placeholder-path verification remains optional/manual unless safe local credentials are provided
+
 ## 2026-07-12 Architecture Decision
 
 Selected direction: `Option C` as the long-term target, with a short `Option B` compatibility bridge and the current static app preserved as the temporary live baseline.
@@ -114,6 +132,14 @@ What must wait:
 - close the documentation truth gap
 - keep `npm run check:all` green
 - do not rewrite data, rules, or media paths
+
+### R0.5 — Static Privacy Containment
+
+- close the `contract.html` localStorage-only auth bypass
+- remove sensitive special-page HTML from the public Hosting surface
+- preserve original special-page source outside `public/`
+- add browser privacy QA that validates behavior, not only route `200` responses
+- do not merge or deploy this branch automatically
 
 ### R1 — Modern Foundation
 

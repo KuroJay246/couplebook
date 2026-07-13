@@ -54,6 +54,12 @@ The current app overuses one generic `glass-card` pattern and needs clearer hier
 - story content above status content
 - special pages remain distinct but better integrated
 
+## 2026-07-12 Static Privacy Containment Note
+
+- The hotfix branch now replaces the public copies of the confession, Valentine, and birthday pages with neutral placeholders.
+- Their original emotional source remains outside `public/` so the content can be reintroduced later through a real protected route model instead of a fake client-only privacy gate.
+- Until the routed migration shell exists, the old static runtime should treat those moments as preserved-but-retired rather than pretending they are privately served.
+
 ### Future Shell Zones
 
 - private frame

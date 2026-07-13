@@ -13,9 +13,9 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
-  if (modulePath.includes('confession')) title.textContent = "✨ Jaylan's Confession";
-  else if (modulePath.includes('valentine')) title.textContent = "✨ Valentine's Request";
-  else if (modulePath.includes('birthday')) title.textContent = "✨ Omia's Birthday";
+  if (modulePath.includes('confession') || modulePath.includes('valentine') || modulePath.includes('birthday')) {
+    title.textContent = '✨ Private Moment';
+  }
 
   frame.src = modulePath;
 });

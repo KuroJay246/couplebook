@@ -38,6 +38,15 @@ This migration track does not add a custom backend. The backend/cloud posture re
 - `core/firestoreSync.js` still mixes active-user preferences with couple-shared projection rebuilding in one module.
 - `core/memories.json` remains local-only and is not represented in Firestore.
 
+## 2026-07-12 Static Privacy Containment Branch Update
+
+- Hotfix branch: `hotfix/static-privacy-boundaries`
+- New mirrored helper: `services/pageAccessService.js`
+- `pageAccessService` waits for real Firebase Auth state, verifies approval through the existing targeted `users/{uid}` lookup, syncs the approved session keys only after that check, and fails closed on signed-out, unauthorized, timeout, or unavailable-auth states.
+- `contract.html` no longer treats `localStorage` as proof of identity. It now opens only after approved-user verification resolves.
+- The public special-page routes now publish neutral placeholder content only. Their original sensitive source files remain outside the Hosting root for later routed reintegration.
+- This branch deliberately does not fake privacy for the old static special pages. The full sensitive content remains deferred to the future protected app architecture.
+
 ## 2026-07-12 Domain Ownership Snapshot
 
 | Domain | Current source of truth | Local state | Firestore state | Notes |
@@ -279,7 +288,7 @@ Stop any future live sync implementation immediately if:
 - collection-wide `users` list/read is still on the critical path
 - username-keyed local structures still drive shared merge behavior
 - root/public mirroring still increases maintenance cost
-- direct special pages and `contract.html` are not fully governed by the same auth boundary as the protected shell
+- the audit baseline exposed direct special pages and a contract bypass; the hotfix branch now contains those paths with approved-session gating and placeholder retirement, but full protected-content reintegration still requires the routed migration shell
 - favorites and signatures still rely on compatibility merge shapes rather than clear domain contracts
 
 ## Candidate Future Service Boundaries

@@ -1,205 +1,131 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Happy Birthday Omia</title>
-  <style>
-    :root{
-      --bg:#0a0612;
-      --card-purple:#a87bdc;
-      --accent:#f5d0fe;
-      --editor-bg:#120a1d;
-      --panel:#1a0d2e;
-      --muted:#e9d5ff;
-      --green:#88d18a;
-      --yellow:#ffd36b;
-      --pink:#f0abfc;
-      --sprinkle1:#f0abfc;
-      --sprinkle2:#ffd36b;
-      --sprinkle3:#88d18a;
-      --sprinkle4:#a78bfa;
-      --sprinkle5:#bbf7d0;
-      --cherry:#e11d48;
-    }
-    html,body{height:100%;margin:0;font-family:'Poppins',sans-serif}
-    body{
-      background:radial-gradient(circle at top left,#2e1065,#0a0612 70%);
-      display:flex;align-items:center;justify-content:center;padding:32px;color:var(--muted)
-    }
-    .wrapper{width:960px;max-width:95vw;display:grid;grid-template-columns:1fr;gap:24px}
-    .card{
-      background:linear-gradient(160deg,var(--card-purple),#6b21a8);
-      border-radius:32px;padding:40px 30px;position:relative;overflow:hidden;
-      box-shadow:0 12px 36px rgba(0,0,0,0.6)
-    }
-    .card::after{
-      content:'';position:absolute;inset:0;
-      background-image:radial-gradient(circle at 10% 20%, rgba(255,255,255,0.1) 0,transparent 20%),
-                       radial-gradient(circle at 90% 80%, rgba(255,255,255,0.06) 0,transparent 18%);
-      pointer-events:none
-    }
-    .card-inner{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:20px}
-    .cake-svg{width:220px;height:220px;overflow:visible}
-
-    /* Greeting */
-    .greeting{
-      font-family:'Dancing Script',cursive;
-      font-size:44px;
-      color:var(--accent);
-      letter-spacing:0.6px;
-      text-align:center;
-      text-shadow:2px 2px 8px rgba(0,0,0,0.5);
-      opacity:0;
-      transform:translateY(30px);
-      animation:textAppear 1s ease forwards 2.2s
-    }
-    .sub{margin:0;color:#f5f3ff;font-size:15px;opacity:0.85}
-    @keyframes textAppear{to{opacity:1; transform:translateY(0);}}
-
-    /* Cake animation */
-    .layer rect{opacity:0;transform:translateY(60px);animation:stack 0.8s forwards;}
-    .layer.bottom rect{animation-delay:0.2s;}
-    .layer.middle rect{animation-delay:0.5s;}
-    .layer.top rect{animation-delay:0.8s;}
-    .frosting{transform:scaleY(0);transform-origin:top;opacity:0;animation:pour 0.8s forwards;}
-    .layer.bottom .frosting{animation-delay:1s;}
-    .layer.middle .frosting{animation-delay:1.3s;}
-    .layer.top .frosting{animation-delay:1.6s;}
-    .cake-candle{opacity:0;transform:translateY(60px);animation:stack 0.8s forwards 2s;}
-    .cake-candle2{opacity:0;transform:translateY(60px);animation:stack 0.8s forwards 2.1s;}
-    .cake-candle3{opacity:0;transform:translateY(60px);animation:stack 0.8s forwards 2.2s;}
-    @keyframes stack{to{opacity:1; transform:translateY(0);}}
-    @keyframes pour{to{opacity:1; transform:scaleY(1);}}
-
-    /* Flame */
-    .flame, .flame2, .flame3 {
-      animation: flicker 1s infinite alternate ease-in-out;
-      transform-origin:center;
-    }
-    .flame2 {animation-delay:0.2s;}
-    .flame3 {animation-delay:0.4s;}
-    @keyframes flicker {
-      from {transform: scale(1);}
-      to {transform: scale(1.2);}
-    }
-
-    /* Plate */
-    .plate {
-      fill:#e5e7eb;
-      opacity:0;
-      animation:stack 0.8s forwards 2.4s;
-    }
-
-    /* Sprinkles */
-    .sprinkle {
-      opacity:0;
-      animation:stack 0.8s forwards 2.6s;
-    }
-
-    /* Cherry */
-    .cherry {
-      opacity:0;
-      animation:stack 0.8s forwards 2.8s;
-    }
-
-    @media (max-width:520px){
-      .greeting{font-size:30px}
-      .cake-svg{width:160px;height:160px}
-    }
-
-    /* Confetti */
-    .confetti{position:absolute;inset:0;pointer-events:none}
-    .confetti span{position:absolute;width:10px;height:10px;border-radius:3px;opacity:0;animation:fall 3s linear infinite}
-    @keyframes fall{
-      0%{opacity:0;transform:translateY(-30px) rotate(0)}
-      10%{opacity:1}
-      100%{transform:translateY(300px) rotate(720deg);opacity:0}
-    }
-  </style>
-  <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Private Moment — MemoryBook</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: Georgia, serif;
+    color: #f7efff;
+    background:
+      radial-gradient(circle at top left, rgba(223, 189, 255, 0.2), transparent 28%),
+      linear-gradient(160deg, #1f123d 0%, #5b2585 55%, #090413 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .card {
+    width: min(100%, 560px);
+    padding: 32px 28px;
+    border-radius: 28px;
+    background: rgba(20, 9, 38, 0.8);
+    border: 1px solid rgba(243, 229, 255, 0.18);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.32);
+    text-align: center;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    margin-bottom: 18px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    font-size: 1.9rem;
+  }
+  h1 {
+    margin: 0 0 12px;
+    font-size: clamp(1.9rem, 4vw, 2.5rem);
+  }
+  p {
+    margin: 0;
+    color: rgba(247, 239, 255, 0.84);
+    line-height: 1.7;
+    font-size: 0.98rem;
+  }
+  .actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 24px;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 180px;
+    padding: 12px 18px;
+    border-radius: 999px;
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .btn-primary {
+    color: #281247;
+    background: #eadcff;
+  }
+  .btn-secondary {
+    color: #f7efff;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+  }
+</style>
 </head>
 <body>
-  <div class="wrapper">
-    <div class="card">
-      <div class="card-inner">
-        <!-- Cake with plate -->
-        <svg class="cake-svg" viewBox="0 0 260 220" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="cakeGrad1" x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0" stop-color="#d9a6ff"/>
-              <stop offset="1" stop-color="#8b3ebd"/>
-            </linearGradient>
-            <linearGradient id="cakeGrad2" x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0" stop-color="#f3d9ff"/>
-              <stop offset="1" stop-color="#c084fc"/>
-            </linearGradient>
-            <linearGradient id="cakeGrad3" x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0" stop-color="#fff0ff"/>
-              <stop offset="1" stop-color="#f0abfc"/>
-            </linearGradient>
-            <linearGradient id="frostGrad" x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0" stop-color="#fff" stop-opacity="0.8"/>
-              <stop offset="1" stop-color="#fff" stop-opacity="1"/>
-            </linearGradient>
-          </defs>
-          <!-- Bottom layer -->
-          <g class="layer bottom">
-            <rect x="30" y="150" width="200" height="40" rx="16" fill="url(#cakeGrad1)" />
-            <path class="frosting" d="M30 150 q100 -25 200 0" fill="url(#frostGrad)" />
-            <!-- Sprinkles -->
-            <circle class="sprinkle" cx="60" cy="170" r="4" fill="var(--sprinkle1)" />
-            <circle class="sprinkle" cx="90" cy="180" r="3" fill="var(--sprinkle2)" />
-            <circle class="sprinkle" cx="120" cy="165" r="3" fill="var(--sprinkle3)" />
-            <circle class="sprinkle" cx="170" cy="175" r="4" fill="var(--sprinkle4)" />
-            <circle class="sprinkle" cx="200" cy="160" r="3" fill="var(--sprinkle5)" />
-          </g>
-          <!-- Middle layer -->
-          <g class="layer middle">
-            <rect x="50" y="110" width="160" height="35" rx="14" fill="url(#cakeGrad2)" />
-            <path class="frosting" d="M50 110 q80 -20 160 0" fill="url(#frostGrad)" />
-            <circle class="sprinkle" cx="70" cy="130" r="2.5" fill="var(--sprinkle2)" />
-            <circle class="sprinkle" cx="110" cy="120" r="2.5" fill="var(--sprinkle3)" />
-            <circle class="sprinkle" cx="150" cy="125" r="2.5" fill="var(--sprinkle4)" />
-            <circle class="sprinkle" cx="190" cy="115" r="2.5" fill="var(--sprinkle1)" />
-          </g>
-          <!-- Top layer -->
-          <g class="layer top">
-            <rect x="80" y="75" width="100" height="30" rx="12" fill="url(#cakeGrad3)" />
-            <path class="frosting" d="M80 75 q50 -15 100 0" fill="url(#frostGrad)" />
-            <circle class="sprinkle" cx="100" cy="90" r="2" fill="var(--sprinkle3)" />
-            <circle class="sprinkle" cx="130" cy="85" r="2" fill="var(--sprinkle2)" />
-            <circle class="sprinkle" cx="160" cy="95" r="2" fill="var(--sprinkle1)" />
-            <!-- Cherry -->
-            <circle class="cherry" cx="130" cy="72" r="7" fill="var(--cherry)" stroke="#fff" stroke-width="2"/>
-            <rect class="cherry" x="128" y="62" width="4" height="12" rx="2" fill="#a3e635" />
-          </g>
-          <!-- Candles -->
-          <rect class="cake-candle" x="125" y="45" width="10" height="35" rx="3" fill="#faf5ff" stroke="#d8b4fe" stroke-width="1" />
-          <rect class="cake-candle2" x="110" y="50" width="8" height="28" rx="2.5" fill="#fffbe7" stroke="#ffd36b" stroke-width="1" />
-          <rect class="cake-candle3" x="142" y="52" width="7" height="25" rx="2" fill="#e0e7ff" stroke="#a78bfa" stroke-width="1" />
-          <!-- Flames -->
-          <ellipse class="flame" cx="130" cy="38" rx="7" ry="10" fill="url(#frostGrad)" />
-          <ellipse class="flame2" cx="114" cy="42" rx="5" ry="7" fill="url(#frostGrad)" />
-          <ellipse class="flame3" cx="145" cy="44" rx="4" ry="6" fill="url(#frostGrad)" />
-          <!-- Plate -->
-          <ellipse class="plate" cx="130" cy="195" rx="110" ry="15" />
-          <!-- Cake message -->
-          <text x="130" y="100" text-anchor="middle" font-family="Poppins, sans-serif" font-size="13" fill="#a87bdc" opacity="0.85">Omia</text>
-        </svg>
-        <div class="greeting">Happy Birthday Omia My Love</div>
-        <p class="sub">With all my heart ♥</p>
-      </div>
-      <!-- Confetti -->
-      <div class="confetti">
-        <span style="left:8%;top:12%;background:#d8b4fe;animation-delay:0s"></span>
-        <span style="left:20%;top:10%;background:#a78bfa;animation-delay:0.2s"></span>
-        <span style="left:78%;top:18%;background:#c084fc;animation-delay:0.4s"></span>
-        <span style="left:54%;top:6%;background:#f0abfc;animation-delay:0.8s"></span>
-        <span style="left:40%;top:0%;background:#fde68a;animation-delay:1.2s"></span>
-        <span style="left:70%;top:5%;background:#bbf7d0;animation-delay:1.5s"></span>
-      </div>
+  <main class="card" aria-live="polite">
+    <div class="badge">🔒</div>
+    <h1 id="moment-title">Securing Private Moment</h1>
+    <p id="moment-message">Checking your approved MemoryBook session before this private moment can continue.</p>
+    <div class="actions">
+      <a class="btn btn-primary" href="/pages/login.html" id="primary-action">Open Sign-In</a>
+      <a class="btn btn-secondary" href="/pages/dashboard.html" id="secondary-action">Return to Dashboard</a>
     </div>
-  </div>
+  </main>
+
+  <script type="module">
+    import { waitForApprovedUserState } from '/services/pageAccessService.js';
+
+    const title = document.getElementById('moment-title');
+    const message = document.getElementById('moment-message');
+    const primary = document.getElementById('primary-action');
+    const secondary = document.getElementById('secondary-action');
+
+    const showBlockedState = (text) => {
+      title.textContent = 'Private Moment Locked';
+      message.textContent = text;
+      primary.textContent = 'Open Sign-In';
+      primary.href = '/pages/login.html';
+      secondary.textContent = 'Back to Vault Login';
+      secondary.href = '/pages/login.html';
+    };
+
+    const showAuthorizedState = () => {
+      title.textContent = 'Private Moment Temporarily Unavailable';
+      message.textContent =
+        'This sensitive page was removed from the public static surface during privacy hardening and will return through the protected app migration.';
+      primary.textContent = 'Return to Dashboard';
+      primary.href = '/pages/dashboard.html';
+      secondary.textContent = 'Back to Private Shell';
+      secondary.href = '/pages/legacy.html?module=omnia-happy-birthday.html';
+    };
+
+    const result = await waitForApprovedUserState({ timeoutMs: 5000 });
+    if (result.status === 'authorized') {
+      showAuthorizedState();
+    } else if (result.status === 'unauthorized') {
+      showBlockedState('This account is not approved for Couple Book private moments.');
+    } else if (result.status === 'unavailable') {
+      showBlockedState('Couple Book could not verify your approved session. Please sign in again.');
+    } else {
+      showBlockedState('This private moment is available only inside the approved Couple Book experience.');
+    }
+  </script>
 </body>
 </html>
