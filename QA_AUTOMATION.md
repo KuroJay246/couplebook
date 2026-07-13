@@ -17,6 +17,8 @@ As of 2026-07-13, the app-v2 lane now also covers:
 - targeted domain-service contracts
 - broad-query guardrails
 - shell design-system structure and token retirement checks
+- Dashboard read-model coverage
+- Dashboard route source coverage
 
 ## Scripts
 
@@ -157,6 +159,25 @@ Still manual:
   - no horizontal overflow was observed
   - no console errors remained after the stale Vite hot-reload log was cleared by a full reload
 
+## 2026-07-13 app-v2 Dashboard Validation
+
+- the Dashboard read-model checkpoint passed app-v2 `lint`, `test`, and `build` before it was pushed as `71b1812`
+- the migrated Dashboard route now adds:
+  - a dedicated Dashboard feature slice
+  - a read-only Dashboard model
+  - source-level tests that prevent the route from regressing back to the placeholder
+- the finished Dashboard migration passed:
+  - `npm run lint`
+  - `npm test` with 37 passing tests
+  - `npm run build`
+  - root `npm run check:all`
+- in-browser validation for the approved Jaylan session confirmed:
+  - `/dashboard` stayed inside the protected shell
+  - no login redirect or `permission-denied` state appeared
+  - desktop and `390x844` mobile widths stayed free of horizontal overflow
+  - the new Dashboard section headings, source-state cards, and special-route links rendered cleanly
+  - browser console logs stayed empty during the final Dashboard pass
+
 ## Known Coverage Gaps After 2026-07-12 Static Privacy Containment
 
 - `check:routes` still proves HTTP `200` only. The redirect/privacy behavior coverage now lives in `check:privacy`, not `check:routes`.
@@ -179,4 +200,4 @@ Still manual:
 - add a headless browser smoke for `app-v2` signed-out route protection and approved-user restoration once a safe local test configuration exists
 - add an approved-user credential-injected smoke path for the retired public special-page placeholders only when it can run without storing secrets in repo files
 - add the partner-account React browser smoke when a safe live session is genuinely available
-- add an approved-user React browser smoke for the compatibility-backed dashboard only after the first real page migration lands
+- expand the approved-user React browser smoke from Dashboard to the next isolated migrated route after Dashboard lands

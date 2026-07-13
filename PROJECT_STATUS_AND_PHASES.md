@@ -51,8 +51,22 @@ Key outcomes from this execution batch:
 - the prior rose/berry/glass baseline was retired from app-v2 shared styling
 - responsive checks completed in-browser at desktop, tablet, and `390x844` mobile widths with no horizontal overflow
 - approved-user protected-route verification remained intact after the visual restyle
-- Dashboard is still a placeholder at this checkpoint; no real Dashboard data migration has landed yet
+- the editorial shell checkpoint was pushed as `866336f` before Dashboard work began
 - no deploy, merge, rules change, production write, private-memory bundle, or Gather Savor modification occurred
+
+## 2026-07-13 Dashboard Migration Execution
+
+- Dashboard is now the first real migrated page inside app-v2; no other non-special product page has been migrated in this batch
+- a dedicated read-only Dashboard compatibility model landed first and was pushed as `71b1812`
+- the Dashboard route now renders:
+  - a story-first editorial opening
+  - an honest recent-memories state
+  - milestone and birthday sections
+  - protected special-moment links
+  - compatibility/source-state reporting
+  - supporting navigation kept below the story opening
+- Dashboard continues to read only through approved auth, the existing compatibility provider, and narrow read-only feature inputs
+- no broad Firestore query, write-back path, deploy, merge, rules change, or private-memory bundle was introduced
 
 ## 2026-07-12 Recovery Audit Snapshot
 
@@ -209,6 +223,9 @@ What must wait:
 ### R5 — Core Page Migration
 
 - dashboard
+  - completed on `migration/react-foundation` after the editorial shell checkpoint
+  - uses a read-only feature model derived from the compatibility provider and approved-user context
+  - browser-verified in the approved Jaylan session with no auth loop, no permission-denied state, and no horizontal overflow
 - timeline
 - gallery
 - profile
@@ -319,7 +336,7 @@ Jaylan was successfully tested in a real browser session after correcting the li
 
 ### UI Gate
 
-3. Keep live redesign work behind route/auth/sync safety confirmation.
+3. Keep remaining live page migration work behind route/auth/sync safety confirmation.
 
 ### Storage Gate
 
@@ -339,7 +356,7 @@ Jaylan was successfully tested in a real browser session after correcting the li
 - non-live sync modeling
 - shared shell refinement inside app-v2
 - service-layer planning
-- Dashboard-only migration after the editorial shell checkpoint stays validated
+- after Dashboard, continue only the next isolated migrated page without widening auth, sync, or private-data scope
 
 ## Recent Phase Closeout Summaries
 

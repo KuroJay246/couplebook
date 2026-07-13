@@ -304,7 +304,42 @@ Behavioral safety preserved:
 - protected routes stayed protected
 - no broad Firestore `users` query was introduced
 - no localStorage auth proof was introduced
-- Dashboard remains a placeholder at this checkpoint; no real Dashboard data or page migration has landed yet
+- the shell checkpoint was pushed before any Dashboard data or page migration began
+
+## 2026-07-13 app-v2 Dashboard Migration Checkpoint
+
+Dashboard is now the first real page migrated into the editorial React shell.
+
+Dashboard structure now follows the locked order:
+
+- editorial story opening
+- recent memories
+- milestones
+- special moments
+- quiet compatibility/source state
+- supporting navigation
+
+What changed:
+
+- replaced the Dashboard placeholder with a dedicated Dashboard feature slice
+- added a read-only Dashboard model that composes approved-user context with compatibility sources only
+- kept recent memories honest when the local memory bridge is unavailable instead of pretending the archive is empty
+- moved milestones into supporting editorial cards instead of opening with counters first
+- kept special-page entries visible but subordinate to the main story opening
+- added a quiet source-state ledger so the route makes compatibility gaps explicit
+
+What stayed intentionally deferred:
+
+- no timeline, gallery, profile, favorites, or settings migration
+- no real couple Firestore memory schema
+- no write-back path to localStorage or Firestore
+- no private media bundle into app-v2
+
+Browser result:
+
+- `/dashboard` rendered inside the approved Jaylan session with no redirect loop and no permission-denied state
+- desktop and mobile checks stayed free of horizontal overflow
+- the Dashboard route showed the new section hierarchy, source-state cards, and protected special-route links with no browser-console warnings/errors
 
 ## Phase 11 Browser Experience Findings
 
