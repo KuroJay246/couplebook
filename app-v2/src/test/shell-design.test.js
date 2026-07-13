@@ -1,29 +1,50 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
+import { ROUTE_GROUPS, getRoutesByGroup } from '../app/routeConfig.js'
 
 async function readSource(relativePath) {
   return readFile(new URL(relativePath, import.meta.url), 'utf8')
 }
 
-test('app shell keeps the editorial navigation grouping explicit', async () => {
+test('route registry keeps the final primary and secondary hierarchy explicit', () => {
+  assert.deepEqual(
+    getRoutesByGroup(ROUTE_GROUPS.primary).map((route) => route.path),
+    ['/dashboard', '/timeline', '/gallery', '/profile'],
+  )
+  assert.deepEqual(
+    getRoutesByGroup(ROUTE_GROUPS.shared).map((route) => route.path),
+    ['/favorites', '/contract'],
+  )
+  assert.deepEqual(
+    getRoutesByGroup(ROUTE_GROUPS.special).map((route) => route.path),
+    ['/birthday', '/valentine', '/confession'],
+  )
+  assert.deepEqual(
+    getRoutesByGroup(ROUTE_GROUPS.utility).map((route) => route.path),
+    ['/settings'],
+  )
+})
+
+test('app shell keeps the refined navigation hierarchy explicit', async () => {
   const shellSource = await readSource('../layout/AppShell.jsx')
   const mobileNavSource = await readSource('../layout/MobileNavigation.jsx')
+  const routeConfigSource = await readSource('../app/routeConfig.js')
 
-  assert.match(shellSource, /const primaryRoutes = protectedRouteMeta\.filter/)
-  assert.match(shellSource, /\/dashboard/)
-  assert.match(shellSource, /\/timeline/)
-  assert.match(shellSource, /\/gallery/)
-  assert.match(shellSource, /const sharedRoutes = protectedRouteMeta\.filter/)
-  assert.match(shellSource, /\/profile/)
-  assert.match(shellSource, /\/favorites/)
-  assert.match(shellSource, /title="Primary story"/)
-  assert.match(shellSource, /title="Shared space"/)
-  assert.match(shellSource, /title="Quiet utilities"/)
+  assert.match(routeConfigSource, /ROUTE_GROUPS/)
+  assert.match(routeConfigSource, /navLabel: 'Home'/)
+  assert.match(routeConfigSource, /navLabel: 'Story'/)
+  assert.match(routeConfigSource, /navLabel: 'Gallery'/)
+  assert.match(routeConfigSource, /navLabel: 'Us'/)
+  assert.match(shellSource, /getRoutesByGroup\(ROUTE_GROUPS\.primary\)/)
+  assert.match(shellSource, /Shared details/)
   assert.match(shellSource, /title="Special moments"/)
-  assert.match(shellSource, /const mobileRoutes = \[\.\.\.primaryRoutes, \.\.\.sharedRoutes\.slice\(0, 1\)\]/)
+  assert.match(shellSource, /Utilities/)
+  assert.match(shellSource, /Sign out/)
+  assert.match(shellSource, /Everything beyond the main journey\./)
   assert.match(mobileNavSource, /visibleItems = Array\.isArray\(items\) \? items\.slice\(0, 4\) : \[\]/)
-  assert.match(mobileNavSource, /aria-label="Open full navigation"/)
+  assert.match(mobileNavSource, /item\.navLabel/)
+  assert.match(mobileNavSource, /aria-label="Open secondary navigation"/)
 })
 
 test('shared states and login shell keep the editorial-journal framing explicit', async () => {

@@ -92,7 +92,7 @@ code {
 .app-shell {
   min-height: 100vh;
   display: grid;
-  grid-template-columns: 292px 1fr;
+  grid-template-columns: 264px 1fr;
 }
 
 .shell-main {
@@ -725,9 +725,9 @@ code {
 .shell-sidebar {
   width: auto;
   min-height: 100vh;
-  padding: 28px 22px 32px;
+  padding: 24px 20px 28px;
   background:
-    linear-gradient(180deg, #eee4d7 0%, #e4d7c7 100%),
+    linear-gradient(180deg, #f0e6da 0%, #e5d8c8 100%),
     repeating-linear-gradient(0deg, rgba(87, 70, 55, 0.03) 0 1px, transparent 1px 24px);
   border-right: 1px solid var(--line-strong);
 }
@@ -737,29 +737,19 @@ code {
   top: 0;
 }
 
-.shell-sidebar-mobile {
-  position: relative;
-  z-index: 2;
-  width: min(360px, calc(100vw - 24px));
-  min-height: 100vh;
-  box-shadow: var(--shadow-strong);
-}
-
 .brand-panel {
   display: grid;
   gap: 12px;
-  margin-bottom: 24px;
 }
 
 .brand-panel h1 {
-  font-size: 2rem;
-  line-height: 1.08;
+  font-size: 1.84rem;
+  line-height: 1.06;
 }
 
 .brand-panel p,
 .account-panel span,
 .shell-header-user span,
-.nav-link small,
 .mobile-nav-link span,
 .sidebar-heading,
 .account-label {
@@ -767,53 +757,116 @@ code {
   line-height: 1.65;
 }
 
-.sidebar-group + .sidebar-group {
-  margin-top: 20px;
-}
-
 .sidebar-heading,
 .account-label {
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
-.sidebar-links {
+.shell-identity,
+.rail-section,
+.account-panel,
+.rail-primary,
+.rail-links,
+.secondary-sheet-group,
+.secondary-sheet-links {
   display: grid;
+}
+
+.shell-identity {
+  gap: 18px;
+}
+
+.rail-primary,
+.rail-links,
+.secondary-sheet-links {
   gap: 8px;
 }
 
-.nav-link,
+.rail-section {
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.chapter-link,
+.rail-link,
 .mobile-nav-link {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
   padding: 12px 14px;
   border: 1px solid transparent;
-  border-left-width: 3px;
-  border-radius: 12px;
+  border-radius: 14px;
   transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease;
 }
 
-.nav-link {
-  color: var(--graphite);
+.chapter-link {
+  padding: 14px 16px;
+  background: rgba(255, 250, 244, 0.62);
+  border-color: rgba(111, 93, 74, 0.08);
+  color: var(--ink);
 }
 
-.nav-link span,
+.chapter-link-label,
 .mobile-nav-link strong {
   font-family: "Georgia", "Times New Roman", serif;
   font-size: 1rem;
 }
 
-.nav-link small,
-.mobile-nav-link span {
-  font-size: 0.79rem;
+.chapter-link-title {
+  color: var(--muted);
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
-.nav-link-active,
-.nav-link:hover,
+.chapter-link-active,
+.chapter-link:hover {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(105, 113, 95, 0.46);
+  box-shadow: inset 3px 0 0 rgba(105, 113, 95, 0.8);
+}
+
+.rail-link {
+  color: var(--graphite);
+  background: rgba(255, 255, 255, 0.32);
+}
+
+.rail-link span {
+  font-family: "Georgia", "Times New Roman", serif;
+  font-size: 0.98rem;
+}
+
+.rail-link small,
+.mobile-nav-link span {
+  font-size: 0.78rem;
+}
+
+.rail-link-shared {
+  border-color: rgba(111, 93, 74, 0.06);
+}
+
+.rail-link-special {
+  border-color: rgba(124, 74, 61, 0.08);
+  background:
+    linear-gradient(90deg, rgba(176, 127, 92, 0.12), rgba(255, 255, 255, 0.34)),
+    rgba(255, 255, 255, 0.34);
+}
+
+.rail-link-utility {
+  border-style: dashed;
+  border-color: rgba(111, 93, 74, 0.16);
+}
+
+.rail-link-active,
+.rail-link:hover {
+  background: rgba(255, 255, 255, 0.84);
+  border-color: rgba(105, 113, 95, 0.34);
+}
+
 .mobile-nav-link-active {
   background: rgba(255, 255, 255, 0.52);
   border-color: var(--accent-olive);
@@ -821,12 +874,16 @@ code {
 }
 
 .account-panel {
-  display: grid;
   gap: 8px;
   width: 100%;
-  margin-top: 26px;
+  margin-top: auto;
   padding-top: 18px;
   border-top: 1px solid var(--line);
+}
+
+.account-panel-copy {
+  display: grid;
+  gap: 4px;
 }
 
 .account-panel strong,
@@ -835,6 +892,10 @@ code {
   font-family: "Georgia", "Times New Roman", serif;
   font-size: 1.05rem;
   font-weight: 600;
+}
+
+.utility-signout {
+  width: 100%;
 }
 
 .shell-frame {
@@ -862,7 +923,7 @@ code {
 }
 
 .shell-header-user {
-  min-width: 220px;
+  min-width: 240px;
   padding: 14px 16px;
   border: 1px solid var(--line);
   border-radius: 14px;
@@ -930,10 +991,13 @@ code {
 .shell-overlay {
   position: fixed;
   inset: 0;
-  display: grid;
-  justify-content: start;
-  background: rgba(35, 27, 23, 0.16);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 12px;
+  background: rgba(35, 27, 23, 0.24);
   backdrop-filter: blur(4px);
+  z-index: 20;
 }
 
 .shell-overlay-dismiss {
@@ -942,6 +1006,49 @@ code {
   border: none;
   background: transparent;
   cursor: pointer;
+}
+
+.secondary-sheet {
+  position: relative;
+  z-index: 1;
+  width: min(560px, calc(100vw - 24px));
+}
+
+.secondary-sheet-card {
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid var(--line-strong);
+  border-radius: 22px;
+  background:
+    linear-gradient(180deg, rgba(250, 246, 239, 0.99), rgba(242, 234, 223, 0.99)),
+    repeating-linear-gradient(90deg, rgba(111, 93, 74, 0.03) 0 1px, transparent 1px 24px);
+  box-shadow: var(--shadow-strong);
+}
+
+.secondary-sheet-header,
+.secondary-sheet-account {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.secondary-sheet-header h2 {
+  font-size: clamp(1.35rem, 5vw, 1.8rem);
+  line-height: 1.08;
+}
+
+.secondary-sheet-account {
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.44);
+}
+
+.secondary-sheet-account strong {
+  font-family: "Georgia", "Times New Roman", serif;
+  font-size: 1rem;
 }
 
 .mobile-nav {
@@ -990,7 +1097,7 @@ code {
   }
 }
 
-@media (max-width: 860px) {
+@media (max-width: 1100px) {
   .app-shell {
     grid-template-columns: 1fr;
   }
@@ -1023,7 +1130,9 @@ code {
   .mobile-nav {
     display: flex;
   }
+}
 
+@media (max-width: 860px) {
   .dashboard-panel {
     padding: 20px;
   }
@@ -1031,13 +1140,19 @@ code {
   .dashboard-section-heading,
   .source-status-toolbar,
   .birthday-card,
-  .story-link-card {
+  .story-link-card,
+  .secondary-sheet-header,
+  .secondary-sheet-account {
     flex-direction: column;
   }
 
   .birthday-card-countdown {
     justify-items: start;
     text-align: left;
+  }
+
+  .secondary-sheet {
+    width: 100%;
   }
 }
 

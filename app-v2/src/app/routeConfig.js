@@ -1,18 +1,108 @@
 export const LOGIN_PATH = '/login'
 export const DEFAULT_AUTHENTICATED_PATH = '/dashboard'
 
+export const ROUTE_GROUPS = Object.freeze({
+  primary: 'primary',
+  shared: 'shared',
+  special: 'special',
+  utility: 'utility',
+})
+
 export const protectedRouteMeta = [
-  { path: '/dashboard', label: 'Dashboard', shortLabel: 'Home', title: 'Dashboard', summary: 'A story-led private home built on the editorial shell and narrow read-only inputs.' },
-  { path: '/timeline', label: 'Timeline', shortLabel: 'Story', title: 'Timeline', summary: 'The relationship story will settle here once legacy reads are connected.' },
-  { path: '/gallery', label: 'Gallery', shortLabel: 'Gallery', title: 'Gallery', summary: 'Curated visual memories will move here after the compatibility layer is wired.' },
-  { path: '/profile', label: 'Profile', shortLabel: 'Us', title: 'Profile', summary: 'Shared identity and paired profiles stay intentionally private here.' },
-  { path: '/favorites', label: 'Favorites', shortLabel: 'Favorites', title: 'Favorites', summary: 'Cherished things, rituals, and shared preferences will land here.' },
-  { path: '/settings', label: 'Settings', shortLabel: 'Settings', title: 'Settings', summary: 'Quiet controls for the private shell and auth state.' },
-  { path: '/contract', label: 'Contract', shortLabel: 'Contract', title: 'Contract', summary: 'Protected contract handling moves here with real auth ownership.' },
-  { path: '/birthday', label: 'Birthday', shortLabel: 'Birthday', title: 'Birthday', summary: 'Sensitive special moments stay protected behind the routed shell.' },
-  { path: '/valentine', label: 'Valentine', shortLabel: 'Valentine', title: 'Valentine', summary: 'Special moments are intentionally placeholders in this migration phase.' },
-  { path: '/confession', label: 'Confession', shortLabel: 'Confession', title: 'Confession', summary: 'Direct public access stays retired until content is reintroduced safely.' },
+  {
+    path: '/dashboard',
+    label: 'Dashboard',
+    navLabel: 'Home',
+    title: 'Dashboard',
+    chapter: 'Chapter 01',
+    group: ROUTE_GROUPS.primary,
+    summary: 'A story-led private home built on the editorial shell and narrow read-only inputs.',
+  },
+  {
+    path: '/timeline',
+    label: 'Timeline',
+    navLabel: 'Story',
+    title: 'Timeline',
+    chapter: 'Chapter 02',
+    group: ROUTE_GROUPS.primary,
+    summary: 'The relationship story will settle here once legacy reads are connected.',
+  },
+  {
+    path: '/gallery',
+    label: 'Gallery',
+    navLabel: 'Gallery',
+    title: 'Gallery',
+    chapter: 'Chapter 03',
+    group: ROUTE_GROUPS.primary,
+    summary: 'Curated visual memories will move here after the compatibility layer is wired.',
+  },
+  {
+    path: '/profile',
+    label: 'Profile',
+    navLabel: 'Us',
+    title: 'Profile',
+    chapter: 'Chapter 04',
+    group: ROUTE_GROUPS.primary,
+    summary: 'Shared identity and paired profiles stay intentionally private here.',
+  },
+  {
+    path: '/favorites',
+    label: 'Favorites',
+    navLabel: 'Favorites',
+    title: 'Favorites',
+    group: ROUTE_GROUPS.shared,
+    summary: 'Cherished things, rituals, and shared preferences will land here.',
+  },
+  {
+    path: '/contract',
+    label: 'Contract',
+    navLabel: 'Contract',
+    title: 'Contract',
+    group: ROUTE_GROUPS.shared,
+    summary: 'Protected contract handling moves here with real auth ownership.',
+  },
+  {
+    path: '/birthday',
+    label: 'Birthday',
+    navLabel: 'Birthday',
+    title: 'Birthday',
+    group: ROUTE_GROUPS.special,
+    accent: 'gold',
+    summary: 'Sensitive special moments stay protected behind the routed shell.',
+  },
+  {
+    path: '/valentine',
+    label: 'Valentine',
+    navLabel: 'Valentine',
+    title: 'Valentine',
+    group: ROUTE_GROUPS.special,
+    accent: 'rose',
+    summary: 'Special moments are intentionally placeholders in this migration phase.',
+  },
+  {
+    path: '/confession',
+    label: 'Confession',
+    navLabel: 'Confession',
+    title: 'Confession',
+    group: ROUTE_GROUPS.special,
+    accent: 'oxblood',
+    summary: 'Direct public access stays retired until content is reintroduced safely.',
+  },
+  {
+    path: '/settings',
+    label: 'Settings',
+    navLabel: 'Settings',
+    title: 'Settings',
+    group: ROUTE_GROUPS.utility,
+    summary: 'Quiet controls for the private shell and auth state.',
+  },
 ]
+
+const routeMetaByPath = new Map(protectedRouteMeta.map((route) => [route.path, route]))
+
+export function getRoutesByGroup(group) {
+  return protectedRouteMeta.filter((route) => route.group === group)
+}
 
 export function normalizePathname(pathname) {
   if (!pathname || pathname === '/') return DEFAULT_AUTHENTICATED_PATH
@@ -28,7 +118,7 @@ export function isProtectedPath(pathname) {
 
 export function findRouteMeta(pathname) {
   const normalizedPath = normalizePathname(pathname)
-  return protectedRouteMeta.find((route) => route.path === normalizedPath) || null
+  return routeMetaByPath.get(normalizedPath) || null
 }
 
 export function resolveProtectedRouteOutcome({ pathname, isLoading, user, isAuthorized }) {

@@ -11,11 +11,11 @@ export function MobileNavigation({ items, onOpenMenu }) {
           className={({ isActive }) => `mobile-nav-link ${isActive ? 'mobile-nav-link-active' : ''}`}
           to={item.path}
         >
-          <strong>{item.shortLabel}</strong>
+          <strong>{item.navLabel}</strong>
           <span>{item.label}</span>
         </NavLink>
       ))}
-      <button aria-label="Open full navigation" className="mobile-nav-link" onClick={onOpenMenu} type="button">
+      <button aria-label="Open secondary navigation" className="mobile-nav-link" onClick={onOpenMenu} type="button">
         <strong>More</strong>
         <span>Menu</span>
       </button>
