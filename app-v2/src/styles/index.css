@@ -1,0 +1,146 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: light;
+  --canvas: #fdf6f2;
+  --canvas-accent: #f4e7df;
+  --ink: #2f1a20;
+  --ink-soft: #6f5860;
+  --rose: #b86a79;
+  --rose-deep: #8e4a59;
+  --berry: #4b2133;
+  --line: rgba(95, 59, 68, 0.12);
+  --surface: rgba(255, 255, 255, 0.74);
+  --surface-strong: rgba(255, 255, 255, 0.9);
+  --shadow: 0 28px 80px rgba(84, 41, 54, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: "Georgia", "Times New Roman", serif;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at top left, rgba(255, 214, 223, 0.62), transparent 30%),
+    radial-gradient(circle at top right, rgba(243, 218, 206, 0.6), transparent 34%),
+    linear-gradient(180deg, var(--canvas) 0%, #f7efe9 100%);
+}
+
+a {
+  color: inherit;
+}
+
+code {
+  font-family: "Courier New", monospace;
+}
+
+.shell-root {
+  min-height: 100vh;
+}
+
+.shell-main {
+  width: min(1120px, calc(100vw - 32px));
+  margin: 0 auto;
+  padding: 40px 0 72px;
+}
+
+.shell-main-center {
+  display: grid;
+  justify-items: center;
+  gap: 20px;
+}
+
+.hero-card,
+.state-card {
+  width: min(100%, 760px);
+  border-radius: 32px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(22px);
+}
+
+.hero-card {
+  padding: 32px;
+}
+
+.hero-card-compact {
+  width: 100%;
+}
+
+.hero-card h1,
+.state-card h2 {
+  margin: 0 0 12px;
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1.02;
+}
+
+.hero-card p,
+.state-card p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-family: "Segoe UI", sans-serif;
+  font-size: 1rem;
+  line-height: 1.72;
+}
+
+.eyebrow,
+.state-badge {
+  display: inline-flex;
+  margin-bottom: 16px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(184, 106, 121, 0.1);
+  color: var(--rose-deep);
+  font-family: "Segoe UI", sans-serif;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.state-card {
+  padding: 28px;
+}
+
+.state-card-error {
+  border-color: rgba(142, 74, 89, 0.2);
+}
+
+.state-card-empty {
+  background: var(--surface-strong);
+}
+
+.page-stack {
+  display: grid;
+  gap: 20px;
+}
+
+@media (max-width: 720px) {
+  .shell-main {
+    width: min(100vw - 24px, 1120px);
+    padding: 24px 0 48px;
+  }
+
+  .hero-card,
+  .state-card {
+    border-radius: 24px;
+  }
+
+  .hero-card {
+    padding: 24px;
+  }
+
+  .state-card {
+    padding: 22px;
+  }
+}
