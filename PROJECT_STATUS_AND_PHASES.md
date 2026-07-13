@@ -257,7 +257,7 @@ What must wait:
 | --- | --- |
 | Overall gate | `HOLD` |
 | Jaylan authenticated smoke actually run | yes |
-| app-v2 Jaylan authenticated browser smoke actually run | no safe local session provided |
+| app-v2 Jaylan authenticated browser smoke actually run | yes (`PASS`) |
 | Partner authenticated smoke actually run | no |
 | Guest blocked in current source/unsigned checks | yes |
 | Signup disabled | yes |
@@ -266,7 +266,26 @@ What must wait:
 
 ### Why Smoke Is Still HOLD
 
-Jaylan was successfully tested in a real browser session after correcting the live Jaylan UID mismatch in Firestore rules. The smoke gate is still `HOLD` because the partner account was not available for testing, and the new app-v2 shell still does not have a safe approved-user browser session available for honest routed smoke confirmation.
+Jaylan was successfully tested in a real browser session after correcting the live Jaylan UID mismatch in Firestore rules. The new app-v2 shell now also has an honest approved-user routed-browser smoke result for Jaylan. The overall gate is still `HOLD` because the partner account was not available for testing.
+
+### 2026-07-13 app-v2 Approved-User React Smoke
+
+- local development first required an ignored `app-v2/.env.local` correction copied from the existing static Firebase web config; no environment file was committed
+- login through the visible in-app browser succeeded for the approved Jaylan account
+- requested protected route preservation was verified on `/dashboard` and later on `/contract` after sign-out and re-login
+- direct authenticated protected-route checks passed for:
+  - `/dashboard`
+  - `/contract`
+  - `/birthday`
+  - `/valentine`
+  - `/confession`
+- reload stayed on each tested protected route with no redirect loop and no loading-screen stall
+- no `permission-denied` state appeared in the approved session
+- browser console stayed free of app-source warnings/errors during the protected-route checks
+- network checks stayed clean except for one expected `net::ERR_ABORTED` fetch when sign-out intentionally terminated an in-flight Firestore listen
+- the observed Firestore authorization read stayed targeted to `users/{uid}` and did not widen into a collection-wide `users` query
+- spoofed legacy `memorybook_active_session`, `memorybook_active_user`, `memorybook_active_uid`, and per-user contract keys did not restore access after sign-out; direct `/contract` navigation still returned to `/login`
+- re-login restored approved access and preserved the requested protected `/contract` route
 
 ## Open Gates
 

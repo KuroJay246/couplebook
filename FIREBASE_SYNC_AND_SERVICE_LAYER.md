@@ -58,6 +58,33 @@ Guardrails now in effect inside app-v2:
 - no automatic write-back from compatibility reads
 - no reintroduction of the old broad sync model
 
+## 2026-07-13 app-v2 Approved-User Smoke
+
+The isolated React shell now has one honest live approved-user browser smoke result for Jaylan.
+
+Confirmed in the visible in-app browser:
+
+- login succeeded after adding an ignored local `app-v2/.env.local` file copied from the existing static Firebase web config
+- `/dashboard`, `/contract`, `/birthday`, `/valentine`, and `/confession` all remained inside the protected shell for the approved session
+- reload restored the approved session on each tested protected route
+- sign-out returned the browser to `/login`
+- spoofed legacy `memorybook_active_session`, `memorybook_active_user`, `memorybook_active_uid`, and contract keys did not restore access
+- re-login restored approved access and preserved the requested `/contract` route
+
+Observed Firebase behavior:
+
+- the auth verification path remained targeted to `users/{uid}`
+- no collection-wide `users` query was observed
+- no `permission-denied` state appeared
+- browser console stayed clean
+- the only notable network event was one expected aborted Firestore listen during sign-out
+
+Overall smoke truth after this run:
+
+- Jaylan app-v2 React smoke: `PASS`
+- partner app-v2 React smoke: not run
+- overall approved-account gate: still `HOLD` until partner verification exists
+
 ## 2026-07-12 Verified Auth And Data Findings
 
 - Firebase identity is email/password only in the current Couple Book runtime.
@@ -325,7 +352,7 @@ Require real authenticated browser sessions for:
 
 ### What cannot be honestly verified while smoke is HOLD
 
-- live signed-in strict-rules flow
+- partner signed-in strict-rules flow
 - real listener behavior on approved couple docs
 - real cloud merge correctness
 
@@ -342,7 +369,7 @@ Stop any future live sync implementation immediately if:
 
 ## Remaining Firestore Risks
 
-- approved-account smoke is still `HOLD`
+- partner approved-account smoke is still `HOLD`
 - collection-wide `users` list/read is still on the critical path
 - username-keyed local structures still drive shared merge behavior
 - root/public mirroring still increases maintenance cost

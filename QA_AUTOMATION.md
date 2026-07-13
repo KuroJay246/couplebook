@@ -119,6 +119,20 @@ Still manual:
 - Approved-user placeholder-path confirmation for the retired public special pages unless safe local credentials are supplied to the privacy check
 - Final visual confirmation for current missing-media fallbacks outside the retired public special pages
 
+## 2026-07-13 app-v2 Approved-User Smoke Result
+
+- the isolated React shell now has one honest live approved-user browser smoke for Jaylan
+- local setup required an ignored `app-v2/.env.local` file copied from the existing static Firebase web config before the React login page could initialize Firebase; that file remains uncommitted
+- approved-user login succeeded in the visible in-app browser
+- `/dashboard`, `/contract`, `/birthday`, `/valentine`, and `/confession` all stayed inside the protected shell for the approved session
+- reload restored the approved session on each tested protected route with no redirect loop, no loading stall, and no `permission-denied` state
+- sign-out returned the browser to `/login`
+- spoofed legacy `memorybook_*` session keys did not restore access to `/contract`
+- re-login restored approved access and preserved the requested `/contract` route
+- browser console stayed clean during the smoke
+- network observation stayed clean except for one expected aborted Firestore listen during sign-out
+- observed Firestore auth verification remained targeted to `users/{uid}`; no broad `users` collection query was observed
+
 ## Known Coverage Gaps After 2026-07-12 Static Privacy Containment
 
 - `check:routes` still proves HTTP `200` only. The redirect/privacy behavior coverage now lives in `check:privacy`, not `check:routes`.
@@ -131,6 +145,7 @@ Still manual:
 - The `app-v2` auth tests are intentionally non-live. They do not log into production Firebase or prove approved-user behavior in a browser without a safe local test configuration.
 - The root `npm run check:all` lane still validates the static rollback app only. It does not exercise the React migration routes.
 - The app-v2 memory bridge tests validate localhost gating, production blocking, and sanitized fixture normalization only. They do not fetch or snapshot real private memory content in CI-style runs.
+- The app-v2 approved-user smoke is still manual, single-account, and browser-session-dependent. Partner verification and future page-specific migrated-route smoke remain outstanding.
 
 ## Next QA Upgrade Targets
 
@@ -138,4 +153,5 @@ Still manual:
 - add a browser-console/media-request smoke that fails on unexpected 404s for the current clean local baseline
 - add a headless browser smoke for `app-v2` signed-out route protection and approved-user restoration once a safe local test configuration exists
 - add an approved-user credential-injected smoke path for the retired public special-page placeholders only when it can run without storing secrets in repo files
+- add the partner-account React browser smoke when a safe live session is genuinely available
 - add an approved-user React browser smoke for the compatibility-backed dashboard only after the first real page migration lands
