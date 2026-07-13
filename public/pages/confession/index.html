@@ -1,827 +1,131 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>For Mara 💌</title>
-
+<meta name="robots" content="noindex, nofollow">
+<title>Private Moment — MemoryBook</title>
 <style>
-* {
-  box-sizing: border-box;
-}
-
-img, video {
-  max-width: 100%;
-  height: auto;
-}
-
-:root {
-  --note-scale: 1;
-  --note-shift: 8px;
-  --note-gap: 10px;
-  --note-cheesy-gap: 6px;
-}
-
-body {
-  margin: 0;
-  font-family: 'Georgia', serif;
-  overflow-y: auto;
-  overflow-x: hidden;
-  min-height: 100vh;
-}
-
-.card-container {
-  min-height: 100vh;
-  min-height: 100dvh;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #fb7185 0%, #ec4899 40%, #db2777 100%);
-  position: relative;
-  overflow: hidden;
-  padding: clamp(16px, 4vw, 28px) clamp(12px, 3.5vw, 24px);
-  box-sizing: border-box;
-}
-
-.floating-hearts, .floating-kisses, .fireworks, .floating-flowers, .floating-blossoms {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.heart, .kiss {
-  position: absolute;
-  font-size: 24px;
-  animation: float-up 8s infinite ease-in;
-  opacity: 0;
-}
-
-.blossom {
-  position: absolute;
-  font-size: 22px;
-  animation: blossom-drift 10s infinite ease-in;
-  opacity: 0;
-}
-
-@keyframes float-up {
-  0% { transform: translateY(100%) rotate(0deg); opacity: 0; }
-  10% { opacity: 1; }
-  90% { opacity: 1; }
-  100% { transform: translateY(-100%) rotate(360deg); opacity: 0; }
-}
-
-@keyframes blossom-drift {
-  0% { transform: translateY(110%) translateX(0) rotate(0deg) scale(0.7); opacity: 0; }
-  10% { opacity: 1; }
-  70% { opacity: 1; }
-  100% { transform: translateY(-120%) translateX(var(--x)) rotate(180deg) scale(1.1); opacity: 0; }
-}
-
-.firework {
-  position: absolute;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: white;
-  animation: fireworkAnim 1.2s ease-out forwards;
-  opacity: 0;
-}
-@keyframes fireworkAnim {
-  0% { transform: scale(0); opacity:1;}
-  50% { transform: scale(3); opacity:1;}
-  100% { transform: scale(0); opacity:0;}
-}
-
-.flower {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  opacity: 0;
-  animation: bloom 4.8s ease-out forwards;
-  transform: translate(-50%, -50%) scale(0);
-  text-shadow: 0 6px 16px rgba(0,0,0,0.25);
-}
-@keyframes bloom {
-  0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
-  20% { opacity: 1; }
-  100% { transform: translate(calc(-50% + var(--x)), calc(-50% + var(--y))) rotate(var(--r)) scale(1); opacity: 0; }
-}
-
-.password-screen {
-  background: rgba(255,255,255,0.97);
-  border-radius: 20px;
-  padding: clamp(24px, 5vw, 40px);
-  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-  text-align: center;
-  max-width: 420px;
-  width: min(92vw, 420px);
-}
-.password-screen h2 { color: #db2777; margin-bottom: 10px; font-size: clamp(22px, 5vw, 28px); }
-.password-screen p { color: #9d174d; margin-bottom: 24px; font-size: clamp(14px, 3.4vw, 16px); }
-
-.password-input {
-  width: 100%;
-  padding: clamp(12px, 3.2vw, 15px);
-  border-radius: 10px;
-  font-size: clamp(16px, 4vw, 18px);
-  margin-bottom: 20px;
-  text-align:center;
-  border: 2px solid #db2777;
-  box-sizing: border-box;
-}
-.unlock-btn {
-  background: linear-gradient(135deg,#fb7185 0%,#ec4899 40%,#db2777 100%);
-  color:white;
-  border:none;
-  padding: clamp(12px, 3.4vw, 15px) clamp(24px, 6vw, 40px);
-  border-radius:10px;
-  font-size: clamp(16px, 4vw, 18px);
-  cursor:pointer;
-}
-.unlock-btn:hover { transform: scale(1.05); }
-.error-message { color:#e11d48; font-size:14px; min-height:20px; }
-
-.card {
-  position: relative;
-  width: min(92vw, 640px);
-  height: min(72vh, 520px);
-  max-width: 100%;
-  display: none;
-  perspective: 1500px;
-}
-.card.unlocked {
-  display:block;
-  animation: cardAppear 0.8s ease-out;
-}
-@keyframes cardAppear {
-  from { opacity:0; transform: scale(0.8); }
-  to { opacity:1; transform:scale(1); }
-}
-
-.card-inner {
-  width:100%;
-  height:100%;
-  transform-style: preserve-3d;
-  cursor:pointer;
-  transition: transform 0.8s;
-}
-.card-inner.opened { transform: rotateY(-180deg); }
-
-.card-front, .card-inside {
-  position:absolute;
-  width:100%;
-  height:100%;
-  backface-visibility:hidden;
-  border-radius:15px;
-  box-shadow:0 10px 40px rgba(0,0,0,0.3);
-}
-
-.card-front {
-  background: linear-gradient(135deg,#fb7185 0%,#ec4899 40%,#db2777 100%);
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  color:white;
-  padding: 24px;
-  box-sizing: border-box;
-}
-.card-front h3 {
-  font-size: clamp(16px, 3.2vw, 22px);
-  margin:0 0 8px;
-  opacity:0.9;
-}
-.card-front h1 {
-  font-size: clamp(22px, 4.8vw, 32px);
-  text-align:center;
-  margin:0 0 16px;
-}
-.click-hint {
-  font-size: clamp(12px, 2.8vw, 14px);
-  letter-spacing: 0.04em;
-  opacity: 0.85;
-}
-
-.card-inside {
-  background:#ffe4ef;
-  transform:rotateY(180deg);
-  padding:18px 18px;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:flex-start;
-  overflow-y:auto;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
-  box-sizing: border-box;
-}
-
-.card-inside h2 {
-  color:#db2777;
-  font-size: clamp(18px, 4.2vw, 24px);
-  margin:4px 0 10px;
-  text-align:center;
-}
-
-.message {
-  color:#9d174d;
-  font-size: clamp(13.5px, 3.1vw, 15.5px);
-  line-height:1.65;
-  text-align:center;
-  max-width:95%;
-  overflow-wrap: anywhere;
-}
-
-.meme-image {
-  display: block;
-  width: 100%;
-  max-width: 420px;
-  margin: 12px auto 16px;
-  border-radius: 12px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.25);
-}
-
-.note-outside {
-  position: absolute;
-  right: 5%;
-  bottom: 6%;
-  display: flex;
-  align-items: flex-end;
-  gap: var(--note-gap);
-  opacity: 0;
-  transform: translateY(var(--note-shift)) scale(var(--note-scale));
-  transition: opacity 0.4s ease, transform 0.4s ease;
-  pointer-events: none;
-}
-.note-top {
-  position: absolute;
-  left: 5%;
-  top: 6%;
-  display: flex;
-  align-items: flex-end;
-  gap: var(--note-gap);
-  opacity: 0;
-  transform: translateY(var(--note-shift)) scale(var(--note-scale));
-  transition: opacity 0.4s ease, transform 0.4s ease;
-  pointer-events: none;
-}
-.note-top.shown {
-  opacity: 1;
-  transform: translateY(0) scale(var(--note-scale));
-}
-.note-stack {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-}
-.note-cheesy {
-  position: absolute;
-  left: 6%;
-  bottom: 8%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--note-cheesy-gap);
-  opacity: 0;
-  transform: translateY(var(--note-shift)) scale(var(--note-scale));
-  transition: opacity 0.4s ease, transform 0.4s ease;
-  pointer-events: none;
-}
-.note-cheesy .note-bubble {
-  max-width: 220px;
-}
-.note-cheesy.shown {
-  opacity: 1;
-  transform: translateY(0) scale(var(--note-scale));
-}
-
-.note-face {
-  width: clamp(48px, 16vw, 96px);
-  height: clamp(48px, 16vw, 96px);
-  border-radius: 18px;
-  object-fit: cover;
-  box-shadow: 0 10px 24px rgba(0,0,0,0.25);
-  background: rgba(255,255,255,0.9);
-}
-.note-bubble {
-  max-width: min(70vw, 240px);
-  background: rgba(255,255,255,0.92);
-  color:#be123c;
-  font-size: clamp(11.5px, 2.6vw, 13.5px);
-  line-height:1.6;
-  text-align:center;
-  font-style: italic;
-  padding: 12px 14px;
-  border-radius: 14px;
-  box-shadow: 0 12px 30px rgba(0,0,0,0.25);
-  position: relative;
-  overflow-wrap: anywhere;
-}
-.note-bubble.primary::after {
-  content: "";
-  position: absolute;
-  right: -14px;
-  bottom: 16px;
-  border-width: 10px 0 10px 14px;
-  border-style: solid;
-  border-color: transparent transparent transparent rgba(255,255,255,0.92);
-}
-.note-bubble.secondary {
-  font-size: clamp(10px, 2.4vw, 12px);
-  margin-top: 6px;
-  opacity: 0.9;
-}
-.note-meme {
-  width: clamp(90px, 34vw, 180px);
-  max-width: 60vw;
-  border-radius: 10px;
-  margin-top: 6px;
-  box-shadow: 0 8px 18px rgba(0,0,0,0.25);
-}
-.note-outside.shown {
-  opacity: 1;
-  transform: translateY(0) scale(var(--note-scale));
-}
-
-.video-section {
-  margin-top: 14px;
-  width: 100%;
-  text-align: center;
-}
-.video-section h3 {
-  font-size: clamp(13px, 3vw, 16px);
-  color:#be123c;
-  margin-bottom:8px;
-}
-.memory-video {
-  width: 100%;
-  max-width: 360px;
-  border-radius: 10px;
-  border: 2px solid rgba(219,39,119,0.4);
-  box-shadow: 0 6px 18px rgba(0,0,0,0.25);
-}
-.local-media-note {
-  margin-top: 10px;
-  padding: 10px 14px;
-  border-radius: 14px;
-  background: rgba(255,255,255,0.72);
-  color: #7b365a;
-  font-size: 0.9rem;
-  line-height: 1.45;
-  box-shadow: 0 10px 24px rgba(123,54,90,0.12);
-}
-
-@media (max-width: 720px) {
-  .note-top {
-    left: 3%;
-    top: 3%;
-  }
-  .note-outside {
-    right: 3%;
-    bottom: 4%;
-  }
-  .note-cheesy {
-    left: 3%;
-    bottom: 16%;
-  }
-  :root {
-    --note-scale: 0.9;
-    --note-shift: 6px;
-    --note-gap: 8px;
-    --note-cheesy-gap: 5px;
-  }
-}
-
-@media (max-width: 600px) {
-  :root {
-    --note-scale: 0.85;
-    --note-shift: 6px;
-    --note-gap: 7px;
-    --note-cheesy-gap: 5px;
-  }
-  .note-bubble {
-    max-width: min(72vw, 220px);
-  }
-  .note-cheesy .note-bubble {
-    max-width: min(72vw, 210px);
-  }
-  .password-screen {
-    width: min(94vw, 360px);
-  }
-}
-
-@media (max-width: 520px) {
-  .card-container {
-    flex-direction: column;
-    justify-content: flex-start;
-    gap: 12px;
-    padding-top: 16px;
-    padding-bottom: 24px;
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: Georgia, serif;
+    color: #fff1f4;
+    background:
+      radial-gradient(circle at top, rgba(255, 201, 214, 0.22), transparent 32%),
+      linear-gradient(160deg, #3f0d24 0%, #6d1438 55%, #14030b 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
   }
   .card {
-    height: min(66vh, 420px);
-  }
-  .note-top,
-  .note-outside,
-  .note-cheesy {
-    position: static;
-    width: min(92vw, 340px);
-    align-items: center;
+    width: min(100%, 560px);
+    padding: 32px 28px;
+    border-radius: 28px;
+    background: rgba(28, 8, 16, 0.76);
+    border: 1px solid rgba(255, 216, 226, 0.18);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.32);
     text-align: center;
   }
-  .note-top,
-  .note-outside {
-    flex-direction: column;
-  }
-  .note-stack {
+  .badge {
+    display: inline-flex;
     align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    margin-bottom: 18px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    font-size: 1.9rem;
   }
-  .note-bubble.primary::after {
-    display: none;
+  h1 {
+    margin: 0 0 12px;
+    font-size: clamp(1.9rem, 4vw, 2.5rem);
   }
-}
-
-@media (max-width: 480px) {
-  .card { height: min(70vh, 440px); }
-  .card-front h1 { font-size: clamp(20px, 6vw, 24px); }
-  .card-inside h2 { font-size: clamp(17px, 4.8vw, 20px); }
-  .message { font-size: clamp(13px, 3.6vw, 14px); }
-  :root {
-    --note-scale: 0.78;
-    --note-shift: 5px;
-    --note-gap: 6px;
-    --note-cheesy-gap: 4px;
+  p {
+    margin: 0;
+    color: rgba(255, 241, 244, 0.82);
+    line-height: 1.7;
+    font-size: 0.98rem;
   }
-  .note-bubble {
-    font-size: clamp(10.5px, 3.2vw, 12.5px);
-    max-width: min(78vw, 210px);
+  .actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 24px;
   }
-  .note-bubble.secondary {
-    font-size: clamp(9.5px, 2.8vw, 11px);
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 180px;
+    padding: 12px 18px;
+    border-radius: 999px;
+    text-decoration: none;
+    font-weight: 600;
   }
-  .note-outside {
-    right: 4%;
-    bottom: 6%;
+  .btn-primary {
+    color: #3f0d24;
+    background: #ffd3df;
   }
-  .note-top {
-    left: 4%;
-    top: 4%;
+  .btn-secondary {
+    color: #fff1f4;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
   }
-  .note-cheesy {
-    left: 4%;
-    bottom: 20%;
-  }
-}
-
-@media (max-width: 360px) {
-  :root {
-    --note-scale: 0.68;
-    --note-gap: 5px;
-    --note-cheesy-gap: 4px;
-  }
-  .note-top,
-  .note-outside,
-  .note-cheesy {
-    gap: 6px;
-  }
-  .note-bubble {
-    padding: 10px 12px;
-  }
-  .note-face {
-    border-radius: 14px;
-  }
-  .card { height: min(68vh, 420px); }
-  .card-front h1 { font-size: clamp(18px, 6.4vw, 22px); }
-  .card-front h3 { font-size: clamp(14px, 3.6vw, 18px); }
-  .card-inside h2 { font-size: clamp(16px, 4.8vw, 19px); }
-  .message { font-size: clamp(12px, 3.8vw, 13.5px); }
-  .password-screen {
-    padding: clamp(18px, 5vw, 26px);
-  }
-  .password-screen h2 { font-size: clamp(20px, 5.6vw, 24px); }
-  .password-screen p { font-size: clamp(12px, 3.8vw, 14px); }
-}
-
-@media (max-width: 320px) {
-  :root {
-    --note-scale: 0.6;
-    --note-gap: 4px;
-    --note-cheesy-gap: 3px;
-  }
-  .card { height: min(64vh, 380px); }
-  .note-bubble {
-    max-width: min(82vw, 190px);
-  }
-  .note-meme {
-    width: clamp(80px, 36vw, 160px);
-  }
-}
-
-@media (max-height: 640px) {
-  .card { height: min(78vh, 460px); }
-  .card-inside {
-    padding: 14px;
-  }
-  :root {
-    --note-scale: 0.82;
-    --note-shift: 6px;
-  }
-}
-
-@media (max-height: 520px) {
-  .card { height: min(70vh, 420px); }
-  :root {
-    --note-scale: 0.7;
-    --note-shift: 5px;
-  }
-}
-
-@media (max-height: 440px) {
-  .card { height: min(64vh, 380px); }
-  :root {
-    --note-scale: 0.6;
-    --note-shift: 4px;
-  }
-}
 </style>
 </head>
-
 <body>
-<div class="card-container">
-  <div class="floating-blossoms" id="blossoms"></div>
-  <div class="floating-hearts" id="hearts"></div>
-  <div class="floating-kisses" id="kisses"></div>
-  <div class="fireworks" id="fireworks"></div>
-  <div class="floating-flowers" id="flowers"></div>
-  <div class="note-top" id="topNote">
-    <div class="note-bubble primary">Ik i repeat my self alot ml</div>
-    <img class="note-face" src="use me.jpg" alt="Smiling face">
-  </div>
-  <div class="note-cheesy" id="cheesyNote">
-    <div class="note-bubble secondary">Yh this was kinda chessy but all love</div>
-    <img class="note-meme" src="i-know-this-aba96f21b5.jpg" alt="I know this is cheesy but">
-  </div>
-  <div class="note-outside" id="outsideNote">
-    <div class="note-stack">
-      <div class="note-bubble primary">Yes i did ask for your favorite flowers for a reason ml. I also did take some insprations from your code alot of it lol</div>
-      <div class="note-bubble secondary">Yes ik i deserve a beating</div>
+  <main class="card" aria-live="polite">
+    <div class="badge">🔒</div>
+    <h1 id="moment-title">Securing Private Moment</h1>
+    <p id="moment-message">Checking your approved MemoryBook session before this private moment can continue.</p>
+    <div class="actions">
+      <a class="btn btn-primary" href="/pages/login.html" id="primary-action">Open Sign-In</a>
+      <a class="btn btn-secondary" href="/pages/dashboard.html" id="secondary-action">Return to Dashboard</a>
     </div>
-    <img class="note-face" src="IMG_20251225_183104_571.jpg" alt="Smiling face">
-  </div>
-  <!-- Private companion images, video, and audio are intentionally kept out of Git/public hosting. -->
-  <div class="local-media-note">
-    Private companion media for this page stays local-only and is excluded from Git and Firebase Hosting until a later Firebase Storage migration.
-  </div>
+  </main>
 
-  <div class="password-screen" id="passwordScreen">
-    <h2>🔐 Unlock Your Card</h2>
-    <p id="passwordHint">Hint: a nickname that I call you 💭</p>
-  <input type="text" class="password-input" id="passwordInput" placeholder="Enter password... (e.g. bighead)">
-    <button class="unlock-btn" id="unlockBtn">Unlock</button>
-    <div class="error-message" id="errorMessage"></div>
-  </div>
+  <script type="module">
+    import { waitForApprovedUserState } from '/services/pageAccessService.js';
 
-  <div class="card" id="card">
-    <div class="card-inner" id="cardInner">
-      <div class="card-front">
-        <h3>For Mara 💜</h3>
-        <h1>I need to tell you something ml 💌</h1>
-        <div class="click-hint">Tap to open</div>
-      </div>
+    const title = document.getElementById('moment-title');
+    const message = document.getElementById('moment-message');
+    const primary = document.getElementById('primary-action');
+    const secondary = document.getElementById('secondary-action');
 
-      <div class="card-inside">
-        <h2>To the girl who fills my heart, Omia 💗</h2>
+    const showBlockedState = (text) => {
+      title.textContent = 'Private Moment Locked';
+      message.textContent = text;
+      primary.textContent = 'Open Sign-In';
+      primary.href = '/pages/login.html';
+      secondary.textContent = 'Back to Vault Login';
+      secondary.href = '/pages/login.html';
+    };
 
-                <p class="message" id="confessionMessage">
-          Omia,<br><br>
+    const showAuthorizedState = () => {
+      title.textContent = 'Private Moment Temporarily Unavailable';
+      message.textContent =
+        'This sensitive page was removed from the public static surface during privacy hardening and will return through the protected app migration.';
+      primary.textContent = 'Return to Dashboard';
+      primary.href = '/pages/dashboard.html';
+      secondary.textContent = 'Back to Private Shell';
+      secondary.href = '/pages/legacy.html?module=confession/index.html';
+    };
 
-          I just want to talk to you the same way I always do. Straight from my head. You know I don't really talk from my chest. I like to stay shy and keep things inside most of the time. I don't always say what's on my mind. And then there are times when it leaks out and I actually say everything... and then I don't shut up and start talking too much. This is one of those times.<br><br>
-
-          From the time we met in Lower Six, something about you just stood out. Your personality, the way you move, the way you talk. And yeah, I always joke about it, but I knew you were never innocent. You've got that cute little smile and those "innocent" eyes, but you know your way around things. You're soft and kind-hearted, but definitely not that little innocent girl, and that always made me smile.<br><br>
-
-          One of our special moments I'll never forget was when you explained me to me. You broke me down in a way I didn't even know how to do for myself. You talked about me from a point of view I'd never seen before, and it stuck with me. I just thought, "yeah... this girl is amazing for real."<br><br>
-
-          Another thing that means a lot to me is those late nights when we talk and I keep picking at you about everything  your life, your stories, things you did, what you're doing. You call me Curious George because I'm always curious, and it's true. I'm curious about you. I like learning you. I like hearing about your books and all the little details. You trusted me with things I had no business knowing, and I really love that you trusted me even if you don't tell me everything.<br><br>
-
-          And there are these small things about you that just get me. The way you talk using all those stickers - just randomly cute for no reason sometimes I'm just there like "oh my god." It's such a tiny thing, but it's you, and I love it.<br><br>
-
-          You're loving, you're affectionate, you're soft in your own way. Holding your hand, hugging you, being close to you it actually calms me down in a way I can't fully explain. You don't even have to do much just you being you does it. I admire that about you.<br><br>
-
-          And yeah, I know I get on your nerves sometimes. You probably want to beat me because I'm nosy, curious, and still don't talk when I should. I overthink, I poke, I go quiet, I talk too much all of it. But even when you're tired of me, you're still patient with me, and I appreciate that more than I say.<br><br>
-
-          I also want you to know this: I do notice the little things you do. The way you talk to me in that cheerful way. The small ways you show you care. Even when you think I don't notice them, I do. I pick at them, I replay them in my head, and I keep them. And yeah, I may not always look you in your eyes when we're talking. I try sometimes, but it's hard for me. That's just how I am. But don't think that means I'm not paying attention  I notice you a lot.<br><br>
-
-          There's so much I can't even put into words properly because my brain isn't great at organizing it, but what I wrote here is what really sticks with me about you.<br><br>
-
-          I love the small details - the things you do for me, in return make me try to do for you in return. Sometimes  " I may be a Jackass or fool" but  It touches me more than I say. And I already know when you read this you're going to say I'm yapping - which is fair, because I did yap. I sat and yapped.<br><br>
-
-          Every time we meet up, I'm always shy. Not because I don't know what to do, but because I never want to make you uncomfortable. Me being shy is literally me caring. I'm in my head like  "don't mess this up... don't do too much... you will scare this girl off." That's how much you matter to me.<br><br>
-
-          I was never really a hug person or a physical-touch person like that. I didn't grow up with much of it, so I was never really comfortable. But you changed that slowly. When I hug you now, I don't want to let go. It feels warm and safe in your arms. I'm not clingy, but I like being close to you - it just feels right. And sometimes when I don't hug you first, it's literally just me overthinking again.<br><br>
-
-          You helped me through this year more than you know. The laughs, TikTok nights, little flirty talks, times you snapped me back into reality  all of it. I love when you include me or ask me to go places, even though I'm really a "stay-home" person. It still made me feel thought of.<br><br>
-
-          And yeah, I've been blocked like five, six... twenty times, who's counting. You always let me back. I joke that you like when I beg, but truthfully "ik you do bby".<br><br>
-
-          I don't want to rush anything. We're both young, doing our own thing, both in school, both chasing our futures. I don't want to hold you back. But I also don't want us to drift apart. I don't mind growing together, moving steady, understanding each other even if it gets complicated as long as we talk and find our way back.<br><br>
-
-          And yeah... I did take some inspiration from your birthday message. That message was when I realized you were something more special to me. The way you said I make you smile more than I know stayed with me. So I reflected on it. I used your lovely card as inspiration, added my own twists, added what I feel  and I mean all of it.<br><br>
-
-          So this is me finally saying it:<br><br>
-
-          Can I be your boyfriend?<br>
-          Can I be the one who learns you properly, takes things slow, doesn't run when it gets rough, actually tries for real, and grows with you even when we mess up?<br><br>
-
-<img class="meme-image" src="thats-so-cheesy.jpg" alt="Thats so cheesy">
-
-
-          I like you. A lot. You mean a lot to me. I just wanted you to hear all of this instead of guessing. I'm not always vocal, but this is from my heart.<br><br>
-
-          Whatever you think, I just want to know. And I want you to know that I appreciate you with my whole heart and whatever your decision is, I'll respect it.
-        </p>
-
-        <div class="video-section">
-          <h3>One of my favourite moments with you 💞</h3>
-          <video class="memory-video" controls playsinline preload="metadata">
-            
-            <source src="WhatsApp Video 2025-12-27 at 17.09.56.mp4" type="video/mp4">
-            Your browser doesn’t support the video tag.
-          </video>
-        </div>
-      </div>
-
-    </div>
-  </div>
-</div>
-
-<audio id="bgMusic" src="Alkaline - Iz You (Official Visualizer).mp3" loop preload="auto"></audio>
-
-<script>
-
-const VALID_PASSWORDS = [
-  "mara",
-  "bighead",
-  "big head",
-  "mimi",
-  "mia"
-].map(x => x.toLowerCase().trim());
-
-let isUnlocked = false;
-const bgMusic = document.getElementById("bgMusic");
-
-function replaceMissingMedia(element, message) {
-  if (!element || element.dataset.localMediaHandled === "true") {
-    return;
-  }
-
-  element.dataset.localMediaHandled = "true";
-  const note = document.createElement("div");
-  note.className = "local-media-note";
-  note.textContent = message;
-  element.replaceWith(note);
-}
-
-function setupLocalOnlyMediaFallbacks() {
-  document.querySelectorAll('img[src$=".jpg"], img[src$=".jpeg"], img[src$=".png"], img[src$=".gif"], img[src$=".webp"]').forEach((img) => {
-    img.addEventListener("error", () => {
-      replaceMissingMedia(img, "Private companion image not included in this clean repo copy.");
-    }, { once: true });
-  });
-
-  const video = document.querySelector(".memory-video");
-  if (video) {
-    const videoFallback = () => replaceMissingMedia(
-      video,
-      "Private companion video is local-only and is not included in this clean repo copy."
-    );
-    video.addEventListener("error", videoFallback, { once: true });
-    const source = video.querySelector("source");
-    if (source) {
-      source.addEventListener("error", videoFallback, { once: true });
+    const result = await waitForApprovedUserState({ timeoutMs: 5000 });
+    if (result.status === 'authorized') {
+      showAuthorizedState();
+    } else if (result.status === 'unauthorized') {
+      showBlockedState('This account is not approved for Couple Book private moments.');
+    } else if (result.status === 'unavailable') {
+      showBlockedState('Couple Book could not verify your approved session. Please sign in again.');
+    } else {
+      showBlockedState('This private moment is available only inside the approved Couple Book experience.');
     }
-  }
-
-  if (bgMusic) {
-    bgMusic.addEventListener("error", () => {
-      bgMusic.removeAttribute("src");
-      bgMusic.load();
-      console.warn("Optional local-only confession audio is unavailable in this clean repo copy.");
-    }, { once: true });
-  }
-}
-
-setupLocalOnlyMediaFallbacks();
-
-function createFloatingHeartsAndKisses(){
-  const hearts = document.getElementById("hearts");
-  const kisses = document.getElementById("kisses");
-  for(let i=0;i<22;i++){
-    const heart = document.createElement("div");
-    heart.className="heart";
-    heart.textContent = ["💗","💖","💞"][Math.floor(Math.random()*3)];
-    heart.style.left = Math.random()*100 + "%";
-    heart.style.animationDelay = Math.random()*6 + "s";
-    heart.style.fontSize = (Math.random()*16 + 18) + "px";
-    hearts.appendChild(heart);
-
-    const kiss = document.createElement("div");
-    kiss.className="kiss";
-    kiss.textContent="💋";
-    kiss.style.left = Math.random()*100 + "%";
-    kiss.style.animationDelay = Math.random()*6 + "s";
-    kiss.style.fontSize = (Math.random()*12 + 16) + "px";
-    kisses.appendChild(kiss);
-  }
-}
-
-function createCherryBlossoms(){
-  const container = document.getElementById("blossoms");
-  container.textContent = "";
-  for(let i=0;i<60;i++){
-    const blossom = document.createElement("div");
-    blossom.className="blossom";
-    blossom.textContent="🌸";
-    blossom.style.left = Math.random()*100 + "%";
-    blossom.style.animationDelay = Math.random()*10 + "s";
-    blossom.style.animationDuration = (Math.random()*6 + 8) + "s";
-    blossom.style.fontSize = (Math.random()*18 + 18) + "px";
-    blossom.style.setProperty("--x", (Math.random()*140 - 70) + "px");
-    container.appendChild(blossom);
-  }
-}
-
-function createFireworks(){
-  const fw = document.getElementById("fireworks");
-  for(let i=0;i<12;i++){
-    const dot = document.createElement("div");
-    dot.className="firework";
-    dot.style.left = Math.random()*100 + "%";
-    dot.style.top = Math.random()*60 + "%";
-    dot.style.background = ["#fb7185","#ec4899","#db2777"][Math.floor(Math.random()*3)];
-    dot.style.animationDelay = Math.random()*1.5 + "s";
-    fw.appendChild(dot);
-  }
-}
-
-function createFlowerBurst(){
-  const container = document.getElementById("flowers");
-  container.textContent = "";
-  const flowers = ["🌺","🌺","🌺","✳️","✳️","🪻","🪻","💮","💮","🌸","🌼","🌷","🌹","🥀","💐","🪷","✿","❇️"];
-  for(let i=0;i<60;i++){
-    const flower = document.createElement("div");
-    flower.className = "flower";
-    flower.textContent = flowers[Math.floor(Math.random()*flowers.length)];
-    const x = Math.random() * 760 - 380;
-    const y = Math.random() * -360 - 30;
-    const size = Math.random() * 22 + 20;
-    const delay = Math.random() * 0.9;
-    const r = Math.random() * 240 - 120;
-    flower.style.setProperty("--x", x + "px");
-    flower.style.setProperty("--y", y + "px");
-    flower.style.setProperty("--r", r + "deg");
-    flower.style.fontSize = size + "px";
-    flower.style.animationDelay = delay + "s";
-    container.appendChild(flower);
-  }
-  setTimeout(()=>{ container.textContent = ""; }, 5200);
-}
-
-document.getElementById("unlockBtn").addEventListener("click", ()=>{
-  const input = document.getElementById("passwordInput").value.toLowerCase().trim();
-  if(VALID_PASSWORDS.includes(input)){
-    isUnlocked=true;
-    document.getElementById("passwordScreen").style.display="none";
-    document.getElementById("card").classList.add("unlocked");
-    document.getElementById("topNote").classList.add("shown");
-    document.getElementById("outsideNote").classList.add("shown");
-    document.getElementById("cheesyNote").classList.add("shown");
-    createFloatingHeartsAndKisses();
-    createCherryBlossoms();
-    createFireworks();
-    createFlowerBurst();
-  } else {
-    document.getElementById("errorMessage").textContent="Think of what I call you 💭";
-  }
-});
-
-document.getElementById("cardInner").addEventListener("click", ()=>{
-  if(!isUnlocked) return;
-  const inner = document.getElementById("cardInner");
-  inner.classList.toggle("opened");
-  if(inner.classList.contains("opened")){
-    createFlowerBurst();
-    if(bgMusic){
-      bgMusic.volume = 0.55;
-      bgMusic.play().catch(()=>{});
-    }
-  } else if(bgMusic){
-    bgMusic.pause();
-    bgMusic.currentTime = 0;
-  }
-});
-
-createCherryBlossoms();
-</script>
+  </script>
 </body>
 </html>

@@ -10,9 +10,30 @@
   <link rel="stylesheet" href="../css/components.css">
   <link rel="stylesheet" href="../css/pages.css">
   <style>
+    body[data-auth-state="pending"] .contract-wizard,
+    body[data-auth-state="blocked"] .contract-wizard {
+      display: none;
+    }
     .contract-wizard {
       max-width: 600px;
       margin: 3rem auto;
+    }
+    .auth-status-card {
+      max-width: 560px;
+      margin: 5rem auto 0;
+      text-align: center;
+      padding: 2rem 1.5rem;
+    }
+    .auth-status-icon {
+      font-size: 2rem;
+      display: inline-flex;
+      width: 3.5rem;
+      height: 3.5rem;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
     }
     .wizard-step {
       display: none;
@@ -70,10 +91,17 @@
     }
   </style>
 </head>
-<body>
+<body data-auth-state="pending">
   <div id="app-shell">
-    <!-- No global header during contract signing for clean isolation -->
     <main class="main-content">
+      <div class="auth-status-card glass-card" id="contract-auth-status" aria-live="polite">
+        <span class="auth-status-icon">🔒</span>
+        <h1 style="font-family: var(--font-accent); font-weight: 700; margin-top: 0.75rem;">Securing Your Private Contract</h1>
+        <p id="contract-auth-message" style="color: var(--color-secondary-text); font-size: 0.95rem; margin: 0;">
+          Checking your approved MemoryBook session before this contract can open.
+        </p>
+      </div>
+
       <div class="contract-wizard glass-card">
         <div style="text-align: center; margin-bottom: 2rem;">
           <span style="font-size: 2.5rem; display: block; animation: heartbeat 1.5s infinite;">❤️</span>
@@ -81,18 +109,17 @@
           <p style="color: var(--color-secondary-text); font-size: 0.9rem;">Setup your profile & review the mutual relationship contract</p>
         </div>
 
-        <!-- STEP 1: Select Profile -->
         <div class="wizard-step active" id="step-profile">
           <h3 style="margin-bottom: 0.5rem; font-weight: 600;">Step 1: Choose Your Profile</h3>
           <p style="color: var(--color-secondary-text); font-size: 0.85rem;">Identify who you are to customize your dashboard & preferences.</p>
-          
+
           <div class="avatar-picker-grid">
             <div class="avatar-option" id="pick-jaylan" onclick="selectUser('Jaylan')">
               <img src="/assets/photos/anniversary_2025.png" alt="Jaylan" class="avatar-img-big">
               <h4 style="font-weight: 700;">Jaylan</h4>
               <span class="badge" style="background: rgba(255, 74, 107, 0.15); color: var(--color-jaylan); margin-top: 0.5rem;">Partner</span>
             </div>
-            
+
             <div class="avatar-option omia-side" id="pick-omia" onclick="selectUser('Omia')">
               <img src="/assets/photos/sunset_walk.png" alt="Omia" class="avatar-img-big">
               <h4 style="font-weight: 700;">Omia</h4>
@@ -110,27 +137,26 @@
           </div>
         </div>
 
-        <!-- STEP 2: Review Contract -->
         <div class="wizard-step" id="step-contract">
           <h3 style="margin-bottom: 0.5rem; font-weight: 600;">Step 2: The Relationship Contract</h3>
           <p style="color: var(--color-secondary-text); font-size: 0.85rem;">Please review the relationship pillars mutual to our partnership.</p>
-          
+
           <div class="contract-display-container">
             <div class="contract-clause">
               <div class="contract-clause-title">🤝 Pillar I: Mutual Respect</div>
               <div class="contract-clause-desc">We commit to respecting each other's opinions, career goals, personal spaces, and individual uniqueness. We lift each other up and speak with kindness even during disagreements.</div>
             </div>
-            
+
             <div class="contract-clause">
               <div class="contract-clause-title">🔒 Pillar II: Absolute Trust</div>
               <div class="contract-clause-desc">We pledge complete honesty, loyalty, and support. We maintain our trust by sharing our thoughts openly and guarding our commitments to one another.</div>
             </div>
-            
+
             <div class="contract-clause">
               <div class="contract-clause-title">💬 Pillar III: Open Communication</div>
               <div class="contract-clause-desc">We communicate with vulnerability and transparency. We resolve conflicts constructively, avoiding blame, and active listening to understand each other's perspective.</div>
             </div>
-            
+
             <div class="contract-clause">
               <div class="contract-clause-title">🚧 Pillar IV: Healthy Boundaries</div>
               <div class="contract-clause-desc">We honor and maintain boundaries that support our mental, emotional, and social well-being. We value individual growth as the foundation of a healthy union.</div>
@@ -161,94 +187,108 @@
 
   <script type="module">
     import { state } from '../core/state.js';
+    import { redirectToLogin, waitForApprovedUserState } from '../services/pageAccessService.js';
 
-    // window.selectUser is referenced by inline onclick in the HTML.
-    // It is defined here at module scope so the onclick can call it,
-    // but it does nothing until DOMContentLoaded has set sessionUsername.
     let sessionUsername = null;
 
     window.selectUser = function(name) {
-      // Only allow selecting the user who is actually logged in
       if (!sessionUsername || name !== sessionUsername) return;
-      document.querySelectorAll('.avatar-option').forEach(el => el.classList.remove('selected'));
+      document.querySelectorAll('.avatar-option').forEach((el) => el.classList.remove('selected'));
       const el = document.getElementById(name === 'Jaylan' ? 'pick-jaylan' : 'pick-omia');
       if (el) el.classList.add('selected');
       document.getElementById('btn-goto-contract').disabled = false;
     };
 
     document.addEventListener('DOMContentLoaded', () => {
-      // STEP 1: Resolve session — MUST happen inside DOMContentLoaded,
-      // never at module parse time (avoids race conditions).
-      sessionUsername =
-        localStorage.getItem('memorybook_active_session') ||
-        localStorage.getItem('memorybook_active_user') ||
-        null;
+      const body = document.body;
+      const authStatus = document.getElementById('contract-auth-status');
+      const authMessage = document.getElementById('contract-auth-message');
 
-      // STEP 2: No session → back to login (with return to stop all further logic)
-      if (!sessionUsername) {
-        window.location.replace('login.html');
-        return;
-      }
+      const failClosed = (message) => {
+        body.dataset.authState = 'blocked';
+        if (authMessage) authMessage.textContent = message;
+        redirectToLogin(message, 'login.html');
+      };
 
-      // STEP 3: Already signed → skip to dashboard (no need to re-sign)
-      if (state.isContractAcceptedFor(sessionUsername)) {
-        window.location.replace('dashboard.html');
-        return;
-      }
+      waitForApprovedUserState({ timeoutMs: 5000 }).then((result) => {
+        if (result.status !== 'authorized') {
+          if (result.status === 'signed_out') {
+            failClosed('Sign in with an approved couple account before opening the private contract.');
+            return;
+          }
 
-      // STEP 4: Render contract wizard for this user
-      const stepProfile  = document.getElementById('step-profile');
-      const stepContract = document.getElementById('step-contract');
-      const btnGotoContract  = document.getElementById('btn-goto-contract');
-      const btnBackProfile   = document.getElementById('btn-back-profile');
-      const btnCompleteSetup = document.getElementById('btn-complete-setup');
-      const acceptCheckbox   = document.getElementById('accept-checkbox');
-      const userBioInput     = document.getElementById('user-bio');
+          if (result.status === 'unauthorized') {
+            failClosed('This account is not approved for the private MemoryBook contract.');
+            return;
+          }
 
-      // Auto-select the session user's card and lock the other card
-      window.selectUser(sessionUsername);
+          failClosed('MemoryBook could not verify your approved session. Please sign in again.');
+          return;
+        }
 
-      const otherId = sessionUsername === 'Jaylan' ? 'pick-omia' : 'pick-jaylan';
-      const otherEl = document.getElementById(otherId);
-      if (otherEl) {
-        otherEl.style.opacity = '0.3';
-        otherEl.style.cursor = 'not-allowed';
-        otherEl.style.pointerEvents = 'none';
-      }
+        sessionUsername = result.username;
+        if (!['Jaylan', 'Omia'].includes(sessionUsername)) {
+          failClosed('This approved account is not mapped to a supported MemoryBook profile.');
+          return;
+        }
 
-      // Label step 1 with the logged-in user's name
-      const stepTitle = stepProfile ? stepProfile.querySelector('h3') : null;
-      if (stepTitle) stepTitle.textContent = `Step 1: Your Profile — ${sessionUsername}`;
+        state.restoreUserSession(sessionUsername);
 
-      // Step navigation
-      btnGotoContract.addEventListener('click', () => {
-        stepProfile.classList.remove('active');
-        stepContract.classList.add('active');
-      });
-
-      btnBackProfile.addEventListener('click', () => {
-        stepContract.classList.remove('active');
-        stepProfile.classList.add('active');
-      });
-
-      // Enable sign button when checkbox is checked
-      acceptCheckbox.addEventListener('change', (e) => {
-        btnCompleteSetup.disabled = !e.target.checked;
-      });
-
-      // Sign & redirect
-      btnCompleteSetup.addEventListener('click', () => {
-        if (!sessionUsername || !acceptCheckbox.checked) return;
-
-        // Persist acceptance — writes per-user key + Firestore push
-        state.acceptContract(sessionUsername, userBioInput.value.trim());
-
-        btnCompleteSetup.innerHTML = '✅ Vault Unlocked! Opening...';
-        btnCompleteSetup.disabled = true;
-
-        setTimeout(() => {
+        if (state.isContractAcceptedFor(sessionUsername)) {
           window.location.replace('dashboard.html');
-        }, 800);
+          return;
+        }
+
+        body.dataset.authState = 'authorized';
+        if (authStatus) authStatus.hidden = true;
+
+        const stepProfile = document.getElementById('step-profile');
+        const stepContract = document.getElementById('step-contract');
+        const btnGotoContract = document.getElementById('btn-goto-contract');
+        const btnBackProfile = document.getElementById('btn-back-profile');
+        const btnCompleteSetup = document.getElementById('btn-complete-setup');
+        const acceptCheckbox = document.getElementById('accept-checkbox');
+        const userBioInput = document.getElementById('user-bio');
+
+        window.selectUser(sessionUsername);
+
+        const otherId = sessionUsername === 'Jaylan' ? 'pick-omia' : 'pick-jaylan';
+        const otherEl = document.getElementById(otherId);
+        if (otherEl) {
+          otherEl.style.opacity = '0.3';
+          otherEl.style.cursor = 'not-allowed';
+          otherEl.style.pointerEvents = 'none';
+        }
+
+        const stepTitle = stepProfile ? stepProfile.querySelector('h3') : null;
+        if (stepTitle) stepTitle.textContent = `Step 1: Your Profile — ${sessionUsername}`;
+
+        btnGotoContract.addEventListener('click', () => {
+          stepProfile.classList.remove('active');
+          stepContract.classList.add('active');
+        });
+
+        btnBackProfile.addEventListener('click', () => {
+          stepContract.classList.remove('active');
+          stepProfile.classList.add('active');
+        });
+
+        acceptCheckbox.addEventListener('change', (e) => {
+          btnCompleteSetup.disabled = !e.target.checked;
+        });
+
+        btnCompleteSetup.addEventListener('click', () => {
+          if (!sessionUsername || !acceptCheckbox.checked) return;
+
+          state.acceptContract(sessionUsername, userBioInput.value.trim());
+
+          btnCompleteSetup.innerHTML = '✅ Vault Unlocked! Opening...';
+          btnCompleteSetup.disabled = true;
+
+          setTimeout(() => {
+            window.location.replace('dashboard.html');
+          }, 800);
+        });
       });
     });
   </script>
