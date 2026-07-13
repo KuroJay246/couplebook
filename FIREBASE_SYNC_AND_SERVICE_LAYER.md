@@ -11,6 +11,23 @@ Current active Firestore domains are narrow:
 
 The active runtime no longer depends on the legacy `usernames` collection. The main remaining risk is the sync layer still performing collection-wide `users` reads/listeners.
 
+## 2026-07-12 app-v2 Firebase Boundary
+
+The isolated React migration track now has its own Firebase client boundary in `app-v2/`:
+
+- `src/lib/firebaseConfig.js`
+  environment-driven configuration with explicit missing-config handling for local development and tests
+- `src/lib/firebaseClient.js`
+  initializes Firebase app, Auth, and Firestore exactly once for the React runtime
+- `src/services/authService.js`
+  owns auth persistence, auth observation, sign-in, and sign-out helpers only
+- `src/services/authorizationService.js`
+  resolves Couple Book approval through a targeted `users/{uid}` read only
+- `src/services/userService.js`
+  stays doc-scoped and does not introduce collection-wide reads or listeners
+
+This migration track does not add a custom backend. The backend/cloud posture remains Firebase Auth plus Firestore with narrow client service modules.
+
 ## 2026-07-12 Verified Auth And Data Findings
 
 - Firebase identity is email/password only in the current Couple Book runtime.
@@ -283,6 +300,26 @@ Smallest useful future boundaries:
 - `deviceService`
 
 The Gather & Savor lesson worth copying is not its event schema. It is the separation between routed UI, auth/provider state, Firebase bootstrap, service calls, and pure helpers.
+
+## Compatibility Adapter Boundary Stubs
+
+The React migration track now includes read-only-first adapter stubs in `app-v2/src/data/`:
+
+- `legacyMemoryAdapter.js`
+- `legacyFavoritesAdapter.js`
+- `legacyProfileAdapter.js`
+- `legacySettingsAdapter.js`
+- `legacyContractAdapter.js`
+
+These files currently document the real legacy sources and expected normalized outputs only.
+
+They do not:
+
+- read or write production Firestore
+- mutate localStorage
+- rewrite `core/memories.json`
+- grant route access
+- move or upload private media
 
 ## Next Safe Sync Step
 

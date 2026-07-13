@@ -15,6 +15,21 @@ Date: 2026-07-12
 | Primary local state | `localStorage` plus `core/memories.json` |
 | Cloud sync boundary | `core/firestoreSync.js` |
 
+## 2026-07-12 Controlled Modernization Execution
+
+| Lane | Branch | Status |
+| --- | --- | --- |
+| Audit checkpoint | `main` | pushed to `origin/main` at `f8cf2214ee0598f903d1fa6d2e5a585295837e4b` |
+| Static privacy containment | `hotfix/static-privacy-boundaries` | pushed review branch at `b2e4345`; not merged, not deployed |
+| React migration foundation | `migration/react-foundation` | isolated `app-v2/` track created from `f8cf221`; no Hosting switch, no deploy |
+
+Key outcomes from this execution batch:
+
+- `main` is now a clean synchronized audit baseline.
+- the static hotfix branch closes the contract localStorage auth bypass and replaces direct public special-page exposure with neutral placeholders under `public/`
+- the new React app lives only in `app-v2/` and builds only to `app-v2/dist`
+- the React shell currently contains protected placeholder routes only; no legacy couple data or private media has been migrated
+
 ## 2026-07-12 Recovery Audit Snapshot
 
 | Item | Status |
@@ -102,21 +117,23 @@ What must wait:
 
 ### R1 — Modern Foundation
 
-- create a separate Vite/React app track
-- add lint, test, build, and Hosting-ready `dist/` output
-- centralize Firebase bootstrap
-- no production switch
+- completed on `migration/react-foundation`
+- separate Vite/React app created at `app-v2/`
+- lint, test, build, and Hosting-ready `dist/` output added
+- Firebase bootstrap centralized without any production switch
 
 ### R2 — Auth And Protected Shell
 
-- add `AuthProvider`, `ProtectedRoute`, and one `AppShell`
-- preserve approved-account-only enforcement
-- do not migrate couple data yet
+- completed on `migration/react-foundation`
+- `AuthProvider`, `ProtectedRoute`, `AuthorizationGate`, and one routed `AppShell` are in place
+- approved-account-only enforcement now depends on Firebase Auth plus a targeted `users/{uid}` lookup
+- no couple data, private memories, or special-page content has been migrated yet
 
 ### R3 — Compatibility Data Adapter
 
-- read current `localStorage` keys and `core/memories.json`
-- keep the old product content visible inside the new shell
+- adapter boundaries are now stubbed in `app-v2/src/data/`
+- current sources are documented for memories, favorites, profiles, settings, and contract state
+- no legacy reads are wired yet
 - no destructive conversion
 
 ### R4 — Domain Services

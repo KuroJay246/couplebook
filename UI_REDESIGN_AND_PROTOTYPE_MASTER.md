@@ -1,6 +1,6 @@
 # UI Redesign And Prototype Master
 
-Date: 2026-07-09
+Date: 2026-07-12
 
 ## Product Identity
 
@@ -63,6 +63,19 @@ The current app overuses one generic `glass-card` pattern and needs clearer hier
 - story content zone
 - lower-emphasis private health/status zone
 - special moments entry zone
+
+## 2026-07-12 app-v2 Shell Foundation
+
+The approved modernization track now includes an isolated routed shell in `app-v2/` on `migration/react-foundation`.
+
+Current boundaries:
+
+- the shell uses protected placeholder pages only
+- direct routes for dashboard, timeline, gallery, profile, favorites, settings, contract, birthday, Valentine, and confession are protected
+- the shell keeps Couple Book's private romantic tone instead of event or admin language
+- desktop sidebar and mobile navigation foundations now exist in one shared layout
+- no legacy couple data, private memories, or special-page content has been migrated into the React app yet
+- the current static app remains the rollback baseline and Hosting target
 
 ## Component Map
 
@@ -337,12 +350,12 @@ This should remain Phase 13 only, after the live sync boundary is safer and the 
 
 ### Recommendation
 
-Use Option B now.
+The approved execution path is now active:
 
-- keep the static app for the immediate production path
-- use the non-live prototype and master docs to lock the future shell, page hierarchy, and component map
-- after smoke and sync gates allow it, apply the redesign in small production batches
-- keep full Vite/React migration as a later explicit decision, not as a side effect of design cleanup
+- keep the static app as the immediate rollback and production path
+- build the future Vite/React shell in parallel inside `app-v2/`
+- use a short compatibility bridge before any page-by-page content migration
+- do not treat the React track as production-ready until compatibility reads, routed page migrations, and cutover checks are proven
 
 ## First Real Refinement Sequence
 
@@ -379,8 +392,9 @@ Use Option B now.
 
 ### Phase 13: Future migration only if approved
 
-- move to Vite/React only after the product shell, service boundaries, and sync direction are already clear
-- treat framework migration as an implementation upgrade, not as the first design fix
+- now partially underway through the isolated `app-v2/` shell only
+- continue only after auth-shell tests pass, compatibility reads are proven, and the static rollback remains intact
+- treat framework migration as an implementation upgrade, not as permission to skip the compatibility bridge
 
 ## Phase 11 Live Token Pass Scope
 

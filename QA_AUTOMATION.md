@@ -2,6 +2,14 @@
 
 This repo now includes a small local QA lane for repeatable safety and route checks.
 
+The modernization track adds a second validation lane inside `app-v2/`:
+
+- `npm run lint`
+- `npm test`
+- `npm run build`
+
+Those commands validate the isolated React shell without changing the current static baseline.
+
 ## Scripts
 
 - `npm run check:routes`
@@ -85,6 +93,9 @@ Automated now:
 - Prototype isolation checks
 - Core documentation presence checks
 - Consolidated master-doc presence checks
+- `app-v2` linting for the isolated React track
+- `app-v2` auth/route contract tests
+- `app-v2` production build generation into `app-v2/dist`
 
 Still manual:
 
@@ -105,6 +116,8 @@ Still manual:
   - `core/memories.json` media paths
   - profile/contract avatar paths
   - direct special-page companion media
+- The `app-v2` auth tests are intentionally non-live. They do not log into production Firebase or prove approved-user behavior in a browser without a safe local test configuration.
+- The root `npm run check:all` lane still validates the static rollback app only. It does not exercise the React migration routes.
 
 ## Next QA Upgrade Targets
 
@@ -112,3 +125,4 @@ Still manual:
 - add a headless browser smoke that proves direct special pages are either retired or protected
 - add a headless browser smoke that confirms `contract.html` cannot open from `localStorage` spoofing alone
 - add a browser-console/media-request smoke that fails on unexpected 404s for the current clean local baseline
+- add a headless browser smoke for `app-v2` signed-out route protection and approved-user restoration once a safe local test configuration exists
