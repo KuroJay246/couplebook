@@ -1,11 +1,15 @@
-import { PlaceholderPage } from '../components/PlaceholderPage'
+import { ProfileView } from '../features/profile/ProfileView'
+import { useProfileData } from '../features/profile/useProfileData'
 
 export function ProfilePage() {
+  const { compatibilityError, compatibilityState, model, refreshCompatibility } = useProfileData()
+
   return (
-    <PlaceholderPage
-      eyebrow="Profile"
-      title="Profile placeholder"
-      description="Shared identity, paired bios, and relationship framing will live here in the migrated app."
+    <ProfileView
+      compatibilityError={compatibilityError}
+      compatibilityState={compatibilityState}
+      model={model}
+      onRefresh={refreshCompatibility}
     />
   )
 }
