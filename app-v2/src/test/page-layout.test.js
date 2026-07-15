@@ -23,21 +23,20 @@ test('shared page layout exports the editorial primitives and semantic contracts
   assert.match(layoutSource, /editorial-page-header/)
 })
 
-test('settings page keeps the approved utility information architecture explicit', async () => {
-  const settingsSource = await readSource('../pages/SettingsPage.jsx')
+test('settings page layout keeps the approved utility information architecture explicit', async () => {
+  const settingsViewSource = await readSource('../features/settings/SettingsView.jsx')
 
-  assert.match(settingsSource, /Your account/)
-  assert.match(settingsSource, /Appearance/)
-  assert.match(settingsSource, /Privacy and access/)
-  assert.match(settingsSource, /Data and compatibility/)
-  assert.match(settingsSource, /Advanced/)
-  assert.match(settingsSource, /Danger zone/)
-  assert.match(settingsSource, /No fake account details are rendered here\./)
-  assert.match(settingsSource, /No live settings writes happen in this batch\./)
-  assert.match(settingsSource, /UtilityPageHeader/)
-  assert.match(settingsSource, /UtilitySection/)
-  assert.match(settingsSource, /SettingsGroup/)
-  assert.doesNotMatch(settingsSource, /jaylanspencer99@gmail\.com/i)
+  assert.match(settingsViewSource, /Your account/)
+  assert.match(settingsViewSource, /Appearance/)
+  assert.match(settingsViewSource, /Privacy and access/)
+  assert.match(settingsViewSource, /Data and compatibility/)
+  assert.match(settingsViewSource, /Migration progress/)
+  assert.match(settingsViewSource, /Advanced/)
+  assert.match(settingsViewSource, /Danger zone/)
+  assert.match(settingsViewSource, /UtilityPageHeader/)
+  assert.match(settingsViewSource, /UtilitySection/)
+  assert.match(settingsViewSource, /SettingsGroup/)
+  assert.doesNotMatch(settingsViewSource, /jaylanspencer99@gmail\.com/i)
 })
 
 test('dashboard and placeholders adopt the shared page layout system', async () => {

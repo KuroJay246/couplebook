@@ -94,7 +94,7 @@ export const protectedRouteMeta = [
     navLabel: 'Settings',
     title: 'Settings',
     group: ROUTE_GROUPS.utility,
-    summary: 'Quiet controls for the private shell and auth state.',
+    summary: 'Read-only account, privacy, and migration notes stay here without exposing live controls or writes.',
   },
 ]
 

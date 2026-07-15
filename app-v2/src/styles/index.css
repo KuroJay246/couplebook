@@ -526,6 +526,94 @@ code {
   text-transform: uppercase;
 }
 
+.settings-page,
+.settings-opening-note,
+.settings-detail-card {
+  display: grid;
+}
+
+.settings-detail-card {
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255, 252, 246, 0.72);
+}
+
+.settings-detail-card h3 {
+  font-size: clamp(1.4rem, 2.7vw, 1.9rem);
+  line-height: 1.08;
+}
+
+.settings-account-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.settings-detail-list,
+.settings-note-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.settings-detail-list {
+  display: grid;
+  gap: 12px;
+}
+
+.settings-detail-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.settings-detail-row:first-child {
+  padding-top: 0;
+  border-top: none;
+}
+
+.settings-detail-row dt {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.settings-detail-row dd {
+  font-family: "Georgia", "Times New Roman", serif;
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: right;
+}
+
+.settings-note-list {
+  display: grid;
+  gap: 10px;
+}
+
+.settings-note-list li {
+  padding-left: 12px;
+  border-left: 2px solid var(--accent-soft);
+  color: var(--graphite);
+  line-height: 1.58;
+}
+
+.settings-gate-status {
+  margin-top: 6px;
+}
+
+.settings-section-subdued {
+  background:
+    linear-gradient(180deg, rgba(250, 246, 240, 0.96), rgba(244, 238, 231, 0.96)),
+    repeating-linear-gradient(0deg, rgba(111, 93, 74, 0.025) 0 1px, transparent 1px 24px);
+}
+
 .profile-page,
 .profile-hero,
 .profile-opening-note,
@@ -1555,6 +1643,7 @@ code {
   .dashboard-hero-layout,
   .dashboard-grid,
   .quiet-status-list,
+  .settings-account-grid,
   .favorites-shared-grid,
   .favorites-spread-grid,
   .favorites-link-grid,
@@ -1617,6 +1706,7 @@ code {
   .favorites-category-heading,
   .profile-person-meta,
   .profile-detail-row,
+  .settings-detail-row,
   .birthday-card,
   .story-link-card,
   .secondary-sheet-header,
@@ -1639,6 +1729,10 @@ code {
   }
 
   .profile-detail-row dd {
+    text-align: left;
+  }
+
+  .settings-detail-row dd {
     text-align: left;
   }
 }
