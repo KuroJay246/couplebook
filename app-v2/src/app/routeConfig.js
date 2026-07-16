@@ -59,7 +59,7 @@ export const protectedRouteMeta = [
     navLabel: 'Contract',
     title: 'Contract',
     group: ROUTE_GROUPS.shared,
-    summary: 'Protected contract handling moves here with real auth ownership.',
+    summary: 'Read-only contract status and document framing now live here inside the protected shell.',
   },
   {
     path: '/birthday',

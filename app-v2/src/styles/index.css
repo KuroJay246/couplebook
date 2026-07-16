@@ -903,6 +903,265 @@ code {
   border-top: 1px solid var(--line);
 }
 
+.contract-page,
+.contract-hero,
+.contract-opening-note,
+.contract-record-card,
+.contract-record-card-copy,
+.contract-link-card,
+.contract-privacy-card,
+.contract-document,
+.contract-document-copy,
+.contract-document-section {
+  display: grid;
+}
+
+.contract-opening-note,
+.contract-record-card,
+.contract-link-card,
+.contract-privacy-card {
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255, 252, 246, 0.72);
+}
+
+.contract-note-list,
+.contract-history-list,
+.contract-clause-list {
+  margin: 0;
+  padding: 0;
+}
+
+.contract-note-list {
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.contract-note-list li {
+  padding-left: 12px;
+  border-left: 2px solid rgba(126, 81, 69, 0.34);
+  color: var(--graphite);
+  line-height: 1.58;
+}
+
+.contract-document {
+  gap: 18px;
+  padding: 22px;
+  border: 1px solid rgba(90, 71, 58, 0.24);
+  border-radius: 20px;
+  background:
+    linear-gradient(180deg, rgba(252, 248, 241, 0.99), rgba(241, 232, 217, 0.98)),
+    repeating-linear-gradient(0deg, rgba(120, 95, 67, 0.05) 0 1px, transparent 1px 26px),
+    radial-gradient(circle at top right, rgba(136, 84, 71, 0.08), transparent 28%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+.contract-document-unavailable {
+  background:
+    linear-gradient(180deg, rgba(249, 244, 237, 0.99), rgba(239, 231, 220, 0.98)),
+    repeating-linear-gradient(0deg, rgba(120, 95, 67, 0.04) 0 1px, transparent 1px 26px);
+}
+
+.contract-document-kicker,
+.contract-document-copy,
+.contract-document-section,
+.contract-history-copy,
+.contract-record-card-copy {
+  gap: 10px;
+}
+
+.contract-document-kicker {
+  display: grid;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(90, 71, 58, 0.16);
+}
+
+.contract-document-kicker p,
+.contract-document-copy p,
+.contract-document-section p,
+.contract-record-card-copy p,
+.contract-link-card p,
+.contract-privacy-card p,
+.contract-boundary-note,
+.contract-history-item span,
+.contract-history-item p {
+  color: var(--ink-soft);
+  line-height: 1.72;
+}
+
+.contract-document-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(220px, 0.7fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.contract-document-copy h3 {
+  font-size: clamp(1.8rem, 3vw, 2.45rem);
+  line-height: 1.08;
+}
+
+.contract-document-meta,
+.contract-record-detail-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.contract-document-meta {
+  padding: 14px 16px;
+  border: 1px solid rgba(90, 71, 58, 0.14);
+  border-radius: 16px;
+  background: rgba(255, 252, 246, 0.72);
+}
+
+.contract-document-meta-row,
+.contract-record-detail-row,
+.contract-record-card-meta,
+.contract-history-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.contract-document-meta-row dt,
+.contract-record-detail-row dt,
+.contract-link-status,
+.contract-record-status,
+.contract-history-meta span {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.contract-document-meta-row dd,
+.contract-record-detail-row dd {
+  margin: 0;
+  font-family: "Georgia", "Times New Roman", serif;
+  font-size: 0.98rem;
+  font-weight: 600;
+  text-align: right;
+}
+
+.contract-document-body {
+  display: grid;
+  gap: 20px;
+  max-width: 72ch;
+}
+
+.contract-document-section {
+  gap: 12px;
+}
+
+.contract-document-section h4,
+.contract-history-item h3,
+.contract-record-card h3,
+.contract-link-card strong {
+  font-size: 1.06rem;
+  line-height: 1.18;
+}
+
+.contract-clause-list {
+  display: grid;
+  gap: 10px;
+  padding-left: 1.2rem;
+}
+
+.contract-clause-list li {
+  color: var(--graphite);
+  line-height: 1.7;
+}
+
+.contract-record-grid,
+.contract-link-grid,
+.contract-privacy-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.contract-record-card {
+  background:
+    linear-gradient(180deg, rgba(255, 252, 246, 0.86), rgba(247, 239, 230, 0.82)),
+    linear-gradient(135deg, rgba(126, 81, 69, 0.06), transparent 42%);
+}
+
+.contract-record-status-ready,
+.contract-record-status-accepted,
+.contract-record-status-recorded {
+  color: var(--success);
+}
+
+.contract-record-status-not-recorded,
+.contract-record-status-empty {
+  color: var(--muted);
+}
+
+.contract-record-status-unavailable,
+.contract-record-status-invalid {
+  color: var(--danger);
+}
+
+.contract-record-status-legacy {
+  color: #7b5745;
+}
+
+.contract-history-list {
+  list-style: none;
+  display: grid;
+  gap: 14px;
+}
+
+.contract-history-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) auto;
+  gap: 14px;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255, 252, 246, 0.78);
+}
+
+.contract-history-meta {
+  justify-items: end;
+  text-align: right;
+}
+
+.contract-history-meta strong {
+  font-family: "Georgia", "Times New Roman", serif;
+  font-size: 0.98rem;
+  font-weight: 600;
+}
+
+.contract-link-card {
+  gap: 10px;
+}
+
+.contract-privacy-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.contract-privacy-card {
+  background: rgba(250, 246, 240, 0.78);
+}
+
+.contract-section-subdued {
+  background:
+    linear-gradient(180deg, rgba(250, 246, 240, 0.96), rgba(244, 238, 231, 0.96)),
+    repeating-linear-gradient(0deg, rgba(111, 93, 74, 0.025) 0 1px, transparent 1px 24px);
+}
+
+.contract-boundary-note {
+  padding-top: 4px;
+  border-top: 1px solid var(--line);
+}
+
 .profile-highlight-list {
   display: flex;
   flex-wrap: wrap;
@@ -1644,6 +1903,10 @@ code {
   .dashboard-grid,
   .quiet-status-list,
   .settings-account-grid,
+  .contract-document-header,
+  .contract-record-grid,
+  .contract-link-grid,
+  .contract-privacy-grid,
   .favorites-shared-grid,
   .favorites-spread-grid,
   .favorites-link-grid,
@@ -1702,6 +1965,10 @@ code {
   .dashboard-section-heading,
   .editorial-section-heading,
   .source-status-toolbar,
+  .contract-document-meta-row,
+  .contract-record-detail-row,
+  .contract-record-card-meta,
+  .contract-history-meta,
   .favorites-person-meta,
   .favorites-category-heading,
   .profile-person-meta,
@@ -1733,6 +2000,20 @@ code {
   }
 
   .settings-detail-row dd {
+    text-align: left;
+  }
+
+  .contract-document-meta-row dd,
+  .contract-record-detail-row dd {
+    text-align: left;
+  }
+
+  .contract-history-item {
+    grid-template-columns: 1fr;
+  }
+
+  .contract-history-meta {
+    justify-items: start;
     text-align: left;
   }
 }

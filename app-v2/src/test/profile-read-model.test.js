@@ -116,7 +116,7 @@ test('profile read model keeps two-person content, highlights, and contract summ
   assert.equal(model.relationship.anniversaries.length, 2)
   assert.equal(model.relationship.milestones.some((item) => item.kind === 'contract'), true)
   assert.equal(model.sharedHighlights.length, 4)
-  assert.equal(model.entries.contract.description, '1 of 2 preserved signatures are available from the legacy contract surface.')
+  assert.equal(model.entries.contract.description, '1 of 2 preserved signatures are already visible from the migrated Contract page.')
   assert.equal(
     model.entries.favorites.description,
     '4 favorite highlights are visible here already, and the full shared collection now lives on the migrated Favorites page.',

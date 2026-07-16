@@ -203,15 +203,17 @@ export function selectContractEntry(contractSource) {
   const acceptedCount = Object.values(signatures).filter((signature) => signature?.accepted === true).length
   const status = contractSource?.status || 'empty'
 
-  let description = 'The shared contract is still waiting to be reintroduced through the routed shell.'
+  let description = 'The migrated Contract page keeps the preserved agreement quiet, read-only, and one step down from this shared profile.'
   if (status === 'ready' && signatureCount > 0) {
-    description = `${acceptedCount} of ${signatureCount} preserved signatures are available from the legacy contract surface.`
+    description = `${acceptedCount} of ${signatureCount} preserved signatures are already visible from the migrated Contract page.`
   } else if (status === 'ready' && contractSource?.data?.accepted) {
-    description = 'The active approved account has already accepted the preserved contract.'
+    description = 'The active approved account already has a preserved acceptance record on the migrated Contract page.'
   } else if (status === 'empty') {
-    description = 'No preserved contract signatures are available yet.'
+    description = 'The Contract page is live, even while no preserved contract signatures are visible from this profile view yet.'
   } else if (status === 'invalid') {
     description = 'Stored contract data needs review before it can be shown here.'
+  } else if (status === 'unavailable') {
+    description = 'The Contract page remains protected while its preserved details stay disconnected on this origin.'
   }
 
   return {
