@@ -338,12 +338,13 @@ Settings must remain intentionally secondary, plain-language, and free of unrela
 
 1. Dashboard remains the stabilized first migrated page
 2. lock navigation and page-layout primitives
-3. establish the Settings utility structure without live writes
+3. establish the Settings utility structure and finish the read-only Settings migration
 4. migrate Profile as the next real read-only page
 5. migrate Favorites next
-6. return to Timeline and Gallery only after the shell and shared-space patterns are proven
-7. reintroduce special-moment page content later through the protected routed family
-8. keep deployment and Hosting cutover blocked until the broader migration gates are cleared
+6. migrate Contract next before reopening Timeline and Gallery scope
+7. return to Timeline and Gallery only after the shell and shared-space patterns are proven
+8. reintroduce special-moment page content later through the protected routed family
+9. keep deployment and Hosting cutover blocked until the broader migration gates are cleared
 
 ## 2026-07-13 Reference Review
 
@@ -639,6 +640,73 @@ Safety preserved:
 - no Firestore write path was introduced
 - no broad Firestore `users` query was introduced
 - no deploy, merge, rules change, private bundle, private-media copy, or Gather Savor modification occurred
+
+## 2026-07-15 app-v2 Settings Migration And Browser Regression Checkpoint
+
+Settings is now the fourth real app-v2 page, and it now behaves like a quiet utility page instead of a loose placeholder.
+
+Read-model boundaries now fixed:
+
+- approved identity still comes only from Firebase Auth plus the approved-user record
+- browser storage remains explicitly non-authenticating
+- preserved appearance data is visible for reference only and does not reactivate theme controls
+- privacy language now stays plain:
+  - approved accounts only
+  - browser storage is not authentication
+  - private media stays outside app-v2
+  - Firebase Storage is still not enabled
+- compatibility status labels stay human:
+  - Available
+  - Awaiting migration
+  - Development only
+- migration progress now reads from one central source and honestly reports:
+  - Dashboard
+  - Profile
+  - Favorites
+  - Settings
+- Advanced remains subordinate and local-development-only
+- Danger zone remains informational only with no destructive controls
+
+Browser result:
+
+- the approved Jaylan session stayed stable on `/dashboard`, `/profile`, `/favorites`, and `/settings`
+- direct protected navigation to `/contract`, `/birthday`, `/valentine`, and `/confession` remained available for the approved session
+- reload restored the approved session with no redirect loop, no loading stall, and no `permission-denied` state
+- sign-out still returned the shell to `/login`
+- spoofed `memorybook_active_*` values still could not restore access
+- the observed auth lookup remained targeted to `users/{uid}` only
+- no static `/pages/settings.html` or `js/settings.js` runtime dependency was observed
+- no private-media request was observed
+
+Browser regression automation now added:
+
+- `npm run test:browser` runs a focused local-only Playwright smoke
+- the lane uses injected localhost-only fixtures instead of real credentials
+- signed-out coverage now checks `/dashboard`, `/contract`, `/birthday`, `/valentine`, and `/confession`
+- spoofed localStorage values are verified to stay non-authorizing
+- authenticated fixture coverage now checks:
+  - protected route stability
+  - direct reload restoration
+  - AppShell rendering
+  - primary navigation rendering
+  - Settings utility-only placement on mobile
+- the lane now fails on:
+  - browser console errors
+  - uncaught page errors
+  - HTTP failure responses
+  - broad `users` access patterns
+  - unexpected non-GET external requests
+  - static rollback dependencies
+  - private-media requests
+- this lane improves repeat confidence only; it does not replace the real Jaylan or partner approved-account browser smoke
+
+Safety preserved:
+
+- Jaylan approved routed-browser smoke remains `PASS`
+- partner approved routed-browser smoke remains `NOT TESTED`
+- overall approved-account gate remains `HOLD`
+- no deploy, merge, rules change, production write, private-media copy, or credential commit occurred
+- the next recommended page remains Contract only; Timeline, Gallery, and sync replacement stay separate
 
 ## Phase 11 Browser Experience Findings
 

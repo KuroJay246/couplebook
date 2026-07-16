@@ -1,6 +1,6 @@
 # Project Status And Phases
 
-Date: 2026-07-13
+Date: 2026-07-15
 
 ## Current Repo Status
 
@@ -14,6 +14,40 @@ Date: 2026-07-13
 | Runtime publish root | `public/` only |
 | Primary local state | `localStorage` plus `core/memories.json` |
 | Cloud sync boundary | `core/firestoreSync.js` |
+
+## 2026-07-15 Settings And Browser Regression Execution
+
+- the controlled Settings batch started from clean synchronized `migration/react-foundation` baseline commit `2660b7b231556475b5dd296e34dc690baf943f8b`
+- the read-only Settings compatibility model landed first in `e62eb26`
+- the Settings route migrated as the fourth real app-v2 page in `542e344`
+- the page now keeps one quiet utility hierarchy:
+  - Your account
+  - Appearance
+  - Privacy and access
+  - Data and compatibility
+  - Migration progress
+  - Advanced
+  - Danger zone
+- Settings identity remains sourced only from Firebase Auth plus the approved-user authorization result; browser storage remains explicitly non-authenticating
+- preserved appearance data is display-only, compatibility status labels stay plain-language, and migration progress now reads from central `app-v2/src/app/migrationStatus.js`
+- destructive controls, theme writes, sync writes, device/session management, and raw Firebase/configuration details remain intentionally absent
+- approved Jaylan browser validation confirmed:
+  - `/dashboard`, `/profile`, `/favorites`, and `/settings` stayed protected and stable
+  - direct navigation to `/contract`, `/birthday`, `/valentine`, and `/confession` remained protected for the approved session
+  - reload restored the approved session with no redirect loop, no loading stall, and no `permission-denied` state
+  - sign-out returned the shell to `/login`
+  - spoofed legacy `memorybook_active_*` values did not restore access
+  - observed authorization remained targeted to `users/{uid}` only
+- app-v2 now includes a focused browser regression checkpoint in `cbcc2e6`:
+  - `npm run test:browser`
+  - local-only injected auth fixture, no real credentials
+  - signed-out protected-route coverage
+  - spoofed localStorage block coverage
+  - reload, AppShell, primary-nav, and mobile utility-nav coverage
+  - console, page-error, broad-users, write-request, static-rollback, and private-media guardrails
+  - manual Jaylan and partner smoke still remain separate real-account gates
+- validation completed cleanly with app-v2 `npm run lint`, `npm test`, `npm run build`, `npm run test:browser`, and root `npm run check:all`
+- no deploy, merge, rules change, production write, localStorage identity shortcut, private bundle, private media copy, credential commit, or Gather Savor modification occurred
 
 ## 2026-07-12 Controlled Modernization Execution
 
@@ -288,7 +322,9 @@ What must wait:
   - uses a dedicated read-only compatibility model with exact-match-only shared overlap rules
   - browser-verified at desktop, tablet, and `390x844` mobile widths with stable reload behavior and working Profile/Contract integration
 - settings
-  - utility-page architecture preview completed; read-only settings content migration is now the next recommended page
+  - completed on `migration/react-foundation` as the fourth real app-v2 page
+  - uses a dedicated read-only compatibility model with central migration-status reporting and no write path
+  - browser-verified at desktop, tablet, and `390x844` mobile widths with stable reload behavior and utility-only mobile placement
 
 ### R6 — Special Page Integration
 
@@ -414,9 +450,37 @@ Jaylan was successfully tested in a real browser session after correcting the li
 - non-live sync modeling
 - shared shell refinement inside app-v2
 - service-layer planning
-- after Dashboard, Profile, and Favorites, continue only the read-only Settings migration without widening auth, sync, or private-data scope
+- after Dashboard, Profile, Favorites, and Settings, continue only the read-only Contract migration without widening auth, sync, or private-data scope
 
 ## Recent Phase Closeout Summaries
+
+### 2026-07-15 Settings Migration And Browser Guardrails Summary
+
+- starting commit: `2660b7b231556475b5dd296e34dc690baf943f8b`
+- work completed:
+  - verified the legacy Settings inventory and kept every interaction read-only
+  - added the Settings compatibility model and central migration-status definition
+  - migrated Settings as the fourth real app-v2 page
+  - added the focused local-only browser regression guardrails
+- browser verification completed in the approved Jaylan session for:
+  - `/dashboard`
+  - `/profile`
+  - `/favorites`
+  - `/settings`
+  - direct protected navigation to `/contract`, `/birthday`, `/valentine`, and `/confession`
+  - sign-out and spoofed-localStorage recheck
+- checks run in this run:
+  - `app-v2 npm run lint`
+  - `app-v2 npm test`
+  - `app-v2 npm run build`
+  - `app-v2 npm run test:browser`
+  - root `npm run check:all`
+- commits completed in this run:
+  - `Add Settings compatibility read model`
+  - `Migrate Settings into React app`
+  - `Add app-v2 browser regression guardrails`
+- smoke status: Jaylan approved routed-browser smoke remains `PASS`, partner remains `NOT TESTED`, and the overall approved-account gate remains honestly `HOLD`
+- next recommended track action: migrate Contract as a read-only route; keep Timeline, Gallery, and sync replacement separate
 
 ### 2026-07-13 Favorites Migration Summary
 

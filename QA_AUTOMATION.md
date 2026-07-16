@@ -7,10 +7,11 @@ The modernization track adds a second validation lane inside `app-v2/`:
 - `npm run lint`
 - `npm test`
 - `npm run build`
+- `npm run test:browser`
 
 Those commands validate the isolated React shell without changing the current static baseline.
 
-As of 2026-07-13, the app-v2 lane now also covers:
+As of 2026-07-15, the app-v2 lane now also covers:
 
 - legacy compatibility adapters
 - production-disabled memory bridge gating
@@ -27,6 +28,11 @@ As of 2026-07-13, the app-v2 lane now also covers:
 - Favorites read-model coverage
 - Favorites route source coverage
 - exact shared-overlap guardrails for Favorites
+- browser-test-mode fixture normalization
+- signed-out protected-route browser smoke
+- spoofed-localStorage browser smoke
+- AppShell reload and utility-navigation browser guardrails
+- browser console/network/privacy guardrails for app-v2
 
 ## Scripts
 
@@ -35,6 +41,9 @@ As of 2026-07-13, the app-v2 lane now also covers:
 
 - `npm run check:privacy`
   Uses headless Playwright against the local static app to prove that signed-out or spoofed localStorage cannot unlock `/pages/contract.html`, that direct public special-page routes expose only neutral placeholder content, and that spoofed localStorage does not unlock the legacy wrapper path.
+
+- `cd app-v2 && npm run test:browser`
+  Uses headless Playwright against a local app-v2 server with localhost-only injected fixtures so the routed shell can prove signed-out protection, spoofed-localStorage blocking, route reload restoration, AppShell rendering, utility-only Settings placement, and console/network guardrails without storing real account credentials.
 
 - `npm run check:safety`
   Verifies tracked files and reachable Git history do not contain the known private media, export, or backup bundle paths that were previously removed from the repo.
@@ -121,12 +130,14 @@ Automated now:
 - `app-v2` domain-service contract tests
 - `app-v2` broad-query and no-write guardrails
 - `app-v2` shell-design tests for navigation grouping, shared-state framing, reduced-motion coverage, and retired rose/berry token usage
+- `app-v2` browser regression checks for signed-out redirects, spoofed localStorage blocking, authenticated route reloads, AppShell rendering, utility-only Settings placement, and console/network guardrails
 - Browser privacy/auth-containment checks for the static contract and retired public special pages
 
 Still manual:
 
 - Approved Jaylan account login smoke
 - Approved partner account login smoke
+- Real approved-session sign-out and re-login verification in the live Jaylan browser session
 - Browser verification that normal signed-in flows do not hit permission-denied after live rules changes
 - Approved-user placeholder-path confirmation for the retired public special pages unless safe local credentials are supplied to the privacy check
 - Final visual confirmation for current missing-media fallbacks outside the retired public special pages
@@ -237,8 +248,37 @@ Still manual:
   - the mobile secondary menu exposed Favorites, Contract, special moments, and Settings correctly
   - the actual approved-session Favorites source on this origin rendered an honest empty state instead of fabricated preferences
   - fresh browser-console warnings/errors stayed empty during the final pass
-  - no static `/pages/favorites.html` or `js/favorites.js` runtime dependency was observed
-  - no private-media requests or production writes were observed during the validation pass
+- no static `/pages/favorites.html` or `js/favorites.js` runtime dependency was observed
+- no private-media requests or production writes were observed during the validation pass
+
+## 2026-07-15 app-v2 Settings And Browser Regression Validation
+
+- the Settings and browser-guardrail batch passed:
+  - `npm run lint`
+  - `npm test`
+  - `npm run build`
+  - `npm run test:browser`
+  - root `npm run check:all`
+- the final app-v2 suite now passes with `69` tests
+- the focused browser lane now covers:
+  - signed-out protection for `/dashboard`, `/contract`, `/birthday`, `/valentine`, and `/confession`
+  - spoofed `memorybook_active_*` session-value blocking
+  - authenticated route stability on `/settings`, `/dashboard`, and `/contract`
+  - direct reload restoration inside the protected shell
+  - AppShell rendering and primary-navigation rendering
+  - Settings utility-only placement in the mobile `More` flow
+  - console-error, page-error, HTTP-failure, broad-users, unexpected-write, static-rollback, and private-media guardrails
+- manual approved Jaylan browser validation also confirmed:
+  - `/dashboard`, `/profile`, `/favorites`, and `/settings` stayed stable
+  - direct approved access to `/contract`, `/birthday`, `/valentine`, and `/confession` remained protected and readable
+  - sign-out returned the shell to `/login`
+  - spoofed legacy localStorage keys still could not restore access
+  - the observed auth lookup remained targeted to `users/{uid}` only
+- the browser regression lane is intentionally local-only and mock-auth based; it does not replace the real Jaylan smoke, the partner smoke, or future pre-cutover manual verification
+- smoke status remains honest:
+  - Jaylan: `PASS`
+  - partner: `NOT TESTED`
+  - overall: `HOLD`
 
 ## Known Coverage Gaps After 2026-07-12 Static Privacy Containment
 
@@ -249,7 +289,7 @@ Still manual:
   - profile/contract avatar paths
   - direct special-page companion media
   - other non-retired page-level local-only asset assumptions
-- The `app-v2` auth tests are intentionally non-live. They do not log into production Firebase or prove approved-user behavior in a browser without a safe local test configuration.
+- The `app-v2` auth and browser-regression lanes are intentionally non-live. They do not log into production Firebase or replace approved-user behavior verification in a real browser session.
 - The root `npm run check:all` lane still validates the static rollback app only. It does not exercise the React migration routes.
 - The app-v2 memory bridge tests validate localhost gating, production blocking, and sanitized fixture normalization only. They do not fetch or snapshot real private memory content in CI-style runs.
 - The app-v2 approved-user smoke is still manual, single-account, and browser-session-dependent. Partner verification and future page-specific migrated-route smoke remain outstanding.
@@ -257,9 +297,7 @@ Still manual:
 
 ## Next QA Upgrade Targets
 
-- add a headless browser smoke that verifies protected routes end on the login page when the session is missing
 - add a browser-console/media-request smoke that fails on unexpected 404s for the current clean local baseline
-- add a headless browser smoke for `app-v2` signed-out route protection and approved-user restoration once a safe local test configuration exists
 - add an approved-user credential-injected smoke path for the retired public special-page placeholders only when it can run without storing secrets in repo files
 - add the partner-account React browser smoke when a safe live session is genuinely available
-- expand the approved-user React browser smoke from Dashboard to the next isolated migrated route after Dashboard lands
+- expand the local browser regression lane to the Contract page once the Contract migration is the active batch
