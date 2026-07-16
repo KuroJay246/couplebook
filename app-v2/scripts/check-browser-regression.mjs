@@ -8,7 +8,11 @@ import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 import { chromium } from 'playwright'
 import { createServer as createViteServer } from 'vite'
-import { browserRegressionAuthorizedFixture, browserRegressionSignedOutFixture } from '../src/test-fixtures/browser-regression.fixture.js'
+import {
+  browserRegressionAuthorizedFixture,
+  browserRegressionSignedOutFixture,
+  browserRegressionUnavailableTimelineFixture,
+} from '../src/test-fixtures/browser-regression.fixture.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -20,8 +24,8 @@ const SPOOFED_SESSION = Object.freeze({
   memorybook_active_user: 'spoofed-reader',
   memorybook_active_uid: 'spoofed-reader-only',
 })
-const SIGNED_OUT_ROUTES = ['/dashboard', '/contract', '/birthday', '/valentine', '/confession']
-const SPOOFED_STORAGE_ROUTES = ['/dashboard', '/contract']
+const SIGNED_OUT_ROUTES = ['/dashboard', '/timeline', '/contract', '/birthday', '/valentine', '/confession']
+const SPOOFED_STORAGE_ROUTES = ['/dashboard', '/timeline', '/contract']
 const FORBIDDEN_CONTRACT_TEXT = /data:image|base64|strokeData|Sign & Open Vault/i
 
 function log(message) {
@@ -348,8 +352,37 @@ async function runAuthenticatedDesktopCoverage(browser) {
     const contractText = await page.locator('main').innerText()
     assert.equal(FORBIDDEN_CONTRACT_TEXT.test(contractText), false, 'Contract route rendered forbidden raw signature or legacy action text.')
 
+    await page.goto(`${getBaseUrl()}/timeline`, { waitUntil: 'domcontentloaded' })
+    await waitForRouteContent(page, '/timeline', 'Our story timeline')
+    await page.getByRole('heading', { name: 'Read the story by chapter.' }).waitFor({ state: 'visible', timeout: 5000 })
+    assert.equal(await page.getByRole('button', { name: /^Show \d+ more$/ }).count() > 0, true, 'Timeline should progressively disclose dense groups.')
+    await page.getByRole('button', { name: 'Special moments' }).click()
+    assert.equal(await page.getByRole('link', { name: 'Open protected moment' }).count(), 1, 'Timeline should expose only approved protected special routes.')
+    await page.getByRole('button', { name: 'Photos' }).click()
+    assert.equal(await page.getByText('Private photo stays local').count() > 0, true, 'Timeline should show private photo references as unavailable.')
+
+    await page.goto(`${getBaseUrl()}/timeline`, { waitUntil: 'domcontentloaded' })
+    await page.reload({ waitUntil: 'domcontentloaded' })
+    await waitForRouteContent(page, '/timeline', 'Our story timeline')
+
     await page.getByRole('button', { name: 'Sign out' }).first().click()
-    await expectRedirectToLogin(page, '/contract')
+    await expectRedirectToLogin(page, '/timeline')
+  } finally {
+    ensureObservedIsClean(observed)
+    await context.close()
+  }
+}
+
+async function runUnavailableTimelineCoverage(browser) {
+  const { context, observed, page } = await createGuardedPage(browser, 'authorized-timeline-unavailable', {
+    browserTestMode: browserRegressionUnavailableTimelineFixture,
+    viewport: { width: 1440, height: 1024 },
+  })
+
+  try {
+    await page.goto(`${getBaseUrl()}/timeline`, { waitUntil: 'domcontentloaded' })
+    await waitForRouteContent(page, '/timeline', 'Our story timeline')
+    assert.equal(await page.getByText('The private story bridge is unavailable here.').count(), 1)
   } finally {
     ensureObservedIsClean(observed)
     await context.close()
@@ -380,6 +413,11 @@ async function runAuthenticatedMobileCoverage(browser) {
     await page.getByRole('link', { name: /Contract/i }).first().click()
     await waitForRouteContent(page, '/contract', 'Our agreement')
 
+    await page.goto(`${getBaseUrl()}/timeline`, { waitUntil: 'domcontentloaded' })
+    await waitForRouteContent(page, '/timeline', 'Our story timeline')
+    await page.getByRole('button', { name: 'Videos' }).click()
+    assert.equal(await page.getByText('Private video stays local').count() > 0, true, 'Timeline mobile should retain compact video filtering.')
+
     const overflowX = await page.evaluate(() => {
       return Math.max(0, document.documentElement.scrollWidth - document.documentElement.clientWidth)
     })
@@ -398,6 +436,7 @@ async function run() {
       await runSignedOutCoverage(browser)
       await runSpoofedStorageCoverage(browser)
       await runAuthenticatedDesktopCoverage(browser)
+      await runUnavailableTimelineCoverage(browser)
       await runAuthenticatedMobileCoverage(browser)
       log('app-v2 browser regression check passed.')
     } finally {

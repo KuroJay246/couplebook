@@ -26,11 +26,11 @@ test('settings route uses the read-only feature hook and utility view', async ()
 test('settings migration progress and utility navigation stay explicit', () => {
   assert.deepEqual(
     routeMigrationStatus.completed.map((entry) => entry.label),
-    ['Dashboard', 'Profile', 'Favorites', 'Contract', 'Settings'],
+    ['Dashboard', 'Timeline', 'Profile', 'Favorites', 'Contract', 'Settings'],
   )
   assert.deepEqual(
     routeMigrationStatus.pending.map((entry) => entry.label),
-    ['Timeline', 'Gallery', 'Birthday', 'Valentine', 'Confession'],
+    ['Gallery', 'Birthday', 'Valentine', 'Confession'],
   )
   assert.deepEqual(approvedAccountMigrationGate, {
     jaylan: 'PASS',

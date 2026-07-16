@@ -1,11 +1,15 @@
-import { PlaceholderPage } from '../components/PlaceholderPage'
+import { TimelineView } from '../features/timeline/TimelineView'
+import { useTimelineData } from '../features/timeline/useTimelineData'
 
 export function TimelinePage() {
+  const { compatibilityError, compatibilityState, model, refreshCompatibility } = useTimelineData()
+
   return (
-    <PlaceholderPage
-      eyebrow="Timeline"
-      title="Timeline placeholder"
-      description="Compatibility reads from the legacy memory dataset will start here once the adapter layer is added."
+    <TimelineView
+      compatibilityError={compatibilityError}
+      compatibilityState={compatibilityState}
+      model={model}
+      onRefresh={refreshCompatibility}
     />
   )
 }

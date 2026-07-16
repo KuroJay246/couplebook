@@ -25,7 +25,7 @@ export const protectedRouteMeta = [
     title: 'Timeline',
     chapter: 'Chapter 02',
     group: ROUTE_GROUPS.primary,
-    summary: 'The relationship story will settle here once legacy reads are connected.',
+    summary: 'Read-only relationship chapters now render through the safe memory read model.',
   },
   {
     path: '/gallery',
