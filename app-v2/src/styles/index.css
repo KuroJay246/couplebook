@@ -1403,6 +1403,274 @@ code {
     repeating-linear-gradient(0deg, rgba(111, 93, 74, 0.025) 0 1px, transparent 1px 24px);
 }
 
+.gallery-page,
+.gallery-hero,
+.gallery-opening-note,
+.gallery-collection,
+.gallery-item-card,
+.gallery-item-copy,
+.special-moment-page,
+.special-moment-hero,
+.special-moment-status {
+  display: grid;
+}
+
+.gallery-opening-note,
+.gallery-item-card,
+.special-moment-status,
+.special-moment-panel {
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255, 252, 246, 0.72);
+}
+
+.gallery-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.gallery-summary-grid article {
+  display: grid;
+  gap: 6px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(232, 221, 206, 0.4);
+}
+
+.gallery-summary-grid strong {
+  font-family: "Georgia", "Times New Roman", serif;
+  font-size: clamp(1.65rem, 3vw, 2.2rem);
+  line-height: 1;
+}
+
+.gallery-summary-grid span,
+.gallery-item-meta,
+.gallery-item-footer,
+.gallery-media-status,
+.gallery-special-link {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.gallery-toolbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255, 252, 246, 0.62);
+}
+
+.gallery-filter-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.gallery-filter-button {
+  min-height: 38px;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.44);
+  color: var(--graphite);
+  cursor: pointer;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.gallery-filter-button-active {
+  border-color: rgba(105, 113, 95, 0.48);
+  background: rgba(232, 221, 206, 0.76);
+  color: var(--ink);
+}
+
+.gallery-year-filter {
+  display: grid;
+  gap: 6px;
+  min-width: 150px;
+  color: var(--graphite);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.gallery-year-filter select {
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper-strong);
+  color: var(--ink);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.gallery-collection-stack {
+  display: grid;
+  gap: 20px;
+}
+
+.gallery-collection {
+  gap: 14px;
+  padding: 20px;
+  border: 1px solid rgba(90, 71, 58, 0.2);
+  border-radius: 20px;
+  background:
+    linear-gradient(180deg, rgba(252, 248, 241, 0.86), rgba(241, 232, 217, 0.78)),
+    repeating-linear-gradient(0deg, rgba(120, 95, 67, 0.035) 0 1px, transparent 1px 26px);
+}
+
+.gallery-collection-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.gallery-collection-heading > div {
+  display: grid;
+  gap: 8px;
+}
+
+.gallery-collection-heading h3 {
+  font-size: clamp(1.45rem, 2.5vw, 1.95rem);
+  line-height: 1.08;
+}
+
+.gallery-collection-heading p,
+.gallery-item-copy p,
+.special-moment-panel p {
+  color: var(--ink-soft);
+  line-height: 1.66;
+}
+
+.gallery-item-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.gallery-item-card {
+  background:
+    linear-gradient(180deg, rgba(255, 252, 246, 0.86), rgba(247, 239, 230, 0.82)),
+    linear-gradient(135deg, rgba(105, 113, 95, 0.05), transparent 44%);
+}
+
+.gallery-item-card-special-route-only,
+.gallery-item-card-private-legacy-reference {
+  border-color: rgba(140, 97, 71, 0.3);
+}
+
+.gallery-item-frame {
+  display: flex;
+  min-height: 118px;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed var(--line-strong);
+  border-radius: 14px;
+  background:
+    linear-gradient(135deg, rgba(232, 221, 206, 0.72), rgba(255, 252, 246, 0.64)),
+    repeating-linear-gradient(45deg, rgba(111, 93, 74, 0.04) 0 1px, transparent 1px 12px);
+}
+
+.gallery-item-frame span {
+  color: var(--graphite);
+  font-family: "Georgia", "Times New Roman", serif;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.gallery-item-copy {
+  gap: 8px;
+}
+
+.gallery-item-meta,
+.gallery-item-footer {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.gallery-item-copy h3 {
+  font-size: 1.12rem;
+  line-height: 1.18;
+}
+
+.gallery-media-status {
+  color: var(--graphite);
+}
+
+.gallery-special-link {
+  color: var(--accent);
+}
+
+.gallery-show-more {
+  width: fit-content;
+  min-height: 38px;
+  padding: 9px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.52);
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.special-moment-page {
+  gap: 18px;
+}
+
+.special-moment-page-gold .special-moment-hero {
+  border-color: rgba(156, 111, 43, 0.28);
+}
+
+.special-moment-page-rose .special-moment-hero {
+  border-color: rgba(138, 77, 69, 0.24);
+}
+
+.special-moment-page-oxblood .special-moment-hero {
+  border-color: rgba(88, 48, 42, 0.34);
+}
+
+.special-moment-panel {
+  background:
+    linear-gradient(180deg, rgba(255, 252, 246, 0.86), rgba(247, 239, 230, 0.82)),
+    repeating-linear-gradient(90deg, rgba(111, 93, 74, 0.03) 0 1px, transparent 1px 24px);
+}
+
+.special-moment-return-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 4px;
+  border-top: 1px solid var(--line);
+}
+
+.special-moment-return-nav a {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.46);
+  color: var(--graphite);
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
 .profile-highlight-list {
   display: flex;
   flex-wrap: wrap;
@@ -2142,6 +2410,7 @@ code {
   .editorial-page-header-layout,
   .dashboard-hero-layout,
   .dashboard-grid,
+  .gallery-summary-grid,
   .quiet-status-list,
   .settings-account-grid,
   .contract-document-header,
@@ -2207,10 +2476,13 @@ code {
   .editorial-section-heading,
   .source-status-toolbar,
   .timeline-toolbar,
+  .gallery-toolbar,
   .timeline-chapter-heading,
   .timeline-group-heading,
   .timeline-memory-card-meta,
   .timeline-memory-card-footer,
+  .gallery-item-meta,
+  .gallery-item-footer,
   .contract-document-meta-row,
   .contract-record-detail-row,
   .contract-record-card-meta,
@@ -2247,6 +2519,14 @@ code {
 
   .timeline-year-filter {
     width: 100%;
+  }
+
+  .gallery-year-filter {
+    width: 100%;
+  }
+
+  .gallery-item-grid {
+    grid-template-columns: 1fr;
   }
 
   .profile-detail-row dd {

@@ -1,11 +1,15 @@
-import { PlaceholderPage } from '../components/PlaceholderPage'
+import { GalleryView } from '../features/gallery/GalleryView'
+import { useGalleryData } from '../features/gallery/useGalleryData'
 
 export function GalleryPage() {
+  const { compatibilityError, compatibilityState, model, refreshCompatibility } = useGalleryData()
+
   return (
-    <PlaceholderPage
-      eyebrow="Gallery"
-      title="Gallery placeholder"
-      description="The curated visual archive will arrive after the protected shell and compatibility adapters are proven."
+    <GalleryView
+      compatibilityError={compatibilityError}
+      compatibilityState={compatibilityState}
+      model={model}
+      onRefresh={refreshCompatibility}
     />
   )
 }

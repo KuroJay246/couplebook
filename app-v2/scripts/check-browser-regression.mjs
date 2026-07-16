@@ -24,8 +24,8 @@ const SPOOFED_SESSION = Object.freeze({
   memorybook_active_user: 'spoofed-reader',
   memorybook_active_uid: 'spoofed-reader-only',
 })
-const SIGNED_OUT_ROUTES = ['/dashboard', '/timeline', '/contract', '/birthday', '/valentine', '/confession']
-const SPOOFED_STORAGE_ROUTES = ['/dashboard', '/timeline', '/contract']
+const SIGNED_OUT_ROUTES = ['/dashboard', '/timeline', '/gallery', '/contract', '/birthday', '/valentine', '/confession']
+const SPOOFED_STORAGE_ROUTES = ['/dashboard', '/timeline', '/gallery', '/contract', '/birthday', '/valentine', '/confession']
 const FORBIDDEN_CONTRACT_TEXT = /data:image|base64|strokeData|Sign & Open Vault/i
 
 function log(message) {
@@ -365,8 +365,43 @@ async function runAuthenticatedDesktopCoverage(browser) {
     await page.reload({ waitUntil: 'domcontentloaded' })
     await waitForRouteContent(page, '/timeline', 'Our story timeline')
 
+    await page.goto(`${getBaseUrl()}/gallery`, { waitUntil: 'domcontentloaded' })
+    await waitForRouteContent(page, '/gallery', 'Our visual archive')
+    await page.getByRole('heading', { name: 'Moments kept in pictures and motion.' }).waitFor({ state: 'visible', timeout: 5000 })
+    assert.equal(await page.getByText('Private photo remains in the legacy book').count() > 0, true, 'Gallery should render private photo references as metadata-only states.')
+    assert.equal(await page.getByText('Private video remains in the legacy book').count() > 0, true, 'Gallery should render private video references as metadata-only states.')
+    assert.equal(await page.getByRole('button', { name: /^Show \d+ more$/ }).count() > 0, true, 'Gallery should progressively disclose dense collections.')
+    await page.getByRole('button', { name: 'Videos' }).click()
+    assert.equal(await page.getByText('Video memory').count() > 0, true, 'Gallery video filter should keep video entries visible.')
+    await page.getByRole('button', { name: 'Special moments' }).click()
+    const gallerySpecialLinkPaths = await page.locator('main a', { hasText: 'Open protected moment' }).evaluateAll((elements) => {
+      return elements.map((element) => new URL(element.href).pathname)
+    })
+    assert.equal(gallerySpecialLinkPaths.length > 0, true, 'Gallery should render protected special links.')
+    assert.deepEqual(
+      [...new Set(gallerySpecialLinkPaths)].sort(),
+      ['/birthday', '/confession', '/valentine'].filter((route) => gallerySpecialLinkPaths.includes(route)).sort(),
+      'Gallery should link only to approved protected special routes.',
+    )
+
+    for (const [route, heading] of [
+      ['/birthday', 'Birthday moment'],
+      ['/valentine', 'Valentine moment'],
+      ['/confession', 'Confession moment'],
+    ]) {
+      await page.goto(`${getBaseUrl()}${route}`, { waitUntil: 'domcontentloaded' })
+      await waitForRouteContent(page, route, heading)
+      assert.equal(await page.getByText('Content migration pending').count() > 0, true, `${route} should show the shared pending migration state.`)
+      assert.equal(await page.getByRole('link', { name: 'Timeline' }).count() > 0, true, `${route} should keep return navigation to Timeline.`)
+      assert.equal(await page.getByRole('link', { name: 'Gallery' }).count() > 0, true, `${route} should keep return navigation to Gallery.`)
+    }
+
+    await page.goto(`${getBaseUrl()}/gallery`, { waitUntil: 'domcontentloaded' })
+    await page.reload({ waitUntil: 'domcontentloaded' })
+    await waitForRouteContent(page, '/gallery', 'Our visual archive')
+
     await page.getByRole('button', { name: 'Sign out' }).first().click()
-    await expectRedirectToLogin(page, '/timeline')
+    await expectRedirectToLogin(page, '/gallery')
   } finally {
     ensureObservedIsClean(observed)
     await context.close()
@@ -418,10 +453,18 @@ async function runAuthenticatedMobileCoverage(browser) {
     await page.getByRole('button', { name: 'Videos' }).click()
     assert.equal(await page.getByText('Private video stays local').count() > 0, true, 'Timeline mobile should retain compact video filtering.')
 
+    await page.goto(`${getBaseUrl()}/gallery`, { waitUntil: 'domcontentloaded' })
+    await waitForRouteContent(page, '/gallery', 'Our visual archive')
+    await page.getByRole('button', { name: 'Private media' }).click()
+    assert.equal(await page.getByText('Private media references').count() > 0, true, 'Gallery mobile should keep private-media filtering available.')
+
+    await page.goto(`${getBaseUrl()}/birthday`, { waitUntil: 'domcontentloaded' })
+    await waitForRouteContent(page, '/birthday', 'Birthday moment')
+
     const overflowX = await page.evaluate(() => {
       return Math.max(0, document.documentElement.scrollWidth - document.documentElement.clientWidth)
     })
-    assert.equal(overflowX, 0, 'Contract mobile layout should not overflow horizontally.')
+    assert.equal(overflowX, 0, 'Gallery and special mobile layouts should not overflow horizontally.')
   } finally {
     ensureObservedIsClean(observed)
     await context.close()

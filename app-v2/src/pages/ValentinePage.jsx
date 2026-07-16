@@ -1,11 +1,5 @@
-import { PlaceholderPage } from '../components/PlaceholderPage'
+import { SpecialMomentFrame } from '../features/specialMoments/SpecialMomentFrame'
 
 export function ValentinePage() {
-  return (
-    <PlaceholderPage
-      eyebrow="Special Moment"
-      title="Valentine placeholder"
-      description="The routed shell will own access to this moment instead of relying on static public files."
-    />
-  )
+  return <SpecialMomentFrame momentKey="valentine" />
 }

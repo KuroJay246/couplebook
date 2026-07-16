@@ -34,7 +34,7 @@ export const protectedRouteMeta = [
     title: 'Gallery',
     chapter: 'Chapter 03',
     group: ROUTE_GROUPS.primary,
-    summary: 'Curated visual memories will move here after the compatibility layer is wired.',
+    summary: 'Read-only visual archive metadata now renders without private media previews.',
   },
   {
     path: '/profile',
