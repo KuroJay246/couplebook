@@ -21,6 +21,8 @@ const SPOOFED_SESSION = Object.freeze({
   memorybook_active_uid: 'spoofed-reader-only',
 })
 const SIGNED_OUT_ROUTES = ['/dashboard', '/contract', '/birthday', '/valentine', '/confession']
+const SPOOFED_STORAGE_ROUTES = ['/dashboard', '/contract']
+const FORBIDDEN_CONTRACT_TEXT = /data:image|base64|strokeData|Sign & Open Vault/i
 
 function log(message) {
   process.stdout.write(`${message}\n`)
@@ -290,17 +292,19 @@ async function runSignedOutCoverage(browser) {
 }
 
 async function runSpoofedStorageCoverage(browser) {
-  const { context, observed, page } = await createGuardedPage(browser, 'signed-out-spoofed:/dashboard', {
-    browserTestMode: browserRegressionSignedOutFixture,
-    spoofedSession: SPOOFED_SESSION,
-  })
+  for (const route of SPOOFED_STORAGE_ROUTES) {
+    const { context, observed, page } = await createGuardedPage(browser, `signed-out-spoofed:${route}`, {
+      browserTestMode: browserRegressionSignedOutFixture,
+      spoofedSession: SPOOFED_SESSION,
+    })
 
-  try {
-    await page.goto(`${getBaseUrl()}/dashboard`, { waitUntil: 'domcontentloaded' })
-    await expectRedirectToLogin(page, '/dashboard')
-  } finally {
-    ensureObservedIsClean(observed)
-    await context.close()
+    try {
+      await page.goto(`${getBaseUrl()}${route}`, { waitUntil: 'domcontentloaded' })
+      await expectRedirectToLogin(page, route)
+    } finally {
+      ensureObservedIsClean(observed)
+      await context.close()
+    }
   }
 }
 
@@ -334,7 +338,15 @@ async function runAuthenticatedDesktopCoverage(browser) {
     await waitForRouteContent(page, '/dashboard', 'Dashboard')
 
     await page.goto(`${getBaseUrl()}/contract`, { waitUntil: 'domcontentloaded' })
-    await waitForRouteContent(page, '/contract', 'Contract')
+    await waitForRouteContent(page, '/contract', 'Our agreement')
+    assert.equal(await page.getByText('Agreement content unavailable in this migrated view.').count() > 0, true)
+    assert.equal(await page.getByText('Signature preserved in legacy data').count() > 0, true)
+    assert.equal(await page.getByRole('link', { name: 'Shared profile' }).count(), 1)
+    assert.equal(await page.getByRole('link', { name: 'Shared favorites' }).count(), 1)
+    assert.equal(await page.locator('main').getByRole('button', { name: /accept|edit|save|delete|export|upload|draw|sign contract|sign & open vault/i }).count(), 0)
+
+    const contractText = await page.locator('main').innerText()
+    assert.equal(FORBIDDEN_CONTRACT_TEXT.test(contractText), false, 'Contract route rendered forbidden raw signature or legacy action text.')
 
     await page.getByRole('button', { name: 'Sign out' }).first().click()
     await expectRedirectToLogin(page, '/contract')
@@ -362,11 +374,16 @@ async function runAuthenticatedMobileCoverage(browser) {
 
     const utilityMenuPaths = await page.locator('.secondary-sheet [href="/settings"]').count()
     assert.equal(utilityMenuPaths, 1, 'Settings should stay inside secondary utility navigation on mobile.')
+    const contractMenuPaths = await page.locator('.secondary-sheet [href="/contract"]').count()
+    assert.equal(contractMenuPaths, 1, 'Contract should stay inside secondary shared navigation on mobile.')
+
+    await page.getByRole('link', { name: /Contract/i }).first().click()
+    await waitForRouteContent(page, '/contract', 'Our agreement')
 
     const overflowX = await page.evaluate(() => {
       return Math.max(0, document.documentElement.scrollWidth - document.documentElement.clientWidth)
     })
-    assert.equal(overflowX, 0, 'Settings mobile layout should not overflow horizontally.')
+    assert.equal(overflowX, 0, 'Contract mobile layout should not overflow horizontally.')
   } finally {
     ensureObservedIsClean(observed)
     await context.close()

@@ -47,6 +47,7 @@ test('browser regression compatibility fixture remains local-only and frozen', (
 
   assert.equal(compatibilityState.state, 'ready')
   assert.equal(compatibilityState.snapshot.sources.settings.data.theme, 'sunset')
-  assert.equal(compatibilityState.snapshot.sources.contract.status, 'empty')
+  assert.equal(compatibilityState.snapshot.sources.contract.status, 'ready')
+  assert.equal(compatibilityState.snapshot.sources.contract.data.activeSignature.hasLegacyPayload, true)
   assert.equal(Object.isFrozen(compatibilityState.snapshot), true)
 })
