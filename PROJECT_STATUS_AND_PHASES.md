@@ -15,6 +15,42 @@ Date: 2026-07-16
 | Primary local state | `localStorage` plus `core/memories.json` |
 | Cloud sync boundary | `core/firestoreSync.js` |
 
+## 2026-07-16 Gallery UI Migration And Special Frame Checkpoint
+
+- the fast-track sprint continued from clean synchronized `migration/react-foundation` commit `b76a4d2`
+- the required baseline passed before implementation:
+  - app-v2 `npm run lint`
+  - app-v2 `npm test`
+  - app-v2 `npm run build`
+  - app-v2 `npm run test:browser`
+  - root `npm run check:all`
+- Gallery is now the seventh real app-v2 migrated page:
+  - `/gallery` uses the existing `useGalleryData` read model with a real `GalleryView`
+  - the page opens as a curated private visual archive instead of a file browser
+  - summary cards stay quiet and metadata-only
+  - filters include All, Photos, Videos, Special moments, Private media, and Year
+  - deterministic collections cover recent visual memories, year groups, private media references, and special moments
+  - dense groups use component-local Show more / Show less progressive disclosure
+- Gallery still does not fetch, render, copy, or bundle private media:
+  - no image, video, lightbox, player, media proxy, Storage, upload, or private URL behavior was added
+  - unavailable and private legacy references render as intentional metadata states
+  - special references link only to protected `/birthday`, `/valentine`, and `/confession`
+- Birthday, Valentine, and Confession now share one protected Special Moment Frame:
+  - each route has a safe non-sensitive config, restrained accent, pending migration state, and return navigation to Dashboard, Timeline, and Gallery
+  - no old static HTML, private special-page copy, real letters, dates, media paths, autoplay, sound, or decorative effects were migrated
+  - the three special routes remain content-pending and incomplete
+- browser validation in the approved Jaylan session confirmed:
+  - Gallery and all three special routes stayed protected after auth restoration
+  - desktop `1440x1024`, tablet `1024x768`, and mobile `390x844` had no horizontal overflow
+  - no loading-screen stall, redirect loop, permission-denied state, browser-console warnings/errors, media elements, or old static asset requests were observed
+  - current local bridge remains unavailable in the real approved session, so automated local fixtures cover populated Gallery filters and Show more behavior
+- migration status now marks Dashboard, Profile, Favorites, Settings, Contract, Timeline, and Gallery complete; Birthday, Valentine, and Confession remain pending
+- smoke status remains honest:
+  - Jaylan: `PASS`
+  - partner: `NOT TESTED`
+  - overall: `HOLD`
+- no deploy, merge, rules change, production write, localStorage mutation, private data bundle, private media copy, Storage initialization, or Gather Savor change occurred
+
 ## 2026-07-16 Timeline UI Migration And Gallery Read-Model Checkpoint
 
 - the fast-track sprint started from clean synchronized `migration/react-foundation` commit `a717c11`
@@ -590,9 +626,37 @@ Jaylan was successfully tested in a real browser session after correcting the li
 - non-live sync modeling
 - shared shell refinement inside app-v2
 - service-layer planning
-- after Dashboard, Profile, Favorites, Settings, Contract, and the Timeline read-model foundation, continue only the read-only Timeline page migration without widening auth, sync, media, or private-data scope
+- after Dashboard, Profile, Favorites, Settings, Contract, Timeline, and Gallery, continue only protected special-content architecture using runtime-safe sources without widening auth, sync, media, or private-data scope
 
 ## Recent Phase Closeout Summaries
+
+### 2026-07-16 Gallery UI And Special Frame Summary
+
+- starting commit: `b76a4d2`
+- work completed:
+  - migrated `/gallery` from placeholder to a real read-only metadata Gallery route
+  - added editorial archive opening, quiet summary cards, type/year/private/special filters, deterministic collections, and per-collection Show more / Show less
+  - kept Gallery media metadata-only with no previews, lightbox, player, proxy, Storage, upload, media fetch, raw media path, or private media bundle
+  - added a shared protected Special Moment Frame and safe config for Birthday, Valentine, and Confession
+  - replaced the three special placeholders with framed pending routes while keeping their content migration status pending
+  - expanded app-v2 browser regression for Gallery and special-frame route protection, spoof resistance, authorized rendering, private-media safety, no static dependency, no writes, and no broad users lookup
+- manual approved Jaylan in-app validation:
+  - Gallery and `/birthday`, `/valentine`, and `/confession` restored the approved session and stayed inside the protected shell
+  - desktop `1440x1024`, tablet `1024x768`, and mobile `390x844` had no horizontal overflow
+  - no loading stall, redirect loop, permission-denied state, browser-console warning/error, media element, old static asset request, or private-media request was observed
+  - the real local bridge was unavailable, so manual validation covered the honest unavailable state and automated authorized fixtures covered populated Gallery filters and progressive disclosure
+- checks run in this run:
+  - app-v2 `npm run lint`
+  - app-v2 `npm test`
+  - app-v2 `npm run build`
+  - app-v2 `npm run test:browser`
+  - root `npm run check:all`
+  - scoped sprint guardrail scans for changed files
+- commits completed in this run:
+  - `Migrate Gallery and add special moment frame`
+  - `Document Gallery and special-frame checkpoint`
+- smoke status: approved Jaylan routed-browser smoke remains `PASS`, partner remains `NOT TESTED`, and the overall approved-account gate remains honestly `HOLD`
+- next recommended track action: migrate Birthday, Valentine, and Confession content architecture using protected runtime content sources only; do not hardcode private content into the public React bundle
 
 ### 2026-07-16 Timeline Planning And Read-Model Foundation Summary
 

@@ -343,9 +343,10 @@ Settings must remain intentionally secondary, plain-language, and free of unrela
 5. migrate Favorites next
 6. Contract is now the fifth real read-only page in app-v2
 7. Timeline is now the sixth real read-only page in app-v2
-8. Gallery now has a safe metadata read model, but its real UI remains pending
-9. reintroduce special-moment page content later through the protected routed family
-10. keep deployment and Hosting cutover blocked until the broader migration gates are cleared
+8. Gallery is now the seventh real read-only metadata page in app-v2
+9. Birthday, Valentine, and Confession now share a protected pending Special Moment Frame
+10. reintroduce special-moment page content later through protected runtime content sources only
+11. keep deployment and Hosting cutover blocked until the broader migration gates are cleared
 
 ## 2026-07-13 Reference Review
 
@@ -389,7 +390,7 @@ Future component families:
 | --- | --- |
 | Shell | `AppShell`, `ProtectedRouteEquivalent`, `HealthStatusPanel` |
 | Story | `StoryHero`, `MemoryCard`, `MemoryTimeline`, `MemoryDetail` |
-| Media | `GalleryGrid`, `MediaCard`, `MediaViewer` |
+| Media | `GalleryView`, metadata collection cards, private-media status cards |
 | Relationship | `ProfilePair`, `FavoritesPanel`, `ContractPanel` |
 | Special moments | `SpecialPageEntry`, `SpecialPageFrame` |
 | Shared UI | `EmptyState`, `LoadingState`, `ErrorState`, `SyncStatusChip`, `FutureFeatureBadge` |
@@ -696,6 +697,42 @@ Safety preserved:
 - overall approved-account gate remains `HOLD`
 - no deploy, merge, rules change, production write, private-media copy, or credential commit occurred
 - the next recommended batch is now narrow and explicit: migrate Timeline as a read-only page only, using the locked memory-domain model below
+
+## 2026-07-16 app-v2 Gallery And Special Frame Checkpoint
+
+Gallery is now the seventh real app-v2 page. It uses the prepared read model as a metadata-only private visual archive instead of a file browser, storage manager, or broken media grid.
+
+Gallery UI result:
+
+- one editorial archive opening with private-product language
+- quiet summary cards for photo references, video references, year coverage, private references, and special moments
+- compact filters for All, Photos, Videos, Special moments, Private media, and Year
+- deterministic collection sections for recent visual memories, year groups, private media references, and special moments
+- per-collection Show more / Show less keeps dense archives readable without infinite scroll or virtualization
+- item cards distinguish photos, videos, private legacy references, unavailable references, and protected special moments with text and structure, not color alone
+
+Gallery media boundary:
+
+- the page does not render images, videos, thumbnails, lightboxes, players, iframes, or media downloads
+- no media proxy, backend, Storage initialization, upload path, or private media copy was introduced
+- raw media paths, local file paths, adapter names, old static filenames, and internal warnings stay out of the UI
+- unavailable private media is presented as preserved context only
+- special entries link only to `/birthday`, `/valentine`, and `/confession`
+
+Special Moment Frame result:
+
+- Birthday, Valentine, and Confession now share one protected frame instead of three generic placeholders
+- each route has a safe non-sensitive config with generic label, protected route, restrained accent, and `pending` migration state
+- the routes show common return navigation to Dashboard, Timeline, and Gallery
+- the routes remain inside the same Couple Book shell instead of becoming detached mini-sites
+- no old special-page HTML, private messages, real letters, names, dates, media paths, autoplay, sound, confetti, or private content was migrated
+
+Responsive and browser result:
+
+- approved Jaylan browser validation passed at `1440x1024`, `1024x768`, and `390x844`
+- Gallery and all special-frame routes restored the approved session and stayed protected
+- no horizontal overflow, console warnings/errors, media elements, old static asset requests, redirect loop, loading stall, or `permission-denied` state was observed
+- populated Gallery filtering and Show more behavior are covered by sanitized authorized browser fixtures because the real approved local bridge is currently unavailable
 
 ## 2026-07-16 app-v2 Timeline And Gallery Read-Model Checkpoint
 

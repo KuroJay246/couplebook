@@ -37,6 +37,11 @@ As of 2026-07-16, the app-v2 lane now also covers:
 - Timeline source and fixture privacy guardrails
 - Timeline page source coverage
 - Gallery read-model coverage
+- Gallery route source coverage
+- Gallery metadata-only UI, filter, grouping, and progressive-disclosure coverage
+- Gallery no-media-fetch/player/Storage/static-dependency guardrails
+- Special Moment Frame source and safe-config coverage
+- Special route pending-state and no-private-content guardrails
 - browser-test-mode fixture normalization
 - signed-out protected-route browser smoke
 - spoofed-localStorage browser smoke
@@ -44,6 +49,8 @@ As of 2026-07-16, the app-v2 lane now also covers:
 - browser console/network/privacy guardrails for app-v2
 - Contract browser-content and mobile-overflow guardrails
 - Timeline browser protection, spoof-resistance, authorized rendering, unavailable-bridge, no-private-media, no-static-dependency, no-write, and no-broad-users guardrails
+- Gallery browser protection, spoof-resistance, authorized rendering, filters, private-media states, no-private-media, no-static-dependency, no-write, and no-broad-users guardrails
+- Special-frame browser protection, spoof-resistance, authorized rendering, pending-state, no-media, no-static-dependency, no-write, and no-broad-users guardrails
 
 ## Scripts
 
@@ -142,6 +149,8 @@ Automated now:
 - `app-v2` broad-query and no-write guardrails
 - `app-v2` shell-design tests for navigation grouping, shared-state framing, reduced-motion coverage, and retired rose/berry token usage
 - `app-v2` browser regression checks for signed-out redirects, spoofed localStorage blocking, authenticated route reloads, AppShell rendering, utility-only Settings placement, and console/network guardrails
+- `app-v2` Gallery UI source/browser guardrails for metadata-only media handling, filters, grouping, Show more, private-media states, and static-dependency blocking
+- `app-v2` Special Moment Frame source/browser guardrails for pending protected routes, safe config, common return navigation, and no private/static content
 - Browser privacy/auth-containment checks for the static contract and retired public special pages
 
 Still manual:
@@ -352,6 +361,36 @@ Still manual:
   - partner: `NOT TESTED`
   - overall: `HOLD`
 
+## 2026-07-16 app-v2 Gallery UI And Special Frame Validation
+
+- the Gallery UI and Special Moment Frame batch passed:
+  - `npm run lint`
+  - `npm test`
+  - `npm run build`
+  - `npm run test:browser`
+  - root `npm run check:all`
+- the final app-v2 suite now passes with `96` tests
+- automated app-v2 coverage now also verifies:
+  - Gallery route source coverage and placeholder removal
+  - metadata-only Gallery rendering with no image, video, fetch, player, Storage, or old static dependency
+  - Gallery filters for All, Photos, Videos, Special moments, Private media, and Year
+  - Gallery private-reference, unavailable, special-route, year-grouping, and progressive-disclosure states
+  - Special Moment Frame safe config for Birthday, Valentine, and Confession
+  - framed pending states with common return navigation and no old static special-page dependency
+  - no private special-page content, autoplay, media, write behavior, broad users query, raw private path, credential literal, or localStorage auth shortcut in the changed sprint files
+  - browser-lane signed-out protection and spoofed-localStorage blocking for `/gallery`, `/birthday`, `/valentine`, and `/confession`
+  - authorized browser fixture rendering for Gallery and all special-frame routes
+- manual approved Jaylan in-app browser validation confirmed:
+  - Gallery and `/birthday`, `/valentine`, and `/confession` restored the approved session and stayed inside the protected shell
+  - desktop `1440x1024`, tablet `1024x768`, and mobile `390x844` had no horizontal overflow
+  - no loading stall, redirect loop, permission-denied state, browser-console warning/error, media element, old static asset request, or private-media request was observed
+  - the current real local memory bridge is unavailable, so manual validation covered honest unavailable states while local authorized fixtures cover populated Gallery filters and Show more
+- the browser regression lane remains local-only and mock-auth based; it does not replace the real Jaylan smoke, partner smoke, or future pre-cutover manual verification
+- smoke status remains honest:
+  - Jaylan: `PASS`
+  - partner: `NOT TESTED`
+  - overall: `HOLD`
+
 ## 2026-07-15 app-v2 Settings And Browser Regression Validation
 
 - the Settings and browser-guardrail batch passed:
@@ -395,12 +434,12 @@ Still manual:
 - The app-v2 memory bridge tests validate localhost gating, production blocking, and sanitized fixture normalization only. They do not fetch or snapshot real private memory content in CI-style runs.
 - The app-v2 approved-user smoke is still manual, single-account, and browser-session-dependent. Partner verification and future page-specific migrated-route smoke remain outstanding.
 - The app-v2 shell visual checks are still targeted browser inspections, not full visual-regression snapshots.
-- Timeline is no longer model-only; the real app-v2 route is migrated. The remaining live-account gap is partner smoke, plus real bridge-enabled approved-session validation when the private local bridge is intentionally available.
-- Gallery is read-model-only. The real Gallery route still needs UI migration and browser validation.
+- Timeline and Gallery are no longer model-only; both real app-v2 routes are migrated. The remaining live-account gap is partner smoke, plus real bridge-enabled approved-session validation when the private local bridge is intentionally available.
+- Birthday, Valentine, and Confession now have a protected shared frame, but their real private content architecture and runtime content source remain pending.
 
 ## Next QA Upgrade Targets
 
 - add a browser-console/media-request smoke that fails on unexpected 404s for the current clean local baseline
 - add an approved-user credential-injected smoke path for the retired public special-page placeholders only when it can run without storing secrets in repo files
 - add the partner-account React browser smoke when a safe live session is genuinely available
-- expand browser regression for the real Gallery UI after the Gallery page migration batch becomes active
+- expand browser regression for protected special-moment runtime content once that architecture exists without hardcoding private content into the React bundle
