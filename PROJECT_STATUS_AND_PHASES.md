@@ -15,6 +15,59 @@ Date: 2026-07-16
 | Primary local state | `localStorage` plus `core/memories.json` |
 | Cloud sync boundary | `core/firestoreSync.js` |
 
+## 2026-07-16 Timeline UI Migration And Gallery Read-Model Checkpoint
+
+- the fast-track sprint started from clean synchronized `migration/react-foundation` commit `a717c11`
+- the required baseline passed before implementation:
+  - app-v2 `npm run lint`
+  - app-v2 `npm test`
+  - app-v2 `npm run build`
+  - app-v2 `npm run test:browser`
+  - root `npm run check:all`
+- Timeline is now the sixth real app-v2 migrated page:
+  - `/timeline` uses `useTimelineData` and `TimelineView`
+  - story-first shared-space opening
+  - deterministic year chapters
+  - special moments kept distinct
+  - compact chapter navigation
+  - quiet type/year filters
+  - dense ordinary groups use Show more / Show less with component-local expansion state only
+  - text-first memory cards render safe titles, descriptions, dates, tags, and private-media status labels
+  - bridge-disabled state says the private legacy story is not connected to this build instead of claiming zero memories
+- Timeline still does not fetch, render, copy, or bundle private media:
+  - no images or videos are rendered
+  - no Storage
+  - no editing, deleting, adding, or synchronization
+  - special moments link only to `/birthday`, `/valentine`, and `/confession`
+  - no raw media paths, old static route names, localStorage keys, adapter names, or internal warnings are displayed
+- browser regression now covers Timeline:
+  - signed-out protection
+  - spoofed legacy localStorage blocking
+  - authorized test-mode rendering
+  - unavailable bridge state
+  - no console errors, HTTP failures, broad users lookup, unexpected writes, static Timeline dependency, or private-media requests
+- manual in-app approved Jaylan validation on `http://127.0.0.1:5173/timeline` confirmed:
+  - approved session restored and stayed on `/timeline`
+  - desktop `1440x1024`, tablet `1024x768`, and mobile `390x844` stayed free of horizontal overflow
+  - no loading-screen stall
+  - no browser-console errors
+  - no static Timeline assets or private media elements observed
+  - current local bridge is unavailable in the real approved session, so live manual validation covered the honest unavailable Timeline state while automated local fixture coverage covered chapter navigation, filters, and Show more
+- Gallery architecture is now prepared but the Gallery page remains a placeholder:
+  - `gallerySelectors.js`
+  - `galleryReadModel.js`
+  - `useGalleryData.js`
+  - safe model shape: `status`, `summary`, `collections`, `photos`, `videos`, `unavailableMedia`, `filters`, `sourceStatus`, `warnings`
+  - safe media states: `available-local-reference`, `private-legacy-reference`, `unavailable`, `invalid`, `special-route-only`, and `no-media`
+  - deterministic collections include recent visual memories, photos, videos, special moments, year collections, and private media references
+  - no raw private URLs, no media fetches, no previews, no lightbox, no player, no Storage, and no Gallery UI migration were introduced
+- migration status now marks Dashboard, Profile, Favorites, Settings, Contract, and Timeline complete; Gallery, Birthday, Valentine, and Confession remain pending
+- smoke status remains honest:
+  - Jaylan: `PASS`
+  - partner: `NOT TESTED`
+  - overall: `HOLD`
+- no deploy, merge, rules change, production write, localStorage mutation, private data bundle, private media copy, Storage initialization, or Gather Savor change occurred
+
 ## 2026-07-16 Timeline Planning And Read-Model Foundation
 
 - the controlled Timeline planning batch started from clean synchronized `migration/react-foundation` commit `1821ccd`
@@ -567,6 +620,33 @@ Jaylan was successfully tested in a real browser session after correcting the li
   - `Add Timeline privacy guardrails`
 - smoke status: approved Jaylan routed-browser smoke remains `PASS`, partner remains `NOT TESTED`, and the overall approved-account gate remains honestly `HOLD`
 - next recommended track action: migrate Timeline as a read-only story route using the locked memory-domain model; keep Gallery, Storage, and sync replacement outside that batch
+
+### 2026-07-16 Timeline UI And Gallery Read-Model Summary
+
+- starting commit: `a717c11`
+- work completed:
+  - migrated `/timeline` from placeholder to the real read-only React Timeline route
+  - added story-first Timeline layout, deterministic chapters, special moments, compact filters, chapter navigation, and progressive disclosure
+  - kept Timeline media text-only with explicit private/unavailable states and no private media fetching
+  - added Gallery selectors, read model, and hook for safe metadata-only planning without changing the Gallery page UI
+  - expanded app-v2 browser regression for Timeline protection, spoof resistance, authorized rendering, unavailable bridge state, no private-media request, no static Timeline dependency, no writes, and no broad users lookup
+  - marked Timeline complete in the migration-status model while keeping Gallery and special pages pending
+- manual approved Jaylan in-app validation:
+  - `/timeline` restored the approved session and stayed inside the protected shell
+  - desktop `1440x1024`, tablet `1024x768`, and mobile `390x844` had no horizontal overflow
+  - no loading stall, redirect loop, permission-denied state, browser-console error, private-media element, or static Timeline asset was observed
+  - the real local bridge was unavailable, so manual validation covered the honest bridge-disabled state and automated authorized fixtures covered populated Timeline interactions
+- checks run in this run:
+  - app-v2 `npm run lint`
+  - app-v2 `npm test`
+  - app-v2 `npm run build`
+  - app-v2 `npm run test:browser`
+  - root `npm run check:all`
+- commits completed in this run:
+  - `Migrate Timeline and prepare Gallery read model`
+  - `Document Timeline and Gallery planning checkpoint`
+- smoke status: approved Jaylan routed-browser smoke remains `PASS`, partner remains `NOT TESTED`, and the overall approved-account gate remains honestly `HOLD`
+- next recommended track action: migrate the Gallery UI next using the prepared Gallery read model, and begin special-moment architecture planning in the same fast-track sprint only if it stays read-only and protected
 
 ### 2026-07-16 Contract Migration Summary
 

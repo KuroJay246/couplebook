@@ -342,8 +342,8 @@ Settings must remain intentionally secondary, plain-language, and free of unrela
 4. migrate Profile as the next real read-only page
 5. migrate Favorites next
 6. Contract is now the fifth real read-only page in app-v2
-7. begin Timeline planning and read-model design only after the shell and shared-space patterns are proven
-8. return to Gallery only after the Timeline plan is settled and the broader migration gates are still clear
+7. Timeline is now the sixth real read-only page in app-v2
+8. Gallery now has a safe metadata read model, but its real UI remains pending
 9. reintroduce special-moment page content later through the protected routed family
 10. keep deployment and Hosting cutover blocked until the broader migration gates are cleared
 
@@ -696,6 +696,55 @@ Safety preserved:
 - overall approved-account gate remains `HOLD`
 - no deploy, merge, rules change, production write, private-media copy, or credential commit occurred
 - the next recommended batch is now narrow and explicit: migrate Timeline as a read-only page only, using the locked memory-domain model below
+
+## 2026-07-16 app-v2 Timeline And Gallery Read-Model Checkpoint
+
+Timeline is now the sixth real app-v2 page. It uses the existing editorial journal system instead of inheriting Gather Savor visual language or the old static raw-card wall.
+
+Timeline UI result:
+
+- one shared-space story opening with a read-only status note
+- deterministic year chapters
+- `Special moments` groups stay distinct inside each year
+- dense ordinary groups initially show a small set and then use Show more / Show less
+- sparse groups collapse into calmer everyday-memory sections
+- filters stay quiet: All, Special moments, Photos, Videos, No media, and Year
+- chapter navigation is compact and horizontal rather than another full sidebar
+- memory cards are text-first, with title, description, date, tags, and safe media status
+- private media appears as status language only; the page does not show images, video players, thumbnails, raw paths, or placeholders pretending media is available
+
+Timeline state behavior:
+
+- loading stays inside the protected shell
+- ready and partial states render readable chapters
+- empty states do not invent memories
+- unavailable bridge state says the private legacy story is not connected to this build
+- invalid state holds story data back for review
+- source-status language stays plain and avoids localStorage keys, adapter names, raw static route names, and internal warnings
+
+Gallery product model result:
+
+- Gallery should become a curated visual archive and Timeline companion, not a file browser or storage manager
+- the new model exposes only safe metadata:
+  - status
+  - summary
+  - collections
+  - photos
+  - videos
+  - unavailableMedia
+  - filters
+  - sourceStatus
+  - warnings
+- deterministic collections are now planned around recent visual memories, photos, videos, special moments, year collections, and private media references
+- safe media states are `available-local-reference`, `private-legacy-reference`, `unavailable`, `invalid`, `special-route-only`, and `no-media`
+- the Gallery UI is still intentionally pending; no lightbox, media preview, player, Storage, fetch, write path, or real Gallery page migration was introduced
+
+Browser and responsive result:
+
+- automated browser regression now covers Timeline signed-out protection, spoof resistance, authorized fixture rendering, unavailable bridge state, static dependency blocking, private-media blocking, no broad users lookup, and no writes
+- manual approved Jaylan validation confirmed `/timeline` stayed protected and responsive at `1440x1024`, `1024x768`, and `390x844`
+- the real local approved session currently renders the honest unavailable-bridge state, while the populated Timeline interaction path is covered by local test fixtures
+- no horizontal overflow, console errors, static Timeline assets, or private media elements were observed in the final manual pass
 
 ## App-v2 Timeline Architecture Lock
 

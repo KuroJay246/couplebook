@@ -35,12 +35,15 @@ As of 2026-07-16, the app-v2 lane now also covers:
 - Timeline normalization and chapter-grouping coverage
 - Timeline read-model status/filter/summary coverage
 - Timeline source and fixture privacy guardrails
+- Timeline page source coverage
+- Gallery read-model coverage
 - browser-test-mode fixture normalization
 - signed-out protected-route browser smoke
 - spoofed-localStorage browser smoke
 - AppShell reload and utility-navigation browser guardrails
 - browser console/network/privacy guardrails for app-v2
 - Contract browser-content and mobile-overflow guardrails
+- Timeline browser protection, spoof-resistance, authorized rendering, unavailable-bridge, no-private-media, no-static-dependency, no-write, and no-broad-users guardrails
 
 ## Scripts
 
@@ -317,6 +320,38 @@ Still manual:
   - partner: `NOT TESTED`
   - overall: `HOLD`
 
+## 2026-07-16 app-v2 Timeline UI And Gallery Read-Model Validation
+
+- the Timeline UI and Gallery read-model batch passed:
+  - `npm run lint`
+  - `npm test`
+  - `npm run build`
+  - `npm run test:browser`
+  - root `npm run check:all`
+- the final app-v2 suite now passes with `92` tests
+- automated app-v2 coverage now also verifies:
+  - Timeline route source coverage and placeholder removal
+  - Timeline text-only private-media behavior with no static Timeline dependency
+  - Timeline signed-out protection
+  - Timeline spoofed legacy localStorage blocking
+  - authorized Timeline rendering with local-only fictional memory fixtures
+  - Timeline unavailable-bridge state
+  - Timeline browser guardrails for no console errors, HTTP failures, broad users lookup, unexpected writes, private-media requests, or static rollback dependencies
+  - Gallery photo and video classification
+  - Gallery private-reference, invalid-reference, no-media, special-moment, year-filter, and type-filter modeling
+  - Gallery immutable inputs and unavailable-versus-empty status boundaries
+  - Gallery no-fetch, no-write, no-broad-query, no-Storage, and no-raw-path guardrails
+- manual approved Jaylan in-app browser validation confirmed:
+  - `/timeline` restored the approved session and stayed inside the protected shell
+  - desktop `1440x1024`, tablet `1024x768`, and mobile `390x844` had no horizontal overflow
+  - no loading stall, redirect loop, permission-denied state, browser-console error, static Timeline asset, or private-media element was observed
+  - the current real local memory bridge is unavailable, so manual validation covered the honest bridge-disabled state while populated Timeline interactions are covered by local authorized fixtures
+- the browser regression lane remains local-only and mock-auth based; it does not replace the real Jaylan smoke, partner smoke, or future pre-cutover manual verification
+- smoke status remains honest:
+  - Jaylan: `PASS`
+  - partner: `NOT TESTED`
+  - overall: `HOLD`
+
 ## 2026-07-15 app-v2 Settings And Browser Regression Validation
 
 - the Settings and browser-guardrail batch passed:
@@ -360,11 +395,12 @@ Still manual:
 - The app-v2 memory bridge tests validate localhost gating, production blocking, and sanitized fixture normalization only. They do not fetch or snapshot real private memory content in CI-style runs.
 - The app-v2 approved-user smoke is still manual, single-account, and browser-session-dependent. Partner verification and future page-specific migrated-route smoke remain outstanding.
 - The app-v2 shell visual checks are still targeted browser inspections, not full visual-regression snapshots.
-- The new Timeline foundation is model-only. The real Timeline route still needs its own future browser and layout verification once the page migration starts.
+- Timeline is no longer model-only; the real app-v2 route is migrated. The remaining live-account gap is partner smoke, plus real bridge-enabled approved-session validation when the private local bridge is intentionally available.
+- Gallery is read-model-only. The real Gallery route still needs UI migration and browser validation.
 
 ## Next QA Upgrade Targets
 
 - add a browser-console/media-request smoke that fails on unexpected 404s for the current clean local baseline
 - add an approved-user credential-injected smoke path for the retired public special-page placeholders only when it can run without storing secrets in repo files
 - add the partner-account React browser smoke when a safe live session is genuinely available
-- prepare the next local browser regression expansion for Timeline only after the Timeline page migration batch becomes active
+- expand browser regression for the real Gallery UI after the Gallery page migration batch becomes active
