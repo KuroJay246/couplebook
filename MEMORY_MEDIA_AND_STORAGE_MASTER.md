@@ -215,6 +215,22 @@ Storage may not be initialized until all prerequisites are met:
 
 Do not bulk upload raw archives, do not copy local-only media into `public/`, and do not treat current local path strings as production-ready media references.
 
+## 2026-07-16 Firestore Migration Dry-Run Media Result
+
+The non-writing `app-v2` migration planner now classifies media for Firestore readiness without copying or exposing private files.
+
+Current local dry-run result:
+
+- memories inspected: `114`
+- valid memory records: `114`
+- invalid memory records: `0`
+- planned Firestore writes: `0`
+- media output: private legacy reference counts only
+- raw media paths in report: none
+- Storage usage: none
+
+Initial memory documents may carry only safe metadata such as `mediaState: "private-legacy-reference"` until the Storage gate is approved. Do not store raw local filesystem paths or unavailable local asset paths in Firestore.
+
 ## Media Migration Plan
 
 ### Future target storage paths

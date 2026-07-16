@@ -55,6 +55,9 @@ As of 2026-07-16, the app-v2 lane now also covers:
 - Special-frame browser protection, spoof-resistance, authorized rendering, pending-state, no-media, no-static-dependency, no-write, and no-broad-users guardrails
 - Special runtime-content browser fixture coverage for sanitized ready sections, private-media status, and no media elements
 - protected unknown-route fallback inside AppShell
+- candidate app-v2 Firestore security rules emulator coverage
+- app-v2 Firestore source-mode read-model smoke with fictional emulator data
+- counts-only Firestore migration dry-run coverage
 
 ## Scripts
 
@@ -66,6 +69,12 @@ As of 2026-07-16, the app-v2 lane now also covers:
 
 - `cd app-v2 && npm run test:browser`
   Uses headless Playwright against a local app-v2 server with localhost-only injected fixtures so the routed shell can prove signed-out protection, spoofed-localStorage blocking, route reload restoration, AppShell rendering, utility-only Settings placement, and console/network guardrails without storing real account credentials.
+
+- `cd app-v2 && npm run test:rules`
+  Starts a local Firestore emulator against `firebase.app-v2.json` and `firestore.app-v2.rules` only. It uses fictional users and couples to prove signed-out denial, member access, unauthorized denial, inactive-member denial, cross-couple denial, unknown-path denial, all-write denial, and app-v2 Firestore source-mode read-model loading. The runner pins `firebase-tools@14.19.0` because this machine has Java 17 and Firebase CLI 15+ requires Java 21.
+
+- `cd app-v2 && npm run migration:plan`
+  Runs the non-writing Firestore migration planner. Output is counts-only/redacted and must not include private titles, descriptions, names, raw media paths, signature data, or full records.
 
 ## 2026-07-16 Final Readiness Validation
 
@@ -92,6 +101,25 @@ Build/privacy scan result:
 - app-source scans passed for service-account/private-key material, broad `users` reads/listeners, Storage usage, static page fetch dependencies, and localStorage auth shortcuts
 - review hits were expected false positives: fictional raw-path redaction fixtures in tests, a test that asserts `dangerouslySetInnerHTML` is absent, and Firebase Auth vendor terminology
 - public Firebase web configuration identifiers are expected in a browser Firebase app and are not classified as secrets
+
+## 2026-07-16 Production Data And Security Validation
+
+- candidate rules are isolated in `firestore.app-v2.rules`; production `firestore.rules` was not replaced
+- candidate Firebase config is isolated in `firebase.app-v2.json`; production `firebase.json` still publishes `public/`
+- app-v2 unit tests now cover source-mode defaults, path validation, Firestore normalizers, no broad `users` query, no write imports, no Storage imports, and migration-planner redaction
+- app-v2 rules tests cover:
+  - signed-out denial
+  - member-one permitted reads
+  - member-two permitted reads
+  - unauthorized authenticated denial
+  - inactive-member denial
+  - cross-couple denial
+  - unknown path denial
+  - create/update/delete/batch/transaction write denial
+  - app-v2 Firestore source-mode read-model smoke with fictional data
+- `npm run migration:plan` against the local legacy memory dataset reported `114` memories, `114` valid records, `0` invalid records, `0` blockers, and `0` planned writes
+- intentional emulator `PERMISSION_DENIED` log lines during `test:rules` are expected negative-test evidence, not production network activity
+- partner real-account smoke remains manual and not tested
 
 - `npm run check:safety`
   Verifies tracked files and reachable Git history do not contain the known private media, export, or backup bundle paths that were previously removed from the repo.
@@ -182,6 +210,8 @@ Automated now:
 - `app-v2` Gallery UI source/browser guardrails for metadata-only media handling, filters, grouping, Show more, private-media states, and static-dependency blocking
 - `app-v2` Special Moment Frame source/browser guardrails for pending protected routes, safe config, common return navigation, and no private/static content
 - `app-v2` Special runtime-content model and bridge guardrails for approved keys only, localhost-only reads, production blocking, section validation, no raw HTML, and private-media redaction
+- `app-v2` candidate Firestore rules emulator tests with fictional data
+- `app-v2` non-writing migration dry-run tests and counts-only output checks
 - Browser privacy/auth-containment checks for the static contract and retired public special pages
 
 Still manual:

@@ -121,6 +121,91 @@ Cloud becomes authoritative only after validated migration. Legacy local data re
 
 For the first production version, use targeted Firestore text-only documents at `couples/{coupleId}/specialMoments/{birthday|valentine|confession}`. This keeps the model simple for two approved users, avoids casual claims of client-side encryption, avoids Storage/media complexity, and matches the current sanitized React section renderer. Private media or client-side encryption should be considered only after a real key-management and Storage/rules design exists.
 
+## 2026-07-16 app-v2 Candidate Firestore Security And Read Architecture
+
+The production-read architecture now exists in app-v2 as an isolated candidate. It is not deployed and it does not replace the current production rules.
+
+Candidate files:
+
+- `firestore.app-v2.rules`
+- `firebase.app-v2.json`
+
+Locked schema:
+
+| Path | Purpose | Minimum fields | Sensitive fields | Readers | Current writes | Service owner | Offline behavior | Retirement source |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `users/{uid}` | approval and couple pointer | `approved`, `coupleId`, `schemaVersion` | account identity | own authenticated user only | denied | `userService` | unavailable if missing | current user-doc approval remains until cutover |
+| `couples/{coupleId}` | shared metadata/version | `schemaVersion` | relationship metadata | active members only | denied | `coupleService` | unavailable if missing | static/local shared metadata |
+| `couples/{coupleId}/members/{uid}` | authoritative membership | `active`, `role`, `schemaVersion` | access control | own active member doc only | denied | `coupleService` | fail closed | approved-user docs plus owner approval |
+| `couples/{coupleId}/profiles/{uid}` | couple profiles | `schemaVersion`, optional safe profile fields | profile details | active members | denied | `profileService` | partial/unavailable | `memorybook_profiles` |
+| `couples/{coupleId}/favorites/{uid}` | member favorites | `schemaVersion`, category arrays | preferences | active members | denied | `favoritesService` | partial/unavailable | `memorybook_favorites` |
+| `couples/{coupleId}/settings/shared` | shared settings | `schemaVersion` | shared preferences | active members | denied | `settingsService` | unavailable | legacy shared settings/theme |
+| `couples/{coupleId}/settings/{uid}` | private member settings | `schemaVersion` | private preferences | owning active member only | denied | `settingsService` | unavailable | `memorybook_settings_{username}` |
+| `couples/{coupleId}/contracts/current` | current contract status | `schemaVersion`, status fields | contract/signature status | active members | denied | `contractService` | unavailable | legacy contract status |
+| `couples/{coupleId}/memories/{memoryId}` | memory metadata | `schemaVersion`, safe memory fields | private memory text/metadata | active members | denied | `memoryService` | unavailable/partial | `core/memories.json` plus overlays |
+| `couples/{coupleId}/specialMoments/{momentType}` | protected text-only special content | `schemaVersion`, text sections | special content text | active members and approved moment type only | denied | `specialMomentService` | unavailable if missing | protected special sources |
+
+Candidate rule posture:
+
+- signed-in auth is required everywhere
+- `users/{uid}` is own-document `get` only; `list` is denied
+- active membership is checked at `couples/{coupleId}/members/{request.auth.uid}`
+- member docs are least-privilege: users may read only their own membership document
+- profiles, favorites, shared settings, contracts, memories, and approved special moments are readable only by active members
+- private settings are readable only by the owning active member
+- approved special moment types are limited to `birthday`, `valentine`, and `confession`
+- unknown collections and all writes are denied
+- rule read-cost implication: active couple reads perform targeted `users/{uid}` and membership lookups; Firestore rules cache repeated document access during the request, but future query expansion should still keep rule helper reads bounded
+
+Read-service implementation:
+
+- `firestorePaths.js` validates non-empty safe IDs and approved special moment types
+- `firestoreReaders.js` centralizes targeted `getDoc` / scoped collection reads and result normalization
+- `userService` remains targeted to `users/{uid}`
+- `coupleService` reads only a known couple document and own membership
+- `profileService` and `favoritesService` read only known couple subcollections
+- `settingsService` separates shared settings from private member settings
+- `contractService` rejects raw signature payload fields
+- `memoryService` normalizes safe memory metadata and withholds unsafe media paths
+- `specialMomentService` normalizes Firestore text sections through the same safe special-content model used by the local bridge
+
+Source mode:
+
+- `VITE_DATA_SOURCE_MODE=legacy` is the default
+- `VITE_DATA_SOURCE_MODE=firestore` is opt-in and uses only targeted read services
+- `VITE_DATA_SOURCE_MODE=test` is blocked in production mode
+- source mode is not used for authentication
+- Firestore mode requires the approved `users/{uid}` document to contain a `coupleId`
+- app-v2 does not trust `coupleId` from localStorage, route params, or UI input
+- Firestore mode does not merge legacy and cloud data, does not hide malformed cloud data through silent fallback, and does not write back
+
+Emulator result:
+
+- `npm run test:rules` passes with fictional users/couples only
+- signed-out access is denied
+- active member one and member two can read permitted couple data
+- unauthorized, inactive, and cross-couple users are denied
+- collection-wide `users` enumeration is denied
+- all create, update, delete, batch, and transaction writes are denied
+- seeded fictional Firestore data loads through app-v2 Dashboard, Profile, Favorites, Settings, Contract, Timeline, Gallery, and Birthday read models
+
+Migration dry-run:
+
+- `npm run migration:plan` is counts-only and non-writing
+- local memory dry-run currently reports `114` memory records, `114` valid, `0` invalid, and `0` blockers
+- all memory media is represented as private legacy reference counts only
+- special production documents remain missing
+- dry-run output must stay redacted and must not include private titles, descriptions, names, raw paths, signature data, or full records
+
+Remaining gates:
+
+- owner approval of schema
+- partner approved-account smoke
+- real production backup/export procedure
+- owner-approved migration rehearsal
+- production special document creation through an approved migration path
+- candidate rules hardening review before deployment
+
 ## 2026-07-13 app-v2 Approved-User Smoke
 
 The isolated React shell now has one honest live approved-user browser smoke result for Jaylan.

@@ -67,6 +67,51 @@ The static rollback app must not be retired until Jaylan and partner smokes pass
 
 Before cutover, tag the current static production commit and approved app-v2 candidate, export required Firestore data, preserve local legacy data, record the current Firebase Hosting release state, and prove the static build can still be restored. During cutover, monitor auth, protected routes, Firestore permissions, console/network errors, and avoid data writes until basic smoke passes where practical. Roll back only with explicit approval if approved users cannot sign in, authorization rejects approved users, private routes become public, production writes corrupt data, required content is missing, routing fails severely, broad Firestore queries return, or private bundle exposure appears. Rollback means restore the previous Hosting release or redeploy the tagged static baseline, stop new writes, preserve logs, do not delete migrated data, and investigate before retrying.
 
+## 2026-07-16 Production Data And Security Implementation Checkpoint
+
+- starting checkpoint: `58635065eab5de26f38d27c82d013fb7cf449dc1` on `migration/react-foundation`
+- baseline before implementation passed app-v2 lint, app-v2 tests, app-v2 build, app-v2 browser regression, and root `npm run check:all`
+- Firestore instance metadata was inspected read-only: `(default)` is Standard / Native in `nam5`
+- production `firestore.rules` and production `firebase.json` were not replaced
+- isolated candidate files were added:
+  - `firestore.app-v2.rules`
+  - `firebase.app-v2.json`
+- app-v2 now has a locked candidate couple-owned schema with:
+  - `users/{uid}` for approval, `coupleId`, safe display metadata, and schema version
+  - `couples/{coupleId}` for shared relationship metadata and migration version
+  - `couples/{coupleId}/members/{uid}` for active membership
+  - couple-scoped profiles, favorites, settings, contract, memories, and special moments
+- all candidate client writes remain denied
+- Firestore source mode is implemented but opt-in only through `VITE_DATA_SOURCE_MODE=firestore`; default remains `legacy`
+- Firestore mode uses targeted reads only and does not trust `coupleId` from localStorage or route parameters
+- special moments now have a production-read contract for `couples/{coupleId}/specialMoments/{birthday|valentine|confession}` without creating those documents
+- local emulator validation passed using fictional data:
+  - signed-out reads/writes denied
+  - active member one access passed
+  - active member two access passed
+  - unauthorized user denied
+  - inactive member denied
+  - cross-couple access denied
+  - unknown paths denied
+  - create/update/delete/batch/transaction writes denied
+  - app-v2 read models loaded seeded fictional Firestore data through the Firestore source resolver
+- migration dry-run tooling was added with `npm run migration:plan`; it reports counts only, plans zero writes, and does not output private titles, descriptions, messages, names, raw media paths, signatures, or full records
+- local dry-run result against the available legacy memory dataset:
+  - memories: `114`
+  - valid memory records: `114`
+  - invalid memory records: `0`
+  - proposed memory paths: `114`
+  - media represented as private legacy reference counts only
+  - special production documents: missing
+  - blockers: none from the counts-only local memory dry-run
+- current gate status:
+  - schema/rules implementation: `CONDITIONAL GO`
+  - production data migration: `HOLD`
+  - special content production data: `HOLD`
+  - partner smoke: `HOLD`
+  - deploy/cutover/static retirement: `BLOCKED`
+- no deploy, merge, production write, production document creation, Storage initialization, private media copy, real credential use, or Gather Savor change occurred
+
 ## 2026-07-16 Special Moment Runtime-Content Migration Checkpoint
 
 - the fast-track sprint continued from clean synchronized `migration/react-foundation` commit `008edb9`
