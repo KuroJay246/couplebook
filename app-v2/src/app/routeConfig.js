@@ -124,10 +124,6 @@ export function findRouteMeta(pathname) {
 export function resolveProtectedRouteOutcome({ pathname, isLoading, user, isAuthorized }) {
   const normalizedPath = normalizePathname(pathname)
 
-  if (!isProtectedPath(normalizedPath)) {
-    return { type: 'allow', path: normalizedPath }
-  }
-
   if (isLoading) {
     return { type: 'loading', path: normalizedPath }
   }
@@ -140,5 +136,5 @@ export function resolveProtectedRouteOutcome({ pathname, isLoading, user, isAuth
     return { type: 'blocked', path: normalizedPath }
   }
 
-  return { type: 'allow', path: normalizedPath }
+  return { type: 'allow', path: isProtectedPath(normalizedPath) ? normalizedPath : DEFAULT_AUTHENTICATED_PATH }
 }

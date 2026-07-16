@@ -50,6 +50,27 @@ test('approved authenticated access stays on the requested protected route', () 
   assert.equal(outcome.path, '/settings')
 })
 
+test('unknown app routes stay protected and resolve back into the shell', () => {
+  const signedOut = resolveProtectedRouteOutcome({
+    pathname: '/unknown-readiness-route',
+    isLoading: false,
+    user: null,
+    isAuthorized: false,
+  })
+  const approved = resolveProtectedRouteOutcome({
+    pathname: '/unknown-readiness-route',
+    isLoading: false,
+    user: { uid: 'approved' },
+    isAuthorized: true,
+  })
+
+  assert.equal(signedOut.type, 'redirect')
+  assert.equal(signedOut.to, LOGIN_PATH)
+  assert.equal(signedOut.path, '/unknown-readiness-route')
+  assert.equal(approved.type, 'allow')
+  assert.equal(approved.path, DEFAULT_AUTHENTICATED_PATH)
+})
+
 test('unauthorized authenticated access returns a blocked state', () => {
   const outcome = resolveProtectedRouteOutcome({
     pathname: '/gallery',
@@ -148,6 +169,7 @@ test('route source and auth shell source keep the protected migration contract e
   assert.match(routesSource, /path="\/birthday"/)
   assert.match(routesSource, /path="\/valentine"/)
   assert.match(routesSource, /path="\/confession"/)
+  assert.match(routesSource, /path="\*"/)
   assert.match(routesSource, /<ProtectedRoute \/>/)
   assert.match(routesSource, /<AppShell \/>/)
   assert.equal(protectedRouteMeta.length, 10)

@@ -39,9 +39,9 @@ export function AppRoutes() {
           <Route path="/birthday" element={<BirthdayPage />} />
           <Route path="/valentine" element={<ValentinePage />} />
           <Route path="/confession" element={<ConfessionPage />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Route>
-      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   )
 }
