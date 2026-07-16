@@ -15,6 +15,60 @@ Date: 2026-07-16
 | Primary local state | `localStorage` plus `core/memories.json` |
 | Cloud sync boundary | `core/firestoreSync.js` |
 
+## 2026-07-16 Timeline Planning And Read-Model Foundation
+
+- the controlled Timeline planning batch started from clean synchronized `migration/react-foundation` commit `1821ccd`
+- branch verification matched the expected checkpoint exactly:
+  - `migration/react-foundation`
+  - clean worktree
+  - `HEAD` matched `origin/migration/react-foundation`
+- baseline validation was rerun before any Timeline-domain work:
+  - root `npm run check:all`
+  - app-v2 `npm run lint`
+  - app-v2 `npm test`
+  - app-v2 `npm run build`
+  - app-v2 `npm run test:browser`
+- the verified legacy memory inventory now stays explicit:
+  - base dataset: root `core/memories.json` mirrored into `public/core/memories.json`
+  - shared overlays: `memorybook_custom_memories`, `memorybook_deleted_memories`, `memorybook_overridden_memories`
+  - current static-only deferred source: local dev `/api/scan-media` autoscan
+  - current static-only deferred fallback: the seeded `core/state.js` fetch-failure memory
+- the verified base dataset shape was audited without bundling or snapshotting private content:
+  - `114` memories
+  - fields limited to `id`, `title`, `description`, `date`, `media`, `isVideo`, `tags`, `isSpecialPage`, and `pageUrl`
+  - `111` ISO datetime values and `3` date-only values
+  - `3` special-page entries with verified legacy routes only
+  - no duplicate IDs, no missing IDs, no invalid dates, and no extra top-level fields in the audited file
+- verified legacy precedence remains:
+  - base dataset first
+  - deletions exclude both base and custom IDs
+  - overrides apply only to matching base IDs
+  - custom memories append after processed base memories
+  - final output sorts newest-first by date, with stable original order for ties or invalid dates
+- the new Timeline foundation landed without touching the real route UI:
+  - `app-v2/src/features/timeline/memorySourceMerge.js`
+  - `app-v2/src/features/timeline/memoryNormalizer.js`
+  - `app-v2/src/features/timeline/memorySelectors.js`
+  - `app-v2/src/features/timeline/timelineReadModel.js`
+  - `app-v2/src/features/timeline/useTimelineData.js`
+  - `app-v2/src/data/legacyMemoryAdapter.js` now preserves tags and special-route metadata needed by the Timeline domain
+- the chosen Timeline architecture is now locked:
+  - authored title and description text stay preserved
+  - generic import titles and descriptions receive display-only copy only
+  - date-only values normalize to noon UTC for deterministic grouping
+  - media becomes one of `none`, `private-legacy-reference`, `special-route-only`, or `invalid-reference`
+  - special routes are whitelisted to `/birthday`, `/valentine`, and `/confession` only
+  - chapters group by descending year, then by `Special moments`, dense month groups, or sparse `Everyday memories`, with undated memories isolated at the end
+  - `featured` remains `null` in this batch
+- deferred boundaries remain explicit:
+  - no Timeline UI migration yet
+  - no Gallery work
+  - no Storage decisions
+  - no sync replacement
+  - no autoscan/private-media inventory ingestion into app-v2
+- validation after the Timeline foundation stayed clean with app-v2 `lint`, `test`, `build`, `test:browser`, and root `check:all`
+- no deploy, merge, rules change, production write, localStorage write, private-memory bundle, private-media copy, credential commit, or Gather Savor modification occurred
+
 ## 2026-07-16 Contract Migration And Guardrail Execution
 
 - the controlled Contract batch resumed from the pushed Settings/browser baseline commit `d7c4386`
@@ -483,9 +537,36 @@ Jaylan was successfully tested in a real browser session after correcting the li
 - non-live sync modeling
 - shared shell refinement inside app-v2
 - service-layer planning
-- after Dashboard, Profile, Favorites, Settings, and Contract, continue only Timeline planning and read-model design without widening auth, sync, or private-data scope
+- after Dashboard, Profile, Favorites, Settings, Contract, and the Timeline read-model foundation, continue only the read-only Timeline page migration without widening auth, sync, media, or private-data scope
 
 ## Recent Phase Closeout Summaries
+
+### 2026-07-16 Timeline Planning And Read-Model Foundation Summary
+
+- starting commit: `1821ccd`
+- work completed:
+  - reverified the branch, origin sync, and full green baseline before any Timeline work
+  - audited the complete legacy memory source hierarchy and current static precedence
+  - implemented pure Timeline source-merge, normalization, selector, and read-model modules
+  - extended the legacy memory adapter so Timeline-safe tags and special-route metadata survive the compatibility bridge
+  - added Timeline domain tests and privacy/source guardrails without changing the real Timeline route
+- verified memory inventory findings:
+  - root and public memory JSON files remain mirrored legacy sources only
+  - the current static app also has a deferred local-dev autoscan source and a deferred fallback seed path that do not enter app-v2
+  - current audited base dataset count is `114` without duplicate IDs or extra top-level fields
+- checks run in this run:
+  - root `npm run check:all`
+  - `app-v2 npm run lint`
+  - `app-v2 npm test`
+  - `app-v2 npm run build`
+  - `app-v2 npm run test:browser`
+- commits completed in this run:
+  - `Document Timeline memory architecture`
+  - `Add Timeline memory normalization`
+  - `Add Timeline compatibility read model`
+  - `Add Timeline privacy guardrails`
+- smoke status: approved Jaylan routed-browser smoke remains `PASS`, partner remains `NOT TESTED`, and the overall approved-account gate remains honestly `HOLD`
+- next recommended track action: migrate Timeline as a read-only story route using the locked memory-domain model; keep Gallery, Storage, and sync replacement outside that batch
 
 ### 2026-07-16 Contract Migration Summary
 
@@ -515,7 +596,7 @@ Jaylan was successfully tested in a real browser session after correcting the li
   - `Extend browser guardrails for Contract`
   - `Document Contract migration checkpoint`
 - smoke status: approved Jaylan routed-browser smoke remains `PASS`, partner remains `NOT TESTED`, and the overall approved-account gate remains honestly `HOLD`
-- next recommended track action: begin Timeline planning and read-model design only; do not start Timeline UI, Gallery work, or sync replacement yet
+- next recommended track action: this checkpoint is now superseded by the Timeline planning foundation; the next batch may migrate Timeline as a read-only route only
 
 ### 2026-07-15 Settings Migration And Browser Guardrails Summary
 

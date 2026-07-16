@@ -695,7 +695,121 @@ Safety preserved:
 - partner approved routed-browser smoke remains `NOT TESTED`
 - overall approved-account gate remains `HOLD`
 - no deploy, merge, rules change, production write, private-media copy, or credential commit occurred
-- the next recommended page does not begin yet: only Timeline planning and read-model design should continue next
+- the next recommended batch is now narrow and explicit: migrate Timeline as a read-only page only, using the locked memory-domain model below
+
+## App-v2 Timeline Architecture Lock
+
+Timeline product purpose:
+
+- the future Timeline is the central private story surface, not a record-management screen
+- it must support chapters, milestones, and quieter everyday memories without mutating the stored legacy data
+- it must stay readable even when private media is unavailable in app-v2
+
+Source hierarchy:
+
+1. root `core/memories.json` mirrored into `public/core/memories.json`
+2. shared localStorage overlays:
+   `memorybook_custom_memories`
+   `memorybook_deleted_memories`
+   `memorybook_overridden_memories`
+3. current static-only deferred sources that do not enter app-v2:
+   local dev `/api/scan-media`
+   the seeded `core/state.js` fetch-failure fallback
+
+Field classification:
+
+- core identity: `id`, `date`
+- display content: `title`, `description`, `tags`
+- media metadata: `media`, `isVideo`
+- special-moment metadata: `isSpecialPage`, `pageUrl`
+- legacy/internal metadata: source type, overlay counts, unknown fields preserved internally only
+- unknown/untrusted fields: kept out of the display model and never rendered automatically
+
+Normalization rules:
+
+- missing IDs fail closed to deterministic fallback IDs only inside the compatibility layer
+- overlay precedence stays aligned with verified legacy behavior:
+  base dataset
+  deletions
+  overrides on matching base IDs only
+  custom memories appended after processed base records
+  final newest-first sort with stable tie order
+- authored text remains preserved
+- unknown fields stay internal and do not enter the Timeline display model
+
+Date policy:
+
+- ISO datetimes retain their parsed UTC timestamp
+- date-only values normalize to noon UTC to avoid timezone drift during grouping and display
+- invalid or missing dates never fall back to the current time
+- invalid and undated entries remain separate from the main chronological flow
+- display formatting happens in selectors, not through source mutation
+
+Title and description display rules:
+
+- authored titles render unchanged after whitespace cleanup only
+- generic import titles such as `Photo from ...` and `Video Clip ...` become neutral display labels only
+- authored descriptions render unchanged
+- blank or generic archive descriptions become neutral display copy only
+- no location, emotion, people, or event meaning is inferred from filenames or paths
+
+Media-state model:
+
+- `none`: the memory has no media reference
+- `private-legacy-reference`: a legacy asset reference exists but stays unavailable in app-v2
+- `special-route-only`: the entry is a routed special moment without a normal media card
+- `invalid-reference`: the legacy media reference is unsafe or malformed and is quarantined from display-safe output
+
+Special-moment handling:
+
+- special entries remain data-backed memories, not separate hardcoded UI blocks
+- only verified legacy page URLs are promoted into routed destinations:
+  `confession/index.html` -> `/confession`
+  `valentine/index.html` -> `/valentine`
+  `omnia-happy-birthday.html` -> `/birthday`
+- any other legacy page route is quarantined and kept out of navigation
+
+Chapter and grouping strategy:
+
+- top-level chapters sort by year descending
+- each year can open with a `Special moments` subgroup
+- regular dated memories stay chronological inside that year
+- sparse year sections collapse into one `Everyday memories` subgroup
+- denser years split into deterministic month groups such as `May 2026`
+- invalid or missing dates move to the final undated section, with `Needs date review` kept explicit when required
+- no emotional chapter names are invented
+
+Filter metadata strategy:
+
+- tags trim and deduplicate case-insensitively while preserving a stable display label
+- supported future filter metadata stays limited to years, tags, and transparent types such as `Special moments`, `Photos`, `Videos`, and `No media`
+- malformed or unknown tags stay out of the filter model
+
+Accessibility implications:
+
+- the data model is text-first, so story copy remains readable without media
+- deterministic chapter/group labels can map cleanly to semantic headings and list landmarks later
+- the read model avoids hover-only meaning and keeps missing-media states explicit
+
+Responsive implications:
+
+- year chapters plus subgroups will scale cleanly from a one-column mobile reading flow to denser desktop layouts later
+- the model does not depend on hover behavior, masonry assumptions, or fixed media sizes
+
+Explicitly deferred UI elements:
+
+- the real Timeline page implementation
+- hero framing and final story layout
+- filter controls and search UI
+- media previews and lightbox behavior
+- detail, add, edit, or delete controls
+- featured-memory presentation
+
+Gallery and Storage boundaries:
+
+- Gallery remains outside this batch and should consume the same normalized memory domain later instead of reintroducing static runtime code
+- Firebase Storage stays deferred
+- local-dev autoscan and private media inventory remain outside app-v2 until a safer approved boundary exists
 
 ## 2026-07-15 app-v2 Settings Migration And Browser Regression Checkpoint
 

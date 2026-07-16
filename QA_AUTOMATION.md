@@ -31,6 +31,10 @@ As of 2026-07-16, the app-v2 lane now also covers:
 - Contract read-model coverage
 - Contract route source coverage
 - signature-payload redaction guardrails for Contract
+- Timeline source-precedence coverage
+- Timeline normalization and chapter-grouping coverage
+- Timeline read-model status/filter/summary coverage
+- Timeline source and fixture privacy guardrails
 - browser-test-mode fixture normalization
 - signed-out protected-route browser smoke
 - spoofed-localStorage browser smoke
@@ -286,6 +290,33 @@ Still manual:
   - partner: `NOT TESTED`
   - overall: `HOLD`
 
+## 2026-07-16 app-v2 Timeline Memory-Domain Validation
+
+- the Timeline planning and read-model batch passed:
+  - `npm run lint`
+  - `npm test`
+  - `npm run build`
+  - `npm run test:browser`
+  - root `npm run check:all`
+- the final app-v2 suite now passes with `86` tests
+- automated app-v2 coverage now also verifies:
+  - legacy memory source precedence for base, deleted, overridden, and custom memory state
+  - deterministic title and description display rules without mutating saved values
+  - tag trimming and case-insensitive deduplication without semantic merging
+  - deterministic date handling for ISO datetimes, date-only strings, invalid dates, and missing dates
+  - media-state classification for `none`, `private-legacy-reference`, `special-route-only`, and `invalid-reference`
+  - special-route whitelisting for birthday, Valentine, and confession only
+  - year-based chapter grouping, sparse `Everyday memories` collapse, and explicit undated/date-review placement
+  - Timeline read-model `ready`, `empty`, `unavailable`, `partial`, and `invalid` states
+  - Timeline summary counts, filter metadata, and `featured: null`
+  - source guardrails that block direct memory-dataset imports, static Timeline runtime imports, and Timeline-domain writes
+  - fixture guardrails that keep the committed Timeline-memory test surface explicitly fictional
+- the Timeline batch intentionally does not replace the real Timeline page or expand browser regression yet
+- smoke status remains honest:
+  - Jaylan: `PASS`
+  - partner: `NOT TESTED`
+  - overall: `HOLD`
+
 ## 2026-07-15 app-v2 Settings And Browser Regression Validation
 
 - the Settings and browser-guardrail batch passed:
@@ -329,10 +360,11 @@ Still manual:
 - The app-v2 memory bridge tests validate localhost gating, production blocking, and sanitized fixture normalization only. They do not fetch or snapshot real private memory content in CI-style runs.
 - The app-v2 approved-user smoke is still manual, single-account, and browser-session-dependent. Partner verification and future page-specific migrated-route smoke remain outstanding.
 - The app-v2 shell visual checks are still targeted browser inspections, not full visual-regression snapshots.
+- The new Timeline foundation is model-only. The real Timeline route still needs its own future browser and layout verification once the page migration starts.
 
 ## Next QA Upgrade Targets
 
 - add a browser-console/media-request smoke that fails on unexpected 404s for the current clean local baseline
 - add an approved-user credential-injected smoke path for the retired public special-page placeholders only when it can run without storing secrets in repo files
 - add the partner-account React browser smoke when a safe live session is genuinely available
-- prepare the next local browser regression expansion for Timeline only after the Timeline migration batch becomes active
+- prepare the next local browser regression expansion for Timeline only after the Timeline page migration batch becomes active

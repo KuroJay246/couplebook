@@ -411,6 +411,7 @@ These files now:
 - normalize malformed values safely
 - return explicit `ready` / `empty` / `unavailable` / `invalid` states
 - redact raw legacy contract-signature payload material into safe status fields before it reaches the view layer
+- keep Timeline-safe tags and special-route metadata available to the read-only memory domain without exposing the real memory dataset to the production bundle
 - stay read-only
 - never grant auth
 - never write back to localStorage or Firestore
@@ -433,6 +434,16 @@ app-v2 now includes test guardrails that fail if it introduces:
 - compatibility-layer Firestore writes
 
 The old static `core/firestoreSync.js` remains part of the rollback app only. It is explicitly not permitted inside app-v2.
+
+## Timeline Memory Boundary
+
+The Timeline foundation now depends on the existing read-only `memoryService` boundary only:
+
+- `memoryService.getLegacyMemories()` remains localhost-only, disabled by default, read-only, and production-blocked
+- the Timeline feature consumes compatibility output only and does not fetch `core/memories.json` directly into the bundle
+- the current static-only `/api/scan-media` autoscan path remains explicitly deferred because it would expose private media inventory decisions before Storage and private-media boundaries are approved
+- the old seeded fallback memory in `core/state.js` also remains excluded from app-v2 because it is a static safety fallback, not a trustworthy protected source
+- future Firestore memory reads remain deferred until an approved narrow schema exists for couple-scoped memory documents
 
 ## Next Safe Sync Step
 
