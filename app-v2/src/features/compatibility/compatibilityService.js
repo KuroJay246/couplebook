@@ -4,6 +4,8 @@ import { getLegacyMemories } from '../../services/memoryService.js'
 import { getLegacyProfile } from '../../services/profileService.js'
 import { getLegacySettings } from '../../services/settingsService.js'
 import { getLegacySpecialMoment } from '../../services/specialMomentService.js'
+import { DATA_SOURCE_MODES, resolveDataSourceMode } from '../../data/dataSourceMode.js'
+import { loadFirestoreCompatibilitySnapshot } from './firestoreCompatibilityService.js'
 
 function collectWarnings(results) {
   return results.flatMap((result) => result.warnings || [])
@@ -22,6 +24,11 @@ function deriveCompatibilityStatus(results) {
 }
 
 export async function loadCompatibilitySnapshot(options = {}) {
+  const mode = options.sourceMode || resolveDataSourceMode(options.env)
+  if (mode === DATA_SOURCE_MODES.firestore) {
+    return loadFirestoreCompatibilitySnapshot(options)
+  }
+
   const username = options.username
   if (!username) {
     return {

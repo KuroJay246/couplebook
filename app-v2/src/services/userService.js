@@ -1,20 +1,24 @@
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '../lib/firebaseClient.js'
+import { pathToString, userPath } from './firestorePaths.js'
 
 export function buildUserDocumentPath(uid) {
-  if (!uid) throw new Error('A Firebase user uid is required.')
-  return `users/${uid}`
+  return pathToString(userPath(uid))
 }
 
 export function getUserDocumentRef(uid, firestore = db) {
   if (!firestore) throw new Error('Firestore is not configured for app-v2.')
-  return doc(firestore, 'users', uid)
+  return doc(firestore, ...userPath(uid))
 }
 
 export function normalizeApprovedUserRecord(uid, data = {}) {
+  const coupleId = typeof data.coupleId === 'string' ? data.coupleId.trim() : ''
   return {
     uid,
     username: data.username || '',
+    coupleId,
+    approved: data.approved === true || !!data.username,
+    schemaVersion: Number.isInteger(data.schemaVersion) ? data.schemaVersion : null,
     profileName: data.profile?.name || '',
     contractAccepted: data.contractAccepted === true,
     theme: data.theme || null,

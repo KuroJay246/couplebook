@@ -3,7 +3,7 @@ import { readFile, readdir } from 'node:fs/promises'
 import path from 'node:path'
 import test from 'node:test'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import { getCoupleDocumentSnapshot, buildCoupleDocumentPath } from '../services/coupleService.js'
+import { buildCoupleDocumentPath } from '../services/coupleService.js'
 import { getLegacyContract, getFirestoreContractByUid, buildContractDocumentPath } from '../services/contractService.js'
 import { getRegisteredDevice, buildDeviceDocumentPath } from '../services/deviceService.js'
 import { getLegacyFavorites, getFirestoreFavoritesByUid, buildFavoritesDocumentPath } from '../services/favoritesService.js'
@@ -48,10 +48,10 @@ test('user service keeps approved-user reads targeted to users uid docs only', a
 test('domain path builders stay explicit and narrow', () => {
   assert.equal(buildCoupleDocumentPath('couple-alpha'), 'couples/couple-alpha')
   assert.equal(buildMemoryCollectionPath('couple-alpha'), 'couples/couple-alpha/memories')
-  assert.equal(buildFavoritesDocumentPath('uid-1'), 'users/uid-1')
-  assert.equal(buildProfileDocumentPath('uid-1'), 'users/uid-1')
-  assert.equal(buildSettingsDocumentPath('uid-1'), 'users/uid-1')
-  assert.equal(buildContractDocumentPath('uid-1'), 'users/uid-1')
+  assert.equal(buildFavoritesDocumentPath('couple-alpha', 'uid-1'), 'couples/couple-alpha/favorites/uid-1')
+  assert.equal(buildProfileDocumentPath('couple-alpha', 'uid-1'), 'couples/couple-alpha/profiles/uid-1')
+  assert.equal(buildSettingsDocumentPath('couple-alpha', 'uid-1'), 'couples/couple-alpha/settings/uid-1')
+  assert.equal(buildContractDocumentPath('couple-alpha'), 'couples/couple-alpha/contracts/current')
   assert.equal(buildDeviceDocumentPath('device-1'), 'devices/device-1')
 })
 
@@ -116,9 +116,8 @@ test('adapter-backed domain reads delegate without writes', async () => {
   assert.equal(memories.data.marker, true)
 })
 
-test('deferred Firestore service contracts fail closed instead of reading or writing broadly', async () => {
+test('Firestore service contracts stay unavailable unless targeted couple context exists', async () => {
   const results = await Promise.all([
-    getCoupleDocumentSnapshot(),
     getFirestoreMemories(),
     getFirestoreFavoritesByUid(),
     getFirestoreProfileByUid(),
@@ -132,6 +131,7 @@ test('deferred Firestore service contracts fail closed instead of reading or wri
     assert.equal(result.status, 'unavailable')
     assert.equal(result.source, 'firestore')
   }
+  assert.throws(() => buildCoupleDocumentPath('bad/couple'))
 })
 
 test('sync service exposes a read-only orchestration contract', async () => {
@@ -191,11 +191,12 @@ test('app-v2 query guardrails reject broad users collection access and compatibi
     })),
   )
 
-  const combinedSource = sourceEntries.map((entry) => entry.content).join('\n')
+  const productionSourceEntries = sourceEntries.filter((entry) => !/src[\\/]test[\\/]/.test(entry.filePath))
+  const combinedSource = productionSourceEntries.map((entry) => entry.content).join('\n')
   assert.doesNotMatch(combinedSource, /getDocs\s*\(\s*collection\s*\([^)]*['"]users['"]/)
   assert.doesNotMatch(combinedSource, /onSnapshot\s*\(\s*collection\s*\([^)]*['"]users['"]/)
 
-  const compatibilityLayer = sourceEntries.filter((entry) => {
+  const compatibilityLayer = productionSourceEntries.filter((entry) => {
     return /src[\\/](data|features[\\/]compatibility|services)[\\/]/.test(entry.filePath)
   })
 

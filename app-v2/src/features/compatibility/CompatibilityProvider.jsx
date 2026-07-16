@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../../auth/useAuth.js'
+import { resolveDataSourceMode } from '../../data/dataSourceMode.js'
 import { getBrowserTestCompatibilityState } from '../../lib/browserTestMode.js'
 import { CompatibilityContext } from './CompatibilityContext.js'
 import { loadCompatibilitySnapshot } from './compatibilityService.js'
@@ -32,6 +33,8 @@ export function CompatibilityProvider({ children }) {
     async function loadSnapshot() {
       try {
         const snapshot = await loadCompatibilitySnapshot({
+          approvedUser,
+          sourceMode: resolveDataSourceMode(),
           username: approvedUser.username,
         })
 
@@ -58,7 +61,7 @@ export function CompatibilityProvider({ children }) {
     return () => {
       active = false
     }
-  }, [approvedUser?.username, browserTestCompatibility, isAuthorized, refreshKey])
+  }, [approvedUser, approvedUser?.username, browserTestCompatibility, isAuthorized, refreshKey])
 
   const resolvedState = browserTestCompatibility
     ? isAuthorized && approvedUser?.username

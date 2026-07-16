@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "test": "node --test",
-    "test:browser": "node scripts/check-browser-regression.mjs"
+    "test:browser": "node scripts/check-browser-regression.mjs",
+    "test:rules": "node scripts/run-firestore-rules-tests.mjs",
+    "migration:plan": "node scripts/plan-firestore-migration.mjs"
   },
   "dependencies": {
     "firebase": "^12.6.0",
@@ -19,6 +21,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@firebase/rules-unit-testing": "^5.0.1",
     "@tailwindcss/vite": "^4.1.17",
     "@vitejs/plugin-react": "^5.1.1",
     "eslint": "^9.39.1",

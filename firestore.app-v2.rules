@@ -1,0 +1,134 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model - app-v2 candidate, not deployed
+    // ===============================================================
+    //
+    // users/{uid}
+    //   approved: bool, required
+    //   coupleId: string, required, opaque ID
+    //   displayName: string, optional, <= 80 chars
+    //   schemaVersion: int, required, 1
+    //
+    // couples/{coupleId}
+    //   schemaVersion: int, required, 1
+    //   title: string, optional, <= 120 chars
+    //   migrationVersion: int, optional
+    //
+    // couples/{coupleId}/members/{uid}
+    //   active: bool, required
+    //   role: string, required, "member"
+    //   schemaVersion: int, required, 1
+    //
+    // couples/{coupleId}/profiles/{uid}
+    // couples/{coupleId}/favorites/{uid}
+    // couples/{coupleId}/settings/shared
+    // couples/{coupleId}/settings/{uid}
+    // couples/{coupleId}/contracts/current
+    // couples/{coupleId}/memories/{memoryId}
+    // couples/{coupleId}/specialMoments/{birthday|valentine|confession}
+    //
+    // All client writes are denied in this candidate. Future write rules must
+    // add strict schema validators before any create/update/delete is allowed.
+    // ===============================================================
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwnUser(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function userDocPath(uid) {
+      return /databases/$(database)/documents/users/$(uid);
+    }
+
+    function memberDocPath(coupleId, uid) {
+      return /databases/$(database)/documents/couples/$(coupleId)/members/$(uid);
+    }
+
+    function isActiveApprovedUserForCouple(coupleId) {
+      return isSignedIn()
+        && exists(userDocPath(request.auth.uid))
+        && get(userDocPath(request.auth.uid)).data.approved == true
+        && get(userDocPath(request.auth.uid)).data.coupleId == coupleId;
+    }
+
+    function isActiveCoupleMember(coupleId) {
+      return isActiveApprovedUserForCouple(coupleId)
+        && exists(memberDocPath(coupleId, request.auth.uid))
+        && get(memberDocPath(coupleId, request.auth.uid)).data.active == true
+        && get(memberDocPath(coupleId, request.auth.uid)).data.role == 'member';
+    }
+
+    function isApprovedMomentType(momentType) {
+      return momentType in ['birthday', 'valentine', 'confession'];
+    }
+
+    match /users/{uid} {
+      allow get: if isOwnUser(uid);
+      allow list: if false;
+      allow create, update, delete: if false;
+    }
+
+    match /couples/{coupleId} {
+      allow get: if isActiveCoupleMember(coupleId);
+      allow list: if false;
+      allow create, update, delete: if false;
+
+      match /members/{uid} {
+        allow get: if isOwnUser(uid) && isActiveCoupleMember(coupleId);
+        allow list: if false;
+        allow create, update, delete: if false;
+      }
+
+      match /profiles/{uid} {
+        allow get, list: if isActiveCoupleMember(coupleId);
+        allow create, update, delete: if false;
+      }
+
+      match /favorites/{uid} {
+        allow get, list: if isActiveCoupleMember(coupleId);
+        allow create, update, delete: if false;
+      }
+
+      match /settings/shared {
+        allow get: if isActiveCoupleMember(coupleId);
+        allow create, update, delete: if false;
+      }
+
+      match /settings/{uid} {
+        allow get: if isOwnUser(uid) && isActiveCoupleMember(coupleId);
+        allow list: if false;
+        allow create, update, delete: if false;
+      }
+
+      match /contracts/current {
+        allow get: if isActiveCoupleMember(coupleId);
+        allow create, update, delete: if false;
+      }
+
+      match /memories/{memoryId} {
+        allow get, list: if isActiveCoupleMember(coupleId);
+        allow create, update, delete: if false;
+      }
+
+      match /specialMoments/{momentType} {
+        allow get: if isApprovedMomentType(momentType) && isActiveCoupleMember(coupleId);
+        allow list: if false;
+        allow create, update, delete: if false;
+      }
+
+      match /{document=**} {
+        allow read, write: if false;
+      }
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
