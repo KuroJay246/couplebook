@@ -14,6 +14,7 @@ import {
   resolveUrl,
   toTrimmedString,
 } from './adapterUtils.js'
+import { mergeLegacyMemorySources } from '../features/timeline/memorySourceMerge.js'
 
 const CUSTOM_MEMORIES_KEY = 'memorybook_custom_memories'
 const DELETED_MEMORIES_KEY = 'memorybook_deleted_memories'
@@ -25,8 +26,11 @@ const OVERRIDDEN_MEMORIES_KEY = 'memorybook_overridden_memories'
  * @property {string} title
  * @property {string} description
  * @property {string | null} dateLabel
+ * @property {string[]} tags
  * @property {'image' | 'video' | 'unknown'} mediaKind
  * @property {string | null} mediaPath
+ * @property {boolean} isSpecialPage
+ * @property {string | null} pageUrl
  * @property {boolean} isDeleted
  * @property {'static-json' | 'local-override' | 'local-custom'} source
  * @property {Record<string, unknown>} unknownFields
@@ -49,6 +53,10 @@ export const legacyMemoryAdapterBoundary = Object.freeze({
     'localStorage: memorybook_custom_memories',
     'localStorage: memorybook_deleted_memories',
     'localStorage: memorybook_overridden_memories',
+  ],
+  deferredLegacySources: [
+    'local dev server: /api/scan-media',
+    'core/state.js fallback seeded memory',
   ],
   expectedNormalizedOutput:
     'CompatibilityResult<NormalizedMemoryState> for the routed shell without mutating legacy memory state.',
@@ -74,6 +82,14 @@ function inferMediaKind(record) {
   return 'unknown'
 }
 
+function normalizeMemoryTags(value) {
+  if (!Array.isArray(value)) return []
+
+  return value
+    .map((entry) => toTrimmedString(entry))
+    .filter(Boolean)
+}
+
 function normalizeMemoryRecord(rawRecord, index, source) {
   const record = isPlainObject(rawRecord) ? rawRecord : {}
 
@@ -82,11 +98,24 @@ function normalizeMemoryRecord(rawRecord, index, source) {
     title: toTrimmedString(record.title),
     description: toTrimmedString(record.description),
     dateLabel: toTrimmedString(record.date) || null,
+    tags: normalizeMemoryTags(record.tags),
     mediaKind: inferMediaKind(record),
     mediaPath: toTrimmedString(record.media) || null,
+    isSpecialPage: normalizeBoolean(record.isSpecialPage, false),
+    pageUrl: toTrimmedString(record.pageUrl) || null,
     isDeleted: false,
     source,
-    unknownFields: pickObjectEntries(record, ['id', 'title', 'description', 'date', 'media', 'isVideo', 'tags']),
+    unknownFields: pickObjectEntries(record, [
+      'id',
+      'title',
+      'description',
+      'date',
+      'media',
+      'isVideo',
+      'tags',
+      'isSpecialPage',
+      'pageUrl',
+    ]),
   }
 }
 
@@ -128,44 +157,6 @@ function readMemoryOverlayState(storage, warnings) {
       (!deletedResult.missing && !deletedResult.ok) ||
       (!overriddenResult.missing && !overriddenResult.ok),
   }
-}
-
-function applyMemoryOverlays(baseMemories, overlayState) {
-  const deletedIds = new Set(overlayState.deletedIds)
-  const overriddenIds = new Set(Object.keys(overlayState.overrides))
-  const mergedMemories = []
-
-  for (const memory of baseMemories) {
-    if (deletedIds.has(memory.id)) {
-      continue
-    }
-
-    if (overriddenIds.has(memory.id) && isPlainObject(overlayState.overrides[memory.id])) {
-      mergedMemories.push(
-        normalizeMemoryRecord(
-          {
-            ...memory,
-            ...overlayState.overrides[memory.id],
-          },
-          mergedMemories.length,
-          'local-override',
-        ),
-      )
-      continue
-    }
-
-    mergedMemories.push(memory)
-  }
-
-  return [...mergedMemories, ...overlayState.customMemories].sort((left, right) => {
-    const leftDate = left.dateLabel ? Date.parse(left.dateLabel) : Number.NaN
-    const rightDate = right.dateLabel ? Date.parse(right.dateLabel) : Number.NaN
-
-    if (Number.isNaN(leftDate) && Number.isNaN(rightDate)) return 0
-    if (Number.isNaN(leftDate)) return 1
-    if (Number.isNaN(rightDate)) return -1
-    return rightDate - leftDate
-  })
 }
 
 function buildMemoryState(memories, overlayState, hasBaseDataset) {
@@ -259,7 +250,12 @@ export async function readLegacyMemories(options = {}) {
 
     const payload = await response.json()
     const normalizedPayload = normalizeLegacyMemoryPayload(payload, { warnings })
-    const mergedMemories = applyMemoryOverlays(normalizedPayload.memories, overlayState)
+    const mergedMemories = mergeLegacyMemorySources({
+      baseMemories: normalizedPayload.memories,
+      customMemories: overlayState.customMemories,
+      deletedIds: overlayState.deletedIds,
+      overrides: overlayState.overrides,
+    })
     const status =
       normalizedPayload.status === 'invalid' || overlayState.hadMalformedState
         ? 'invalid'
