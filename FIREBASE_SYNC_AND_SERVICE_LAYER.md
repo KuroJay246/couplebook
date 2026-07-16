@@ -58,6 +58,69 @@ Guardrails now in effect inside app-v2:
 - no automatic write-back from compatibility reads
 - no reintroduction of the old broad sync model
 
+## 2026-07-16 Final Data-Source And Cutover Design
+
+The final readiness sprint confirmed that app-v2 is still a read-only migration shell with one production-ready auth lookup and no production writes.
+
+| Domain | Current static source | app-v2 compatibility source | Current Firestore source | Status | Write status | Cutover requirement | Rollback implication |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| approved users | Firebase Auth plus static approval checks | `authorizationService` | targeted `users/{uid}` | production-ready | no app-v2 writes | keep targeted lookup only | restore static Hosting if approved lookup fails after cutover |
+| authentication | Firebase Auth | `authService` | Firebase Auth | production-ready | sign-in/sign-out only | partner smoke must pass | restore static Hosting if approved users cannot sign in |
+| profiles | legacy localStorage projection | `legacyProfileAdapter` | legacy user-doc fields only | read-only bridge | none | move to `couples/{coupleId}/profiles/{uid}` | preserve legacy local data as backup |
+| relationship metadata | local/static relationship copy | read-only page/read-model composition | none approved | schema pending | none | define safe fields on `couples/{coupleId}` | static app remains source until migrated |
+| favorites | legacy localStorage | `legacyFavoritesAdapter` | legacy user-doc fields only | read-only bridge | none | move to couple-scoped favorites service | preserve local favorites until verified |
+| settings | user localStorage settings/theme | `legacySettingsAdapter` | legacy user-doc fields only | read-only bridge | none | split shared settings from per-user settings | static settings remain fallback |
+| contract | legacy static/private wording | `legacyContractAdapter` status only | legacy user-doc fields only | read-only bridge | none | move reviewed contract docs to couple scope | old static contract remains rollback source |
+| contract signatures | local signature ledger | redacted signature status | legacy user-doc fields only | read-only bridge | none | migrate redacted state and future signature model deliberately | preserve original local ledger outside app-v2 |
+| memories | `core/memories.json` plus overlays | local-only bridge and browser overlays | none | development-only/read-only bridge | none | create couple-scoped memory docs after dry-run | keep legacy dataset as backup |
+| memory overlays | localStorage custom/deleted/overridden keys | `legacyMemoryAdapter` | none | read-only bridge | none | idempotent migration with pre-write export | no destructive reconciliation |
+| deleted memories | localStorage tombstone list | `legacyMemoryAdapter` | none | read-only bridge | none | encode tombstones or archive state explicitly | preserve before migration |
+| Timeline | static memory renderer | `useTimelineData` | none | read-only bridge | none | switch to memory service after schema/rules | keep legacy Timeline until cutover verified |
+| Gallery | static memory/media renderer | `useGalleryData` metadata only | none | read-only bridge | none | metadata-only Firestore first; media later | no media rollback dependency yet |
+| special-moment content | root protected static sources | localhost-only bridge, disabled by default | none | development-only | none | connect protected production source | keep static source preserved until verified |
+| private media | local archive/path refs | metadata/status only | none | deferred/prohibited | none | Storage gate must pass before upload | do not delete or move local archive |
+| device information | static settings/device helper | interface only | existing `devices/{deviceId}` static domain | deferred | none | decide whether device docs are still needed | leave static device behavior untouched |
+| migration status | docs and app status model | committed read-only status | none | schema pending | none | add version metadata under couple scope | rollback reads documented tags/status |
+
+### Proposed Firestore Structure
+
+`users/{uid}` stays intentionally narrow. It should contain only approved-user identity, account-level safe profile fields, and authorization-related status. It must not become a dumping ground for shared memories, favorites, contracts, or media.
+
+`couples/{coupleId}` owns shared relationship metadata, safe shared settings, and migration/version metadata. Readers are exactly the two approved users for the couple. Writers should be domain-service scoped after rules are designed and emulator-tested; no browser-side administrative writes are allowed.
+
+Planned subcollections:
+
+| Path | Owner | Readers | Writers | Listener scope | Expected fields | Migration source | Service | Rule/test requirement |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `couples/{coupleId}/profiles/{uid}` | profile subject | both approved users | subject or approved service path | one profile doc or two-doc batch | display name, safe profile fields, timestamps | legacy profiles | `profileService` | owner/couple membership rules plus emulator tests |
+| `couples/{coupleId}/memories/{memoryId}` | couple | both approved users | future memory service only | query by couple and bounded filters | title, date, story/caption, tags, mediaRefs metadata, sourceType, migration version | memory dataset and overlays | `memoryService` | no public reads, no giant document, no auto-overwrite |
+| `couples/{coupleId}/favorites/{favoriteId}` | couple or item owner | both approved users | future favorites service | bounded collection/list views | category, owner, label, note, timestamps | legacy favorites | `favoritesService` | exact couple membership checks |
+| `couples/{coupleId}/contracts/{contractId}` | couple | both approved users | future contract service | active contract doc plus status docs | version, body reference/status, acceptance, signature metadata | legacy contract/status | `contractService` | no raw unsafe signature payload exposure |
+| `couples/{coupleId}/specialMoments/{momentType}` | couple | both approved users | controlled future content service | three targeted docs only | moment type, text sections, status, version, timestamps | protected special sources | `specialMomentService` | fixed-key validation and text-only rendering tests |
+| `couples/{coupleId}/devices/{deviceId}` | device owner | owner plus limited couple-safe metadata if needed | device owner/service | owner-scoped | safe device label/status only | existing device domain if retained | `deviceService` | decide necessity before implementation |
+
+Explicitly rejected for app-v2 cutover: collection-wide `users` scans, collection-wide `users` listeners, one giant couple document containing everything, automatic local-to-cloud overwrite, uncontrolled last-write-wins merging, and browser-side administrative writes.
+
+### Sync Replacement Plan
+
+The old static `core/firestoreSync.js` responsibilities to retire are broad users reads/listeners, mixed active-user and shared-couple payload writes, automatic compatibility write-back, username-keyed merge reconstruction, and implicit local-to-cloud reconciliation.
+
+Responsibilities to preserve are targeted hydration, clear unavailable/offline states, pre-cutover backup/export, read-only compatibility adapters during transition, user-visible stale-data warnings, and route rerender events once domain services exist.
+
+Future ownership must be domain-specific:
+
+- initial data migration: idempotent dry-run first, pre-write backup/export, explicit owner approval, no media upload in first cutover
+- normal reads: targeted document reads or bounded couple subcollection queries owned by each domain service
+- normal writes: no writes until rules, tests, conflict policy, audit/error reporting, and rollback behavior are approved
+- offline sync: deferred queue with explicit conflict policy; no silent destructive reconciliation
+- media sync: deferred until the Storage gate passes
+
+Cloud becomes authoritative only after validated migration. Legacy local data remains a backup during transition, and partial failures must leave both cloud and local rollback evidence intact.
+
+### Special Content Production Recommendation
+
+For the first production version, use targeted Firestore text-only documents at `couples/{coupleId}/specialMoments/{birthday|valentine|confession}`. This keeps the model simple for two approved users, avoids casual claims of client-side encryption, avoids Storage/media complexity, and matches the current sanitized React section renderer. Private media or client-side encryption should be considered only after a real key-management and Storage/rules design exists.
+
 ## 2026-07-13 app-v2 Approved-User Smoke
 
 The isolated React shell now has one honest live approved-user browser smoke result for Jaylan.

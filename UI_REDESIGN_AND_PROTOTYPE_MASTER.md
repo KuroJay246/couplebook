@@ -265,6 +265,13 @@ Settings must remain intentionally secondary, plain-language, and free of unrela
 - typography, navigation, and return patterns stay shared even when page composition shifts
 - private content migration for these moments remains deferred in the current run
 
+### 2026-07-16 Readiness Audit Design Correction
+
+- the final product audit found no P0/P1 design or navigation defects and no Gather Savor visual carryover requiring redesign
+- one P2 coherence issue was fixed: unknown app routes now stay inside the protected AppShell and use the shared utility/editorial empty-state pattern instead of rendering as a detached page
+- the fallback language confirms unknown paths do not load static rollback pages or bypass authorization
+- this preserves the design lock that every protected experience, including route errors, should feel like part of one private book rather than a separate mini-site
+
 ### Final color blend
 
 - editorial base:

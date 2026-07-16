@@ -15,6 +15,58 @@ Date: 2026-07-16
 | Primary local state | `localStorage` plus `core/memories.json` |
 | Cloud sync boundary | `core/firestoreSync.js` |
 
+## 2026-07-16 Final Migration Readiness Sprint
+
+- verified active branch `migration/react-foundation` at synchronized checkpoint `12b2f30d4f113ea73d131dadd6f1945c2adac93d` before the sprint; no deploy, merge, rules change, production write, private-media copy, Storage initialization, or Gather Savor change occurred
+- baseline remained green before readiness work: app-v2 lint, app-v2 tests, app-v2 build, app-v2 browser regression, and root `npm run check:all`
+- full product audit covered `/`, `/login`, `/dashboard`, `/timeline`, `/gallery`, `/profile`, `/favorites`, `/settings`, `/contract`, `/birthday`, `/valentine`, `/confession`, and an unknown route at desktop `1440x1024`, tablet `1024x768`, and mobile `390x844`
+- known migrated routes passed the approved Jaylan session audit with protected-shell rendering, route reload restoration, no redirect loop, no loading stall, no `permission-denied`, no private-media elements, no old static asset requests, no browser-console app errors, and no horizontal overflow
+- audit findings:
+  - P0: none
+  - P1: none
+  - P2 fixed: unknown app routes now stay inside the authenticated AppShell and render a protected route fallback instead of a detached page
+  - P3 deferred: none requiring immediate migration work
+- approved-account gate remains honest:
+  - Jaylan: `PASS`
+  - partner: `NOT TESTED`
+  - overall: `HOLD`
+- partner smoke was not run because a safe partner credential/session was not available; the password must not be requested in chat, terminal, source, tests, docs, or environment files
+- local Hosting rehearsal used the production Vite build through local Vite preview only; all app-v2 routes and direct reloads returned the React index locally, with no production Hosting contact, no preview channel, no deploy, and no tracked `firebase.json` switch
+- build audit result: seven production files, no source maps, no bundled media files, no `.env` files, no service-account/private-key material, no broad `users` query, no Storage usage, and no static page fetch dependency; public Firebase web config identifiers are expected browser config, not secrets
+- final readiness position:
+  - local app-v2 product development: `GO`
+  - production data and security implementation: `CONDITIONAL GO`
+  - production cutover, deploy, and static rollback retirement: `HOLD`
+  - media/Storage: `DEFERRED`
+
+### Current Cutover Readiness Matrix
+
+| Category | Status | Reason |
+| --- | --- | --- |
+| Product pages | GO | ten app-v2 routes are migrated and audited locally |
+| Authentication | GO | Firebase Auth plus targeted `users/{uid}` approval remains the only app-v2 authorization path |
+| Two-account verification | HOLD | partner approved-account smoke is not safely available yet |
+| Navigation | GO | primary, secondary, special, utility, sign-out, and unknown-route fallback passed audit |
+| Accessibility | CONDITIONAL GO | semantic shell, headings, labels, focus, and mobile touch layout passed audit; full assistive-technology pass remains pre-cutover work |
+| Responsive design | GO | audited at desktop, tablet, and mobile with no horizontal overflow |
+| Browser automation | GO | app-v2 browser regression passed |
+| Build | GO | lint, tests, build, and root checks passed |
+| Privacy | GO | no private bundle/media/static-runtime leak found in app-v2 build audit |
+| Firestore schema | HOLD | target schema is documented but not approved or implemented |
+| Rules | BLOCKED | rules were intentionally not changed or emulator-tested for the target schema in this sprint |
+| Production data source | HOLD | app-v2 still uses read-only compatibility sources and development-only special content |
+| Special content | HOLD | Birthday, Valentine, and Confession need an approved production source |
+| Media/Storage | DEFERRED | Storage remains uninitialized pending explicit media gate approval |
+| Hosting | HOLD | local rehearsal passed, but production Hosting still publishes the static rollback path |
+| Rollback | CONDITIONAL GO | criteria and runbook are documented; final restore verification must happen before cutover |
+| Documentation | GO | readiness status is consolidated in the master docs |
+
+### Static Retirement And Rollback Gate
+
+The static rollback app must not be retired until Jaylan and partner smokes pass, every app-v2 route passes, browser automation passes, lint/tests/build pass, Firestore schema and rules are approved and emulator-tested, production migration dry-run passes, pre-migration backup/export is complete, special content has a protected production source, the media decision is closed, local Hosting rehearsal remains green, production build privacy scan passes, rollback is verified, and the owner explicitly approves cutover.
+
+Before cutover, tag the current static production commit and approved app-v2 candidate, export required Firestore data, preserve local legacy data, record the current Firebase Hosting release state, and prove the static build can still be restored. During cutover, monitor auth, protected routes, Firestore permissions, console/network errors, and avoid data writes until basic smoke passes where practical. Roll back only with explicit approval if approved users cannot sign in, authorization rejects approved users, private routes become public, production writes corrupt data, required content is missing, routing fails severely, broad Firestore queries return, or private bundle exposure appears. Rollback means restore the previous Hosting release or redeploy the tagged static baseline, stop new writes, preserve logs, do not delete migrated data, and investigate before retrying.
+
 ## 2026-07-16 Special Moment Runtime-Content Migration Checkpoint
 
 - the fast-track sprint continued from clean synchronized `migration/react-foundation` commit `008edb9`

@@ -175,6 +175,46 @@ Do not enable it until:
 3. first-upload scope is explicitly approved
 4. rules and metadata path plan are reviewed again
 
+## 2026-07-16 Final Media And Storage Gate
+
+The final readiness sprint keeps Storage deferred. app-v2 currently works metadata-only for Dashboard, Timeline, Gallery, Birthday, Valentine, and Confession:
+
+- Timeline renders text, tags, dates, chapters, and private-media status without fetching private media
+- Gallery renders visual-archive metadata, filters, collections, and unavailable/private-reference states without previews, players, lightboxes, uploads, or Storage
+- Birthday, Valentine, and Confession render protected text-only runtime sections or honest unavailable states; companion media remains excluded
+
+Future experiences that genuinely require a media decision:
+
+- real Gallery photo previews and video playback
+- Timeline media thumbnails or inline playback
+- special-moment companion photos, audio, or video
+- upload/edit/delete media workflows
+- offline media caching, thumbnail generation, video streaming, and cleanup
+
+Expected concerns before approval:
+
+- media volume and large video size
+- upload ownership and deletion authority
+- private filename/path safety
+- thumbnail and streaming strategy
+- cost and quota limits
+- device backup behavior
+- rollback and cleanup if a cutover is reversed
+
+Storage may not be initialized until all prerequisites are met:
+
+1. Jaylan and partner approved-account smoke both pass.
+2. Firestore schema is approved.
+3. Storage rules are designed and emulator-tested.
+4. One-file upload, download, and delete behavior is tested locally.
+5. Firestore media metadata schema is approved.
+6. Private filenames are not publicly exposed.
+7. File-size and file-type limits are defined.
+8. Public download URLs are not stored carelessly.
+9. Rollback and cleanup procedure is documented and approved.
+
+Do not bulk upload raw archives, do not copy local-only media into `public/`, and do not treat current local path strings as production-ready media references.
+
 ## Media Migration Plan
 
 ### Future target storage paths

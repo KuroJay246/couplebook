@@ -54,6 +54,7 @@ As of 2026-07-16, the app-v2 lane now also covers:
 - Gallery browser protection, spoof-resistance, authorized rendering, filters, private-media states, no-private-media, no-static-dependency, no-write, and no-broad-users guardrails
 - Special-frame browser protection, spoof-resistance, authorized rendering, pending-state, no-media, no-static-dependency, no-write, and no-broad-users guardrails
 - Special runtime-content browser fixture coverage for sanitized ready sections, private-media status, and no media elements
+- protected unknown-route fallback inside AppShell
 
 ## Scripts
 
@@ -65,6 +66,32 @@ As of 2026-07-16, the app-v2 lane now also covers:
 
 - `cd app-v2 && npm run test:browser`
   Uses headless Playwright against a local app-v2 server with localhost-only injected fixtures so the routed shell can prove signed-out protection, spoofed-localStorage blocking, route reload restoration, AppShell rendering, utility-only Settings placement, and console/network guardrails without storing real account credentials.
+
+## 2026-07-16 Final Readiness Validation
+
+The final migration-readiness sprint used one baseline, focused correction checks, and one final validation lane. Baseline before the correction passed app-v2 `npm run lint`, `npm test`, `npm run build`, `npm run test:browser`, and root `npm run check:all`.
+
+Product audit result:
+
+- routes audited: `/`, `/login`, `/dashboard`, `/timeline`, `/gallery`, `/profile`, `/favorites`, `/settings`, `/contract`, `/birthday`, `/valentine`, `/confession`, and an unknown route
+- viewport coverage: `1440x1024`, `1024x768`, and `390x844`
+- known routes passed protected-shell, reload, no redirect-loop, no loading-stall, no `permission-denied`, no app-console-error, no private-media, no old static asset, and no horizontal-overflow checks
+- P2 fixed: unknown routes now render a protected in-shell fallback instead of a detached page
+- partner smoke remains `NOT TESTED`, so the overall real approved-account gate remains `HOLD`
+
+Local Hosting rehearsal result:
+
+- method: production `app-v2/dist` served through local Vite preview only
+- no Firebase Hosting deployment, preview channel, rules deployment, index deployment, production write, or tracked `firebase.json` change occurred
+- `/`, `/login`, `/dashboard`, `/timeline`, `/gallery`, `/profile`, `/favorites`, `/settings`, `/contract`, `/birthday`, `/valentine`, `/confession`, and an unknown route returned the React index locally with direct route reload support
+- local HTML inspection found no source-map references, `.env` exposure, private media, directory listing, or legacy static dependency
+
+Build/privacy scan result:
+
+- production build contained seven files, no source maps, no media files, and no `.env` files
+- app-source scans passed for service-account/private-key material, broad `users` reads/listeners, Storage usage, static page fetch dependencies, and localStorage auth shortcuts
+- review hits were expected false positives: fictional raw-path redaction fixtures in tests, a test that asserts `dangerouslySetInnerHTML` is absent, and Firebase Auth vendor terminology
+- public Firebase web configuration identifiers are expected in a browser Firebase app and are not classified as secrets
 
 - `npm run check:safety`
   Verifies tracked files and reachable Git history do not contain the known private media, export, or backup bundle paths that were previously removed from the repo.
