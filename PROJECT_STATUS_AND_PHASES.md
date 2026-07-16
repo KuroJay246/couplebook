@@ -15,6 +15,49 @@ Date: 2026-07-16
 | Primary local state | `localStorage` plus `core/memories.json` |
 | Cloud sync boundary | `core/firestoreSync.js` |
 
+## 2026-07-16 Special Moment Runtime-Content Migration Checkpoint
+
+- the fast-track sprint continued from clean synchronized `migration/react-foundation` commit `008edb9`
+- the required baseline passed before implementation:
+  - app-v2 `npm run lint`
+  - app-v2 `npm test`
+  - app-v2 `npm run build`
+  - app-v2 `npm run test:browser`
+  - root `npm run check:all`
+- Birthday, Valentine, and Confession are now complete product-page migrations in app-v2:
+  - the shared `SpecialMomentFrame` now renders runtime-content states instead of generic pending placeholders
+  - one normalized content model accepts only `birthday`, `valentine`, and `confession`
+  - content sections are limited to paragraph, quote, list, note, and timeline shapes
+  - unknown section kinds, executable markup, event-handler markup, raw HTML, and private media path text are quarantined or withheld
+  - all private content renders as text-only React elements; no `dangerouslySetInnerHTML` is used
+- content-source classification:
+  - committed UI copy is limited to generic labels, route metadata, unavailable states, and layout language
+  - legacy root `pages/...` files remain protected runtime private content sources for local development only
+  - public `public/pages/...` files remain neutral placeholders and are not consumed by app-v2
+  - old media/audio/video references are classified as local-only private media metadata and render only as status text
+  - old splash screens, public reveal behavior, inline scripts, autoplay/audio/video, and static-page interactions are obsolete
+- local-only runtime behavior:
+  - app-v2 reads special content only through a fixed-key, env-gated, localhost-only bridge
+  - the bridge rejects production mode, non-local runtime origins, non-local base URLs, unknown moment keys, and path traversal attempts
+  - the root dev server exposes a narrow `/api/special-moment/{birthday|valentine|confession}` endpoint that parses text only and does not return media paths or raw HTML
+  - the default approved Jaylan app session shows honest unavailable states because the local bridge is not enabled there
+- content connection status:
+  - Birthday: `development-only`
+  - Valentine: `development-only`
+  - Confession: `development-only`
+  - production cutover: `pending`
+- browser validation in the approved Jaylan session confirmed:
+  - `/birthday`, `/valentine`, and `/confession` stayed protected after auth restoration
+  - desktop `1440x1024`, tablet `1024x768`, and mobile `390x844` had no horizontal overflow
+  - no loading-screen stall, redirect loop, permission-denied state, browser-console warnings/errors, media elements, old static asset requests, or private-media requests were observed
+  - sanitized browser fixtures cover ready runtime-content rendering without real private text
+- migration status now marks Dashboard, Profile, Favorites, Settings, Contract, Timeline, Gallery, Birthday, Valentine, and Confession complete; production content connection remains pending
+- smoke status remains honest:
+  - Jaylan: `PASS`
+  - partner: `NOT TESTED`
+  - overall: `HOLD`
+- no deploy, merge, rules change, production write, localStorage mutation, private data bundle, private media copy, Storage initialization, or Gather Savor change occurred
+
 ## 2026-07-16 Gallery UI Migration And Special Frame Checkpoint
 
 - the fast-track sprint continued from clean synchronized `migration/react-foundation` commit `b76a4d2`
@@ -626,9 +669,37 @@ Jaylan was successfully tested in a real browser session after correcting the li
 - non-live sync modeling
 - shared shell refinement inside app-v2
 - service-layer planning
-- after Dashboard, Profile, Favorites, Settings, Contract, Timeline, and Gallery, continue only protected special-content architecture using runtime-safe sources without widening auth, sync, media, or private-data scope
+- after Dashboard, Profile, Favorites, Settings, Contract, Timeline, Gallery, Birthday, Valentine, and Confession, continue only migration-readiness audits, partner smoke, and production data-source planning without widening auth, sync, media, or private-data scope
 
 ## Recent Phase Closeout Summaries
+
+### 2026-07-16 Special Moment Runtime-Content Migration Summary
+
+- starting commit: `008edb9`
+- work completed:
+  - added a normalized runtime-only special moment content model
+  - added a read-only special content service and hook with browser-fixture support
+  - extended the existing local dev server with a fixed-key text-only special-content endpoint
+  - migrated Birthday, Valentine, and Confession from pending placeholders to real runtime-content React pages
+  - kept production content connection pending while allowing development-only local bridge reads
+  - added source, model, route, and browser guardrails for raw HTML, scripts, event handlers, private media paths, old static dependencies, writes, broad queries, Storage, and credentials
+- manual approved Jaylan in-app validation:
+  - `/birthday`, `/valentine`, and `/confession` restored the approved session and stayed inside the protected shell
+  - desktop `1440x1024`, tablet `1024x768`, and mobile `390x844` had no horizontal overflow
+  - no loading stall, redirect loop, permission-denied state, browser-console warning/error, media element, old static asset request, or private-media request was observed
+  - the real approved session showed honest unavailable runtime states because the local bridge was not enabled
+- checks run in this run:
+  - app-v2 `npm run lint`
+  - app-v2 `npm test`
+  - app-v2 `npm run build`
+  - app-v2 `npm run test:browser`
+  - root `npm run check:all`
+  - scoped special runtime guardrail scans
+- commits completed in this run:
+  - `Migrate protected special moment content architecture`
+  - `Document special moment migration checkpoint`
+- smoke status: approved Jaylan routed-browser smoke remains `PASS`, partner remains `NOT TESTED`, and the overall approved-account gate remains honestly `HOLD`
+- next recommended track action: run a final migration-readiness sprint covering full app-v2 product audit, partner-account smoke, production data-source and Firestore cutover planning, static rollback retirement criteria, and Hosting deployment rehearsal without production deployment
 
 ### 2026-07-16 Gallery UI And Special Frame Summary
 

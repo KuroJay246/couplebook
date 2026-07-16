@@ -344,8 +344,8 @@ Settings must remain intentionally secondary, plain-language, and free of unrela
 6. Contract is now the fifth real read-only page in app-v2
 7. Timeline is now the sixth real read-only page in app-v2
 8. Gallery is now the seventh real read-only metadata page in app-v2
-9. Birthday, Valentine, and Confession now share a protected pending Special Moment Frame
-10. reintroduce special-moment page content later through protected runtime content sources only
+9. Birthday, Valentine, and Confession are now real protected runtime-content pages with production content connection pending
+10. connect production special-moment content later through approved protected runtime sources only
 11. keep deployment and Hosting cutover blocked until the broader migration gates are cleared
 
 ## 2026-07-13 Reference Review
@@ -697,6 +697,42 @@ Safety preserved:
 - overall approved-account gate remains `HOLD`
 - no deploy, merge, rules change, production write, private-media copy, or credential commit occurred
 - the next recommended batch is now narrow and explicit: migrate Timeline as a read-only page only, using the locked memory-domain model below
+
+## 2026-07-16 app-v2 Special Moment Runtime-Content Checkpoint
+
+Birthday, Valentine, and Confession are now real protected app-v2 pages. Their visual frame is shared, but their content arrives only through a runtime source after auth and approval, not through committed React text.
+
+Shared runtime-content result:
+
+- one normalized content model for Birthday, Valentine, and Confession
+- only fixed moment keys are accepted
+- allowed section kinds are paragraph, quote, list, note, and timeline
+- sections render as semantic text-only React elements
+- unknown section types, executable markup, event handlers, raw HTML, external embeds, and private media path text are withheld
+- production mode, non-local runtime origins, non-local bridge base URLs, unknown moment keys, and traversal-style keys fail closed
+
+Page design result:
+
+- Birthday keeps the parchment, muted-gold, clay, candlelit direction without party-template visuals or confetti
+- Valentine keeps the parchment, dusty-rose, restrained-oxblood correspondence direction without commercial Valentine styling or animated hearts
+- Confession keeps the ink, parchment, oxblood sealed-note direction without theatrical splash screens, forced delay, audio, or autoplay
+- all three pages share the same protected shell, return navigation, runtime boundary note, source status, and private-media status treatment
+
+Content and media boundary:
+
+- committed source contains only generic labels, route metadata, unavailable copy, and layout language
+- private messages, letters, relationship-specific sections, private dates, and special-page text are runtime-only
+- the local dev bridge can read fixed special content endpoints only when explicitly enabled on localhost
+- old public placeholder pages are not fetched or consumed by app-v2
+- old images, video, and audio are represented only as private/unavailable media status text
+- no thumbnails, players, downloads, media URLs, raw paths, or filenames render in the app-v2 page
+
+Responsive and browser result:
+
+- approved Jaylan browser validation passed at `1440x1024`, `1024x768`, and `390x844`
+- Birthday, Valentine, and Confession restored the approved session and stayed protected
+- no horizontal overflow, console warnings/errors, media elements, old static asset requests, redirect loop, loading stall, or `permission-denied` state was observed
+- sanitized browser fixtures verify ready runtime-content rendering without real private content
 
 ## 2026-07-16 app-v2 Gallery And Special Frame Checkpoint
 
