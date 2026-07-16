@@ -1,5 +1,53 @@
 import { LEGACY_LOCAL_DEV_SOURCE, LEGACY_LOCAL_STORAGE_SOURCE } from '../data/adapterUtils.js'
 
+function specialMomentFixture(type, title) {
+  return Object.freeze({
+    status: 'ready',
+    source: LEGACY_LOCAL_DEV_SOURCE,
+    data: Object.freeze({
+      status: 'ready',
+      content: Object.freeze({
+        type,
+        title,
+        subtitle: 'Fictional runtime content used only for browser regression.',
+        date: '2026-06-01',
+        sections: Object.freeze([
+          Object.freeze({
+            id: `${type}-runtime-note`,
+            kind: 'paragraph',
+            heading: 'Fictional runtime section',
+            content: 'This sanitized special moment proves protected runtime rendering without real private content.',
+            items: Object.freeze([]),
+          }),
+          Object.freeze({
+            id: `${type}-runtime-list`,
+            kind: 'list',
+            heading: 'Fictional preserved details',
+            content: '',
+            items: Object.freeze(['Sanitized item one', 'Sanitized item two']),
+          }),
+        ]),
+      }),
+      media: Object.freeze({
+        status: 'private-legacy-reference',
+        type: null,
+        note: 'Companion media remains private and is not rendered in this build.',
+      }),
+      sourceStatus: Object.freeze({
+        source: LEGACY_LOCAL_DEV_SOURCE,
+        connection: 'ready',
+        warningCount: 0,
+        runtimeOnly: true,
+      }),
+      privacy: Object.freeze({
+        runtimeOnly: true,
+        privateContentBundled: false,
+      }),
+    }),
+    warnings: Object.freeze([]),
+  })
+}
+
 export const browserRegressionAuthorizedFixture = Object.freeze({
   enabled: true,
   auth: Object.freeze({
@@ -220,6 +268,11 @@ export const browserRegressionAuthorizedFixture = Object.freeze({
             ]),
           }),
           warnings: Object.freeze([]),
+        }),
+        specialMoments: Object.freeze({
+          birthday: specialMomentFixture('birthday', 'Fictional birthday runtime chapter'),
+          valentine: specialMomentFixture('valentine', 'Fictional Valentine runtime chapter'),
+          confession: specialMomentFixture('confession', 'Fictional confession runtime chapter'),
         }),
       }),
       warnings: Object.freeze([]),

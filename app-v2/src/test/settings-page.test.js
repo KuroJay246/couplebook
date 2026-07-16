@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
-import { approvedAccountMigrationGate, routeMigrationStatus } from '../app/migrationStatus.js'
+import { approvedAccountMigrationGate, routeMigrationStatus, specialMomentContentConnectionStatus } from '../app/migrationStatus.js'
 import { ROUTE_GROUPS, getRoutesByGroup } from '../app/routeConfig.js'
 
 async function readSource(relativePath) {
@@ -26,12 +26,15 @@ test('settings route uses the read-only feature hook and utility view', async ()
 test('settings migration progress and utility navigation stay explicit', () => {
   assert.deepEqual(
     routeMigrationStatus.completed.map((entry) => entry.label),
-    ['Dashboard', 'Timeline', 'Gallery', 'Profile', 'Favorites', 'Contract', 'Settings'],
+    ['Dashboard', 'Timeline', 'Gallery', 'Profile', 'Favorites', 'Contract', 'Birthday', 'Valentine', 'Confession', 'Settings'],
   )
-  assert.deepEqual(
-    routeMigrationStatus.pending.map((entry) => entry.label),
-    ['Birthday', 'Valentine', 'Confession'],
-  )
+  assert.deepEqual(routeMigrationStatus.pending.map((entry) => entry.label), [])
+  assert.deepEqual(specialMomentContentConnectionStatus, {
+    birthday: 'development-only',
+    valentine: 'development-only',
+    confession: 'development-only',
+    productionCutover: 'pending',
+  })
   assert.deepEqual(approvedAccountMigrationGate, {
     jaylan: 'PASS',
     partner: 'NOT TESTED',

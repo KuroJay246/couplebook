@@ -3,6 +3,7 @@ import { getLegacyFavorites } from '../../services/favoritesService.js'
 import { getLegacyMemories } from '../../services/memoryService.js'
 import { getLegacyProfile } from '../../services/profileService.js'
 import { getLegacySettings } from '../../services/settingsService.js'
+import { getLegacySpecialMoment } from '../../services/specialMomentService.js'
 
 function collectWarnings(results) {
   return results.flatMap((result) => result.warnings || [])
@@ -43,8 +44,14 @@ export async function loadCompatibilitySnapshot(options = {}) {
     getLegacyContract(options),
     getLegacyMemories(options),
   ])
+  const [birthday, valentine, confession] = await Promise.all([
+    getLegacySpecialMoment('birthday', options),
+    getLegacySpecialMoment('valentine', options),
+    getLegacySpecialMoment('confession', options),
+  ])
 
-  const sources = { favorites, profile, settings, contract, memories }
+  const specialMoments = Object.freeze({ birthday, valentine, confession })
+  const sources = { favorites, profile, settings, contract, memories, specialMoments }
   const results = Object.values(sources)
 
   return Object.freeze({

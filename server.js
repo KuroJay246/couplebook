@@ -14,6 +14,11 @@ const PUBLIC_ROOT = path.join(ROOT, 'public');
 
 const PHOTO_EXTS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'];
 const VIDEO_EXTS = ['.mp4', '.mov', '.webm', '.mkv', '.avi'];
+const SPECIAL_MOMENT_SOURCES = Object.freeze({
+  birthday: path.join(ROOT, 'pages', 'omnia-happy-birthday.html'),
+  valentine: path.join(ROOT, 'pages', 'valentine', 'index.html'),
+  confession: path.join(ROOT, 'pages', 'confession', 'index.html'),
+});
 
 const MIME_TYPES = {
   '.html': 'text/html',
@@ -135,6 +140,134 @@ function serveFile(res, filePath) {
   });
 }
 
+function stripTags(value) {
+  return String(value || '')
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function decodeHtmlEntities(value) {
+  return String(value || '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'");
+}
+
+function extractTextByClass(html, className) {
+  const escapedClass = className.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const pattern = new RegExp(`<([a-zA-Z0-9]+)[^>]*class=["'][^"']*\\b${escapedClass}\\b[^"']*["'][^>]*>([\\s\\S]*?)<\\/\\1>`, 'i');
+  const match = html.match(pattern);
+  return match ? decodeHtmlEntities(stripTags(match[2])) : '';
+}
+
+function extractTagText(html, tagName) {
+  const pattern = new RegExp(`<${tagName}\\b[^>]*>([\\s\\S]*?)<\\/${tagName}>`, 'gi');
+  return [...html.matchAll(pattern)].map((match) => decodeHtmlEntities(stripTags(match[1]))).filter(Boolean);
+}
+
+function section(id, kind, heading, content, items = []) {
+  return { id, kind, heading, content, items };
+}
+
+function normalizeSpecialContent(momentKey, html) {
+  if (momentKey === 'birthday') {
+    const title = extractTextByClass(html, 'greeting');
+    const message = extractTextByClass(html, 'sub');
+    return {
+      moment: {
+        type: 'birthday',
+        title,
+        subtitle: 'A private birthday chapter from the legacy book.',
+        sections: [section('birthday-message', 'note', 'Birthday note', message)].filter((entry) => entry.content),
+      },
+      media: {
+        status: 'none',
+        type: null,
+        note: 'No companion media is connected for this route.',
+      },
+    };
+  }
+
+  if (momentKey === 'valentine') {
+    const headings = extractTagText(html, 'h2');
+    const hint = extractTextByClass(html, 'hint');
+    const buttons = extractTagText(html, 'button');
+    return {
+      moment: {
+        type: 'valentine',
+        title: headings[0] || '',
+        subtitle: 'A private Valentine chapter from the legacy book.',
+        sections: [
+          section('valentine-question', 'paragraph', 'Private question', headings[0] || ''),
+          section('valentine-response-options', 'list', 'Preserved response choices', '', buttons),
+          section('valentine-note', 'note', 'Legacy note', hint),
+        ].filter((entry) => entry.content || entry.items.length > 0),
+      },
+      media: {
+        status: 'none',
+        type: null,
+        note: 'No companion media is connected for this route.',
+      },
+    };
+  }
+
+  if (momentKey === 'confession') {
+    const headings = extractTagText(html, 'h1').concat(extractTagText(html, 'h2'), extractTagText(html, 'h3'));
+    const paragraphs = extractTagText(html, 'p');
+    const message = extractTextByClass(html, 'message');
+    return {
+      moment: {
+        type: 'confession',
+        title: headings[0] || '',
+        subtitle: 'A private confession chapter from the legacy book.',
+        sections: [
+          section('confession-opening', 'paragraph', headings[1] || 'Private opening', paragraphs[0] || ''),
+          section('confession-message', 'note', headings[2] || 'Private note', message),
+        ].filter((entry) => entry.content),
+      },
+      media: {
+        status: 'private-legacy-reference',
+        type: null,
+        note: 'Companion images, video, and audio remain private in the legacy book.',
+      },
+    };
+  }
+
+  return null;
+}
+
+function serveSpecialMomentContent(momentKey, res) {
+  const sourceFile = SPECIAL_MOMENT_SOURCES[momentKey];
+
+  if (!sourceFile) {
+    res.writeHead(404, { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache', 'Access-Control-Allow-Origin': '*' });
+    res.end(JSON.stringify({ error: 'Unknown special moment.' }));
+    return;
+  }
+
+  fs.readFile(sourceFile, 'utf8', (error, html) => {
+    if (error) {
+      res.writeHead(404, { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache', 'Access-Control-Allow-Origin': '*' });
+      res.end(JSON.stringify({ error: 'Special moment source unavailable.' }));
+      return;
+    }
+
+    const payload = normalizeSpecialContent(momentKey, html);
+    res.writeHead(200, {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache',
+      'Access-Control-Allow-Origin': '*'
+    });
+    res.end(JSON.stringify(payload || { error: 'Special moment source unavailable.' }));
+  });
+}
+
 // ─── HTTP Server ──────────────────────────────────────────────────────────────
 
 const server = http.createServer((req, res) => {
@@ -161,6 +294,12 @@ const server = http.createServer((req, res) => {
       res.writeHead(500, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: e.message }));
     }
+    return;
+  }
+
+  const specialMomentMatch = url.match(/^\/api\/special-moment\/(birthday|valentine|confession)$/);
+  if (specialMomentMatch) {
+    serveSpecialMomentContent(specialMomentMatch[1], res);
     return;
   }
 

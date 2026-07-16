@@ -8,9 +8,9 @@ const ROUTE_STATUS_BY_PATH = Object.freeze({
   '/contract': 'complete',
   '/timeline': 'complete',
   '/gallery': 'complete',
-  '/birthday': 'pending',
-  '/valentine': 'pending',
-  '/confession': 'pending',
+  '/birthday': 'complete',
+  '/valentine': 'complete',
+  '/confession': 'complete',
 })
 
 const ROUTE_SUMMARY_BY_PATH = Object.freeze({
@@ -21,9 +21,16 @@ const ROUTE_SUMMARY_BY_PATH = Object.freeze({
   '/contract': 'Read-only contract status and document framing now live inside the protected routed shell.',
   '/timeline': 'Read-only story chapters now render from the safe memory read model.',
   '/gallery': 'Read-only visual archive metadata now renders without private media previews.',
-  '/birthday': 'Protected special-moment content remains pending behind the routed shell.',
-  '/valentine': 'Protected special-moment content remains pending behind the routed shell.',
-  '/confession': 'Protected special-moment content remains pending behind the routed shell.',
+  '/birthday': 'Protected runtime-content page is live; production content connection remains pending.',
+  '/valentine': 'Protected runtime-content page is live; production content connection remains pending.',
+  '/confession': 'Protected runtime-content page is live; production content connection remains pending.',
+})
+
+export const specialMomentContentConnectionStatus = Object.freeze({
+  birthday: 'development-only',
+  valentine: 'development-only',
+  confession: 'development-only',
+  productionCutover: 'pending',
 })
 
 export const approvedAccountMigrationGate = Object.freeze({

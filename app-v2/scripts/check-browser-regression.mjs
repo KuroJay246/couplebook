@@ -385,13 +385,17 @@ async function runAuthenticatedDesktopCoverage(browser) {
     )
 
     for (const [route, heading] of [
-      ['/birthday', 'Birthday moment'],
-      ['/valentine', 'Valentine moment'],
-      ['/confession', 'Confession moment'],
+      ['/birthday', 'Birthday moment', 'Fictional birthday runtime chapter'],
+      ['/valentine', 'Valentine moment', 'Fictional Valentine runtime chapter'],
+      ['/confession', 'Confession moment', 'Fictional confession runtime chapter'],
     ]) {
       await page.goto(`${getBaseUrl()}${route}`, { waitUntil: 'domcontentloaded' })
       await waitForRouteContent(page, route, heading)
-      assert.equal(await page.getByText('Content migration pending').count() > 0, true, `${route} should show the shared pending migration state.`)
+      assert.equal(await page.getByText('Runtime content connected').count() > 0, true, `${route} should show runtime connection status.`)
+      assert.equal(await page.getByText('Fictional runtime section').count() > 0, true, `${route} should render sanitized runtime sections.`)
+      assert.equal(await page.getByText('Sanitized item one').count() > 0, true, `${route} should render sanitized runtime lists.`)
+      assert.equal(await page.getByRole('heading', { name: heading === 'Birthday moment' ? 'Fictional birthday runtime chapter' : heading === 'Valentine moment' ? 'Fictional Valentine runtime chapter' : 'Fictional confession runtime chapter' }).count(), 1)
+      assert.equal(await page.locator('main img, main video, main audio, main iframe').count(), 0, `${route} should not render private media elements.`)
       assert.equal(await page.getByRole('link', { name: 'Timeline' }).count() > 0, true, `${route} should keep return navigation to Timeline.`)
       assert.equal(await page.getByRole('link', { name: 'Gallery' }).count() > 0, true, `${route} should keep return navigation to Gallery.`)
     }
@@ -460,6 +464,7 @@ async function runAuthenticatedMobileCoverage(browser) {
 
     await page.goto(`${getBaseUrl()}/birthday`, { waitUntil: 'domcontentloaded' })
     await waitForRouteContent(page, '/birthday', 'Birthday moment')
+    assert.equal(await page.getByText('Fictional birthday runtime chapter').count(), 1, 'Special mobile route should render sanitized runtime content.')
 
     const overflowX = await page.evaluate(() => {
       return Math.max(0, document.documentElement.scrollWidth - document.documentElement.clientWidth)

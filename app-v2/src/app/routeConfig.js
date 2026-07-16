@@ -68,7 +68,7 @@ export const protectedRouteMeta = [
     title: 'Birthday',
     group: ROUTE_GROUPS.special,
     accent: 'gold',
-    summary: 'Sensitive special moments stay protected behind the routed shell.',
+    summary: 'Protected birthday content now uses a runtime-only source boundary.',
   },
   {
     path: '/valentine',
@@ -77,7 +77,7 @@ export const protectedRouteMeta = [
     title: 'Valentine',
     group: ROUTE_GROUPS.special,
     accent: 'rose',
-    summary: 'Special moments are intentionally placeholders in this migration phase.',
+    summary: 'Protected Valentine content now uses a runtime-only source boundary.',
   },
   {
     path: '/confession',
@@ -86,7 +86,7 @@ export const protectedRouteMeta = [
     title: 'Confession',
     group: ROUTE_GROUPS.special,
     accent: 'oxblood',
-    summary: 'Direct public access stays retired until content is reintroduced safely.',
+    summary: 'Protected confession content now uses a runtime-only source boundary.',
   },
   {
     path: '/settings',
