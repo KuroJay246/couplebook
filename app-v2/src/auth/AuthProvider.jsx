@@ -1,5 +1,6 @@
 import { startTransition, useEffect, useState } from 'react'
 import { auth } from '../lib/firebaseClient'
+import { getBrowserTestAuthState } from '../lib/browserTestMode'
 import { isFirebaseConfigured, missingFirebaseConfigMessage } from '../lib/firebaseConfig'
 import { ensureAuthPersistence, observeAuthState, signInWithEmail, signOutCurrentUser } from '../services/authService'
 import { resolveApprovedUser } from '../services/authorizationService'
@@ -17,14 +18,17 @@ function applySignedOutState(setters) {
 }
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null)
-  const [approvedUser, setApprovedUser] = useState(null)
-  const [isAuthorized, setIsAuthorized] = useState(false)
-  const [loading, setLoading] = useState(isFirebaseConfigured)
-  const [authInitialized, setAuthInitialized] = useState(!isFirebaseConfigured)
-  const [authError, setAuthError] = useState(isFirebaseConfigured ? '' : missingFirebaseConfigMessage)
+  const [browserTestAuth] = useState(() => getBrowserTestAuthState())
+  const isBrowserTestMode = browserTestAuth !== null
+  const [user, setUser] = useState(browserTestAuth?.user || null)
+  const [approvedUser, setApprovedUser] = useState(browserTestAuth?.approvedUser || null)
+  const [isAuthorized, setIsAuthorized] = useState(browserTestAuth?.isAuthorized || false)
+  const [loading, setLoading] = useState(isBrowserTestMode ? false : isFirebaseConfigured)
+  const [authInitialized, setAuthInitialized] = useState(isBrowserTestMode || !isFirebaseConfigured)
+  const [authError, setAuthError] = useState(browserTestAuth?.authError || (isFirebaseConfigured ? '' : missingFirebaseConfigMessage))
 
   useEffect(() => {
+    if (isBrowserTestMode) return undefined
     if (!isFirebaseConfigured) return undefined
 
     let active = true
@@ -132,9 +136,13 @@ export function AuthProvider({ children }) {
       active = false
       unsubscribe()
     }
-  }, [])
+  }, [isBrowserTestMode])
 
   async function signIn(email, password) {
+    if (isBrowserTestMode) {
+      throw new Error('Browser regression auth is injected locally and cannot be edited from the sign-in form.')
+    }
+
     setAuthError('')
     setLoading(true)
 
@@ -174,6 +182,18 @@ export function AuthProvider({ children }) {
   }
 
   async function signOut() {
+    if (isBrowserTestMode) {
+      applySignedOutState({
+        setUser,
+        setApprovedUser,
+        setIsAuthorized,
+        setAuthError,
+        setAuthInitialized,
+        setLoading,
+      })
+      return
+    }
+
     setLoading(true)
 
     try {
@@ -196,7 +216,7 @@ export function AuthProvider({ children }) {
     isAuthorized,
     loading,
     authInitialized,
-    isConfigured: isFirebaseConfigured,
+    isConfigured: isBrowserTestMode || isFirebaseConfigured,
     authError,
     signIn,
     signOut,

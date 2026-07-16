@@ -8,7 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint .",
-    "test": "node --test"
+    "test": "node --test",
+    "test:browser": "node scripts/check-browser-regression.mjs"
   },
   "dependencies": {
     "firebase": "^12.6.0",

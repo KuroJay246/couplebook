@@ -1,10 +1,18 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../../auth/useAuth.js'
+import { getBrowserTestCompatibilityState } from '../../lib/browserTestMode.js'
 import { CompatibilityContext } from './CompatibilityContext.js'
 import { loadCompatibilitySnapshot } from './compatibilityService.js'
 
+const EMPTY_COMPATIBILITY_STATE = Object.freeze({
+  state: 'empty',
+  snapshot: null,
+  error: '',
+})
+
 export function CompatibilityProvider({ children }) {
   const { approvedUser, isAuthorized } = useAuth()
+  const [browserTestCompatibility] = useState(() => getBrowserTestCompatibilityState())
   const [refreshKey, setRefreshKey] = useState(0)
   const [compatibilityState, setCompatibilityState] = useState({
     state: 'loading',
@@ -13,6 +21,8 @@ export function CompatibilityProvider({ children }) {
   })
 
   useEffect(() => {
+    if (browserTestCompatibility) return undefined
+
     if (!isAuthorized || !approvedUser?.username) {
       return undefined
     }
@@ -48,15 +58,14 @@ export function CompatibilityProvider({ children }) {
     return () => {
       active = false
     }
-  }, [approvedUser?.username, isAuthorized, refreshKey])
+  }, [approvedUser?.username, browserTestCompatibility, isAuthorized, refreshKey])
 
-  const resolvedState =
-    !isAuthorized || !approvedUser?.username
-      ? {
-          state: 'empty',
-          snapshot: null,
-          error: '',
-        }
+  const resolvedState = browserTestCompatibility
+    ? isAuthorized && approvedUser?.username
+      ? browserTestCompatibility
+      : EMPTY_COMPATIBILITY_STATE
+    : !isAuthorized || !approvedUser?.username
+      ? EMPTY_COMPATIBILITY_STATE
       : compatibilityState
 
   return (
@@ -64,6 +73,8 @@ export function CompatibilityProvider({ children }) {
       value={{
         ...resolvedState,
         refresh: () => {
+          if (browserTestCompatibility) return
+
           setCompatibilityState({
             state: 'loading',
             snapshot: resolvedState.snapshot,
