@@ -1,11 +1,11 @@
 import {
   LEGACY_LOCAL_STORAGE_SOURCE,
   createCompatibilityResult,
+  deepClone,
   isPlainObject,
   normalizeBoolean,
   normalizePersonKey,
   parseStoredJson,
-  pickObjectEntries,
   readStorageValue,
   resolveStorage,
   toTrimmedString,
@@ -19,8 +19,10 @@ const SIGNATURES_KEY = 'memorybook_contract_signatures'
  * @property {boolean} accepted
  * @property {string | null} timestamp
  * @property {string | null} version
- * @property {Array<{ accepted: boolean, timestamp: string | null, version: string | null, unknownFields: Record<string, unknown> }>} history
+ * @property {Array<{ accepted: boolean, timestamp: string | null, version: string | null, unknownFields: Record<string, unknown>, hasLegacyPayload: boolean, redactedFields: string[] }>} history
  * @property {Record<string, unknown>} unknownFields
+ * @property {boolean} hasLegacyPayload
+ * @property {string[]} redactedFields
  */
 
 /**
@@ -45,6 +47,97 @@ export const legacyContractAdapterBoundary = Object.freeze({
   futureOwner: 'R3 compatibility mapping before contract domain service extraction',
 })
 
+const REDACTED_VALUE = Symbol('contract-signature-redacted')
+const SENSITIVE_SIGNATURE_KEY_PATTERN = /(signature|dataurl|base64|stroke|canvas|image|binary|payload|svg|png|jpe?g|webp|gif|points|path)/i
+
+function getSafeRedactionLabel(keyPath) {
+  const [rootKey = 'signature'] = toTrimmedString(keyPath).split(/[.[\]]+/).filter(Boolean)
+  return /^payload$/i.test(rootKey) ? 'payload' : 'signature-data'
+}
+
+function isLikelyDataUrl(value) {
+  return /^data:/i.test(toTrimmedString(value))
+}
+
+function isLikelyBase64Payload(value) {
+  const normalized = toTrimmedString(value).replace(/\s+/g, '')
+  return normalized.length >= 80 && /^[A-Za-z0-9+/=]+$/.test(normalized)
+}
+
+function isSensitiveSignatureValue(keyPath, value) {
+  if (SENSITIVE_SIGNATURE_KEY_PATTERN.test(keyPath)) return true
+  if (typeof value === 'string' && (isLikelyDataUrl(value) || isLikelyBase64Payload(value))) {
+    return true
+  }
+  return false
+}
+
+function sanitizeSignatureUnknownValue(value, keyPath, redactedFields) {
+  if (Array.isArray(value)) {
+    const sanitizedItems = value
+      .map((entry, index) => sanitizeSignatureUnknownValue(entry, `${keyPath}[${index}]`, redactedFields))
+      .filter((entry) => entry !== REDACTED_VALUE)
+
+    if (sanitizedItems.length === 0 && SENSITIVE_SIGNATURE_KEY_PATTERN.test(keyPath)) {
+      return REDACTED_VALUE
+    }
+
+    return sanitizedItems.map((entry) => deepClone(entry))
+  }
+
+  if (isPlainObject(value)) {
+    const sanitizedEntries = Object.entries(value).flatMap(([entryKey, entryValue]) => {
+      const sanitizedValue = sanitizeSignatureUnknownValue(entryValue, `${keyPath}.${entryKey}`, redactedFields)
+      return sanitizedValue === REDACTED_VALUE ? [] : [[entryKey, sanitizedValue]]
+    })
+
+    if (sanitizedEntries.length === 0 && SENSITIVE_SIGNATURE_KEY_PATTERN.test(keyPath)) {
+      return REDACTED_VALUE
+    }
+
+    return Object.fromEntries(sanitizedEntries)
+  }
+
+  if (isSensitiveSignatureValue(keyPath, value)) {
+    redactedFields.push(getSafeRedactionLabel(keyPath))
+    return REDACTED_VALUE
+  }
+
+  return deepClone(value)
+}
+
+function sanitizeSignatureUnknownFields(rawSource, excludedKeys = []) {
+  const unknownFields = {}
+  const redactedFields = []
+
+  for (const [key, value] of Object.entries(rawSource || {})) {
+    if (excludedKeys.includes(key)) continue
+
+    const sanitizedValue = sanitizeSignatureUnknownValue(value, key, redactedFields)
+    if (sanitizedValue !== REDACTED_VALUE) {
+      unknownFields[key] = sanitizedValue
+    }
+  }
+
+  return {
+    unknownFields,
+    redactedFields: [...new Set(redactedFields)],
+  }
+}
+
+function normalizeSignatureHistoryEntry(rawEntry) {
+  const { unknownFields, redactedFields } = sanitizeSignatureUnknownFields(rawEntry, ['accepted', 'timestamp', 'version'])
+
+  return {
+    accepted: normalizeBoolean(rawEntry.accepted, false),
+    timestamp: toTrimmedString(rawEntry.timestamp) || null,
+    version: toTrimmedString(rawEntry.version) || null,
+    unknownFields,
+    hasLegacyPayload: redactedFields.length > 0,
+    redactedFields,
+  }
+}
+
 function normalizeSignatureRecord(rawSignature) {
   if (!isPlainObject(rawSignature)) {
     return {
@@ -53,26 +146,28 @@ function normalizeSignatureRecord(rawSignature) {
       version: null,
       history: [],
       unknownFields: {},
+      hasLegacyPayload: false,
+      redactedFields: [],
     }
   }
 
   const history = Array.isArray(rawSignature.history)
     ? rawSignature.history
         .filter((entry) => isPlainObject(entry))
-        .map((entry) => ({
-          accepted: normalizeBoolean(entry.accepted, false),
-          timestamp: toTrimmedString(entry.timestamp) || null,
-          version: toTrimmedString(entry.version) || null,
-          unknownFields: pickObjectEntries(entry, ['accepted', 'timestamp', 'version']),
-        }))
+        .map((entry) => normalizeSignatureHistoryEntry(entry))
     : []
+  const { unknownFields, redactedFields } = sanitizeSignatureUnknownFields(rawSignature, ['accepted', 'timestamp', 'version', 'history'])
+  const historyRedactions = history.flatMap((entry) => entry.redactedFields || [])
+  const allRedactedFields = [...new Set([...redactedFields, ...historyRedactions])]
 
   return {
     accepted: normalizeBoolean(rawSignature.accepted, false),
     timestamp: toTrimmedString(rawSignature.timestamp) || null,
     version: toTrimmedString(rawSignature.version) || null,
     history,
-    unknownFields: pickObjectEntries(rawSignature, ['accepted', 'timestamp', 'version', 'history']),
+    unknownFields,
+    hasLegacyPayload: allRedactedFields.length > 0,
+    redactedFields: allRedactedFields,
   }
 }
 

@@ -216,6 +216,43 @@ test('legacy contract adapter reads only contract state and ignores spoofed sess
   assert.deepEqual(storage.snapshot(), before)
 })
 
+test('legacy contract adapter redacts signature payload material before it can reach the display layer', async () => {
+  const result = await readLegacyContractState({
+    storage: createStorage({
+      memorybook_contract_signatures: JSON.stringify({
+        Jaylan: {
+          accepted: true,
+          timestamp: '2026-01-01T00:00:00.000Z',
+          version: '3.0',
+          dataUrl: 'data:image/png;base64,AAAAABBBBBCCCCCDDDDDEEEEEFFFFF',
+          payload: {
+            strokeData: ['10,10', '11,11'],
+          },
+          history: [
+            {
+              accepted: true,
+              timestamp: '2026-01-01T00:00:00.000Z',
+              version: '3.0',
+              base64: 'QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVo9PT09PT09PT09PT09PT09PT09PT09',
+            },
+          ],
+        },
+      }),
+    }).storage,
+    username: 'Jaylan',
+  })
+
+  assert.equal(result.status, 'ready')
+  assert.equal(result.data.activeSignature.hasLegacyPayload, true)
+  assert.deepEqual(result.data.activeSignature.unknownFields, {})
+  assert.ok(result.data.activeSignature.redactedFields.includes('signature-data'))
+  assert.ok(result.data.activeSignature.redactedFields.includes('payload'))
+  assert.equal(result.data.activeSignature.history[0].hasLegacyPayload, true)
+
+  const serialized = JSON.stringify(result)
+  assert.doesNotMatch(serialized, /data:image|base64|strokeData/i)
+})
+
 test('legacy contract adapter handles missing and malformed signature data safely', async () => {
   const emptyResult = await readLegacyContractState({
     storage: createStorage().storage,
