@@ -410,6 +410,7 @@ These files now:
 - use dependency-injected browser storage or fetch access
 - normalize malformed values safely
 - return explicit `ready` / `empty` / `unavailable` / `invalid` states
+- redact raw legacy contract-signature payload material into safe status fields before it reaches the view layer
 - stay read-only
 - never grant auth
 - never write back to localStorage or Firestore

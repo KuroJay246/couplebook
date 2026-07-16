@@ -11,7 +11,7 @@ The modernization track adds a second validation lane inside `app-v2/`:
 
 Those commands validate the isolated React shell without changing the current static baseline.
 
-As of 2026-07-15, the app-v2 lane now also covers:
+As of 2026-07-16, the app-v2 lane now also covers:
 
 - legacy compatibility adapters
 - production-disabled memory bridge gating
@@ -28,11 +28,15 @@ As of 2026-07-15, the app-v2 lane now also covers:
 - Favorites read-model coverage
 - Favorites route source coverage
 - exact shared-overlap guardrails for Favorites
+- Contract read-model coverage
+- Contract route source coverage
+- signature-payload redaction guardrails for Contract
 - browser-test-mode fixture normalization
 - signed-out protected-route browser smoke
 - spoofed-localStorage browser smoke
 - AppShell reload and utility-navigation browser guardrails
 - browser console/network/privacy guardrails for app-v2
+- Contract browser-content and mobile-overflow guardrails
 
 ## Scripts
 
@@ -251,6 +255,37 @@ Still manual:
 - no static `/pages/favorites.html` or `js/favorites.js` runtime dependency was observed
 - no private-media requests or production writes were observed during the validation pass
 
+## 2026-07-16 app-v2 Contract Validation
+
+- the Contract batch passed:
+  - `npm run lint`
+  - `npm test`
+  - `npm run build`
+  - `npm run test:browser`
+  - root `npm run check:all`
+- the final app-v2 suite now passes with `78` tests
+- automated app-v2 coverage now also verifies:
+  - Contract read-model ready, partial, empty, unavailable, and invalid states
+  - safe acceptance/signature summaries when protected wording is unavailable
+  - legacy signature-payload redaction before data reaches the display layer
+  - Contract route source coverage and the absence of sign/edit/export controls
+  - browser-lane signed-out protection for `/contract`
+  - browser-lane spoofed-localStorage blocking for `/dashboard` and `/contract`
+  - authenticated Contract heading, unavailable-wording state, safe signature-status text, and Profile/Favorites links
+  - no raw `data:image`, `base64`, or `strokeData` text on the migrated Contract route
+  - mobile secondary-navigation placement and no horizontal overflow on Contract
+- manual approved Jaylan browser validation also confirmed:
+  - `/dashboard`, `/profile`, `/favorites`, `/settings`, and `/contract` stayed stable
+  - direct approved access to `/birthday`, `/valentine`, and `/confession` remained protected and readable
+  - sign-out returned the shell to `/login`
+  - spoofed legacy localStorage keys still could not restore access
+  - the observed auth lookup remained targeted to `users/{uid}` only
+- the browser regression lane remains local-only and mock-auth based; it does not replace the real Jaylan smoke, the partner smoke, or future pre-cutover manual verification
+- smoke status remains honest:
+  - Jaylan: `PASS`
+  - partner: `NOT TESTED`
+  - overall: `HOLD`
+
 ## 2026-07-15 app-v2 Settings And Browser Regression Validation
 
 - the Settings and browser-guardrail batch passed:
@@ -300,4 +335,4 @@ Still manual:
 - add a browser-console/media-request smoke that fails on unexpected 404s for the current clean local baseline
 - add an approved-user credential-injected smoke path for the retired public special-page placeholders only when it can run without storing secrets in repo files
 - add the partner-account React browser smoke when a safe live session is genuinely available
-- expand the local browser regression lane to the Contract page once the Contract migration is the active batch
+- prepare the next local browser regression expansion for Timeline only after the Timeline migration batch becomes active

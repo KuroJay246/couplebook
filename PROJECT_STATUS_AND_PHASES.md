@@ -1,6 +1,6 @@
 # Project Status And Phases
 
-Date: 2026-07-15
+Date: 2026-07-16
 
 ## Current Repo Status
 
@@ -14,6 +14,39 @@ Date: 2026-07-15
 | Runtime publish root | `public/` only |
 | Primary local state | `localStorage` plus `core/memories.json` |
 | Cloud sync boundary | `core/firestoreSync.js` |
+
+## 2026-07-16 Contract Migration And Guardrail Execution
+
+- the controlled Contract batch resumed from the pushed Settings/browser baseline commit `d7c4386`
+- the legacy contract inputs were verified before route work:
+  - acceptance state remains `memorybook_contract_accepted_{username}`
+  - signature state remains `memorybook_contract_signatures`
+  - the old static agreement wording stays in the rollback app and is explicitly not copied into app-v2
+- the read-only Contract compatibility layer landed first in `d5c872a`
+- `legacyContractAdapter.js` now redacts raw signature payload material into safe status fields before the routed UI can read it
+- Contract is now the fifth real app-v2 page, and it now renders:
+  - a shared-space opening
+  - an honest agreement-document unavailable state when protected wording is not available on this origin
+  - acceptance summary cards
+  - signature status cards with raw payloads hidden
+  - preserved history
+  - related links back to Profile and Favorites
+  - privacy and source-status reporting
+- signing, editing, exporting, localStorage-auth restoration, Firestore writes, and rollback-page dependencies remain intentionally absent
+- focused browser guardrails now also cover Contract:
+  - signed-out protection for `/contract`
+  - spoofed-localStorage blocking for both `/dashboard` and `/contract`
+  - authenticated Contract assertions for the migrated heading, safe signature-state text, and Profile/Favorites links
+  - forbidden raw signature/action-text detection
+  - mobile secondary-navigation placement and no-overflow coverage
+- approved Jaylan browser validation during the Contract batch confirmed:
+  - `/dashboard`, `/profile`, `/favorites`, `/settings`, `/contract`, `/birthday`, `/valentine`, and `/confession` stayed protected for the approved session
+  - reload restored the approved session with no redirect loop, no loading stall, and no `permission-denied` state
+  - sign-out returned the shell to `/login`
+  - spoofed legacy session values still could not restore access
+  - observed authorization remained targeted to `users/{uid}` only
+- validation completed cleanly with app-v2 `npm run lint`, `npm test`, `npm run build`, `npm run test:browser`, and root `npm run check:all`
+- no deploy, merge, rules change, production write, private-media copy, credential commit, or Gather Savor modification occurred
 
 ## 2026-07-15 Settings And Browser Regression Execution
 
@@ -450,9 +483,39 @@ Jaylan was successfully tested in a real browser session after correcting the li
 - non-live sync modeling
 - shared shell refinement inside app-v2
 - service-layer planning
-- after Dashboard, Profile, Favorites, and Settings, continue only the read-only Contract migration without widening auth, sync, or private-data scope
+- after Dashboard, Profile, Favorites, Settings, and Contract, continue only Timeline planning and read-model design without widening auth, sync, or private-data scope
 
 ## Recent Phase Closeout Summaries
+
+### 2026-07-16 Contract Migration Summary
+
+- starting commit: `d7c4386`
+- work completed:
+  - verified the legacy acceptance/signature inputs before page work
+  - added the Contract compatibility model and safe signature-payload redaction
+  - migrated Contract as the fifth real app-v2 page
+  - extended the local browser regression lane for Contract coverage
+- browser verification completed in the approved Jaylan session for:
+  - `/dashboard`
+  - `/profile`
+  - `/favorites`
+  - `/settings`
+  - `/contract`
+  - direct protected navigation to `/birthday`, `/valentine`, and `/confession`
+  - sign-out and spoofed-localStorage recheck
+- checks run in this run:
+  - `app-v2 npm run lint`
+  - `app-v2 npm test`
+  - `app-v2 npm run build`
+  - `app-v2 npm run test:browser`
+  - root `npm run check:all`
+- commits completed in this run:
+  - `Add Contract compatibility read model`
+  - `Migrate Contract into React app`
+  - `Extend browser guardrails for Contract`
+  - `Document Contract migration checkpoint`
+- smoke status: approved Jaylan routed-browser smoke remains `PASS`, partner remains `NOT TESTED`, and the overall approved-account gate remains honestly `HOLD`
+- next recommended track action: begin Timeline planning and read-model design only; do not start Timeline UI, Gallery work, or sync replacement yet
 
 ### 2026-07-15 Settings Migration And Browser Guardrails Summary
 

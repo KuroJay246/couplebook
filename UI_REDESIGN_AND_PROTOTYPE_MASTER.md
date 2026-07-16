@@ -341,10 +341,11 @@ Settings must remain intentionally secondary, plain-language, and free of unrela
 3. establish the Settings utility structure and finish the read-only Settings migration
 4. migrate Profile as the next real read-only page
 5. migrate Favorites next
-6. migrate Contract next before reopening Timeline and Gallery scope
-7. return to Timeline and Gallery only after the shell and shared-space patterns are proven
-8. reintroduce special-moment page content later through the protected routed family
-9. keep deployment and Hosting cutover blocked until the broader migration gates are cleared
+6. Contract is now the fifth real read-only page in app-v2
+7. begin Timeline planning and read-model design only after the shell and shared-space patterns are proven
+8. return to Gallery only after the Timeline plan is settled and the broader migration gates are still clear
+9. reintroduce special-moment page content later through the protected routed family
+10. keep deployment and Hosting cutover blocked until the broader migration gates are cleared
 
 ## 2026-07-13 Reference Review
 
@@ -640,6 +641,61 @@ Safety preserved:
 - no Firestore write path was introduced
 - no broad Firestore `users` query was introduced
 - no deploy, merge, rules change, private bundle, private-media copy, or Gather Savor modification occurred
+
+## 2026-07-16 app-v2 Contract Migration Checkpoint
+
+Contract is now the fifth real app-v2 page, and it now behaves like a formal shared-space document instead of a placeholder.
+
+Read-model boundaries now fixed:
+
+- approved identity still comes only from Firebase Auth plus the approved-user record
+- browser storage remains explicitly non-authenticating
+- legacy agreement wording from the rollback HTML is not copied into app-v2
+- acceptance and signature status now stay readable even when protected agreement wording is unavailable on this origin
+- raw signature payloads are redacted into safe status labels before they can reach the page
+- signing, editing, accepting, exporting, and reset controls remain deferred
+
+Page composition now:
+
+- shared-space hero with quiet Profile and Favorites actions
+- a formal document panel with an honest unavailable-wording state when protected text is not ready
+- acceptance summary cards
+- signature status cards with raw payloads hidden
+- preserved history
+- lower-emphasis links back to Profile and Favorites
+- privacy and source-status sections kept below the main document
+
+Browser result:
+
+- the approved Jaylan session stayed stable on `/dashboard`, `/profile`, `/favorites`, `/settings`, and `/contract`
+- direct protected navigation to `/birthday`, `/valentine`, and `/confession` remained available for the approved session
+- reload restored the approved session with no redirect loop, no loading stall, and no `permission-denied` state
+- sign-out still returned the shell to `/login`
+- spoofed `memorybook_active_*` values still could not restore access
+- the observed auth lookup remained targeted to `users/{uid}` only
+- no static `/pages/contract.html` dependency or raw signature payload text was exposed inside the migrated route
+- desktop, tablet, and `390x844` mobile widths stayed free of horizontal overflow
+
+Browser regression automation now extended:
+
+- `npm run test:browser` now rechecks signed-out protection for `/contract`
+- spoofed storage blocking now rechecks both `/dashboard` and `/contract`
+- authenticated fixture coverage now checks:
+  - the `Our agreement` heading
+  - the honest unavailable-wording state
+  - safe signature-status text
+  - Profile and Favorites links
+  - the absence of sign/edit/export controls
+  - the absence of raw `data:image`, `base64`, and `strokeData` text
+- mobile coverage now confirms Contract remains inside the secondary navigation and the migrated Contract layout does not overflow
+
+Safety preserved:
+
+- Jaylan approved routed-browser smoke remains `PASS`
+- partner approved routed-browser smoke remains `NOT TESTED`
+- overall approved-account gate remains `HOLD`
+- no deploy, merge, rules change, production write, private-media copy, or credential commit occurred
+- the next recommended page does not begin yet: only Timeline planning and read-model design should continue next
 
 ## 2026-07-15 app-v2 Settings Migration And Browser Regression Checkpoint
 
