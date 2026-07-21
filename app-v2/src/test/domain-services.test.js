@@ -27,6 +27,8 @@ test('user service keeps approved-user reads targeted to users uid docs only', a
       return {
         exists: () => true,
         data: () => ({
+          approved: true,
+          accessStatus: 'active',
           username: 'Jaylan',
           theme: 'sunset',
           profile: { name: 'Jaylan' },
@@ -41,6 +43,8 @@ test('user service keeps approved-user reads targeted to users uid docs only', a
   assert.deepEqual(docCalls, ['uid-321'])
   assert.deepEqual(getCalls, ['users/uid-321'])
   assert.equal(approvedUser.username, 'Jaylan')
+  assert.equal(approvedUser.approved, true)
+  assert.equal(approvedUser.accessStatus, 'active')
   assert.equal(approvedUser.theme, 'sunset')
   assert.equal(approvedUser.contractAccepted, true)
 })

@@ -15,7 +15,8 @@
     "check:sync-model": "node scripts/qa/check-sync-model.js",
     "check:prototype": "node scripts/qa/check-prototype.js",
     "check:docs": "node scripts/qa/check-docs.js",
-    "check:all": "node scripts/qa/check-all.js"
+    "check:all": "node scripts/qa/check-all.js",
+    "release:preflight": "set EXPECTED_FIREBASE_PROJECT_ID=couplebook-97830&& node scripts/assert-firebase-project.mjs --project couplebook-97830"
   },
   "keywords": [
     "relationship",

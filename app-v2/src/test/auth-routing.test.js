@@ -115,7 +115,7 @@ test('authorization uses a targeted users uid lookup only', async () => {
     {
       readUserProfileByUid: async (uid) => {
         calls.push(uid)
-        return { uid, username: 'Jaylan', profileName: 'Jaylan' }
+        return { uid, approved: true, accessStatus: 'active', username: 'Jaylan', profileName: 'Jaylan' }
       },
     },
   )
@@ -124,6 +124,23 @@ test('authorization uses a targeted users uid lookup only', async () => {
   assert.deepEqual(calls, ['uid-123'])
   assert.equal(resolution.status, 'authorized')
   assert.equal(resolution.approvedUser.displayName, 'Jaylan')
+})
+
+test('pending approved accounts receive the safe unopened-book status', async () => {
+  const resolution = await resolveApprovedUser(
+    { uid: 'pending-uid', email: 'pending@example.com' },
+    {
+      readUserProfileByUid: async (uid) => ({
+        uid,
+        approved: true,
+        accessStatus: 'pending',
+        coupleId: 'couple-alpha',
+      }),
+    },
+  )
+
+  assert.equal(resolution.status, 'pending')
+  assert.equal(resolution.approvedUser, null)
 })
 
 test('local session-like values do not unlock protected routes independently', () => {

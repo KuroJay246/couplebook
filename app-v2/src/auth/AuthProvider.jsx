@@ -6,6 +6,14 @@ import { ensureAuthPersistence, observeAuthState, signInWithEmail, signOutCurren
 import { resolveApprovedUser } from '../services/authorizationService'
 import { AuthContext } from './AuthContext'
 
+const UNAPPROVED_ACCOUNT_MESSAGE = 'This account is not approved for Couple Book.'
+const PENDING_ACCOUNT_MESSAGE = 'This private book has not been opened for this account yet.'
+
+function getAuthorizationMessage(status) {
+  if (status === 'pending') return PENDING_ACCOUNT_MESSAGE
+  return UNAPPROVED_ACCOUNT_MESSAGE
+}
+
 function applySignedOutState(setters) {
   startTransition(() => {
     setters.setUser(null)
@@ -67,7 +75,7 @@ export function AuthProvider({ children }) {
           } else {
             setApprovedUser(null)
             setIsAuthorized(false)
-            setAuthError('This account is not approved for Couple Book.')
+            setAuthError(getAuthorizationMessage(resolution.status))
           }
 
           setAuthInitialized(true)
@@ -160,7 +168,7 @@ export function AuthProvider({ children }) {
         } else {
           setApprovedUser(null)
           setIsAuthorized(false)
-          setAuthError('This account is not approved for Couple Book.')
+          setAuthError(getAuthorizationMessage(resolution.status))
         }
 
         setAuthInitialized(true)

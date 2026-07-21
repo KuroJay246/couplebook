@@ -37,6 +37,7 @@ const hasEmulator = Boolean(process.env.FIRESTORE_EMULATOR_HOST)
 const ids = Object.freeze({
   memberOne: 'member_one',
   memberTwo: 'member_two',
+  pendingPartner: 'pending_partner',
   inactive: 'inactive_member',
   outsider: 'outsider_user',
   couple: 'couple_alpha',
@@ -68,17 +69,19 @@ test.beforeEach(async () => {
   await env.clearFirestore()
   await env.withSecurityRulesDisabled(async (context) => {
     const db = context.firestore()
-    await setDoc(doc(db, 'users', ids.memberOne), { approved: true, coupleId: ids.couple, displayName: 'Member One', schemaVersion: 1 })
-    await setDoc(doc(db, 'users', ids.memberTwo), { approved: true, coupleId: ids.couple, displayName: 'Member Two', schemaVersion: 1 })
-    await setDoc(doc(db, 'users', ids.inactive), { approved: true, coupleId: ids.couple, displayName: 'Inactive', schemaVersion: 1 })
-    await setDoc(doc(db, 'users', ids.outsider), { approved: false, coupleId: ids.couple, displayName: 'Outsider', schemaVersion: 1 })
-    await setDoc(doc(db, 'users', ids.otherMember), { approved: true, coupleId: ids.otherCouple, displayName: 'Other', schemaVersion: 1 })
+    await setDoc(doc(db, 'users', ids.memberOne), { approved: true, accessStatus: 'active', coupleId: ids.couple, displayName: 'Member One', schemaVersion: 1 })
+    await setDoc(doc(db, 'users', ids.memberTwo), { approved: true, accessStatus: 'active', coupleId: ids.couple, displayName: 'Member Two', schemaVersion: 1 })
+    await setDoc(doc(db, 'users', ids.pendingPartner), { approved: true, accessStatus: 'pending', coupleId: ids.couple, displayName: 'Pending Partner', schemaVersion: 1 })
+    await setDoc(doc(db, 'users', ids.inactive), { approved: true, accessStatus: 'active', coupleId: ids.couple, displayName: 'Inactive', schemaVersion: 1 })
+    await setDoc(doc(db, 'users', ids.outsider), { approved: false, accessStatus: 'active', coupleId: ids.couple, displayName: 'Outsider', schemaVersion: 1 })
+    await setDoc(doc(db, 'users', ids.otherMember), { approved: true, accessStatus: 'active', coupleId: ids.otherCouple, displayName: 'Other', schemaVersion: 1 })
 
     await setDoc(doc(db, 'couples', ids.couple), { title: 'Fictional Couple', migrationVersion: 1, schemaVersion: 1 })
     await setDoc(doc(db, 'couples', ids.otherCouple), { title: 'Other Couple', migrationVersion: 1, schemaVersion: 1 })
 
     await setDoc(doc(db, 'couples', ids.couple, 'members', ids.memberOne), { active: true, role: 'member', schemaVersion: 1 })
     await setDoc(doc(db, 'couples', ids.couple, 'members', ids.memberTwo), { active: true, role: 'member', schemaVersion: 1 })
+    await setDoc(doc(db, 'couples', ids.couple, 'members', ids.pendingPartner), { active: true, role: 'member', schemaVersion: 1 })
     await setDoc(doc(db, 'couples', ids.couple, 'members', ids.inactive), { active: false, role: 'member', schemaVersion: 1 })
     await setDoc(doc(db, 'couples', ids.otherCouple, 'members', ids.otherMember), { active: true, role: 'member', schemaVersion: 1 })
 
@@ -162,8 +165,8 @@ test('second active member receives same couple access but not private settings 
   await assertFails(getDocs(collection(db, 'couples', ids.otherCouple, 'profiles')))
 })
 
-test('unauthorized, inactive, and cross-couple users fail closed', { skip: !hasEmulator }, async () => {
-  for (const uid of [ids.outsider, ids.inactive, ids.otherMember]) {
+test('pending, unauthorized, inactive, and cross-couple users fail closed', { skip: !hasEmulator }, async () => {
+  for (const uid of [ids.pendingPartner, ids.outsider, ids.inactive, ids.otherMember]) {
     const db = authed(uid)
     await assertFails(getDoc(doc(db, 'couples', ids.couple)))
     await assertFails(getDoc(doc(db, 'couples', ids.couple, 'members', uid)))
@@ -346,4 +349,5 @@ test('rules source has no public reads, hardcoded real UIDs, email authority, or
   assert.doesNotMatch(rules, /allow\s+(create|update|delete|write)\s*:\s*if\s+true/)
   assert.doesNotMatch(rules, /request\.auth\.token\.email/)
   assert.doesNotMatch(rules, /oauPl1OU|IvfHjC5/)
+  assert.match(rules, /accessStatus\s*==\s*'active'/)
 })

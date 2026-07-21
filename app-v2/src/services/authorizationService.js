@@ -22,6 +22,10 @@ export async function resolveApprovedUser(firebaseUser, options = {}) {
     return { status: 'unauthorized', approvedUser: null }
   }
 
+  if (approvedUser.approved !== true || approvedUser.accessStatus !== 'active') {
+    return { status: 'pending', approvedUser: null }
+  }
+
   return {
     status: 'authorized',
     approvedUser: {

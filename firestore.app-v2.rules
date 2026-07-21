@@ -7,7 +7,8 @@ service cloud.firestore {
     // ===============================================================
     //
     // users/{uid}: approved-user authorization document. Client read is owner
-    // only; client writes are denied.
+    // only; client writes are denied. Production access also requires
+    // accessStatus == "active"; pending accounts are retained but denied.
     //
     // couples/{coupleId}: shared couple metadata. Client read is active-member
     // only; client writes are denied.
@@ -80,6 +81,7 @@ service cloud.firestore {
       return isSignedIn()
         && exists(userDocPath(request.auth.uid))
         && get(userDocPath(request.auth.uid)).data.approved == true
+        && get(userDocPath(request.auth.uid)).data.accessStatus == 'active'
         && get(userDocPath(request.auth.uid)).data.coupleId == coupleId;
     }
 
