@@ -26,12 +26,13 @@ test('migration package validates counts and excludes raw private paths', () => 
   assert.doesNotMatch(serialized, /[A-Z]:\\|file:\/\/|\\Users\\|\/Users\/|OUR MEMORIES/i)
 })
 
-test('migration planner treats existing differing documents as conflicts', async () => {
+test('migration planner treats existing non-user differing documents as conflicts', async () => {
   const validPackage = createMigrationPackage({ generatedAt: '2026-07-21T00:00:00.000Z' })
   const db = {
-    doc() {
+    doc(path) {
       return {
         async get() {
+          if (path.startsWith('users/')) return { exists: true, data: () => ({ username: 'Existing account' }) }
           return { exists: true, data: () => ({ approved: false }) }
         },
       }
@@ -39,6 +40,7 @@ test('migration planner treats existing differing documents as conflicts', async
   }
   const plan = await planMigrationOperations(db, validPackage)
 
-  assert.equal(plan.summary.conflict, validPackage.documents.length)
+  assert.equal(plan.summary.mergeUserAccessFields, 2)
+  assert.equal(plan.summary.conflict, validPackage.documents.length - 2)
   assert.equal(plan.ok, false)
 })

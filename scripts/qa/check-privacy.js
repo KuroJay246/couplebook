@@ -10,15 +10,15 @@ const SPOOFED_SESSION = {
 
 const SPECIAL_ROUTE_EXPECTATIONS = [
   {
-    route: '/pages/confession/index.html',
+    route: '/confession',
     forbiddenText: ['For Mara', 'Can I be your boyfriend?', 'Omia']
   },
   {
-    route: '/pages/valentine/index.html',
+    route: '/valentine',
     forbiddenText: ['Will you be my Valentine?', 'No is not an option ml', 'Omia']
   },
   {
-    route: '/pages/omnia-happy-birthday.html',
+    route: '/birthday',
     forbiddenText: ['Happy Birthday Omia', 'With all my heart', 'Omia']
   }
 ];
@@ -34,7 +34,7 @@ async function openWithStorage(browser, route, storageState = null) {
   const page = await context.newPage();
 
   if (storageState) {
-    await page.goto(`${BASE_URL}/pages/login.html`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE_URL}/login`, { waitUntil: 'networkidle' });
     await page.evaluate((entries) => {
       localStorage.clear();
       for (const [key, value] of Object.entries(entries)) {
@@ -48,11 +48,11 @@ async function openWithStorage(browser, route, storageState = null) {
 }
 
 async function assertSignedOutContractRedirect(browser) {
-  const { context, page } = await openWithStorage(browser, '/pages/contract.html');
+  const { context, page } = await openWithStorage(browser, '/contract');
   try {
-    expect(page.url().endsWith('/pages/login.html'), 'Signed-out contract access should redirect to login.');
+    expect(page.url().endsWith('/login'), 'Signed-out contract access should redirect to login.');
     const bodyText = await page.locator('body').innerText();
-    expect(bodyText.includes('Private Couple Vault'), 'Signed-out contract access should land on the login screen.');
+    expect(bodyText.includes('Sign in'), 'Signed-out contract access should land on the login screen.');
     log('Privacy OK: signed-out contract access redirects to login.');
   } finally {
     await context.close();
@@ -60,9 +60,9 @@ async function assertSignedOutContractRedirect(browser) {
 }
 
 async function assertSpoofedContractRedirect(browser) {
-  const { context, page } = await openWithStorage(browser, '/pages/contract.html', SPOOFED_SESSION);
+  const { context, page } = await openWithStorage(browser, '/contract', SPOOFED_SESSION);
   try {
-    expect(page.url().endsWith('/pages/login.html'), 'Spoofed localStorage must not unlock contract access.');
+    expect(page.url().endsWith('/login'), 'Spoofed localStorage must not unlock contract access.');
     const bodyText = await page.locator('body').innerText();
     expect(!bodyText.includes('Initialize MemoryBook'), 'Contract wizard should not render for spoofed localStorage.');
     log('Privacy OK: spoofed localStorage does not unlock the contract.');
@@ -77,8 +77,8 @@ async function assertSpecialRouteBlocked(browser, route, forbiddenText, storageS
     const title = await page.title();
     const bodyText = await page.locator('body').innerText();
 
-    expect(title === 'Private Moment — MemoryBook', `${route} should expose only the neutral private-moment placeholder.`);
-    expect(bodyText.includes('Private Moment Locked'), `${route} should fail closed for signed-out access.`);
+    expect(title.includes('Couple Book') || title.includes('Vite'), `${route} should keep the app shell title.`);
+    expect(page.url().endsWith('/login'), `${route} should fail closed for signed-out access.`);
 
     for (const text of forbiddenText) {
       expect(!bodyText.includes(text), `${route} leaked retired sensitive text: ${text}`);
@@ -91,12 +91,12 @@ async function assertSpecialRouteBlocked(browser, route, forbiddenText, storageS
 async function assertLegacyWrapperRedirect(browser) {
   const { context, page } = await openWithStorage(
     browser,
-    '/pages/legacy.html?module=confession/index.html',
+    '/confession',
     SPOOFED_SESSION
   );
   try {
-    expect(page.url().endsWith('/pages/login.html'), 'Spoofed localStorage must not unlock the legacy wrapper.');
-    log('Privacy OK: spoofed localStorage does not unlock the legacy wrapper.');
+    expect(page.url().endsWith('/login'), 'Spoofed localStorage must not unlock protected routes.');
+    log('Privacy OK: spoofed localStorage does not unlock protected routes.');
   } finally {
     await context.close();
   }
@@ -115,12 +115,12 @@ async function maybeCheckAuthorizedPath(browser) {
   const page = await context.newPage();
 
   try {
-    await page.goto(`${BASE_URL}/pages/login.html`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE_URL}/login`, { waitUntil: 'networkidle' });
     await page.getByLabel('Account Email').fill(email);
     await page.getByLabel('Password').fill(password);
     await page.getByRole('button', { name: 'Sign In' }).click();
     await page.waitForLoadState('networkidle');
-    await page.goto(`${BASE_URL}/pages/confession/index.html`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE_URL}/confession`, { waitUntil: 'networkidle' });
 
     const bodyText = await page.locator('body').innerText();
     expect(bodyText.includes('Private Moment Temporarily Unavailable'), 'Authorized path should show the protected placeholder state.');

@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import process from 'node:process'
 import { initializeAdminFirestore } from './lib/admin-firestore.mjs'
 import { assertConfirmation, assertProjectArg, getArgValue, hasFlag } from './lib/project-guard.mjs'
+import { sha256, withoutKeys } from './lib/checksum.mjs'
 
 /* global console */
 
@@ -12,6 +13,9 @@ try {
   if (!backupPath || !fs.existsSync(backupPath)) throw new Error('Rollback requires --backup pointing to a targeted backup file.')
   const backup = JSON.parse(fs.readFileSync(backupPath, 'utf8'))
   if (backup?.metadata?.projectId !== projectId) throw new Error('Backup project does not match rollback target.')
+  const expectedChecksum = backup?.metadata?.checksum
+  const actualChecksum = sha256(withoutKeys(backup, new Set(['checksum'])))
+  if (!expectedChecksum || actualChecksum !== expectedChecksum) throw new Error('Backup checksum verification failed.')
   const restoreCount = backup.documents.filter((document) => document.exists).length
   const missingCount = backup.documents.filter((document) => !document.exists).length
   if (!hasFlag(args, '--apply')) {

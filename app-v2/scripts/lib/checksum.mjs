@@ -22,3 +22,14 @@ export function sha256(value) {
 export function documentChecksum(data) {
   return sha256(data)
 }
+
+export function withoutKeys(value, keysToRemove) {
+  if (Array.isArray(value)) return value.map((entry) => withoutKeys(entry, keysToRemove))
+  if (!value || typeof value !== 'object') return value
+
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter(([key]) => !keysToRemove.has(key))
+      .map(([key, entry]) => [key, withoutKeys(entry, keysToRemove)]),
+  )
+}

@@ -25,7 +25,7 @@ export async function initializeAdminFirestore(args = process.argv.slice(2)) {
   )
   const db = getFirestore(app)
 
-  await db.doc('__migrationCredentialChecks__/project').get()
+  await db.doc('_migrationCredentialChecks/project').get()
 
   return { db, projectId }
 }

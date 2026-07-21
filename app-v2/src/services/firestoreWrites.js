@@ -1,5 +1,5 @@
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore'
-import { isFirestoreEmulatorWriteMode } from '../data/writeMode.js'
+import { isFirestoreWriteMode } from '../data/writeMode.js'
 import { db } from '../lib/firebaseClient.js'
 import {
   currentContractPath,
@@ -58,8 +58,8 @@ function resolveCoupleId(approvedUser) {
 
 async function assertWriteContext({ approvedUser, createDoc = doc, env, firestore = db, getDocument = getDoc, user }) {
   if (!firestore) throw new Error('Firestore is not configured.')
-  if (!isFirestoreEmulatorWriteMode(env)) {
-    throw new Error('Firestore writes are disabled outside firestore-emulator-write mode.')
+  if (!isFirestoreWriteMode(env)) {
+    throw new Error('Firestore writes are disabled outside approved Firestore write mode.')
   }
   if (!user?.uid || !approvedUser?.uid || user.uid !== approvedUser.uid) {
     throw new Error('An authenticated approved user is required before writing.')

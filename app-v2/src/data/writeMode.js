@@ -4,6 +4,7 @@ export const WRITE_MODES = Object.freeze({
   legacyRead: 'legacy-read',
   firestoreRead: 'firestore-read',
   firestoreEmulatorWrite: 'firestore-emulator-write',
+  firestoreProductionWrite: 'firestore-production-write',
   productionWriteDisabled: 'production-write-disabled',
 })
 
@@ -18,4 +19,12 @@ export function resolveWriteMode(env = readRuntimeEnv()) {
 
 export function isFirestoreEmulatorWriteMode(env = readRuntimeEnv()) {
   return resolveWriteMode(env) === WRITE_MODES.firestoreEmulatorWrite && getRuntimeMode(env) !== 'production'
+}
+
+export function isFirestoreProductionWriteMode(env = readRuntimeEnv()) {
+  return resolveWriteMode(env) === WRITE_MODES.firestoreProductionWrite && getRuntimeMode(env) === 'production'
+}
+
+export function isFirestoreWriteMode(env = readRuntimeEnv()) {
+  return isFirestoreEmulatorWriteMode(env) || isFirestoreProductionWriteMode(env)
 }

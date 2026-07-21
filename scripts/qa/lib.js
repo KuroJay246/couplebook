@@ -7,17 +7,17 @@ const REPO_ROOT = path.resolve(__dirname, '..', '..');
 const SERVER_URL = 'http://127.0.0.1:3000';
 const DEFAULT_ROUTES = [
   '/',
-  '/pages/login.html',
-  '/pages/dashboard.html',
-  '/pages/timeline.html',
-  '/pages/media.html',
-  '/pages/profile.html',
-  '/pages/favorites.html',
-  '/pages/settings.html',
-  '/pages/legacy.html?module=confession/index.html',
-  '/pages/confession/index.html',
-  '/pages/valentine/index.html',
-  '/pages/omnia-happy-birthday.html'
+  '/login',
+  '/dashboard',
+  '/timeline',
+  '/gallery',
+  '/profile',
+  '/favorites',
+  '/settings',
+  '/contract',
+  '/birthday',
+  '/valentine',
+  '/confession'
 ];
 
 function log(message) {
@@ -89,11 +89,17 @@ async function withServer(callback) {
     return callback();
   }
 
-  log('Starting local dev server for route checks');
-  const child = spawn(process.execPath, ['server.js'], {
-    cwd: REPO_ROOT,
+  log('Starting app-v2 preview server for route checks');
+  const child = spawn(
+    process.platform === 'win32' ? 'cmd.exe' : 'npx',
+    process.platform === 'win32'
+      ? ['/d', '/s', '/c', 'npx vite preview --host 127.0.0.1 --port 3000']
+      : ['vite', 'preview', '--host', '127.0.0.1', '--port', '3000'],
+    {
+    cwd: path.join(REPO_ROOT, 'app-v2'),
     stdio: 'ignore'
-  });
+    }
+  );
 
   try {
     const ready = await waitForServer();

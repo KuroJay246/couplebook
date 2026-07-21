@@ -47,6 +47,17 @@ test('write services reject production-disabled mode before writing', async () =
   assert.equal(firestore.writes.length, 0)
 })
 
+test('write services allow explicit production Firestore write mode with active membership', async () => {
+  const firestore = createFirestoreStub()
+  await saveOwnProfile(
+    { name: 'Member One', bio: 'Production-safe bio' },
+    { ...context, env: { MODE: 'production', VITE_WRITE_MODE: 'firestore-production-write' }, firestore, ...firestore },
+  )
+
+  assert.equal(firestore.writes.length, 1)
+  assert.equal(firestore.writes[0].path, 'couples/couple_alpha/profiles/member_one')
+})
+
 test('write services reject inactive couple membership before writing', async () => {
   const firestore = createFirestoreStub({ active: false })
   await assert.rejects(saveOwnFavorites({ food: ['cake'] }, { ...context, firestore, ...firestore }), /membership/)

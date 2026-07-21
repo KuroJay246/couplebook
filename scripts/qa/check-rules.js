@@ -33,11 +33,17 @@ function main() {
     log('Rules files contain real approved UID values only.');
   }
 
-  if (firebaseConfig?.hosting?.public !== 'public') {
+  if (firebaseConfig?.hosting?.public !== 'app-v2/dist') {
     hasFailure = true;
-    fail('firebase.json hosting.public is not set to public.');
+    fail('firebase.json hosting.public is not set to app-v2/dist.');
   } else {
-    log('firebase.json still publishes only public/.');
+    log('firebase.json publishes app-v2/dist for Version 1.0.');
+  }
+
+  const rewrites = firebaseConfig?.hosting?.rewrites || [];
+  if (!rewrites.some((rewrite) => rewrite.source === '**' && rewrite.destination === '/index.html')) {
+    hasFailure = true;
+    fail('firebase.json is missing the app-v2 SPA rewrite.');
   }
 
   if (!storageDraft.includes('allow delete: if false;')) {

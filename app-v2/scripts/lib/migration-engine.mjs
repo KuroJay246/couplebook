@@ -7,14 +7,29 @@ function selectPackageFields(existing, proposed) {
   return selected
 }
 
+function canMergeUserAccessDocument(path, existing, proposed) {
+  if (!path.startsWith('users/')) return false
+  const existingKeys = new Set(Object.keys(existing || {}))
+  const proposedKeys = Object.keys(proposed)
+  const missingKeys = proposedKeys.filter((key) => !existingKeys.has(key))
+  const differingKeys = proposedKeys.filter((key) => existingKeys.has(key) && stableStringify(existing[key]) !== stableStringify(proposed[key]))
+  const allowedDifferingKeys = new Set(['username', 'displayName'])
+  return missingKeys.length > 0 && differingKeys.every((key) => allowedDifferingKeys.has(key))
+}
+
 export async function planMigrationOperations(db, migrationPackage) {
   const validation = validateMigrationPackage(migrationPackage)
   if (!validation.ok) {
-    return { ok: false, errors: validation.errors, operations: [], summary: { create: 0, alreadyCorrect: 0, conflict: 0, invalid: 0 } }
+    return {
+      ok: false,
+      errors: validation.errors,
+      operations: [],
+      summary: { create: 0, alreadyCorrect: 0, mergeUserAccessFields: 0, conflict: 0, invalid: 0 },
+    }
   }
 
   const operations = []
-  const summary = { create: 0, alreadyCorrect: 0, conflict: 0, invalid: 0 }
+  const summary = { create: 0, alreadyCorrect: 0, mergeUserAccessFields: 0, conflict: 0, invalid: 0 }
 
   for (const document of migrationPackage.documents) {
     const snapshot = await db.doc(document.path).get()
@@ -28,6 +43,12 @@ export async function planMigrationOperations(db, migrationPackage) {
     if (stableStringify(existingSelected) === stableStringify(document.data)) {
       operations.push({ type: 'ALREADY_CORRECT', path: document.path, document })
       summary.alreadyCorrect += 1
+      continue
+    }
+
+    if (canMergeUserAccessDocument(document.path, snapshot.data(), document.data)) {
+      operations.push({ type: 'MERGE_USER_ACCESS_FIELDS', path: document.path, document })
+      summary.mergeUserAccessFields += 1
       continue
     }
 
@@ -53,7 +74,18 @@ export async function applyCreateOperations(db, operations) {
     }
     await batch.commit()
   }
-  return creates.length
+  const userMerges = operations.filter((operation) => operation.type === 'MERGE_USER_ACCESS_FIELDS')
+  for (let index = 0; index < userMerges.length; index += 400) {
+    const batch = db.batch()
+    for (const operation of userMerges.slice(index, index + 400)) {
+      batch.set(db.doc(operation.path), operation.document.data, { merge: true })
+    }
+    await batch.commit()
+  }
+  return {
+    created: creates.length,
+    mergedUserAccessFields: userMerges.length,
+  }
 }
 
 export async function verifyMigrationDocuments(db, migrationPackage) {

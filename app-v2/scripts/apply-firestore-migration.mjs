@@ -29,7 +29,9 @@ try {
     process.exit(0)
   }
   assertConfirmation(args, 'MIGRATE_COUPLEBOOK_97830')
-  result.created = await applyCreateOperations(db, plan.operations)
+  const applyResult = await applyCreateOperations(db, plan.operations)
+  result.created = applyResult.created
+  result.mergedUserAccessFields = applyResult.mergedUserAccessFields
   result.dryRun = false
   console.log(JSON.stringify(result, null, 2))
 } catch (error) {

@@ -1,10 +1,11 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
+import { execFileSync } from 'node:child_process'
 import { initializeAdminFirestore } from './lib/admin-firestore.mjs'
 import { assertProjectArg } from './lib/project-guard.mjs'
 import { createMigrationPackage } from './lib/migration-package.mjs'
-import { sha256 } from './lib/checksum.mjs'
+import { sha256, withoutKeys } from './lib/checksum.mjs'
 
 /* global console */
 
@@ -17,6 +18,47 @@ async function readTargetDocuments(db, migrationPackage) {
     documents.push({ path: target.path, exists: snapshot.exists, data: snapshot.exists ? snapshot.data() : null })
   }
   return documents
+}
+
+function getGitCommit(repoRoot) {
+  return execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repoRoot, encoding: 'utf8' }).trim()
+}
+
+function getHostingReleaseMetadata(projectId, repoRoot) {
+  try {
+    const output = process.platform === 'win32'
+      ? execFileSync(
+        process.env.ComSpec || 'cmd.exe',
+        ['/d', '/s', '/c', `npx -y firebase-tools@14.19.0 hosting:channel:list --project ${projectId} --json`],
+        { cwd: repoRoot, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] },
+      )
+      : execFileSync(
+        'npx',
+        ['-y', 'firebase-tools@14.19.0', 'hosting:channel:list', '--project', projectId, '--json'],
+        { cwd: repoRoot, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] },
+      )
+    const parsed = JSON.parse(output)
+    const liveChannel = parsed?.result?.channels?.find((channel) => channel.name?.endsWith('/channels/live'))
+    const release = liveChannel?.release
+    return {
+      captured: Boolean(release),
+      channel: liveChannel?.name ?? null,
+      url: liveChannel?.url ?? null,
+      releaseName: release?.name ?? null,
+      versionName: release?.version?.name ?? null,
+      versionStatus: release?.version?.status ?? null,
+      fileCount: release?.version?.fileCount ?? null,
+      versionBytes: release?.version?.versionBytes ?? null,
+      status: release?.status ?? null,
+      type: release?.type ?? null,
+      releaseTime: release?.releaseTime ?? null,
+    }
+  } catch (error) {
+    return {
+      captured: false,
+      error: error.message,
+    }
+  }
 }
 
 try {
@@ -37,16 +79,18 @@ try {
     documentCount: documents.length,
     existingDocumentCount: documents.filter((document) => document.exists).length,
     missingDocumentCount: documents.filter((document) => !document.exists).length,
-    gitCommit: process.env.GIT_COMMIT || '',
+    staticProductionCommit: getGitCommit(repoRoot),
+    hostingRelease: getHostingReleaseMetadata(projectId, repoRoot),
   }
   const backup = { metadata, documents, rules, appV2Rules }
-  const checksum = sha256(backup)
+  const checksum = sha256(withoutKeys(backup, new Set(['checksum'])))
   backup.metadata.checksum = checksum
 
   const backupPath = path.join(backupDir, 'targeted-firestore-backup.json')
   fs.writeFileSync(backupPath, `${JSON.stringify(backup, null, 2)}\n`)
   const parsed = JSON.parse(fs.readFileSync(backupPath, 'utf8'))
-  if (parsed.metadata.checksum !== checksum) throw new Error('Backup checksum verification failed.')
+  const parsedChecksum = sha256(withoutKeys(parsed, new Set(['checksum'])))
+  if (parsed.metadata.checksum !== checksum || parsedChecksum !== checksum) throw new Error('Backup checksum verification failed.')
 
   console.log(JSON.stringify({
     backupCreated: true,
@@ -54,6 +98,8 @@ try {
     documentCount: metadata.documentCount,
     existingDocumentCount: metadata.existingDocumentCount,
     missingDocumentCount: metadata.missingDocumentCount,
+    hostingReleaseCaptured: metadata.hostingRelease.captured,
+    staticProductionCommit: metadata.staticProductionCommit,
     checksum,
   }, null, 2))
 } catch (error) {
