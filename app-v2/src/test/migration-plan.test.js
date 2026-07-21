@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 import { createMigrationPlan } from '../../scripts/plan-firestore-migration.mjs'
+import { rehearseMigration } from '../../scripts/rehearse-firestore-migration.mjs'
 
 test('migration planner returns deterministic counts-only output and blockers', () => {
   const plan = createMigrationPlan({
@@ -29,4 +30,25 @@ test('migration planner returns deterministic counts-only output and blockers', 
 test('migration planner script imports no Firestore write methods', async () => {
   const source = await readFile(new URL('../../scripts/plan-firestore-migration.mjs', import.meta.url), 'utf8')
   assert.doesNotMatch(source, /setDoc|addDoc|updateDoc|deleteDoc|writeBatch|runTransaction/)
+})
+
+test('migration rehearsal stays redacted and production-write disabled', () => {
+  const report = rehearseMigration({
+    memories: [
+      { id: 'private-id-one', title: 'Private fictional title', date: '2026-01-01', media: 'private-photo.jpg' },
+    ],
+  })
+
+  assert.equal(report.productionWrites, false)
+  assert.equal(report.mode, 'dry-run')
+  assert.equal(report.sourceInventory.memories, 1)
+  assert.equal(report.validation.privateMediaPolicy, 'metadata-only')
+  assert.equal(JSON.stringify(report).includes('Private fictional title'), false)
+  assert.equal(JSON.stringify(report).includes('private-id-one'), false)
+})
+
+test('migration rehearsal script imports no Firestore write methods', async () => {
+  const source = await readFile(new URL('../../scripts/rehearse-firestore-migration.mjs', import.meta.url), 'utf8')
+  assert.doesNotMatch(source, /setDoc|addDoc|updateDoc|deleteDoc|writeBatch|runTransaction/)
+  assert.match(source, /productionWrites: false/)
 })

@@ -1,4 +1,5 @@
 import { QuietStatus, SettingsGroup, UtilityPageHeader, UtilitySection } from '../../components/PageLayout'
+import { WriteWorkflowPanel } from '../../components/WriteWorkflowPanel'
 
 function renderSettingsStatusLabel(status) {
   if (status === 'ready') return 'Read-only settings'
@@ -282,6 +283,7 @@ export function SettingsView({ compatibilityError, compatibilityState, model, on
       />
 
       <AccountSection account={model.account} />
+      <WriteWorkflowPanel kind="settings" onRefresh={onRefresh} />
       <AppearanceSection appearance={model.appearance} />
       <PrivacySection privacy={model.privacy} />
       <CompatibilitySection

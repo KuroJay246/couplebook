@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { EditorialEmptyState, EditorialSection, QuietStatus, SharedSpaceHeader } from '../../components/PageLayout'
+import { WriteWorkflowPanel } from '../../components/WriteWorkflowPanel'
 
 function renderContractStatusLabel(status) {
   if (status === 'ready') return 'Read-only agreement'
@@ -341,6 +342,7 @@ export function ContractView({ compatibilityError, compatibilityState, model, on
         title="Our agreement"
       />
 
+      <WriteWorkflowPanel kind="contract" onRefresh={onRefresh} />
       <AgreementSection agreement={model.agreement} />
       <AcceptanceSection acceptance={model.acceptance} />
       <SignatureSection signatures={model.signatures} />

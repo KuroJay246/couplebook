@@ -537,3 +537,19 @@ Still manual:
 - add an approved-user credential-injected smoke path for the retired public special-page placeholders only when it can run without storing secrets in repo files
 - add the partner-account React browser smoke when a safe live session is genuinely available
 - expand browser regression for production special-moment content only after an approved protected production runtime source exists
+
+## app-v2 Version 0.99 Validation - 2026-07-21
+
+Validated locally:
+
+- `npm run lint` in app-v2
+- `npm test` in app-v2: 120 tests, 113 pass, 7 emulator-only skips outside emulator
+- `npm run build` in app-v2
+- `npm run test:browser` in app-v2
+- `npm run test:rules` in app-v2: 8 emulator rule tests pass
+- `npm run migration:plan` in app-v2
+- `npm run migration:rehearse` in app-v2
+- `npm run health:react` in app-v2
+- `npm run check:all` at repo root
+
+React Doctor v0.8.3 moved from 58 warnings to 56 warnings. Remaining warnings are primarily BaaS authority-map visibility in bundled Firebase artifacts, low-priority iteration/performance suggestions, unused compatibility exports/files, and one AuthProvider reducer recommendation. Candidate rules and tests remain the authoritative security check for Firestore isolation.

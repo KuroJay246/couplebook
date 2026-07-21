@@ -50,3 +50,4 @@ pages/confession/*.webm
 pages/valentine/*.mp3
 
 users_export.json
+app-v2/local-migration-packages/

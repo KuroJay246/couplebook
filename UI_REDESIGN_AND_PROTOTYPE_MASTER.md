@@ -2068,3 +2068,18 @@ Remaining gallery risks:
 Next recommended Phase 11 batch:
 
 - pause further gallery changes until this live refinement is visually approved, then choose either a narrow gallery viewer/mobile polish pass or the next isolated surface cleanup without touching sync, auth, or memory data
+
+## app-v2 Version 0.99 Product UI Update - 2026-07-21
+
+The React app-v2 interface now treats editing as a first-class product surface while preserving the private editorial identity. The new workflow panels use the existing paper-and-ink visual system, restrained olive/clay accents, labeled form controls, visible status messaging, and no fake disabled production actions.
+
+Route effects:
+
+- Profile: own-profile edit workflow is prepared for emulator writes; partner profile remains read-only.
+- Favorites: own-category favorite entry workflow is prepared with approved categories only.
+- Settings: scoped appearance and reduced-motion/local-only preferences are prepared without turning Settings into an admin screen.
+- Timeline: text-only memory creation and seeded-memory archive workflow are prepared; no media upload or player was added.
+- Contract: status-only acceptance workflow is prepared; raw signatures remain unavailable.
+- Birthday, Valentine, Confession: fixed structured text editing is prepared with safe section types only.
+
+Production-disabled mode renders these as honest write-status sections rather than inert controls.

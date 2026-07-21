@@ -6,32 +6,58 @@ service cloud.firestore {
     // Assumed Data Model - app-v2 candidate, not deployed
     // ===============================================================
     //
-    // users/{uid}
-    //   approved: bool, required
-    //   coupleId: string, required, opaque ID
-    //   displayName: string, optional, <= 80 chars
-    //   schemaVersion: int, required, 1
+    // users/{uid}: approved-user authorization document. Client read is owner
+    // only; client writes are denied.
     //
-    // couples/{coupleId}
-    //   schemaVersion: int, required, 1
-    //   title: string, optional, <= 120 chars
-    //   migrationVersion: int, optional
+    // couples/{coupleId}: shared couple metadata. Client read is active-member
+    // only; client writes are denied.
     //
-    // couples/{coupleId}/members/{uid}
-    //   active: bool, required
-    //   role: string, required, "member"
-    //   schemaVersion: int, required, 1
+    // couples/{coupleId}/members/{uid}: active membership document. Client read
+    // is own-member only; client writes are denied.
     //
     // couples/{coupleId}/profiles/{uid}
-    // couples/{coupleId}/favorites/{uid}
-    // couples/{coupleId}/settings/shared
-    // couples/{coupleId}/settings/{uid}
-    // couples/{coupleId}/contracts/current
-    // couples/{coupleId}/memories/{memoryId}
-    // couples/{coupleId}/specialMoments/{birthday|valentine|confession}
+    //   schemaVersion: 1
+    //   name: string, 1..80
+    //   bio: string, <=500
+    //   anniversaryView: string, <=40
+    //   joinedDate: string YYYY-MM-DD or empty
+    //   birthday: string YYYY-MM-DD or empty
     //
-    // All client writes are denied in this candidate. Future write rules must
-    // add strict schema validators before any create/update/delete is allowed.
+    // couples/{coupleId}/favorites/{uid}
+    //   schemaVersion: 1
+    //   food/songs/movies/places/memories/notes: list, <=50
+    //
+    // couples/{coupleId}/settings/{uid}
+    //   schemaVersion: 1
+    //   theme: paper|rose|olive|plum
+    //   anniversaryView: string, <=40
+    //   privacy.localOnlyMode: bool
+    //   privacy.reducedMotion: bool
+    //
+    // couples/{coupleId}/contracts/current
+    //   schemaVersion: 1
+    //   title: optional string <=160
+    //   bodyStatus: optional string <=60
+    //   acceptedBy: list <=2
+    //   signatureStatus: status-only|not-connected
+    //
+    // couples/{coupleId}/memories/{memoryId}
+    //   schemaVersion: 1
+    //   title: string, 1..180
+    //   description: string, <=2000
+    //   date: string YYYY-MM-DD
+    //   tags: list <=30
+    //   mediaState: none|private-legacy-reference
+    //   specialMomentType: optional ordinary|birthday|valentine|confession
+    //   status: active|archived
+    //   createdBy/updatedBy: uid strings
+    //
+    // couples/{coupleId}/specialMoments/{birthday|valentine|confession}
+    //   schemaVersion: 1
+    //   title: string, 1..120
+    //   subtitle: string, <=180
+    //   date: string YYYY-MM-DD or empty
+    //   sections: list <=8, validated structurally in app service
     // ===============================================================
 
     function isSignedIn() {
@@ -68,6 +94,106 @@ service cloud.firestore {
       return momentType in ['birthday', 'valentine', 'confession'];
     }
 
+    function hasOnly(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function hasAll(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function isSafeString(value, maxSize) {
+      return value is string
+        && value.size() <= maxSize
+        && !value.matches('.*(<[^>]+>|javascript:|on[a-z]+\\s*=|script|iframe|object|embed).*');
+    }
+
+    function isRequiredSafeString(value, maxSize) {
+      return isSafeString(value, maxSize) && value.size() > 0;
+    }
+
+    function isDateOrEmpty(value) {
+      return value is string && (value == '' || value.matches('^\\d{4}-\\d{2}-\\d{2}$'));
+    }
+
+    function isStringList(value, maxSize) {
+      return value is list && value.size() <= maxSize;
+    }
+
+    function isValidProfile(uid) {
+      return isOwnUser(uid)
+        && hasOnly(['schemaVersion', 'name', 'bio', 'anniversaryView', 'joinedDate', 'birthday'])
+        && hasAll(['schemaVersion', 'name'])
+        && request.resource.data.schemaVersion == 1
+        && isRequiredSafeString(request.resource.data.name, 80)
+        && (!('bio' in request.resource.data) || isSafeString(request.resource.data.bio, 500))
+        && (!('anniversaryView' in request.resource.data) || isSafeString(request.resource.data.anniversaryView, 40))
+        && (!('joinedDate' in request.resource.data) || isDateOrEmpty(request.resource.data.joinedDate))
+        && (!('birthday' in request.resource.data) || isDateOrEmpty(request.resource.data.birthday));
+    }
+
+    function isValidFavorites(uid) {
+      return isOwnUser(uid)
+        && hasOnly(['schemaVersion', 'food', 'songs', 'movies', 'places', 'memories', 'notes'])
+        && request.resource.data.schemaVersion == 1
+        && (!('food' in request.resource.data) || isStringList(request.resource.data.food, 50))
+        && (!('songs' in request.resource.data) || isStringList(request.resource.data.songs, 50))
+        && (!('movies' in request.resource.data) || isStringList(request.resource.data.movies, 50))
+        && (!('places' in request.resource.data) || isStringList(request.resource.data.places, 50))
+        && (!('memories' in request.resource.data) || isStringList(request.resource.data.memories, 50))
+        && (!('notes' in request.resource.data) || isStringList(request.resource.data.notes, 50));
+    }
+
+    function isValidPrivateSettings(uid) {
+      return isOwnUser(uid)
+        && hasOnly(['schemaVersion', 'theme', 'anniversaryView', 'privacy'])
+        && request.resource.data.schemaVersion == 1
+        && request.resource.data.theme in ['paper', 'rose', 'olive', 'plum']
+        && (!('anniversaryView' in request.resource.data) || isSafeString(request.resource.data.anniversaryView, 40))
+        && request.resource.data.privacy is map
+        && request.resource.data.privacy.keys().hasOnly(['localOnlyMode', 'reducedMotion'])
+        && request.resource.data.privacy.localOnlyMode is bool
+        && request.resource.data.privacy.reducedMotion is bool;
+    }
+
+    function isValidMemory() {
+      return hasOnly(['schemaVersion', 'title', 'description', 'date', 'tags', 'mediaState', 'specialMomentType', 'createdBy', 'updatedBy', 'status'])
+        && hasAll(['schemaVersion', 'title', 'date', 'mediaState', 'createdBy', 'updatedBy', 'status'])
+        && request.resource.data.schemaVersion == 1
+        && isRequiredSafeString(request.resource.data.title, 180)
+        && (!('description' in request.resource.data) || isSafeString(request.resource.data.description, 2000))
+        && request.resource.data.date.matches('^\\d{4}-\\d{2}-\\d{2}$')
+        && (!('tags' in request.resource.data) || isStringList(request.resource.data.tags, 30))
+        && request.resource.data.mediaState in ['none', 'private-legacy-reference']
+        && (!('specialMomentType' in request.resource.data) || request.resource.data.specialMomentType in ['birthday', 'valentine', 'confession'])
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.updatedBy == request.auth.uid
+        && request.resource.data.status in ['active', 'archived'];
+    }
+
+    function isValidContractAcceptance() {
+      return hasOnly(['schemaVersion', 'title', 'bodyStatus', 'acceptedBy', 'signatureStatus'])
+        && request.resource.data.schemaVersion == 1
+        && (!('title' in request.resource.data) || isSafeString(request.resource.data.title, 160))
+        && (!('bodyStatus' in request.resource.data) || isSafeString(request.resource.data.bodyStatus, 60))
+        && request.resource.data.acceptedBy is list
+        && request.resource.data.acceptedBy.size() <= 2
+        && request.auth.uid in request.resource.data.acceptedBy
+        && request.resource.data.signatureStatus in ['status-only', 'not-connected'];
+    }
+
+    function isValidSpecialMoment(momentType) {
+      return isApprovedMomentType(momentType)
+        && hasOnly(['schemaVersion', 'title', 'subtitle', 'date', 'sections'])
+        && hasAll(['schemaVersion', 'title', 'sections'])
+        && request.resource.data.schemaVersion == 1
+        && isRequiredSafeString(request.resource.data.title, 120)
+        && (!('subtitle' in request.resource.data) || isSafeString(request.resource.data.subtitle, 180))
+        && (!('date' in request.resource.data) || isDateOrEmpty(request.resource.data.date))
+        && request.resource.data.sections is list
+        && request.resource.data.sections.size() <= 8;
+    }
+
     match /users/{uid} {
       allow get: if isOwnUser(uid);
       allow list: if false;
@@ -87,12 +213,14 @@ service cloud.firestore {
 
       match /profiles/{uid} {
         allow get, list: if isActiveCoupleMember(coupleId);
-        allow create, update, delete: if false;
+        allow create, update: if isActiveCoupleMember(coupleId) && isValidProfile(uid);
+        allow delete: if false;
       }
 
       match /favorites/{uid} {
         allow get, list: if isActiveCoupleMember(coupleId);
-        allow create, update, delete: if false;
+        allow create, update: if isActiveCoupleMember(coupleId) && isValidFavorites(uid);
+        allow delete: if false;
       }
 
       match /settings/shared {
@@ -103,23 +231,26 @@ service cloud.firestore {
       match /settings/{uid} {
         allow get: if isOwnUser(uid) && isActiveCoupleMember(coupleId);
         allow list: if false;
-        allow create, update, delete: if false;
+        allow create, update: if isActiveCoupleMember(coupleId) && isValidPrivateSettings(uid);
+        allow delete: if false;
       }
 
       match /contracts/current {
         allow get: if isActiveCoupleMember(coupleId);
-        allow create, update, delete: if false;
+        allow create, update: if isActiveCoupleMember(coupleId) && isValidContractAcceptance();
+        allow delete: if false;
       }
 
       match /memories/{memoryId} {
         allow get, list: if isActiveCoupleMember(coupleId);
-        allow create, update, delete: if false;
+        allow create, update: if isActiveCoupleMember(coupleId) && isValidMemory();
+        allow delete: if false;
       }
 
       match /specialMoments/{momentType} {
         allow get: if isApprovedMomentType(momentType) && isActiveCoupleMember(coupleId);
-        allow list: if false;
-        allow create, update, delete: if false;
+        allow create, update: if isActiveCoupleMember(coupleId) && isValidSpecialMoment(momentType);
+        allow list, delete: if false;
       }
 
       match /{document=**} {

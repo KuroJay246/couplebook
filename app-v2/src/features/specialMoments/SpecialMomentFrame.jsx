@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { EditorialEmptyState, EditorialSection, QuietStatus, SharedSpaceHeader } from '../../components/PageLayout'
+import { WriteWorkflowPanel } from '../../components/WriteWorkflowPanel'
 import { getSpecialMomentConfig } from './specialMomentConfig.js'
 import { useSpecialMomentContent } from './useSpecialMomentContent.js'
 
@@ -162,7 +163,7 @@ function SpecialMomentRuntimeContent({ model }) {
 
 export function SpecialMomentFrame({ momentKey }) {
   const config = getSpecialMomentConfig(momentKey)
-  const { model } = useSpecialMomentContent(momentKey)
+  const { model, refreshCompatibility } = useSpecialMomentContent(momentKey)
 
   if (!config) {
     return (
@@ -188,6 +189,7 @@ export function SpecialMomentFrame({ momentKey }) {
         title={config.title}
       />
 
+      <WriteWorkflowPanel kind="special" momentKey={momentKey} onRefresh={refreshCompatibility} />
       <EditorialSection
         className="special-moment-section"
         description="Private text renders only when a runtime source returns normalized safe sections. Otherwise this page stays honest about what is unavailable."

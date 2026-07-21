@@ -17,6 +17,7 @@ export function deepClone(value) {
     return globalThis.structuredClone(value)
   }
 
+  // Last-resort fallback for runtimes without structuredClone.
   return JSON.parse(JSON.stringify(value))
 }
 
@@ -101,9 +102,10 @@ export function normalizeBoolean(value, fallback = false) {
 export function normalizeStringArray(value) {
   if (!Array.isArray(value)) return []
 
-  return value
-    .map((entry) => toTrimmedString(entry))
-    .filter(Boolean)
+  return value.flatMap((entry) => {
+    const normalized = toTrimmedString(entry)
+    return normalized ? [normalized] : []
+  })
 }
 
 export function normalizePersonKey(key) {

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { EditorialEmptyState, EditorialSection, SharedSpaceHeader } from '../../components/PageLayout'
+import { WriteWorkflowPanel } from '../../components/WriteWorkflowPanel'
 import { describeFavoritesCounts } from './favoritesSelectors.js'
 
 function pluralize(count, singular, plural = `${singular}s`) {
@@ -293,6 +294,7 @@ export function FavoritesView({ compatibilityError, compatibilityState, model, o
         title="The things we return to."
       />
 
+      <WriteWorkflowPanel kind="favorites" onRefresh={onRefresh} />
       <SharedMatchesSection shared={model.shared} />
       <PeopleSection model={model} />
       <RelatedEntriesSection entries={model.entries} />

@@ -1215,3 +1215,19 @@ Future long-run reports should be grouped by track:
 1. Run real approved-account smoke if credentials/session are available.
 2. If both accounts pass, decide whether the next safe batch should be the smallest live sync read replacement or the first dashboard story-hierarchy cleanup.
 3. Otherwise continue Phase 9 and only small reversible Phase 11 UI cleanup without changing live sync behavior.
+
+## app-v2 Version 0.99 Release Candidate - 2026-07-21
+
+Engineering completed a local Version 0.99 release-candidate pass on the `migration/react-foundation` branch. The app-v2 React shell remains protected, production writes remain disabled, and candidate Firestore writes are available only through explicit `firestore-emulator-write` mode.
+
+Completed:
+
+- React health pass: React Doctor v0.8.3 went from 58 warnings to 56 warnings; fixed memoized provider values, one sequential legacy compatibility load, and one clone/array iteration issue.
+- Product UI pass: profile, favorites, settings, timeline, contract, and special-moment routes now expose polished write-status/editing workflow sections while avoiding fake controls in production-disabled mode.
+- Firestore candidate writes: added gated write services for own profile, own favorites, own settings, text-only memories, status-only contract acceptance, memory archiving, and fixed special-moment text sections.
+- Candidate rules: `firestore.app-v2.rules` now validates emulator writes by active couple membership, own-private ownership, approved schemas, supported categories, supported special moments, status-only contract acceptance, and default-deny unknown paths.
+- Migration rehearsal: added `npm run migration:rehearse`, producing counts-only redacted dry-run output with no production writes.
+
+Release gate:
+
+- Version 1.0 remains blocked until partner real-account smoke, owner schema approval, owner migration approval, owner deployment approval, production rules deployment, production migration verification, Hosting cutover approval, and rollback confirmation.

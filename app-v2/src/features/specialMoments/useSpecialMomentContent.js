@@ -4,7 +4,7 @@ import { useCompatibilityData } from '../compatibility/useCompatibilityData.js'
 import { buildSpecialMomentContentModel } from './specialMomentContentModel.js'
 
 export function useSpecialMomentContent(momentKey) {
-  const { snapshot, state } = useCompatibilityData()
+  const { refresh, snapshot, state } = useCompatibilityData()
   const fixtureSource = snapshot?.sources?.specialMoments?.[momentKey] || null
   const [contentState, setContentState] = useState({
     momentKey: '',
@@ -51,6 +51,7 @@ export function useSpecialMomentContent(momentKey) {
   }, [fixtureSource, momentKey])
 
   return {
+    refreshCompatibility: refresh,
     model: buildSpecialMomentContentModel({
       momentKey,
       contentSource: fixtureSource || contentState.source,

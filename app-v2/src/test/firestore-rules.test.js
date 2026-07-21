@@ -176,12 +176,124 @@ test('unauthorized, inactive, and cross-couple users fail closed', { skip: !hasE
   }
 })
 
-test('unknown paths and all client writes are denied', { skip: !hasEmulator }, async () => {
+test('active members can perform valid candidate emulator writes', { skip: !hasEmulator }, async () => {
+  const db = authed(ids.memberOne)
+  await assertSucceeds(setDoc(doc(db, 'couples', ids.couple, 'profiles', ids.memberOne), {
+    schemaVersion: 1,
+    name: 'Member One Revised',
+    bio: 'A safe fictional profile note.',
+    anniversaryView: 'shared',
+    joinedDate: '2026-01-01',
+    birthday: '',
+  }))
+  await assertSucceeds(setDoc(doc(db, 'couples', ids.couple, 'favorites', ids.memberOne), {
+    schemaVersion: 1,
+    food: ['fictional cake'],
+    songs: [],
+    movies: [],
+    places: ['fictional park'],
+    memories: [],
+    notes: [],
+  }))
+  await assertSucceeds(setDoc(doc(db, 'couples', ids.couple, 'settings', ids.memberOne), {
+    schemaVersion: 1,
+    theme: 'olive',
+    anniversaryView: 'shared',
+    privacy: { localOnlyMode: true, reducedMotion: true },
+  }))
+  await assertSucceeds(setDoc(doc(db, 'couples', ids.couple, 'memories', 'new_memory'), {
+    schemaVersion: 1,
+    title: 'Fictional new memory',
+    description: 'Text only.',
+    date: '2026-02-14',
+    tags: ['fictional'],
+    mediaState: 'none',
+    specialMomentType: 'valentine',
+    createdBy: ids.memberOne,
+    updatedBy: ids.memberOne,
+    status: 'active',
+  }))
+  await assertSucceeds(updateDoc(doc(db, 'couples', ids.couple, 'contracts', 'current'), {
+    schemaVersion: 1,
+    title: 'Fictional contract',
+    acceptedBy: [ids.memberOne, ids.memberTwo],
+    signatureStatus: 'status-only',
+  }))
+  await assertSucceeds(setDoc(doc(db, 'couples', ids.couple, 'specialMoments', 'birthday'), {
+    schemaVersion: 1,
+    title: 'Fictional birthday update',
+    subtitle: 'Safe text only',
+    date: '2026-07-21',
+    sections: [{ kind: 'paragraph', content: 'Fictional text' }],
+  }))
+
+  const memberTwoDb = authed(ids.memberTwo)
+  await assertSucceeds(updateDoc(doc(memberTwoDb, 'couples', ids.couple, 'profiles', ids.memberTwo), {
+    schemaVersion: 1,
+    name: 'Member Two Revised',
+    bio: 'Another safe fictional profile note.',
+    anniversaryView: '',
+    joinedDate: '',
+    birthday: '',
+  }))
+})
+
+test('candidate write rules reject unauthorized, cross-couple, partner-private, and malformed writes', { skip: !hasEmulator }, async () => {
   const db = authed(ids.memberOne)
   await assertFails(getDoc(doc(db, 'couples', ids.couple, 'unknown', 'doc')))
-  await assertFails(setDoc(doc(db, 'couples', ids.couple, 'profiles', ids.memberOne), { name: 'Changed' }))
-  await assertFails(updateDoc(doc(db, 'couples', ids.couple, 'profiles', ids.memberOne), { name: 'Changed' }))
+  await assertFails(setDoc(doc(db, 'couples', ids.couple, 'profiles', ids.memberTwo), { schemaVersion: 1, name: 'Changed' }))
+  await assertFails(updateDoc(doc(db, 'couples', ids.couple, 'settings', ids.memberTwo), {
+    schemaVersion: 1,
+    theme: 'paper',
+    privacy: { localOnlyMode: false, reducedMotion: false },
+  }))
   await assertFails(deleteDoc(doc(db, 'couples', ids.couple, 'profiles', ids.memberOne)))
+  await assertFails(setDoc(doc(db, 'couples', ids.otherCouple, 'profiles', ids.memberOne), { schemaVersion: 1, name: 'Cross couple' }))
+  await assertFails(setDoc(doc(db, 'couples', ids.couple, 'profiles', ids.memberOne), {
+    schemaVersion: 1,
+    name: 'Changed',
+    role: 'admin',
+  }))
+  await assertFails(setDoc(doc(db, 'couples', ids.couple, 'profiles', ids.memberOne), {
+    schemaVersion: 2,
+    name: 'Changed',
+  }))
+  await assertFails(setDoc(doc(db, 'couples', ids.couple, 'memories', 'unsafe_memory'), {
+    schemaVersion: 1,
+    title: '<script>alert(1)</script>',
+    date: '2026-02-14',
+    tags: [],
+    mediaState: 'none',
+    createdBy: ids.memberOne,
+    updatedBy: ids.memberOne,
+    status: 'active',
+  }))
+  await assertFails(setDoc(doc(db, 'couples', ids.couple, 'memories', 'unsafe_media'), {
+    schemaVersion: 1,
+    title: 'Unsafe media',
+    date: '2026-02-14',
+    tags: [],
+    mediaState: 'file:///private/photo.jpg',
+    createdBy: ids.memberOne,
+    updatedBy: ids.memberOne,
+    status: 'active',
+  }))
+  await assertFails(setDoc(doc(db, 'couples', ids.couple, 'memories', 'unsupported_special'), {
+    schemaVersion: 1,
+    title: 'Unsafe route',
+    date: '2026-02-14',
+    tags: [],
+    mediaState: 'none',
+    specialMomentType: 'anniversary',
+    createdBy: ids.memberOne,
+    updatedBy: ids.memberOne,
+    status: 'active',
+  }))
+  await assertFails(setDoc(doc(db, 'couples', ids.couple, 'specialMoments', 'anniversary'), {
+    schemaVersion: 1,
+    title: 'Unsupported',
+    sections: [],
+  }))
 
   const batch = writeBatch(db)
   batch.set(doc(db, 'couples', ids.couple, 'profiles', 'new_profile'), { name: 'New' })
@@ -189,9 +301,14 @@ test('unknown paths and all client writes are denied', { skip: !hasEmulator }, a
 
   await assertFails(
     runTransaction(db, async (transaction) => {
-      transaction.update(doc(db, 'couples', ids.couple, 'contracts', 'current'), { title: 'Changed' })
+      transaction.update(doc(db, 'couples', ids.couple, 'contracts', 'current'), { signatureStatus: 'raw-signature-uploaded' })
     }),
   )
+
+  for (const uid of [ids.outsider, ids.inactive, ids.otherMember]) {
+    const deniedDb = authed(uid)
+    await assertFails(setDoc(doc(deniedDb, 'couples', ids.couple, 'favorites', uid), { schemaVersion: 1, food: [] }))
+  }
 })
 
 test('app-v2 Firestore source mode reads seeded fictional data through read models', { skip: !hasEmulator }, async () => {

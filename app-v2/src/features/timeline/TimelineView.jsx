@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { EditorialEmptyState, EditorialSection, QuietStatus, SharedSpaceHeader } from '../../components/PageLayout'
+import { WriteWorkflowPanel } from '../../components/WriteWorkflowPanel'
 
 const ORDINARY_GROUP_LIMIT = 4
 const TYPE_FILTERS = Object.freeze([
@@ -377,6 +378,7 @@ export function TimelineView({ compatibilityError, compatibilityState, model, on
         title="Our story timeline"
       />
 
+      <WriteWorkflowPanel kind="memory" onRefresh={onRefresh} />
       <EditorialSection
         className="timeline-section"
         description="Years lead the structure, special moments stay distinct, and dense periods open a few entries at a time."

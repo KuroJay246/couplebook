@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useAuth } from '../../auth/useAuth.js'
 import { resolveDataSourceMode } from '../../data/dataSourceMode.js'
 import { getBrowserTestCompatibilityState } from '../../lib/browserTestMode.js'
@@ -71,23 +71,24 @@ export function CompatibilityProvider({ children }) {
       ? EMPTY_COMPATIBILITY_STATE
       : compatibilityState
 
-  return (
-    <CompatibilityContext.Provider
-      value={{
-        ...resolvedState,
-        refresh: () => {
-          if (browserTestCompatibility) return
+  const refresh = useCallback(() => {
+    if (browserTestCompatibility) return
 
-          setCompatibilityState({
-            state: 'loading',
-            snapshot: resolvedState.snapshot,
-            error: '',
-          })
-          setRefreshKey((value) => value + 1)
-        },
-      }}
-    >
-      {children}
-    </CompatibilityContext.Provider>
+    setCompatibilityState({
+      state: 'loading',
+      snapshot: resolvedState.snapshot,
+      error: '',
+    })
+    setRefreshKey((value) => value + 1)
+  }, [browserTestCompatibility, resolvedState.snapshot])
+
+  const value = useMemo(
+    () => ({
+      ...resolvedState,
+      refresh,
+    }),
+    [refresh, resolvedState],
   )
+
+  return <CompatibilityContext.Provider value={value}>{children}</CompatibilityContext.Provider>
 }

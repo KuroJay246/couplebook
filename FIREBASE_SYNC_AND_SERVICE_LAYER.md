@@ -614,3 +614,35 @@ Gather Savor is useful as a structural reference because its Firebase and app wi
 - pages consume services inside a routed shell instead of owning infrastructure directly
 
 Couple Book should copy that boundary discipline later without copying Gather Savor's event-specific data model or workflows.
+
+## app-v2 Version 0.99 Candidate Write Layer - 2026-07-21
+
+The app-v2 service layer now includes explicit write-mode gating:
+
+- `legacy-read`
+- `firestore-read`
+- `firestore-emulator-write`
+- `production-write-disabled`
+
+`production-write-disabled` remains the default. Write services reject operations unless the runtime is non-production `firestore-emulator-write`, the Firebase user matches the approved user, the approved user document supplies the coupleId, and active couple membership is verified from `couples/{coupleId}/members/{uid}`.
+
+Implemented candidate write services:
+
+- own profile fields
+- own favorites by approved categories
+- own private settings
+- text-only shared memories
+- soft archive of memories
+- status-only contract acceptance
+- fixed special-moment text sections
+
+Not implemented:
+
+- private media upload
+- Firebase Storage integration
+- production writes
+- raw signature payloads
+- administrative console writes
+- broad user/couple queries
+
+`firestore.app-v2.rules` now validates the candidate emulator schemas and keeps production rules untouched.

@@ -44,14 +44,12 @@ export async function loadCompatibilitySnapshot(options = {}) {
     }
   }
 
-  const [favorites, profile, settings, contract, memories] = await Promise.all([
+  const [favorites, profile, settings, contract, memories, birthday, valentine, confession] = await Promise.all([
     getLegacyFavorites(options),
     getLegacyProfile(options),
     getLegacySettings(options),
     getLegacyContract(options),
     getLegacyMemories(options),
-  ])
-  const [birthday, valentine, confession] = await Promise.all([
     getLegacySpecialMoment('birthday', options),
     getLegacySpecialMoment('valentine', options),
     getLegacySpecialMoment('confession', options),

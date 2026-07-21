@@ -73,3 +73,15 @@ These are no longer primary reading surfaces after consolidation and should live
 5. `QA_AUTOMATION.md`
 
 Use the standalone smoke docs only when preparing or recording real approved-account smoke.
+
+## app-v2 Version 0.99 Release Candidate - 2026-07-21
+
+Release-candidate updates were added to:
+
+- `PROJECT_STATUS_AND_PHASES.md`
+- `UI_REDESIGN_AND_PROTOTYPE_MASTER.md`
+- `FIREBASE_SYNC_AND_SERVICE_LAYER.md`
+- `MEMORY_MEDIA_AND_STORAGE_MASTER.md`
+- `QA_AUTOMATION.md`
+
+Version 1.0 remains owner-gated: partner smoke, schema approval, migration approval, deployment approval, production rules deployment, production migration, Hosting cutover, and rollback confirmation.

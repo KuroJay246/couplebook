@@ -319,3 +319,14 @@ While approved-account smoke is `HOLD`:
 - do not rewrite `core/memories.json`
 - do not consume `public/core/memories.json` from app-v2
 - first restore or map the expected local asset-path contract before claiming any gallery/media runtime is fully healthy
+
+## app-v2 Version 0.99 Memory and Media Boundary - 2026-07-21
+
+The Version 0.99 candidate keeps private media disconnected. Timeline writes are text-only and force `mediaState: "none"` for newly created memories. Migration rehearsal reports the 114 legacy memories as metadata-only private legacy references and does not copy raw local paths or media files.
+
+Still blocked for Version 1.0:
+
+- owner-approved private media architecture
+- Storage initialization and rules review
+- production migration approval
+- partner-account smoke

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { EditorialEmptyState, EditorialSection, SharedSpaceHeader } from '../../components/PageLayout'
+import { WriteWorkflowPanel } from '../../components/WriteWorkflowPanel'
 
 function renderProfileStatusLabel(status) {
   if (status === 'ready') return 'Read-only profile'
@@ -272,6 +273,7 @@ export function ProfileView({ compatibilityError, compatibilityState, model, onR
         title={model.relationship.title}
       />
 
+      <WriteWorkflowPanel kind="profile" onRefresh={onRefresh} />
       <PeopleSection model={model} />
       <MilestonesSection relationship={model.relationship} />
       <HighlightsSection model={model} />

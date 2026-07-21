@@ -1,4 +1,4 @@
-import { startTransition, useEffect, useState } from 'react'
+import { startTransition, useCallback, useEffect, useMemo, useState } from 'react'
 import { auth } from '../lib/firebaseClient'
 import { getBrowserTestAuthState } from '../lib/browserTestMode'
 import { isFirebaseConfigured, missingFirebaseConfigMessage } from '../lib/firebaseConfig'
@@ -138,7 +138,7 @@ export function AuthProvider({ children }) {
     }
   }, [isBrowserTestMode])
 
-  async function signIn(email, password) {
+  const signIn = useCallback(async (email, password) => {
     if (isBrowserTestMode) {
       throw new Error('Browser regression auth is injected locally and cannot be edited from the sign-in form.')
     }
@@ -179,9 +179,9 @@ export function AuthProvider({ children }) {
       })
       throw error
     }
-  }
+  }, [isBrowserTestMode])
 
-  async function signOut() {
+  const signOut = useCallback(async () => {
     if (isBrowserTestMode) {
       applySignedOutState({
         setUser,
@@ -208,19 +208,22 @@ export function AuthProvider({ children }) {
         setLoading,
       })
     }
-  }
+  }, [isBrowserTestMode])
 
-  const value = {
-    user,
-    approvedUser,
-    isAuthorized,
-    loading,
-    authInitialized,
-    isConfigured: isBrowserTestMode || isFirebaseConfigured,
-    authError,
-    signIn,
-    signOut,
-  }
+  const value = useMemo(
+    () => ({
+      user,
+      approvedUser,
+      isAuthorized,
+      loading,
+      authInitialized,
+      isConfigured: isBrowserTestMode || isFirebaseConfigured,
+      authError,
+      signIn,
+      signOut,
+    }),
+    [approvedUser, authError, authInitialized, isAuthorized, isBrowserTestMode, loading, signIn, signOut, user],
+  )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
