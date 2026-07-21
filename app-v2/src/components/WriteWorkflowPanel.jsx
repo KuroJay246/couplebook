@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useAuth } from '../auth/useAuth.js'
-import { isFirestoreEmulatorWriteMode, resolveWriteMode } from '../data/writeMode.js'
+import { isFirestoreWriteMode, resolveWriteMode } from '../data/writeMode.js'
 import {
   acceptContract,
   archiveMemory,
@@ -23,7 +23,7 @@ const DEFAULT_FORM = Object.freeze({
 
 function statusMessage(kind) {
   if (kind === 'profile') return 'Edit only your personal profile fields. Partner details stay read-only.'
-  if (kind === 'favorites') return 'Add or replace your own favorites in approved categories. Partner preferences remain read-only.'
+  if (kind === 'favorites') return 'Save your own favorites in approved categories. Use a comma-separated list or leave it blank to clear that category.'
   if (kind === 'settings') return 'Save only your scoped appearance and privacy preferences.'
   if (kind === 'memory') return 'Create or archive text-only shared memories. Media upload stays unavailable.'
   if (kind === 'contract') return 'Record status-only acceptance. Raw signatures are not collected.'
@@ -43,7 +43,8 @@ export function WriteWorkflowPanel({ kind, momentKey = 'birthday', onRefresh }) 
   const { approvedUser, user } = useAuth()
   const [form, setForm] = useState(() => ({ ...DEFAULT_FORM[kind] }))
   const [state, setState] = useState({ status: 'idle', message: '' })
-  const enabled = isFirestoreEmulatorWriteMode()
+  const [lastMemoryId, setLastMemoryId] = useState('')
+  const enabled = isFirestoreWriteMode()
   const writeMode = resolveWriteMode()
 
   const context = useMemo(() => ({ approvedUser, user }), [approvedUser, user])
@@ -61,19 +62,20 @@ export function WriteWorkflowPanel({ kind, momentKey = 'birthday', onRefresh }) 
       if (kind === 'profile') {
         await saveOwnProfile(form, context)
       } else if (kind === 'favorites') {
-        await saveOwnFavorites({ [form.category]: [form.value] }, context)
+        await saveOwnFavorites({ [form.category]: form.value.split(',').map((item) => item.trim()).filter(Boolean) }, context)
       } else if (kind === 'settings') {
         await saveOwnSettings(form, context)
       } else if (kind === 'memory') {
-        const memoryId = `memory_${Date.now()}`
+        const memoryId = `launch_test_${Date.now()}`
         await saveMemory(memoryId, { ...form, tags: form.tags.split(',').map((tag) => tag.trim()).filter(Boolean) }, context)
+        setLastMemoryId(memoryId)
       } else if (kind === 'contract') {
         await acceptContract(context)
       } else if (kind === 'special') {
         await saveSpecialMomentText(momentKey, { ...form, sections: [{ kind: form.kind, content: form.content }] }, context)
       }
 
-      setState({ status: 'success', message: 'Saved in Firestore emulator mode. Production writes remain disabled.' })
+      setState({ status: 'success', message: 'Saved to Firestore.' })
       onRefresh?.()
     } catch (error) {
       setState({ status: 'error', message: error?.message || 'The change could not be saved.' })
@@ -81,11 +83,11 @@ export function WriteWorkflowPanel({ kind, momentKey = 'birthday', onRefresh }) 
   }
 
   async function archiveLatest() {
-    if (!enabled) return
+    if (!enabled || !lastMemoryId) return
     setState({ status: 'saving', message: 'Archiving memory.' })
     try {
-      await archiveMemory('memory_one', context)
-      setState({ status: 'success', message: 'Memory was archived in emulator mode.' })
+      await archiveMemory(lastMemoryId, context)
+      setState({ status: 'success', message: 'Temporary memory was archived.' })
       onRefresh?.()
     } catch (error) {
       setState({ status: 'error', message: error?.message || 'The memory could not be archived.' })
@@ -96,8 +98,8 @@ export function WriteWorkflowPanel({ kind, momentKey = 'birthday', onRefresh }) 
     return (
       <EditorialSection
         className="workflow-section"
-        description={`Write mode is ${writeMode}. Production writes remain disabled until owner-approved launch.`}
-        eyebrow="Production writes disabled"
+        description={`Write mode is ${writeMode}. Editing opens only in an approved Firestore write mode.`}
+        eyebrow="Writes disabled"
         title="Safe editing workflow"
       >
         <p className="workflow-note">{statusMessage(kind)}</p>
@@ -109,7 +111,7 @@ export function WriteWorkflowPanel({ kind, momentKey = 'birthday', onRefresh }) 
     <EditorialSection
       className="workflow-section"
       description={statusMessage(kind)}
-      eyebrow="Emulator writes enabled"
+      eyebrow="Approved writes enabled"
       title="Safe editing workflow"
     >
       <form className="workflow-form" onSubmit={submit}>
@@ -119,6 +121,7 @@ export function WriteWorkflowPanel({ kind, momentKey = 'birthday', onRefresh }) 
             <Field label="Bio"><textarea value={form.bio} onChange={(event) => update('bio', event.target.value)} rows="4" /></Field>
             <Field label="Joined date"><input type="date" value={form.joinedDate} onChange={(event) => update('joinedDate', event.target.value)} /></Field>
             <Field label="Birthday"><input type="date" value={form.birthday} onChange={(event) => update('birthday', event.target.value)} /></Field>
+            <Field label="Anniversary view"><input value={form.anniversaryView} onChange={(event) => update('anniversaryView', event.target.value)} /></Field>
           </>
         ) : null}
 
@@ -129,7 +132,7 @@ export function WriteWorkflowPanel({ kind, momentKey = 'birthday', onRefresh }) 
                 {['food', 'songs', 'movies', 'places', 'memories', 'notes'].map((category) => <option key={category} value={category}>{category}</option>)}
               </select>
             </Field>
-            <Field label="Favorite"><input value={form.value} onChange={(event) => update('value', event.target.value)} required /></Field>
+            <Field label="Favorites"><input value={form.value} onChange={(event) => update('value', event.target.value)} /></Field>
           </>
         ) : null}
 
@@ -140,6 +143,7 @@ export function WriteWorkflowPanel({ kind, momentKey = 'birthday', onRefresh }) 
                 {['paper', 'rose', 'olive', 'plum'].map((theme) => <option key={theme} value={theme}>{theme}</option>)}
               </select>
             </Field>
+            <Field label="Anniversary view"><input value={form.anniversaryView} onChange={(event) => update('anniversaryView', event.target.value)} /></Field>
             <label className="workflow-check"><input checked={form.localOnlyMode} onChange={(event) => update('localOnlyMode', event.target.checked)} type="checkbox" /> Local-only privacy note</label>
             <label className="workflow-check"><input checked={form.reducedMotion} onChange={(event) => update('reducedMotion', event.target.checked)} type="checkbox" /> Prefer reduced motion</label>
           </>
@@ -180,8 +184,8 @@ export function WriteWorkflowPanel({ kind, momentKey = 'birthday', onRefresh }) 
             {state.status === 'saving' ? 'Saving' : kind === 'contract' ? 'Accept status' : 'Save'}
           </button>
           {kind === 'memory' ? (
-            <button className="button button-secondary" disabled={!enabled || state.status === 'saving'} onClick={archiveLatest} type="button">
-              Archive seeded memory
+            <button className="button button-secondary" disabled={!enabled || !lastMemoryId || state.status === 'saving'} onClick={archiveLatest} type="button">
+              Archive temporary memory
             </button>
           ) : null}
           <button className="button button-secondary" disabled={state.status === 'saving'} onClick={() => setForm({ ...DEFAULT_FORM[kind] })} type="button">
