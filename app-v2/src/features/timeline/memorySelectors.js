@@ -57,8 +57,10 @@ export function selectTimelineTypeLabel(memory) {
 }
 
 export function selectTimelineDisplayMemories(memories = []) {
-  return freezeClone(
-    sortMemories(memories).filter((memory) => memory.status !== 'archived').map((memory) => ({
+  const displayMemories = []
+  for (const memory of sortMemories(memories)) {
+    if (memory.status === 'archived') continue
+    displayMemories.push({
       id: memory.id,
       status: memory.status,
       title: memory.title,
@@ -74,8 +76,9 @@ export function selectTimelineDisplayMemories(memories = []) {
       warnings: memory.warnings,
       sort: memory.sort,
       typeLabel: selectTimelineTypeLabel(memory),
-    })),
-  )
+    })
+  }
+  return freezeClone(displayMemories)
 }
 
 export function buildTimelineSummary(memories = []) {

@@ -6,19 +6,16 @@ async function readSource(relativePath) {
   return readFile(new URL(relativePath, import.meta.url), 'utf8')
 }
 
-test('shared page layout exports the editorial primitives and semantic contracts', async () => {
+test('shared page layout keeps only the remaining not-found primitives', async () => {
   const layoutSource = await readSource('../components/PageLayout.jsx')
 
-  assert.match(layoutSource, /export function ChapterHeader/)
-  assert.match(layoutSource, /export function SharedSpaceHeader/)
-  assert.match(layoutSource, /export function UtilityPageHeader/)
-  assert.match(layoutSource, /export function EditorialSection/)
   assert.match(layoutSource, /export function UtilitySection/)
-  assert.match(layoutSource, /export function SettingsGroup/)
-  assert.match(layoutSource, /export function QuietStatus/)
   assert.match(layoutSource, /export function EditorialEmptyState/)
-  assert.match(layoutSource, /aria-labelledby=/)
-  assert.match(layoutSource, /editorial-page-header/)
+  assert.doesNotMatch(layoutSource, /export function ChapterHeader/)
+  assert.doesNotMatch(layoutSource, /export function SharedSpaceHeader/)
+  assert.doesNotMatch(layoutSource, /export function UtilityPageHeader/)
+  assert.doesNotMatch(layoutSource, /export function SettingsGroup/)
+  assert.doesNotMatch(layoutSource, /export function QuietStatus/)
 })
 
 test('settings page layout keeps the faithful utility information architecture explicit', async () => {

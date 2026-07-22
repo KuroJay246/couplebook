@@ -41,7 +41,21 @@ export function SettingsView({ model }) {
           </div>
           <div className={`settings-panel ${active === 'privacy' ? 'active' : ''}`}>
             <h3 style={{ fontFamily: 'var(--font-accent)', marginBottom: '0.5rem' }}>Privacy Toggles</h3>
-            {['Private approved access only', 'Browser storage cannot sign you in'].map((label) => <div className="toggle-item" key={label}><div className="toggle-label-container"><span className="toggle-title">{label}</span><span className="toggle-desc">Protected by the current Firebase session.</span></div><label className="switch"><input checked readOnly type="checkbox" /><span className="slider" /></label></div>)}
+            {['Private approved access only', 'Browser storage cannot sign you in'].map((label) => {
+              const id = `setting-${label.toLowerCase().replaceAll(' ', '-')}`
+              return (
+                <div className="toggle-item" key={label}>
+                  <div className="toggle-label-container">
+                    <span className="toggle-title" id={`${id}-label`}>{label}</span>
+                    <span className="toggle-desc">Protected by the current Firebase session.</span>
+                  </div>
+                  <label className="switch" htmlFor={id}>
+                    <input aria-labelledby={`${id}-label`} checked id={id} readOnly type="checkbox" />
+                    <span className="slider" />
+                  </label>
+                </div>
+              )
+            })}
           </div>
           <div className={`settings-panel ${active === 'accounts' ? 'active' : ''}`}>
             <h3 style={{ fontFamily: 'var(--font-accent)', marginBottom: '0.5rem' }}>Account Management</h3>

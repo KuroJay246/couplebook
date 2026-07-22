@@ -28,7 +28,6 @@ test('route registry keeps the final primary and secondary hierarchy explicit', 
 
 test('app shell keeps the refined navigation hierarchy explicit', async () => {
   const shellSource = await readSource('../layout/AppShell.jsx')
-  const mobileNavSource = await readSource('../layout/MobileNavigation.jsx')
   const routeConfigSource = await readSource('../app/routeConfig.js')
 
   assert.match(routeConfigSource, /ROUTE_GROUPS/)
@@ -42,7 +41,7 @@ test('app shell keeps the refined navigation hierarchy explicit', async () => {
   assert.match(shellSource, /sidebar-panel/)
   assert.match(shellSource, /Logout/)
   assert.match(shellSource, /Quick Nav/)
-  assert.match(mobileNavSource, /mobile-nav/)
+  assert.doesNotMatch(shellSource, /MobileNavigation/)
 })
 
 test('shared states and login shell keep the editorial-journal framing explicit', async () => {

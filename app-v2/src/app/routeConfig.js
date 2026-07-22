@@ -98,8 +98,6 @@ export const protectedRouteMeta = [
   },
 ]
 
-const routeMetaByPath = new Map(protectedRouteMeta.map((route) => [route.path, route]))
-
 export function getRoutesByGroup(group) {
   return protectedRouteMeta.filter((route) => route.group === group)
 }
@@ -114,11 +112,6 @@ export function normalizePathname(pathname) {
 export function isProtectedPath(pathname) {
   const normalizedPath = normalizePathname(pathname)
   return protectedRouteMeta.some((route) => route.path === normalizedPath)
-}
-
-export function findRouteMeta(pathname) {
-  const normalizedPath = normalizePathname(pathname)
-  return routeMetaByPath.get(normalizedPath) || null
 }
 
 export function resolveProtectedRouteOutcome({ pathname, isLoading, user, isAuthorized }) {

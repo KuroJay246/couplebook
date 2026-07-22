@@ -21,7 +21,7 @@ export function ContractView({ model }) {
             <div className="signee-status" key={record.displayName}>
               <div className="signee-name">{record.displayName}</div>
               <span className="badge" style={{ background: record.status === 'signed' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.1)', color: record.status === 'signed' ? '#6ee7b7' : '#f87171' }}>{record.label}</span>
-              <div style={{ fontSize: '0.7rem', color: 'var(--color-muted)', marginTop: '0.25rem' }}>{record.signedAtLabel}</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--color-muted)', marginTop: '0.25rem' }}>{record.signedAtLabel}</div>
             </div>
           )) : null}
         </div>

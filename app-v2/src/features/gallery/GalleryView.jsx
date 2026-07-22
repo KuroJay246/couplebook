@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 
@@ -75,15 +75,25 @@ function LiveAlbumTile() {
 }
 
 function GalleryLightbox({ item, onClose }) {
+  const dialogRef = useRef(null)
+
+  useEffect(() => {
+    if (!item) return
+    if (!dialogRef.current?.open) {
+      dialogRef.current?.showModal()
+    }
+    dialogRef.current?.querySelector('button')?.focus()
+  }, [item])
+
   if (!item) return null
   const isVideo = item.media.kind === 'video'
   return createPortal(
     isVideo ? (
-      <div className="modal-overlay active" role="presentation">
-        <div aria-modal="true" className="modal-container" role="dialog" style={{ maxWidth: '700px', background: '#000000', borderColor: 'rgba(255,255,255,0.15)' }}>
+      <dialog aria-labelledby="gallery-video-title" className="modal-overlay active" onCancel={onClose} ref={dialogRef}>
+        <div className="modal-container" style={{ maxWidth: '700px', background: '#000000', borderColor: 'rgba(255,255,255,0.15)' }}>
           <div className="modal-header" style={{ background: '#0d0f14', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-            <h3 className="modal-title" style={{ color: 'white' }}>{item.title}</h3>
-            <button className="modal-close" onClick={onClose} style={{ color: 'white' }} type="button">×</button>
+            <h3 className="modal-title" id="gallery-video-title" style={{ color: 'white' }}>{item.title}</h3>
+            <button aria-label="Close gallery details" className="modal-close" onClick={onClose} style={{ color: 'white' }} type="button">×</button>
           </div>
           <div className="modal-body" style={{ padding: 0, lineHeight: 0, background: '#000000' }}>
             <div className="gallery-video-unavailable">
@@ -99,14 +109,14 @@ function GalleryLightbox({ item, onClose }) {
             <button className="btn btn-secondary" onClick={onClose} type="button">Close</button>
           </div>
         </div>
-      </div>
+      </dialog>
     ) : (
-      <div className="lightbox-overlay active" role="dialog" aria-modal="true">
-        <button className="lightbox-close" onClick={onClose} type="button">×</button>
+      <dialog aria-labelledby="gallery-image-title" className="lightbox-overlay active" onCancel={onClose} ref={dialogRef}>
+        <button aria-label="Close gallery details" className="lightbox-close" onClick={onClose} type="button">×</button>
         <div className="lightbox-content gallery-video-unavailable">
           <div className="gallery-video-unavailable-copy">
             <p className="gallery-video-unavailable-label">Private image stored safely</p>
-            <h4 className="gallery-video-unavailable-title">{item.title}</h4>
+            <h4 className="gallery-video-unavailable-title" id="gallery-image-title">{item.title}</h4>
             <p className="gallery-video-unavailable-text">{item.description}</p>
           </div>
         </div>
@@ -114,7 +124,7 @@ function GalleryLightbox({ item, onClose }) {
           <div className="lightbox-caption">{item.displayDate || 'Date review'}</div>
           <div className="gallery-lightbox-status">Story preserved. Image stays private.</div>
         </div>
-      </div>
+      </dialog>
     ),
     document.body,
   )

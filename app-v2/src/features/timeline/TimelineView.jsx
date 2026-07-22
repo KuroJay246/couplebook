@@ -46,13 +46,16 @@ function TimelineCard({ memory, onSelect }) {
 function DetailModal({ memory, onClose }) {
   const closeRef = useRef(null)
   useEffect(() => {
-    if (memory) closeRef.current?.focus()
+    if (!memory) return
+    const dialog = closeRef.current?.closest('dialog')
+    if (dialog && !dialog.open) dialog.showModal()
+    closeRef.current?.focus()
   }, [memory])
 
   if (!memory) return null
   return createPortal(
-    <div className="modal-overlay active" role="presentation">
-      <div aria-labelledby="detail-title" aria-modal="true" className="modal-container" role="dialog" style={{ maxWidth: '600px' }}>
+    <dialog aria-labelledby="detail-title" className="modal-overlay active" onCancel={onClose}>
+      <div className="modal-container" style={{ maxWidth: '600px' }}>
         <div className="modal-header" style={{ borderBottom: 'none' }}>
           <h3 className="modal-title" id="detail-title" style={{ fontSize: '1.4rem' }}>{memory.displayTitle}</h3>
           <button aria-label="Close memory details" className="modal-close" onClick={onClose} ref={closeRef} type="button">×</button>
@@ -83,7 +86,7 @@ function DetailModal({ memory, onClose }) {
           <button className="btn btn-secondary" onClick={onClose} type="button">Close</button>
         </div>
       </div>
-    </div>,
+    </dialog>,
     document.body,
   )
 }

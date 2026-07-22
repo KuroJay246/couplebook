@@ -28,10 +28,6 @@ function slugify(value) {
   return normalizeComparableText(value).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'item'
 }
 
-function pluralize(count, singular, plural = `${singular}s`) {
-  return `${count} ${count === 1 ? singular : plural}`
-}
-
 function summarizeSource(key, source) {
   const status = source?.status || 'empty'
   let summary = 'This supporting source is waiting for its first safe values.'
@@ -355,15 +351,4 @@ export function deriveFavoritesStatus({ favoritesSource, people, profileSource }
   if (people.length === 1) return 'partial'
   if (profileStatus === 'unavailable' || profileStatus === 'invalid') return 'partial'
   return 'ready'
-}
-
-export function describeFavoritesCounts(model) {
-  const visiblePeople = pluralize(model.people.length, 'collection')
-  const visibleCategories = pluralize(model.categoryIndex.length, 'category', 'categories')
-
-  if (model.shared.exactMatches.length > 0) {
-    return `${visiblePeople} visible, ${visibleCategories} preserved, and ${pluralize(model.shared.exactMatches.length, 'exact overlap')} ready.`
-  }
-
-  return `${visiblePeople} visible and ${visibleCategories} preserved.`
 }
