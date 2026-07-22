@@ -1253,3 +1253,15 @@ Release record:
 - Static rollback: preserved through `couplebook-static-backup-20260721-183554`.
 - Candidate rollback reference: preserved through `couplebook-v1.0-candidate-20260721-183554`.
 - Firebase Storage/private media: deferred; Version 1.0 remains metadata-only for private media.
+
+## Version 1.1 Visual Recovery Branch - 2026-07-22
+
+Branch status:
+
+- Active branch: `fix/couplebook-visual-recovery`.
+- Production remains on Version 1.0; no Version 1.1 production deployment has occurred.
+- Gallery now includes a protected `Our Live Album` card that links to the existing shared iCloud album for photos and videos added outside Couple Book.
+- iCloud privacy check: a clean signed-out browser could reach only the iCloud sign-in page and could not view the album contents or item count. The owner-only Public Website toggle was not visible from the subscriber account used for review, so it is not recorded as directly inspected.
+- Firestore rules source of truth: `firestore.rules` is the authoritative production Firestore rules file and matches deployed policy content after normal trailing-newline normalization.
+- The older `firestore.rules.private-draft` file was a pre-app-v2 private draft and is removed from the active release path. Production rule validation now relies on active `firestore.rules`, behavior tests, placeholder scans, and Firebase CLI dry-run compile.
+- Firebase Storage/private media remains deferred.

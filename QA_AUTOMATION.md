@@ -128,7 +128,7 @@ Build/privacy scan result:
   Verifies `public/` does not contain `.mp4`, `.mov`, `.mp3`, `.wav`, `.jpg`, `.jpeg`, or `.png` files. For this private app, any future exception should be explicitly documented before the check is relaxed.
 
 - `npm run check:rules`
-  Verifies the local Firestore live rules match the reviewed draft, confirms placeholder UIDs are gone, confirms Hosting still publishes only `public/`, confirms the Storage draft still blocks deletes, and runs a Firebase CLI dry-run for Firestore rules only.
+  Verifies `firestore.rules` as the authoritative production Firestore rules file, confirms placeholder UIDs are gone from active Firestore rules and the future-only Storage draft, confirms Hosting still publishes only `app-v2/dist`, confirms the Storage draft still blocks deletes, and runs a Firebase CLI dry-run for Firestore rules only.
 
 - `npm run check:mirrors`
   Verifies the known root/public mirrored runtime files stay byte-equivalent after normalizing line endings, including the `services/` mirror set.
@@ -168,7 +168,7 @@ Build/privacy scan result:
   A media file with a blocked extension exists inside `public/`. Treat it as unsafe until it is proven to be an intentional public-safe UI asset.
 
 - `check:rules` failure:
-  The local rules drifted, a placeholder UID remains, Hosting target drifted, Storage delete blocking regressed, or the Firestore rules dry-run no longer validates.
+  The authoritative Firestore rules no longer validate, a placeholder UID remains in an active rules file, Hosting target drifted, Storage delete blocking regressed, or the Firestore rules dry-run no longer validates.
 
 - `check:mirrors` failure:
   A mirrored root/public runtime file drifted. Stop and realign both trees before committing.

@@ -5,6 +5,7 @@ import { EditorialEmptyState, EditorialSection, QuietStatus, SharedSpaceHeader }
 import { resolveMediaUrl } from '../../services/mediaService'
 
 const COLLECTION_LIMIT = 4
+const LIVE_SHARED_ALBUM_URL = 'https://www.icloud.com/photos/#/sa,20BC8532-D41C-4AB3-9C83-B05458C10B78/'
 const TYPE_FILTERS = Object.freeze([
   { key: 'all', label: 'All' },
   { key: 'photos', label: 'Photos' },
@@ -317,6 +318,25 @@ function GallerySummary({ model }) {
   )
 }
 
+function LiveSharedAlbumCard() {
+  return (
+    <article className="gallery-live-album-card">
+      <div className="gallery-live-album-thumbnail" aria-hidden="true">
+        <span>Us</span>
+      </div>
+      <div className="gallery-live-album-copy">
+        <span className="folio-mark">Live album</span>
+        <h3>Our Live Album</h3>
+        <p>Open our shared iCloud album to see the latest photos and videos added outside Couple Book.</p>
+        <span className="gallery-live-album-status">Updated through iCloud</span>
+      </div>
+      <a className="gallery-live-album-link" href={LIVE_SHARED_ALBUM_URL} rel="noopener noreferrer" target="_blank">
+        Open Live Album
+      </a>
+    </article>
+  )
+}
+
 function GalleryItem({ item, onSelect }) {
   const typeMark = item.media.kind === 'video' ? 'Motion' : item.specialMoment.isSpecial ? 'Special' : 'Image'
 
@@ -552,6 +572,7 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
         eyebrow="Archive"
         title="Moments kept in pictures and motion."
       >
+        <LiveSharedAlbumCard />
         <GallerySummary model={model} />
         <GalleryFilters filters={filters} model={model} onChange={setFilters} />
         {compatibilityState === 'loading' && model.summary.totalMemories === 0 ? (

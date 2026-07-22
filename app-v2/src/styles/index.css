@@ -1412,6 +1412,8 @@ code {
 .gallery-hero,
 .gallery-opening-note,
 .gallery-collection,
+.gallery-live-album-card,
+.gallery-live-album-copy,
 .gallery-item-card,
 .gallery-item-copy,
 .special-moment-page,
@@ -1421,6 +1423,7 @@ code {
 }
 
 .gallery-opening-note,
+.gallery-live-album-card,
 .gallery-item-card,
 .special-moment-status,
 .special-moment-panel {
@@ -1429,6 +1432,80 @@ code {
   border: 1px solid var(--line);
   border-radius: 16px;
   background: rgba(255, 252, 246, 0.72);
+}
+
+.gallery-live-album-card {
+  grid-template-columns: minmax(112px, 0.24fr) minmax(0, 1fr) auto;
+  align-items: center;
+  overflow: hidden;
+  contain: layout paint;
+  background:
+    linear-gradient(135deg, rgba(255, 74, 107, 0.16), rgba(139, 92, 246, 0.1) 54%, rgba(255, 252, 246, 0)),
+    rgba(255, 252, 246, 0.78);
+}
+
+.gallery-live-album-thumbnail {
+  display: grid;
+  place-items: center;
+  min-height: 112px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background:
+    linear-gradient(145deg, rgba(255, 74, 107, 0.58), rgba(139, 92, 246, 0.46) 48%, rgba(10, 12, 16, 0.74));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+}
+
+.gallery-live-album-thumbnail span {
+  color: #fff;
+  font-family: "Georgia", "Times New Roman", serif;
+  font-size: clamp(1.9rem, 5vw, 3.1rem);
+  font-weight: 700;
+  text-shadow: 0 8px 24px rgba(0, 0, 0, 0.42);
+}
+
+.gallery-live-album-copy {
+  gap: 8px;
+}
+
+.gallery-live-album-copy h3 {
+  font-size: clamp(1.35rem, 2.5vw, 1.95rem);
+  line-height: 1.08;
+}
+
+.gallery-live-album-copy p {
+  max-width: 58ch;
+  color: var(--ink-soft);
+  line-height: 1.66;
+}
+
+.gallery-live-album-status {
+  width: fit-content;
+  color: var(--cb-gold);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.gallery-live-album-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 16px;
+  color: var(--ink);
+  white-space: nowrap;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.58);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.gallery-live-album-link:hover {
+  background: var(--cb-bg-glass-hover);
+  border-color: rgba(255, 74, 107, 0.28);
 }
 
 .gallery-summary-grid {
@@ -3591,6 +3668,18 @@ code {
   .favorites-link-grid,
   .profile-entry-grid {
     grid-template-columns: 1fr;
+  }
+
+  .gallery-live-album-card {
+    grid-template-columns: 1fr;
+  }
+
+  .gallery-live-album-thumbnail {
+    min-height: 112px;
+  }
+
+  .gallery-live-album-link {
+    width: 100%;
   }
 
   .gallery-item-frame {
