@@ -365,6 +365,7 @@ Candidate implementation now exists for:
 - private couple-scoped Storage rules at `storage.app-v2.rules`
 - Storage emulator coverage for active owner/member access, pending denial, signed-out denial, unauthorized denial, cross-couple denial, invalid paths, invalid MIME, oversized derivatives, unsupported extensions, and metadata tampering
 - deterministic exact-match media mapping and dry-run manifest generation
+- guarded Admin SDK media apply tooling with Application Default Credentials, explicit project lock, manifest checksum verification, derived confirmation token, local-file checksum verification, idempotent object handling, conflict detection, and redacted rollback backup output
 - strict Firestore `storage-verified` media metadata validation
 - Gallery rendering of verified private media through transient authenticated Storage URL resolution
 - fallback Gallery states for missing or unavailable legacy media
@@ -375,5 +376,6 @@ Required before any upload:
 2. Storage rules and Firestore rules pass serial emulator tests
 3. dry-run reports conflicts `0`, invalid `0`, ambiguous auto-upload `0`, probable auto-upload `0`
 4. backup and rollback manifest are verified
-5. exact-match upload command is explicitly approved
-6. post-upload owner read and pending-partner denial are verified
+5. exact-match upload command is explicitly approved with the checksum-derived confirmation token
+6. Application Default Credentials are available for the guarded Admin SDK tool
+7. post-upload owner read and pending-partner denial are verified

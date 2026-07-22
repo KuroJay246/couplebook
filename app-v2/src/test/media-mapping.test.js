@@ -68,6 +68,7 @@ test('media manifest classifies exact, duplicate, and missing references safely'
   assert.equal(manifest.publicManifest.summary.missing, 1)
   assert.equal(manifest.publicManifest.summary.ambiguousMatches, 1)
   assert.equal(manifest.publicManifest.summary.plannedOriginalUploads, 1)
+  assert.equal(manifest.privateManifest.checksum, manifest.publicManifest.checksum)
   assert.equal(JSON.stringify(manifest.publicManifest).includes('C:/private'), false)
   assert.equal(JSON.stringify(manifest.privateManifest).includes('C:/private/exact.mp4'), true)
 })

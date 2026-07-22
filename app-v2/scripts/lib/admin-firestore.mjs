@@ -1,5 +1,6 @@
 import { applicationDefault, getApps, initializeApp } from 'firebase-admin/app'
 import { getFirestore } from 'firebase-admin/firestore'
+import { getStorage } from 'firebase-admin/storage'
 import process from 'node:process'
 import { assertProjectArg, REQUIRED_PROJECT_ID } from './project-guard.mjs'
 
@@ -28,4 +29,11 @@ export async function initializeAdminFirestore(args = process.argv.slice(2)) {
   await db.doc('_migrationCredentialChecks/project').get()
 
   return { db, projectId }
+}
+
+export async function initializeAdminMediaServices(args = process.argv.slice(2)) {
+  const { db, projectId } = await initializeAdminFirestore(args)
+  const app = getApps().find((candidate) => candidate.name === 'couplebook-migration')
+  const bucket = getStorage(app).bucket(`${projectId}.appspot.com`)
+  return { bucket, db, projectId }
 }

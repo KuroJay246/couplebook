@@ -151,6 +151,15 @@ export function buildMediaManifest({ coupleId, localMedia, references }) {
         ? {
             redactedFileId: candidate.redactedFileId,
             storagePath: `couples/${coupleId}/media/${reference.mediaId}/${variant}`,
+            storageMetadata: {
+              coupleId,
+              mediaId: reference.mediaId,
+              ownerUid: '',
+              schemaVersion: '1',
+              kind: reference.expectedType,
+              extension: candidate.extension.replace(/^\./, ''),
+              sha256: candidate.sha256,
+            },
             extension: candidate.extension.replace(/^\./, ''),
             contentType: candidate.contentType,
             sizeBytes: candidate.sizeBytes,
@@ -192,12 +201,12 @@ export function buildMediaManifest({ coupleId, localMedia, references }) {
     summary,
     records: publicRecords,
   }
-  const privateManifest = {
-    ...publicManifest,
-    records,
-  }
   const checksum = crypto.createHash('sha256').update(JSON.stringify(publicManifest)).digest('hex')
-  return { checksum, privateManifest, publicManifest: { ...publicManifest, checksum } }
+  return {
+    checksum,
+    privateManifest: { ...publicManifest, checksum, records },
+    publicManifest: { ...publicManifest, checksum },
+  }
 }
 
 export function assertProject(projectId) {
