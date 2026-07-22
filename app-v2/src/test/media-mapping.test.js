@@ -131,3 +131,54 @@ test('media project lock rejects missing, wrong, and prohibited projects', () =>
   assert.throws(() => assertProject('gathervibeshub'))
   assert.throws(() => assertProject('some-other-project'))
 })
+
+test('media manifest prevents duplicate upload attempts for duplicate canonical candidates', () => {
+  const shared = {
+    privatePath: 'C:/private/canonical.mp4',
+    redactedFileId: 'canonical-one',
+    normalizedFilename: 'exact.mp4',
+    extension: '.mp4',
+    type: 'video',
+    supportedUpload: true,
+    contentType: 'video/mp4',
+    sizeBytes: 3,
+    sha256: 'a'.repeat(64),
+    corrupt: false,
+  }
+  const manifest = buildMediaManifest({
+    coupleId: 'couple_alpha',
+    localMedia: [shared, { ...shared, privatePath: 'C:/private/canonical-copy.mp4', redactedFileId: 'canonical-two' }],
+    references: [
+      { memoryId: 'one', mediaId: 'media_one', redactedReferenceId: 'ref1', normalizedFilename: 'exact.mp4', expectedType: 'video' },
+    ],
+  })
+
+  assert.equal(manifest.publicManifest.summary.duplicates, 1)
+  assert.equal(manifest.publicManifest.summary.plannedOriginalUploads, 0)
+})
+
+test('media manifest matches canonical files by private filename aliases without inflating local file counts', () => {
+  const manifest = buildMediaManifest({
+    coupleId: 'couple_alpha',
+    localMedia: [{
+      privatePath: 'C:/private/media_hash.mp4',
+      redactedFileId: 'canonical-one',
+      normalizedFilename: 'mediahash.mp4',
+      filenameAliases: ['legacyclip.mp4'],
+      extension: '.mp4',
+      type: 'video',
+      supportedUpload: true,
+      contentType: 'video/mp4',
+      sizeBytes: 3,
+      sha256: 'b'.repeat(64),
+      corrupt: false,
+    }],
+    references: [
+      { memoryId: 'one', mediaId: 'media_one', redactedReferenceId: 'ref1', normalizedFilename: 'legacyclip.mp4', expectedType: 'video' },
+    ],
+  })
+
+  assert.equal(manifest.publicManifest.summary.localFiles, 1)
+  assert.equal(manifest.publicManifest.summary.exactMatches, 1)
+  assert.equal(manifest.publicManifest.summary.plannedOriginalUploads, 1)
+})

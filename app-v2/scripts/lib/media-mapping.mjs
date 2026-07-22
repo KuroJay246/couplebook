@@ -148,8 +148,11 @@ export function readLegacyMediaReferences({ repoRoot }) {
 export function buildMediaManifest({ coupleId, derivedPosters = new Map(), localMedia, references }) {
   const localByName = new Map()
   for (const file of localMedia) {
-    if (!localByName.has(file.normalizedFilename)) localByName.set(file.normalizedFilename, [])
-    localByName.get(file.normalizedFilename).push(file)
+    const names = [file.normalizedFilename, ...(Array.isArray(file.filenameAliases) ? file.filenameAliases : [])].filter(Boolean)
+    for (const name of new Set(names)) {
+      if (!localByName.has(name)) localByName.set(name, [])
+      localByName.get(name).push(file)
+    }
   }
 
   const records = references.map((reference) => {

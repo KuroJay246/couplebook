@@ -54,3 +54,10 @@ app-v2/local-migration-packages/
 .local-backups/
 .local-migration-packages/
 .visual-audit/
+Couple Book Private Media/
+Couple Book Media Recovery.manifests/
+media-inventory*.json
+media-inventory*.csv
+duplicate-groups*.json
+folder-summary*.json
+recovery-log*.json
