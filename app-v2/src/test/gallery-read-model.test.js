@@ -100,6 +100,38 @@ test('gallery read model exposes no raw private paths and keeps deterministic gr
   assert.doesNotMatch(serialized, /\/assets\/photos|\/assets\/videos|C:\\\\|mediaPath|pageUrl|older"|newer"/)
 })
 
+test('gallery read model exposes verified storage media without raw local references', () => {
+  const model = buildGalleryReadModel({
+    compatibilitySnapshot: createSnapshot({
+      status: 'ready',
+      source: 'firestore',
+      data: {
+        hasBaseDataset: true,
+        memories: [
+          createMemoryRecord({
+            id: 'verified-video',
+            mediaPath: '',
+            mediaKind: 'video',
+            media: {
+              kind: 'video',
+              storagePath: 'couples/couple_alpha/media/media_001/original',
+              posterPath: 'couples/couple_alpha/media/media_001/poster',
+              contentType: 'video/mp4',
+              sizeBytes: 100,
+            },
+          }),
+        ],
+      },
+      warnings: [],
+    }),
+  })
+
+  assert.equal(model.verifiedMedia.length, 1)
+  assert.equal(model.videos[0].media.status, 'storage-verified')
+  assert.equal(model.videos[0].media.storagePath, 'couples/couple_alpha/media/media_001/original')
+  assert.doesNotMatch(JSON.stringify(model), /C:\\\\|OUR MEMORIES|\/assets\/videos/)
+})
+
 test('gallery read model distinguishes unavailable from empty and partial states', () => {
   const unavailableModel = buildGalleryReadModel({
     compatibilitySnapshot: createSnapshot({
@@ -143,13 +175,13 @@ test('gallery read model distinguishes unavailable from empty and partial states
   assert.equal(partialModel.status, 'partial')
 })
 
-test('gallery architecture stays read-only and avoids fetch, writes, broad queries, and Storage', async () => {
+test('gallery architecture stays read-only and routes Storage through the media service only', async () => {
   const selectorsSource = await readFile(new URL('../features/gallery/gallerySelectors.js', import.meta.url), 'utf8')
   const readModelSource = await readFile(new URL('../features/gallery/galleryReadModel.js', import.meta.url), 'utf8')
   const hookSource = await readFile(new URL('../features/gallery/useGalleryData.js', import.meta.url), 'utf8')
   const combined = `${selectorsSource}\n${readModelSource}\n${hookSource}`
 
-  assert.doesNotMatch(combined, /fetch\(|XMLHttpRequest|new Image|<img|<video|createObjectURL|getDownloadURL|firebase\/storage/)
+  assert.doesNotMatch(combined, /fetch\(|XMLHttpRequest|new Image|createObjectURL|getDownloadURL|firebase\/storage/)
   assert.doesNotMatch(combined, /\bsetItem\s*\(|\bupdateDoc\s*\(|\baddDoc\s*\(|\bdeleteDoc\s*\(|\bsetDoc\s*\(/)
   assert.doesNotMatch(combined, /collection\([^)]*users|documents\/users(?:[/?#]|\b)/)
   assert.doesNotMatch(combined, /jaylanspencer99|C:\\Users|OUR MEMORIES|\/assets\/photos|\/assets\/videos/)

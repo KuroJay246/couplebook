@@ -175,6 +175,27 @@ function normalizeSpecialMoment(record, warnings) {
 }
 
 function normalizeMediaReference(record, specialMoment) {
+  if (record?.media && typeof record.media === 'object') {
+    const kind = toTrimmedString(record.media.kind)
+    const storagePath = toTrimmedString(record.media.storagePath)
+    const thumbnailPath = toTrimmedString(record.media.thumbnailPath)
+    const posterPath = toTrimmedString(record.media.posterPath)
+    if ((kind === 'image' || kind === 'video') && /^couples\/[A-Za-z0-9_-]{1,120}\/media\/[A-Za-z0-9_-]{1,120}\/(original|thumbnail|poster)$/.test(storagePath)) {
+      return {
+        status: 'storage-verified',
+        kind,
+        hasReference: true,
+        isAvailableInApp: true,
+        displayUrl: null,
+        storagePath,
+        thumbnailPath,
+        posterPath,
+        contentType: toTrimmedString(record.media.contentType),
+        sizeBytes: Number.isSafeInteger(record.media.sizeBytes) ? record.media.sizeBytes : 0,
+      }
+    }
+  }
+
   const mediaPath = toTrimmedString(record?.mediaPath)
   const mediaKind = toTrimmedString(record?.mediaKind) || 'unknown'
 

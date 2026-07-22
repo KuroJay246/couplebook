@@ -48,7 +48,8 @@ service cloud.firestore {
     //   description: string, <=2000
     //   date: string YYYY-MM-DD
     //   tags: list <=30
-    //   mediaState: none|private-legacy-reference
+    //   mediaState: none|private-legacy-reference|storage-verified
+    //   media: optional map for verified Storage media only
     //   specialMomentType: optional ordinary|birthday|valentine|confession
     //   status: active|archived
     //   createdBy/updatedBy: uid strings
@@ -159,18 +160,46 @@ service cloud.firestore {
     }
 
     function isValidMemory() {
-      return hasOnly(['schemaVersion', 'title', 'description', 'date', 'tags', 'mediaState', 'specialMomentType', 'createdBy', 'updatedBy', 'status'])
+      return hasOnly(['schemaVersion', 'title', 'description', 'date', 'tags', 'mediaState', 'media', 'specialMomentType', 'createdBy', 'updatedBy', 'status'])
         && hasAll(['schemaVersion', 'title', 'date', 'mediaState', 'createdBy', 'updatedBy', 'status'])
         && request.resource.data.schemaVersion == 1
         && isRequiredSafeString(request.resource.data.title, 180)
         && (!('description' in request.resource.data) || isSafeString(request.resource.data.description, 2000))
         && request.resource.data.date.matches('^\\d{4}-\\d{2}-\\d{2}$')
         && (!('tags' in request.resource.data) || isStringList(request.resource.data.tags, 30))
-        && request.resource.data.mediaState in ['none', 'private-legacy-reference']
+        && request.resource.data.mediaState in ['none', 'private-legacy-reference', 'storage-verified']
+        && (
+          request.resource.data.mediaState == 'storage-verified'
+            ? ('media' in request.resource.data && isValidMediaMetadata(request.resource.data.media))
+            : !('media' in request.resource.data)
+        )
         && (!('specialMomentType' in request.resource.data) || request.resource.data.specialMomentType in ['birthday', 'valentine', 'confession'])
         && request.resource.data.createdBy == request.auth.uid
         && request.resource.data.updatedBy == request.auth.uid
         && request.resource.data.status in ['active', 'archived'];
+    }
+
+    function isSafeStoragePath(value) {
+      return value is string
+        && value.matches('^couples/[A-Za-z0-9_-]{1,120}/media/[A-Za-z0-9_-]{1,120}/(original|thumbnail|poster)$');
+    }
+
+    function isValidMediaMetadata(media) {
+      return media is map
+        && media.keys().hasOnly(['id', 'kind', 'storagePath', 'thumbnailPath', 'posterPath', 'contentType', 'sizeBytes', 'checksum'])
+        && media.id is string
+        && media.id.matches('^[A-Za-z0-9_-]{1,120}$')
+        && media.kind in ['image', 'video']
+        && isSafeStoragePath(media.storagePath)
+        && (!('thumbnailPath' in media) || media.thumbnailPath == '' || isSafeStoragePath(media.thumbnailPath))
+        && (!('posterPath' in media) || media.posterPath == '' || isSafeStoragePath(media.posterPath))
+        && media.contentType is string
+        && media.contentType.matches('^(image/(jpeg|png|webp|gif)|video/(mp4|quicktime|webm))$')
+        && media.sizeBytes is int
+        && media.sizeBytes >= 0
+        && media.sizeBytes <= 250 * 1024 * 1024
+        && media.checksum is string
+        && media.checksum.matches('^[A-Fa-f0-9]{64}$');
     }
 
     function isValidContractAcceptance() {

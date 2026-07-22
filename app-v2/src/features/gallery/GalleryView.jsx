@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { EditorialEmptyState, EditorialSection, QuietStatus, SharedSpaceHeader } from '../../components/PageLayout'
+import { resolveMediaUrl } from '../../services/mediaService'
 
 const COLLECTION_LIMIT = 4
 const TYPE_FILTERS = Object.freeze([
@@ -118,6 +119,10 @@ function groupByYear(items) {
 }
 
 function mediaStatusLabel(item) {
+  if (item.media.status === 'storage-verified') {
+    return item.media.kind === 'video' ? 'Verified private video' : 'Verified private photo'
+  }
+
   if (item.media.status === 'private-legacy-reference') {
     return item.media.kind === 'video' ? 'Private video remains in the legacy book' : 'Private photo remains in the legacy book'
   }
@@ -127,6 +132,54 @@ function mediaStatusLabel(item) {
   if (item.media.status === 'special-route-only') return 'Protected special route'
   if (item.media.status === 'available-local-reference') return 'Local reference not previewed'
   return 'No media preview'
+}
+
+function getPreviewStoragePath(item) {
+  if (item.media.status !== 'storage-verified') return ''
+  return item.media.thumbnailPath || item.media.posterPath || (item.media.kind === 'image' ? item.media.storagePath : '')
+}
+
+function SecureMediaPreview({ item, mode = 'card' }) {
+  const [state, setState] = useState({ status: 'idle', path: '', url: '' })
+  const storagePath = mode === 'detail' ? item.media.storagePath : getPreviewStoragePath(item)
+
+  useEffect(() => {
+    let active = true
+    if (!storagePath) {
+      return () => {
+        active = false
+      }
+    }
+
+    resolveMediaUrl(storagePath)
+      .then((url) => {
+        if (active) setState({ status: 'ready', path: storagePath, url })
+      })
+      .catch(() => {
+        if (active) setState({ status: 'error', path: storagePath, url: '' })
+      })
+
+    return () => {
+      active = false
+    }
+  }, [storagePath])
+
+  const status = storagePath ? (state.path === storagePath ? state.status : 'loading') : 'unavailable'
+
+  if (status === 'ready' && state.url) {
+    if (mode === 'detail' && item.media.kind === 'video') {
+      return <video className="gallery-secure-media gallery-secure-media-video" controls preload="metadata" src={state.url} />
+    }
+
+    return <img alt="" className="gallery-secure-media" loading="lazy" src={state.url} />
+  }
+
+  const label = status === 'loading' ? 'Loading private media' : status === 'error' ? 'Private media failed to load' : item.media.kind === 'video' ? 'Private video' : 'Private media'
+  return (
+    <div className={`gallery-secure-media-fallback gallery-secure-media-fallback-${status}`} aria-label={label}>
+      <span>{label}</span>
+    </div>
+  )
 }
 
 function GalleryDetailDialog({ item, onClose }) {
@@ -150,8 +203,8 @@ function GalleryDetailDialog({ item, onClose }) {
       <button aria-label="Close visual detail" className="gallery-detail-close" onClick={onClose} ref={closeButtonRef} type="button">
         Close
       </button>
-      <div className="gallery-detail-frame" aria-hidden="true">
-        <span>{typeMark}</span>
+      <div className="gallery-detail-frame" aria-hidden={item.media.status === 'storage-verified' ? undefined : true}>
+        {item.media.status === 'storage-verified' ? <SecureMediaPreview item={item} mode="detail" /> : <span>{typeMark}</span>}
       </div>
       <div className="gallery-detail-copy">
         <span className="folio-mark">{item.typeLabel}</span>
@@ -270,7 +323,7 @@ function GalleryItem({ item, onSelect }) {
   return (
     <article className={`gallery-item-card gallery-item-card-${item.media.status}`}>
       <div className="gallery-item-frame" aria-hidden="true">
-        <span>{typeMark}</span>
+        {item.media.status === 'storage-verified' ? <SecureMediaPreview item={item} /> : <span>{typeMark}</span>}
       </div>
       <div className="gallery-item-copy">
         <div className="gallery-item-meta">

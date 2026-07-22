@@ -3364,6 +3364,39 @@ code {
   color: rgba(248, 250, 252, 0.78);
 }
 
+.gallery-secure-media,
+.gallery-secure-media-fallback {
+  width: 100%;
+  height: 100%;
+  min-height: inherit;
+  border: 0;
+  border-radius: inherit;
+}
+
+.gallery-secure-media {
+  display: block;
+  object-fit: cover;
+  background: rgba(8, 6, 18, 0.72);
+}
+
+.gallery-secure-media-video {
+  object-fit: contain;
+}
+
+.gallery-secure-media-fallback {
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  color: rgba(248, 250, 252, 0.82);
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: clamp(1rem, 2vw, 1.55rem);
+  text-align: center;
+  background:
+    radial-gradient(circle at 30% 24%, rgba(255, 74, 107, 0.24), transparent 34%),
+    radial-gradient(circle at 72% 78%, rgba(139, 92, 246, 0.22), transparent 38%),
+    rgba(12, 10, 28, 0.82);
+}
+
 .profile-person-panel,
 .favorites-person-panel {
   position: relative;
@@ -3562,6 +3595,16 @@ code {
 
   .gallery-item-frame {
     aspect-ratio: 1 / 0.82;
+  }
+
+  .gallery-collection,
+  .gallery-item-card {
+    backdrop-filter: none;
+    box-shadow: 0 14px 34px rgba(4, 3, 12, 0.28);
+  }
+
+  .gallery-item-card {
+    contain: layout paint;
   }
 
   .mobile-nav {

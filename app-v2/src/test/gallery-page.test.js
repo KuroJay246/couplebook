@@ -21,10 +21,12 @@ test('gallery route uses the read-only feature hook and archive view', async () 
   assert.match(galleryViewSource, /The visual archive is unavailable here\./)
 })
 
-test('gallery view keeps media metadata-only and avoids static Gallery dependencies', async () => {
+test('gallery view renders only verified secure media and avoids static Gallery dependencies', async () => {
   const galleryViewSource = await readSource('../features/gallery/GalleryView.jsx')
 
-  assert.doesNotMatch(galleryViewSource, /<img|<video|createObjectURL|fetch\(|getDownloadURL|uploadBytes|firebase\/storage/)
+  assert.match(galleryViewSource, /SecureMediaPreview/)
+  assert.match(galleryViewSource, /storage-verified/)
+  assert.doesNotMatch(galleryViewSource, /createObjectURL|fetch\(|uploadBytes|firebase\/storage/)
   assert.doesNotMatch(galleryViewSource, /pages\/media\.html|pages\/gallery\.html|js\/media\.js|legacy\.html|pageUrl|mediaPath/)
   assert.doesNotMatch(galleryViewSource, /localStorage|memorybook_|legacyMemoryAdapter|raw warnings/)
   assert.doesNotMatch(galleryViewSource, /\bsetItem\s*\(|\bupdateDoc\s*\(|\baddDoc\s*\(|\bdeleteDoc\s*\(/)

@@ -45,7 +45,48 @@ test('Firestore normalizers quarantine unsafe media and raw special HTML', () =>
   assert.ok(specialWarnings.length > 0)
 })
 
-test('app-v2 Firestore sources avoid broad users queries, writes, storage, and arbitrary paths', async () => {
+test('Firestore memory normalizer accepts only safe verified Storage metadata', () => {
+  const warnings = []
+  const memory = normalizeFirestoreMemory('memory_one', {
+    title: 'Safe title',
+    description: 'Safe description',
+    date: '2026-01-01',
+    mediaState: 'storage-verified',
+    media: {
+      id: 'media_001',
+      kind: 'video',
+      storagePath: 'couples/couple_alpha/media/media_001/original',
+      posterPath: 'couples/couple_alpha/media/media_001/poster',
+      contentType: 'video/mp4',
+      sizeBytes: 100,
+      checksum: 'a'.repeat(64),
+    },
+    schemaVersion: 1,
+  }, warnings)
+  assert.equal(memory.media.status, undefined)
+  assert.equal(memory.media.kind, 'video')
+  assert.equal(memory.media.storagePath, 'couples/couple_alpha/media/media_001/original')
+
+  const unsafeWarnings = []
+  const unsafe = normalizeFirestoreMemory('memory_two', {
+    title: 'Unsafe title',
+    date: '2026-01-01',
+    mediaState: 'storage-verified',
+    media: {
+      id: 'media_002',
+      kind: 'image',
+      storagePath: 'https://example.com/private.jpg',
+      contentType: 'image/jpeg',
+      sizeBytes: 10,
+      checksum: 'b'.repeat(64),
+    },
+    schemaVersion: 1,
+  }, unsafeWarnings)
+  assert.equal(unsafe.media, '')
+  assert.match(unsafeWarnings.join(' '), /invalid storage metadata/)
+})
+
+test('app-v2 Firestore sources avoid broad users queries, writes, and arbitrary paths', async () => {
   const serviceFiles = [
     '../services/userService.js',
     '../services/coupleService.js',
@@ -63,5 +104,4 @@ test('app-v2 Firestore sources avoid broad users queries, writes, storage, and a
   assert.doesNotMatch(combined, /collection\([^)]*['"]users['"]/)
   assert.doesNotMatch(combined, /collectionGroup\(/)
   assert.doesNotMatch(combined, /setDoc|addDoc|updateDoc|deleteDoc|writeBatch|runTransaction/)
-  assert.doesNotMatch(combined, /firebase\/storage/)
 })

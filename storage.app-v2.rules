@@ -1,0 +1,107 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // ===============================================================
+    // Assumed Storage Model - app-v2 candidate, not deployed
+    // ===============================================================
+    //
+    // couples/{coupleId}/media/{mediaId}/{variant}
+    //   variant: original|thumbnail|poster
+    //   metadata.coupleId: same as path coupleId
+    //   metadata.mediaId: same as path mediaId
+    //   metadata.ownerUid: active approved member uid
+    //   metadata.schemaVersion: "1"
+    //   metadata.kind: image|video
+    //   metadata.extension: jpg|jpeg|png|webp|gif|mp4|mov|m4v|webm
+    //
+    // Storage is private by default. Reads require an active approved couple
+    // member. Client writes are limited to active members and validated object
+    // metadata; guarded Admin SDK tooling bypasses rules for migration uploads.
+    // ===============================================================
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function userDocPath(uid) {
+      return /databases/(default)/documents/users/$(uid);
+    }
+
+    function memberDocPath(coupleId, uid) {
+      return /databases/(default)/documents/couples/$(coupleId)/members/$(uid);
+    }
+
+    function isSafeId(value) {
+      return value.matches('^[A-Za-z0-9_-]{1,120}$');
+    }
+
+    function isActiveApprovedUserForCouple(coupleId) {
+      return isSignedIn()
+        && firestore.exists(userDocPath(request.auth.uid))
+        && firestore.get(userDocPath(request.auth.uid)).data.approved == true
+        && firestore.get(userDocPath(request.auth.uid)).data.accessStatus == 'active'
+        && firestore.get(userDocPath(request.auth.uid)).data.coupleId == coupleId;
+    }
+
+    function isActiveCoupleMember(coupleId) {
+      return isActiveApprovedUserForCouple(coupleId)
+        && firestore.exists(memberDocPath(coupleId, request.auth.uid))
+        && firestore.get(memberDocPath(coupleId, request.auth.uid)).data.active == true
+        && firestore.get(memberDocPath(coupleId, request.auth.uid)).data.role == 'member';
+    }
+
+    function validVariant(variant) {
+      return variant in ['original', 'thumbnail', 'poster'];
+    }
+
+    function validMetadata(coupleId, mediaId) {
+      return request.resource.metadata.coupleId == coupleId
+        && request.resource.metadata.mediaId == mediaId
+        && request.resource.metadata.ownerUid == request.auth.uid
+        && request.resource.metadata.schemaVersion == '1'
+        && request.resource.metadata.kind in ['image', 'video']
+        && request.resource.metadata.extension in ['jpg', 'jpeg', 'png', 'webp', 'gif', 'mp4', 'mov', 'm4v', 'webm'];
+    }
+
+    function validOriginalContent() {
+      return (
+          request.resource.metadata.kind == 'image'
+          && request.resource.contentType in ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+          && request.resource.size <= 20 * 1024 * 1024
+        )
+        || (
+          request.resource.metadata.kind == 'video'
+          && request.resource.contentType in ['video/mp4', 'video/quicktime', 'video/webm']
+          && request.resource.size <= 250 * 1024 * 1024
+        );
+    }
+
+    function validDerivativeContent() {
+      return request.resource.metadata.kind in ['image', 'video']
+        && request.resource.contentType in ['image/jpeg', 'image/png', 'image/webp']
+        && request.resource.size <= 5 * 1024 * 1024;
+    }
+
+    function validObject(coupleId, mediaId, variant) {
+      return isSafeId(coupleId)
+        && isSafeId(mediaId)
+        && validVariant(variant)
+        && validMetadata(coupleId, mediaId)
+        && (variant == 'original' ? validOriginalContent() : validDerivativeContent());
+    }
+
+    match /couples/{coupleId}/media/{mediaId}/{variant} {
+      allow read: if isActiveCoupleMember(coupleId) && validVariant(variant);
+      allow create: if isActiveCoupleMember(coupleId) && validObject(coupleId, mediaId, variant);
+      allow update: if false;
+      allow delete: if isActiveCoupleMember(coupleId)
+        && resource.metadata.ownerUid == request.auth.uid
+        && validVariant(variant);
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

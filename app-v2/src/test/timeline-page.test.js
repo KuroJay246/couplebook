@@ -20,10 +20,10 @@ test('timeline route uses the read-only feature hook and story view', async () =
   assert.match(timelineViewSource, /The private story bridge is unavailable here\./)
 })
 
-test('timeline view keeps media private and avoids static route dependencies', async () => {
+test('timeline view avoids static route dependencies and direct Storage calls', async () => {
   const timelineViewSource = await readSource('../features/timeline/TimelineView.jsx')
 
-  assert.doesNotMatch(timelineViewSource, /<img|<video|createObjectURL|fetch\(|getDownloadURL|uploadBytes|firebase\/storage/)
+  assert.doesNotMatch(timelineViewSource, /createObjectURL|fetch\(|getDownloadURL|uploadBytes|firebase\/storage/)
   assert.doesNotMatch(timelineViewSource, /pages\/timeline\.html|legacy\.html|pageUrl|mediaPath/)
   assert.doesNotMatch(timelineViewSource, /localStorage|memorybook_|legacyMemoryAdapter|internal warnings/)
   assert.doesNotMatch(timelineViewSource, /\bsetItem\s*\(|\bupdateDoc\s*\(|\baddDoc\s*\(|\bdeleteDoc\s*\(/)

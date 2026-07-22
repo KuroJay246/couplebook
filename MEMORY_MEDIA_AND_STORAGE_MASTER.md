@@ -330,3 +330,50 @@ Still blocked for Version 1.0:
 - Storage initialization and rules review
 - production migration approval
 - partner-account smoke
+
+## 2026-07-22 Version 1.1 Visual Recovery Media Foundation
+
+The Version 1.1 recovery branch now has a guarded, local-only media restoration foundation. No media has been uploaded, no Storage rules have been deployed, and no private media files have been committed.
+
+Verified private-media audit result:
+
+| Metric | Count |
+| --- | --- |
+| Legacy media references | 114 |
+| Local media files inventoried | 35 |
+| Exact local matches | 35 |
+| Verified matches | 0 |
+| Probable matches | 0 |
+| Ambiguous matches | 0 |
+| Missing references | 79 |
+| Corrupt files | 0 |
+| Duplicate content groups | 0 |
+| Planned original uploads in dry run | 35 |
+| Planned thumbnails | 0 |
+| Planned poster frames | 0 |
+| Planned bytes | 497,725,210 |
+
+Current classification:
+
+- the 35 exact matches are videos and may be restored only through the guarded Storage path after all gates pass
+- the 79 missing references are photo references with no matching local files in the owner-authorized project/archive locations currently available
+- no probable or ambiguous files may be uploaded automatically
+- missing photos must remain in the refined missing-media state unless source files are provided later
+
+Candidate implementation now exists for:
+
+- private couple-scoped Storage rules at `storage.app-v2.rules`
+- Storage emulator coverage for active owner/member access, pending denial, signed-out denial, unauthorized denial, cross-couple denial, invalid paths, invalid MIME, oversized derivatives, unsupported extensions, and metadata tampering
+- deterministic exact-match media mapping and dry-run manifest generation
+- strict Firestore `storage-verified` media metadata validation
+- Gallery rendering of verified private media through transient authenticated Storage URL resolution
+- fallback Gallery states for missing or unavailable legacy media
+
+Required before any upload:
+
+1. owner-authenticated preview review passes
+2. Storage rules and Firestore rules pass serial emulator tests
+3. dry-run reports conflicts `0`, invalid `0`, ambiguous auto-upload `0`, probable auto-upload `0`
+4. backup and rollback manifest are verified
+5. exact-match upload command is explicitly approved
+6. post-upload owner read and pending-partner denial are verified
