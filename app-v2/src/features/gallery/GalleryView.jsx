@@ -514,7 +514,7 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
     description: 'Newest photo, video, and protected special references with private media kept closed.',
     items: filteredItems.slice(0, 8),
   }
-  const yearCollections = groupByYear(filteredItems)
+  const yearCollections = filters.year === 'all' ? [] : groupByYear(filteredItems)
   const privateCollection = {
     key: 'private-filtered',
     label: 'Private media references',

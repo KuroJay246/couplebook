@@ -3600,11 +3600,17 @@ code {
   .gallery-collection,
   .gallery-item-card {
     backdrop-filter: none;
-    box-shadow: 0 14px 34px rgba(4, 3, 12, 0.28);
+    box-shadow: none;
   }
 
   .gallery-item-card {
     contain: layout paint;
+  }
+
+  .gallery-item-card:hover,
+  .gallery-filter-button:hover,
+  .gallery-special-link:hover {
+    transform: none;
   }
 
   .mobile-nav {
