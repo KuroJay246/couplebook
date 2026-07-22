@@ -68,7 +68,7 @@ test('media manifest classifies exact, duplicate, and missing references safely'
   assert.equal(manifest.publicManifest.summary.exactMatches, 1)
   assert.equal(manifest.publicManifest.summary.missing, 1)
   assert.equal(manifest.publicManifest.summary.ambiguousMatches, 1)
-  assert.equal(manifest.publicManifest.summary.plannedOriginalUploads, 1)
+  assert.equal(manifest.publicManifest.summary.plannedOriginalUploads, 3)
   assert.equal(manifest.privateManifest.checksum, manifest.publicManifest.checksum)
   assert.equal(JSON.stringify(manifest.publicManifest).includes('C:/private'), false)
   assert.equal(JSON.stringify(manifest.privateManifest).includes('C:/private/exact.mp4'), true)
@@ -82,6 +82,18 @@ test('media inventory reads local files but report construction keeps private pa
   assert.equal(localMedia.length, 1)
   assert.equal(localMedia[0].type, 'video')
   assert.equal(localMedia[0].supportedUpload, true)
+})
+
+test('media inventory can lock upload source to root files without scanning quarantine subfolders', () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'couplebook-media-root-only-'))
+  fs.writeFileSync(path.join(tmp, 'CB_VID_0001.mp4'), Buffer.from([1, 2, 3]))
+  fs.mkdirSync(path.join(tmp, 'quarantine'), { recursive: true })
+  fs.writeFileSync(path.join(tmp, 'quarantine', 'duplicate.mp4'), Buffer.from([1, 2, 3]))
+
+  const localMedia = inventoryLocalMedia({ repoRoot: tmp, rootOnly: true, roots: [tmp] })
+
+  assert.equal(localMedia.length, 1)
+  assert.equal(localMedia[0].normalizedFilename, 'cbvid0001.mp4')
 })
 
 test('derived poster inventory is ignored publicly but counted for video upload manifests', () => {
@@ -108,7 +120,7 @@ test('derived poster inventory is ignored publicly but counted for video upload 
   const manifest = buildMediaManifest({ coupleId: 'couple_alpha', derivedPosters, localMedia, references })
 
   assert.equal(manifest.publicManifest.summary.plannedPosterFrames, 1)
-  assert.equal(manifest.publicManifest.summary.totalBytes, 13)
+  assert.equal(manifest.publicManifest.summary.totalBytes, 10)
   assert.equal(JSON.stringify(manifest.publicManifest).includes('.visual-audit'), false)
   assert.equal(JSON.stringify(manifest.privateManifest).includes('.visual-audit'), true)
 })
@@ -154,7 +166,8 @@ test('media manifest prevents duplicate upload attempts for duplicate canonical 
   })
 
   assert.equal(manifest.publicManifest.summary.duplicates, 1)
-  assert.equal(manifest.publicManifest.summary.plannedOriginalUploads, 0)
+  assert.equal(manifest.publicManifest.summary.plannedOriginalUploads, 1)
+  assert.equal(manifest.publicManifest.summary.duplicateUploadAttemptsPrevented, 0)
 })
 
 test('media manifest matches canonical files by private filename aliases without inflating local file counts', () => {
@@ -181,4 +194,33 @@ test('media manifest matches canonical files by private filename aliases without
   assert.equal(manifest.publicManifest.summary.localFiles, 1)
   assert.equal(manifest.publicManifest.summary.exactMatches, 1)
   assert.equal(manifest.publicManifest.summary.plannedOriginalUploads, 1)
+})
+
+test('media manifest counts upload bytes from unique local originals instead of repeated legacy references', () => {
+  const localMedia = [{
+    privatePath: 'C:/private/canonical.mp4',
+    redactedFileId: 'canonical-one',
+    normalizedFilename: 'legacya.mp4',
+    filenameAliases: ['legacya.mp4', 'legacyb.mp4'],
+    extension: '.mp4',
+    type: 'video',
+    supportedUpload: true,
+    contentType: 'video/mp4',
+    sizeBytes: 3,
+    sha256: 'c'.repeat(64),
+    corrupt: false,
+  }]
+  const manifest = buildMediaManifest({
+    coupleId: 'couple_alpha',
+    localMedia,
+    references: [
+      { memoryId: 'one', mediaId: 'media_one', redactedReferenceId: 'ref1', normalizedFilename: 'legacya.mp4', expectedType: 'video' },
+      { memoryId: 'two', mediaId: 'media_two', redactedReferenceId: 'ref2', normalizedFilename: 'legacyb.mp4', expectedType: 'video' },
+    ],
+  })
+
+  assert.equal(manifest.publicManifest.summary.exactMatches, 2)
+  assert.equal(manifest.publicManifest.summary.plannedOriginalUploads, 1)
+  assert.equal(manifest.publicManifest.summary.duplicateUploadAttemptsPrevented, 1)
+  assert.equal(manifest.publicManifest.summary.totalBytes, 3)
 })

@@ -9,7 +9,7 @@ const MEDIA_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.gif', '.webp', '.he
 const IMAGE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic'])
 const VIDEO_EXTENSIONS = new Set(['.mp4', '.mov', '.m4v', '.webm', '.avi'])
 const AUDIO_EXTENSIONS = new Set(['.mp3', '.wav', '.m4a'])
-const DEFAULT_EXCLUDED_DIRS = new Set(['.git', 'node_modules', 'dist', 'build', '.firebase', '.visual-audit'])
+const DEFAULT_EXCLUDED_DIRS = new Set(['.git', 'node_modules', 'dist', 'build', '.firebase', '.visual-audit', 'quarantine', 'manifests', 'logs', 'generated', 'thumbnails', 'video-posters'])
 
 export function stripBom(text) {
   return text.replace(/^\uFEFF/, '')
@@ -41,8 +41,9 @@ export function mediaTypeForExtension(extension) {
 
 export function supportedUploadType(extension) {
   const ext = extension.toLowerCase()
-  if (['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(ext)) return true
-  if (['.mp4', '.mov', '.m4v', '.webm'].includes(ext)) return true
+  if (['.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic', '.heif', '.bmp', '.tif', '.tiff'].includes(ext)) return true
+  if (['.mp4', '.mov', '.m4v', '.webm', '.avi', '.mkv', '.3gp', '.wmv'].includes(ext)) return true
+  if (['.mp3', '.wav', '.m4a', '.aac', '.ogg'].includes(ext)) return true
   return false
 }
 
@@ -52,9 +53,22 @@ export function contentTypeForExtension(extension) {
   if (ext === '.png') return 'image/png'
   if (ext === '.gif') return 'image/gif'
   if (ext === '.webp') return 'image/webp'
+  if (ext === '.heic') return 'image/heic'
+  if (ext === '.heif') return 'image/heif'
+  if (ext === '.bmp') return 'image/bmp'
+  if (ext === '.tif' || ext === '.tiff') return 'image/tiff'
   if (ext === '.mp4' || ext === '.m4v') return 'video/mp4'
   if (ext === '.mov') return 'video/quicktime'
   if (ext === '.webm') return 'video/webm'
+  if (ext === '.avi') return 'video/x-msvideo'
+  if (ext === '.mkv') return 'video/x-matroska'
+  if (ext === '.3gp') return 'video/3gpp'
+  if (ext === '.wmv') return 'video/x-ms-wmv'
+  if (ext === '.mp3') return 'audio/mpeg'
+  if (ext === '.wav') return 'audio/wav'
+  if (ext === '.m4a') return 'audio/mp4'
+  if (ext === '.aac') return 'audio/aac'
+  if (ext === '.ogg') return 'audio/ogg'
   return 'application/octet-stream'
 }
 
@@ -64,14 +78,15 @@ export function sha256File(filePath) {
   return hash.digest('hex')
 }
 
-function walkMediaFiles(rootDir, repoRoot, acc = []) {
+function walkMediaFiles(rootDir, repoRoot, acc = [], options = {}) {
   if (!fs.existsSync(rootDir)) return acc
   for (const entry of fs.readdirSync(rootDir, { withFileTypes: true })) {
     const filePath = path.join(rootDir, entry.name)
     const relativePath = path.relative(repoRoot, filePath).replaceAll('\\', '/')
     if (entry.isDirectory()) {
+      if (options.rootOnly) continue
       if (DEFAULT_EXCLUDED_DIRS.has(entry.name) || relativePath.startsWith('app-v2/local-migration-packages')) continue
-      walkMediaFiles(filePath, repoRoot, acc)
+      walkMediaFiles(filePath, repoRoot, acc, options)
       continue
     }
 
@@ -82,8 +97,8 @@ function walkMediaFiles(rootDir, repoRoot, acc = []) {
   return acc
 }
 
-export function inventoryLocalMedia({ repoRoot, roots }) {
-  const files = [...new Set(roots.flatMap((rootDir) => walkMediaFiles(rootDir, repoRoot)))]
+export function inventoryLocalMedia({ repoRoot, rootOnly = false, roots }) {
+  const files = [...new Set(roots.flatMap((rootDir) => walkMediaFiles(rootDir, repoRoot, [], { rootOnly })))]
   return files.map((filePath) => {
     const stats = fs.statSync(filePath)
     const extension = path.extname(filePath).toLowerCase()
@@ -216,6 +231,12 @@ export function buildMediaManifest({ coupleId, derivedPosters = new Map(), local
     }
   })
 
+  const uploadCandidatesByChecksum = new Map()
+  for (const file of localMedia) {
+    if (file.supportedUpload !== true || file.corrupt !== false || !file.sha256) continue
+    if (!uploadCandidatesByChecksum.has(file.sha256)) uploadCandidatesByChecksum.set(file.sha256, file)
+  }
+  const safeMatchedChecksums = new Set(records.filter((record) => record.safeToUpload).map((record) => record.original.sha256))
   const summary = {
     localFiles: localMedia.length,
     references: references.length,
@@ -226,15 +247,14 @@ export function buildMediaManifest({ coupleId, derivedPosters = new Map(), local
     missing: records.filter((record) => record.classification === 'MISSING').length,
     duplicates: records.filter((record) => record.classification === 'DUPLICATE').length,
     corrupt: localMedia.filter((file) => file.corrupt).length,
-    plannedOriginalUploads: records.filter((record) => record.safeToUpload).length,
+    plannedOriginalUploads: uploadCandidatesByChecksum.size,
     plannedThumbnails: 0,
     plannedPosterFrames: records.filter((record) => record.safeToUpload && record.poster).length,
     alreadyCorrect: 0,
     conflicts: 0,
     invalid: records.filter((record) => record.classification === 'EXACT' && !record.safeToUpload).length,
-    totalBytes: records
-      .filter((record) => record.safeToUpload)
-      .reduce((total, record) => total + record.original.sizeBytes + (record.poster?.sizeBytes || 0), 0),
+    duplicateUploadAttemptsPrevented: Math.max(0, records.filter((record) => record.safeToUpload).length - safeMatchedChecksums.size),
+    totalBytes: [...uploadCandidatesByChecksum.values()].reduce((total, file) => total + file.sizeBytes, 0),
   }
 
   const publicRecords = records.map((record) => {

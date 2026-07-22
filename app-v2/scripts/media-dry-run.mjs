@@ -29,12 +29,17 @@ assertProject(projectId)
 const coupleId = argValue('--couple') || 'couple-main'
 const outDir = path.join(repoRoot, '.visual-audit', 'media-truth-current')
 fs.mkdirSync(outDir, { recursive: true })
-const canonicalOriginalsRoot = path.join(repoRoot, '..', 'Couple Book Private Media', 'originals')
+const canonicalLibraryRoot = path.join(repoRoot, '..', 'Couple Book Private Media')
+const canonicalOriginalsRoot = path.join(canonicalLibraryRoot, 'originals')
 const useLegacySources = process.argv.includes('--legacy-sources')
-const mediaRoots = !useLegacySources && fs.existsSync(canonicalOriginalsRoot)
-  ? [canonicalOriginalsRoot]
+const flatManifestPath = path.join(canonicalLibraryRoot, 'CoupleBookUploadManifest.json')
+const useFlatCanonical = !useLegacySources && fs.existsSync(flatManifestPath)
+const mediaRoots = useFlatCanonical
+  ? [canonicalLibraryRoot]
+  : !useLegacySources && fs.existsSync(canonicalOriginalsRoot)
+    ? [canonicalOriginalsRoot]
   : [repoRoot, path.join(repoRoot, 'OUR MEMORIES'), path.join(repoRoot, 'assets'), path.join(repoRoot, 'pages')]
-const sourceMode = mediaRoots.length === 1 && mediaRoots[0] === canonicalOriginalsRoot ? 'canonical-private-library' : 'legacy-local-sources'
+const sourceMode = useFlatCanonical || (mediaRoots.length === 1 && mediaRoots[0] === canonicalOriginalsRoot) ? 'canonical-private-library' : 'legacy-local-sources'
 
 function withCanonicalAliases(localMedia) {
   if (sourceMode !== 'canonical-private-library') return localMedia
@@ -56,6 +61,7 @@ function withCanonicalAliases(localMedia) {
 
 const localMedia = withCanonicalAliases(inventoryLocalMedia({
   repoRoot,
+  rootOnly: useFlatCanonical,
   roots: mediaRoots,
 }))
 const derivedPosters = inventoryDerivedPosters({
