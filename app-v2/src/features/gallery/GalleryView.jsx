@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { EditorialEmptyState, EditorialSection, QuietStatus, SharedSpaceHeader } from '../../components/PageLayout'
 
@@ -128,11 +129,71 @@ function mediaStatusLabel(item) {
   return 'No media preview'
 }
 
+function GalleryDetailDialog({ item, onClose }) {
+  const dialogRef = useRef(null)
+  const closeButtonRef = useRef(null)
+
+  useEffect(() => {
+    if (!item || !dialogRef.current) return
+    if (!dialogRef.current.open) {
+      dialogRef.current.showModal()
+    }
+    closeButtonRef.current?.focus()
+  }, [item])
+
+  if (!item) return null
+
+  const typeMark = item.media.kind === 'video' ? 'Motion' : item.specialMoment.isSpecial ? 'Special' : 'Image'
+
+  return createPortal(
+    <dialog aria-labelledby="gallery-detail-title" className="gallery-detail-dialog" onClose={onClose} ref={dialogRef}>
+      <button aria-label="Close visual detail" className="gallery-detail-close" onClick={onClose} ref={closeButtonRef} type="button">
+        Close
+      </button>
+      <div className="gallery-detail-frame" aria-hidden="true">
+        <span>{typeMark}</span>
+      </div>
+      <div className="gallery-detail-copy">
+        <span className="folio-mark">{item.typeLabel}</span>
+        <h2 id="gallery-detail-title">{item.title}</h2>
+        <p>{item.description}</p>
+        <dl className="gallery-detail-list">
+          <div>
+            <dt>Date</dt>
+            <dd>{item.displayDate || item.monthLabel || 'Date to review'}</dd>
+          </div>
+          <div>
+            <dt>Media</dt>
+            <dd>{mediaStatusLabel(item)}</dd>
+          </div>
+          <div>
+            <dt>Boundary</dt>
+            <dd>Read-only protected metadata</dd>
+          </div>
+        </dl>
+        {item.tags.length > 0 ? (
+          <ul className="gallery-detail-tags" aria-label="Gallery detail tags">
+            {item.tags.slice(0, 6).map((tag) => (
+              <li key={tag.key}>{tag.label}</li>
+            ))}
+          </ul>
+        ) : null}
+        {item.specialMoment.route ? (
+          <Link className="gallery-special-link" onClick={onClose} to={item.specialMoment.route}>
+            Open protected moment
+          </Link>
+        ) : null}
+      </div>
+    </dialog>,
+    document.body,
+  )
+}
+
 function OpeningNote({ model }) {
   return (
     <QuietStatus
       className="gallery-opening-note"
-      description="Gallery reads safe metadata only. Media previews, uploads, lightboxes, video playback, and synchronization stay outside this route."
+      description="Gallery reads safe metadata only. Private media previews, uploads, video playback, and synchronization stay outside this route."
       eyebrow={renderGalleryStatusLabel(model.status)}
       items={[
         pluralize(model.summary.photos, 'photo reference'),
@@ -203,7 +264,7 @@ function GallerySummary({ model }) {
   )
 }
 
-function GalleryItem({ item }) {
+function GalleryItem({ item, onSelect }) {
   const typeMark = item.media.kind === 'video' ? 'Motion' : item.specialMoment.isSpecial ? 'Special' : 'Image'
 
   return (
@@ -221,6 +282,9 @@ function GalleryItem({ item }) {
       </div>
       <div className="gallery-item-footer">
         <span className="gallery-media-status">{mediaStatusLabel(item)}</span>
+        <button className="gallery-detail-trigger" onClick={() => onSelect(item)} type="button">
+          View details
+        </button>
         {item.specialMoment.route ? (
           <Link className="gallery-special-link" to={item.specialMoment.route}>
             Open protected moment
@@ -231,7 +295,7 @@ function GalleryItem({ item }) {
   )
 }
 
-function GalleryCollection({ collection, expandedCollections, onToggle }) {
+function GalleryCollection({ collection, expandedCollections, onSelect, onToggle }) {
   const isExpandable = collection.items.length > COLLECTION_LIMIT
   const isExpanded = expandedCollections.has(collection.key)
   const visibleItems = isExpandable && !isExpanded ? collection.items.slice(0, COLLECTION_LIMIT) : collection.items
@@ -249,7 +313,7 @@ function GalleryCollection({ collection, expandedCollections, onToggle }) {
       </div>
       <div className="gallery-item-grid">
         {visibleItems.map((item) => (
-          <GalleryItem item={item} key={item.key} />
+          <GalleryItem item={item} key={item.key} onSelect={onSelect} />
         ))}
       </div>
       {isExpandable ? (
@@ -266,7 +330,7 @@ function GalleryCollection({ collection, expandedCollections, onToggle }) {
   )
 }
 
-function GalleryCollections({ collections }) {
+function GalleryCollections({ collections, onSelect }) {
   const [expandedCollections, setExpandedCollections] = useState(() => new Set())
 
   const toggleCollection = (collectionKey) => {
@@ -288,6 +352,7 @@ function GalleryCollections({ collections }) {
           collection={collection}
           expandedCollections={expandedCollections}
           key={collection.key}
+          onSelect={onSelect}
           onToggle={toggleCollection}
         />
       ))}
@@ -387,6 +452,7 @@ function SourceStateSection({ compatibilityError, compatibilityState, model, onR
 
 export function GalleryView({ compatibilityError, compatibilityState, model, onRefresh }) {
   const [filters, setFilters] = useState({ type: 'all', year: 'all' })
+  const [selectedItem, setSelectedItem] = useState(null)
   const allItems = getAllGalleryItems(model)
   const filteredItems = filterItems(allItems, filters)
   const recentCollection = {
@@ -429,7 +495,7 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
 
       <EditorialSection
         className="gallery-section"
-        description="Photo, video, and special-route references stay grouped as a private collection without loading private media."
+        description="Photo, video, and special-route references stay grouped as a private collection with safe detail views and without loading private media."
         eyebrow="Archive"
         title="Moments kept in pictures and motion."
       >
@@ -442,7 +508,7 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
             titleAs="h3"
           />
         ) : collections.length > 0 ? (
-          <GalleryCollections collections={collections} />
+          <GalleryCollections collections={collections} onSelect={setSelectedItem} />
         ) : (
           <GalleryEmptyState model={model} />
         )}
@@ -454,6 +520,7 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
         model={model}
         onRefresh={onRefresh}
       />
+      <GalleryDetailDialog item={selectedItem} onClose={() => setSelectedItem(null)} />
     </section>
   )
 }

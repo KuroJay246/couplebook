@@ -139,6 +139,19 @@ function assertRecoveredVisuals(route, viewport, metrics) {
   }
 }
 
+async function assertDetailInteraction(page, route, viewport) {
+  const detailButtonName = route.path === '/gallery' ? 'View details' : route.path === '/timeline' ? 'View memory' : null
+  if (!detailButtonName) return
+
+  await page.getByRole('button', { name: detailButtonName }).first().click()
+  const dialog = page.getByRole('dialog')
+  await dialog.waitFor({ state: 'visible', timeout: 5000 })
+  assert.equal(await dialog.locator('img, video, audio, iframe').count(), 0, `${viewport.name} ${route.path} detail should not render private media elements.`)
+  assert.equal(await dialog.getByRole('button', { name: /close/i }).count() > 0, true, `${viewport.name} ${route.path} detail should expose a close control.`)
+  await page.keyboard.press('Escape')
+  await dialog.waitFor({ state: 'hidden', timeout: 5000 })
+}
+
 async function run() {
   fs.rmSync(SCREENSHOT_ROOT, { recursive: true, force: true })
   fs.mkdirSync(SCREENSHOT_ROOT, { recursive: true })
@@ -191,6 +204,7 @@ async function run() {
           assert.deepEqual(consoleErrors, [], `${viewport.name} ${route.path} should not log browser console errors.`)
           assert.deepEqual(failedResponses, [], `${viewport.name} ${route.path} should not request failed resources.`)
           assertRecoveredVisuals(route, viewport, metrics)
+          await assertDetailInteraction(page, route, viewport)
 
           const screenshotPath = path.join(SCREENSHOT_ROOT, `${viewport.name}-${route.path.slice(1) || 'root'}.png`)
           await page.screenshot({ path: screenshotPath, fullPage: true })

@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { EditorialEmptyState, EditorialSection, QuietStatus, SharedSpaceHeader } from '../../components/PageLayout'
 import { WriteWorkflowPanel } from '../../components/WriteWorkflowPanel'
@@ -61,6 +62,64 @@ function mediaStatusLabel(memory) {
   if (memory.media.kind === 'video') return 'Video memory'
   if (memory.media.kind === 'image') return 'Photo memory'
   return 'No media attached'
+}
+
+function TimelineDetailDialog({ memory, onClose }) {
+  const dialogRef = useRef(null)
+  const closeButtonRef = useRef(null)
+
+  useEffect(() => {
+    if (!memory || !dialogRef.current) return
+    if (!dialogRef.current.open) {
+      dialogRef.current.showModal()
+    }
+    closeButtonRef.current?.focus()
+  }, [memory])
+
+  if (!memory) return null
+
+  return createPortal(
+    <dialog aria-labelledby="timeline-detail-title" className="timeline-detail-dialog" onClose={onClose} ref={dialogRef}>
+      <button aria-label="Close memory detail" className="timeline-detail-close" onClick={onClose} ref={closeButtonRef} type="button">
+        Close
+      </button>
+      <div className="timeline-detail-date">
+        <span>{memory.typeLabel}</span>
+        <strong>{memory.displayDate || 'Date to review'}</strong>
+      </div>
+      <div className="timeline-detail-copy">
+        <h2 id="timeline-detail-title">{memory.displayTitle}</h2>
+        <p>{memory.displayDescription}</p>
+      </div>
+      {memory.tags.length > 0 ? (
+        <ul className="timeline-detail-tags" aria-label="Memory detail tags">
+          {memory.tags.slice(0, 6).map((tag) => (
+            <li key={tag.key}>{tag.label}</li>
+          ))}
+        </ul>
+      ) : null}
+      <dl className="timeline-detail-list">
+        <div>
+          <dt>Media</dt>
+          <dd>{mediaStatusLabel(memory)}</dd>
+        </div>
+        <div>
+          <dt>Source</dt>
+          <dd>Read-only protected story metadata</dd>
+        </div>
+        <div>
+          <dt>Status</dt>
+          <dd>{memory.warnings.length > 0 ? 'Held with review notes' : 'Ready'}</dd>
+        </div>
+      </dl>
+      {memory.specialMoment.route ? (
+        <Link className="timeline-special-link" onClick={onClose} to={memory.specialMoment.route}>
+          Open protected moment
+        </Link>
+      ) : null}
+    </dialog>,
+    document.body,
+  )
 }
 
 function matchesTypeFilter(memory, typeFilter) {
@@ -164,7 +223,7 @@ function ChapterNavigation({ chapters }) {
   )
 }
 
-function MemoryCard({ memory }) {
+function MemoryCard({ memory, onSelect }) {
   return (
     <article className={`timeline-memory-card ${memory.specialMoment.isSpecial ? 'timeline-memory-card-special' : ''}`}>
       <div className="timeline-memory-card-meta">
@@ -184,6 +243,9 @@ function MemoryCard({ memory }) {
       ) : null}
       <div className="timeline-memory-card-footer">
         <span className={`timeline-media-pill timeline-media-pill-${memory.media.status}`}>{mediaStatusLabel(memory)}</span>
+        <button className="timeline-detail-trigger" onClick={() => onSelect(memory)} type="button">
+          View memory
+        </button>
         {memory.specialMoment.route ? (
           <Link className="timeline-special-link" to={memory.specialMoment.route}>
             Open protected moment
@@ -194,7 +256,7 @@ function MemoryCard({ memory }) {
   )
 }
 
-function TimelineGroup({ expandedGroups, group, onToggle }) {
+function TimelineGroup({ expandedGroups, group, onSelect, onToggle }) {
   const isExpandable = group.kind !== 'special' && group.memories.length > ORDINARY_GROUP_LIMIT
   const isExpanded = expandedGroups.has(group.id)
   const visibleMemories = isExpandable && !isExpanded ? group.memories.slice(0, ORDINARY_GROUP_LIMIT) : group.memories
@@ -207,7 +269,7 @@ function TimelineGroup({ expandedGroups, group, onToggle }) {
       </div>
       <div className="timeline-memory-list">
         {visibleMemories.map((memory) => (
-          <MemoryCard key={memory.id} memory={memory} />
+          <MemoryCard key={memory.id} memory={memory} onSelect={onSelect} />
         ))}
       </div>
       {isExpandable ? (
@@ -219,7 +281,7 @@ function TimelineGroup({ expandedGroups, group, onToggle }) {
   )
 }
 
-function TimelineChapters({ chapters }) {
+function TimelineChapters({ chapters, onSelect }) {
   const [expandedGroups, setExpandedGroups] = useState(() => new Set())
 
   const toggleGroup = (groupId) => {
@@ -244,7 +306,7 @@ function TimelineChapters({ chapters }) {
           </header>
           <div className="timeline-group-stack">
             {chapter.groups.map((group) => (
-              <TimelineGroup expandedGroups={expandedGroups} group={group} key={group.id} onToggle={toggleGroup} />
+              <TimelineGroup expandedGroups={expandedGroups} group={group} key={group.id} onSelect={onSelect} onToggle={toggleGroup} />
             ))}
           </div>
         </article>
@@ -361,6 +423,7 @@ function SourceStateSection({ compatibilityError, compatibilityState, model, onR
 
 export function TimelineView({ compatibilityError, compatibilityState, model, onRefresh }) {
   const [filters, setFilters] = useState({ type: 'all', year: 'all' })
+  const [selectedMemory, setSelectedMemory] = useState(null)
   const visibleChapters = filterChapters(model.chapters, filters)
 
   return (
@@ -394,7 +457,7 @@ export function TimelineView({ compatibilityError, compatibilityState, model, on
             titleAs="h3"
           />
         ) : visibleChapters.length > 0 ? (
-          <TimelineChapters chapters={visibleChapters} />
+          <TimelineChapters chapters={visibleChapters} onSelect={setSelectedMemory} />
         ) : (
           <TimelineEmptyState filters={filters} model={model} />
         )}
@@ -417,6 +480,7 @@ export function TimelineView({ compatibilityError, compatibilityState, model, on
         model={model}
         onRefresh={onRefresh}
       />
+      <TimelineDetailDialog memory={selectedMemory} onClose={() => setSelectedMemory(null)} />
     </section>
   )
 }
