@@ -84,4 +84,18 @@ Release-candidate updates were added to:
 - `MEMORY_MEDIA_AND_STORAGE_MASTER.md`
 - `QA_AUTOMATION.md`
 
-Version 1.0 remains owner-gated: partner smoke, schema approval, migration approval, deployment approval, production rules deployment, production migration, Hosting cutover, and rollback confirmation.
+## Couple Book Version 1.0 - Admin Surprise Mode Released - 2026-07-22
+
+The final Version 1.0 release record is recorded in `PROJECT_STATUS_AND_PHASES.md`.
+
+Release facts:
+
+- Production URL: https://couplebook-97830.web.app
+- Release commit: `7f739b07b3854186b3381ed73162ea1a05aae398`
+- Release tag: `couplebook-v1.0-admin-surprise`
+- Hosting release: `projects/couplebook-97830/sites/couplebook-97830/channels/live/releases/1784691939089000`
+- Jaylan live authentication, protected routes, direct reload, sign-out, and browser-storage spoof protection passed.
+- Firestore migration and production rules are complete.
+- Partner remains pending.
+- Static rollback is preserved.
+- Firebase Storage/private media remains deferred.

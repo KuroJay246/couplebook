@@ -1230,4 +1230,26 @@ Completed:
 
 Release gate:
 
-- Version 1.0 remains blocked until partner real-account smoke, owner schema approval, owner migration approval, owner deployment approval, production rules deployment, production migration verification, Hosting cutover approval, and rollback confirmation.
+- Version 1.0 moved to released status on 2026-07-22 through the Admin Surprise Mode closeout below.
+
+## Couple Book Version 1.0 - Admin Surprise Mode Released - 2026-07-22
+
+Release record:
+
+- Version: Couple Book Version 1.0 - Admin Surprise Mode.
+- Production URL: https://couplebook-97830.web.app
+- Release commit: `7f739b07b3854186b3381ed73162ea1a05aae398`.
+- Release tag: `couplebook-v1.0-admin-surprise`.
+- Hosting release: `projects/couplebook-97830/sites/couplebook-97830/channels/live/releases/1784691939089000`.
+- Hosting version: `projects/couplebook-97830/sites/couplebook-97830/versions/71ce4448f9e43928`.
+- Firestore migration: complete for `v1-0-admin-surprise`; production verification passed with `failureCount: 0`.
+- Production rules: deployed and verified for active approved access, signed-out denial, pending denial, unauthorized denial, inactive denial, and cross-couple denial.
+- Jaylan live authentication: PASS.
+- Protected routes: PASS for Dashboard, Timeline, Gallery, Profile, Favorites, Settings, Contract, Birthday, Valentine, and Confession.
+- Direct reload: PASS on every protected route.
+- Sign-out: PASS.
+- Browser-storage spoof protection: PASS.
+- Partner state: partner remains pending; activation is deferred until after the surprise reveal.
+- Static rollback: preserved through `couplebook-static-backup-20260721-183554`.
+- Candidate rollback reference: preserved through `couplebook-v1.0-candidate-20260721-183554`.
+- Firebase Storage/private media: deferred; Version 1.0 remains metadata-only for private media.
