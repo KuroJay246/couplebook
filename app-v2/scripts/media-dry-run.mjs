@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url'
 import {
   assertProject,
   buildMediaManifest,
+  inventoryDerivedPosters,
   inventoryLocalMedia,
   readLegacyMediaReferences,
   REQUIRED_PROJECT_ID,
@@ -33,8 +34,12 @@ const localMedia = inventoryLocalMedia({
   repoRoot,
   roots: [repoRoot, path.join(repoRoot, 'OUR MEMORIES'), path.join(repoRoot, 'assets'), path.join(repoRoot, 'pages')],
 })
+const derivedPosters = inventoryDerivedPosters({
+  repoRoot,
+  rootDir: path.join(repoRoot, '.visual-audit', 'media-derived-current'),
+})
 const references = readLegacyMediaReferences({ repoRoot })
-const manifest = buildMediaManifest({ coupleId, localMedia, references })
+const manifest = buildMediaManifest({ coupleId, derivedPosters, localMedia, references })
 
 fs.writeFileSync(path.join(outDir, 'media-manifest-redacted.json'), JSON.stringify(manifest.publicManifest, null, 2))
 fs.writeFileSync(path.join(outDir, 'media-manifest-private.ignored.json'), JSON.stringify(manifest.privateManifest, null, 2))

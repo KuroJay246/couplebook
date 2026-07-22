@@ -8,6 +8,7 @@ import {
   assertProject,
   buildMediaManifest,
   deterministicMediaId,
+  inventoryDerivedPosters,
   inventoryLocalMedia,
   normalizeFilename,
   readLegacyMediaReferences,
@@ -81,6 +82,35 @@ test('media inventory reads local files but report construction keeps private pa
   assert.equal(localMedia.length, 1)
   assert.equal(localMedia[0].type, 'video')
   assert.equal(localMedia[0].supportedUpload, true)
+})
+
+test('derived poster inventory is ignored publicly but counted for video upload manifests', () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'couplebook-media-posters-'))
+  const posterRoot = path.join(tmp, '.visual-audit', 'media-derived-current')
+  const mediaId = 'media_one'
+  fs.mkdirSync(path.join(posterRoot, mediaId), { recursive: true })
+  fs.writeFileSync(path.join(posterRoot, mediaId, 'poster.jpg'), Buffer.from([5, 6, 7]))
+
+  const derivedPosters = inventoryDerivedPosters({ repoRoot: tmp, rootDir: posterRoot })
+  const localMedia = [{
+    privatePath: 'C:/private/exact.mp4',
+    redactedFileId: 'file1',
+    normalizedFilename: 'exact.mp4',
+    extension: '.mp4',
+    type: 'video',
+    supportedUpload: true,
+    contentType: 'video/mp4',
+    sizeBytes: 10,
+    sha256: 'hash1',
+    corrupt: false,
+  }]
+  const references = [{ memoryId: 'one', mediaId, redactedReferenceId: 'ref1', normalizedFilename: 'exact.mp4', expectedType: 'video' }]
+  const manifest = buildMediaManifest({ coupleId: 'couple_alpha', derivedPosters, localMedia, references })
+
+  assert.equal(manifest.publicManifest.summary.plannedPosterFrames, 1)
+  assert.equal(manifest.publicManifest.summary.totalBytes, 13)
+  assert.equal(JSON.stringify(manifest.publicManifest).includes('.visual-audit'), false)
+  assert.equal(JSON.stringify(manifest.privateManifest).includes('.visual-audit'), true)
 })
 
 test('legacy references strip BOM and include media records only', () => {

@@ -103,6 +103,28 @@ export function inventoryLocalMedia({ repoRoot, roots }) {
   })
 }
 
+export function inventoryDerivedPosters({ repoRoot, rootDir }) {
+  if (!fs.existsSync(rootDir)) return new Map()
+  const posters = new Map()
+  for (const entry of fs.readdirSync(rootDir, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue
+    const mediaId = entry.name
+    const posterPath = path.join(rootDir, mediaId, 'poster.jpg')
+    if (!fs.existsSync(posterPath)) continue
+    const stats = fs.statSync(posterPath)
+    if (stats.size === 0) continue
+    posters.set(mediaId, {
+      contentType: 'image/jpeg',
+      extension: 'jpg',
+      privatePath: posterPath,
+      redactedFileId: redactedId(path.relative(repoRoot, posterPath)),
+      sha256: sha256File(posterPath),
+      sizeBytes: stats.size,
+    })
+  }
+  return posters
+}
+
 export function readLegacyMediaReferences({ repoRoot }) {
   const memoriesPath = path.join(repoRoot, 'core', 'memories.json')
   const records = fs.existsSync(memoriesPath) ? parseJsonFile(memoriesPath) : []
@@ -123,7 +145,7 @@ export function readLegacyMediaReferences({ repoRoot }) {
     })
 }
 
-export function buildMediaManifest({ coupleId, localMedia, references }) {
+export function buildMediaManifest({ coupleId, derivedPosters = new Map(), localMedia, references }) {
   const localByName = new Map()
   for (const file of localMedia) {
     if (!localByName.has(file.normalizedFilename)) localByName.set(file.normalizedFilename, [])
@@ -137,6 +159,7 @@ export function buildMediaManifest({ coupleId, localMedia, references }) {
     if (candidates.length > 1) classification = 'DUPLICATE'
 
     const candidate = classification === 'EXACT' ? candidates[0] : null
+    const poster = reference.expectedType === 'video' ? derivedPosters.get(reference.mediaId) || null : null
     const variant = reference.expectedType === 'video' ? 'original' : 'original'
     return {
       coupleId,
@@ -166,7 +189,27 @@ export function buildMediaManifest({ coupleId, localMedia, references }) {
             sha256: candidate.sha256,
           }
         : null,
+      poster: candidate && poster
+        ? {
+            redactedFileId: poster.redactedFileId,
+            storagePath: `couples/${coupleId}/media/${reference.mediaId}/poster`,
+            storageMetadata: {
+              coupleId,
+              mediaId: reference.mediaId,
+              ownerUid: '',
+              schemaVersion: '1',
+              kind: 'poster',
+              extension: poster.extension,
+              sha256: poster.sha256,
+            },
+            extension: poster.extension,
+            contentType: poster.contentType,
+            sizeBytes: poster.sizeBytes,
+            sha256: poster.sha256,
+          }
+        : null,
       privatePath: candidate?.privatePath || null,
+      posterPrivatePath: poster?.privatePath || null,
     }
   })
 
@@ -182,16 +225,19 @@ export function buildMediaManifest({ coupleId, localMedia, references }) {
     corrupt: localMedia.filter((file) => file.corrupt).length,
     plannedOriginalUploads: records.filter((record) => record.safeToUpload).length,
     plannedThumbnails: 0,
-    plannedPosterFrames: 0,
+    plannedPosterFrames: records.filter((record) => record.safeToUpload && record.poster).length,
     alreadyCorrect: 0,
     conflicts: 0,
     invalid: records.filter((record) => record.classification === 'EXACT' && !record.safeToUpload).length,
-    totalBytes: records.filter((record) => record.safeToUpload).reduce((total, record) => total + record.original.sizeBytes, 0),
+    totalBytes: records
+      .filter((record) => record.safeToUpload)
+      .reduce((total, record) => total + record.original.sizeBytes + (record.poster?.sizeBytes || 0), 0),
   }
 
   const publicRecords = records.map((record) => {
     const safeRecord = { ...record }
     delete safeRecord.privatePath
+    delete safeRecord.posterPrivatePath
     return safeRecord
   })
   const publicManifest = {

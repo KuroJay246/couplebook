@@ -27,6 +27,7 @@ export function publicManifestChecksum(manifest) {
       ? manifest.records.map((record) => {
           const safeRecord = { ...record }
           delete safeRecord.privatePath
+          delete safeRecord.posterPrivatePath
           return safeRecord
         })
       : [],
@@ -41,7 +42,7 @@ function safeFirestoreMedia(record, ownerUid) {
     kind: record.expectedType,
     storagePath: record.original.storagePath,
     thumbnailPath: '',
-    posterPath: '',
+    posterPath: record.poster?.storagePath || '',
     contentType: record.original.contentType,
     sizeBytes: record.original.sizeBytes,
     checksum: record.original.sha256,
@@ -102,6 +103,15 @@ export function validatePrivateManifest(privateManifest) {
     if (checksum !== record.original.sha256) {
       throw new Error(`Private file checksum mismatch for ${record.redactedReferenceId}.`)
     }
+    if (record.poster) {
+      if (!record.posterPrivatePath || !fs.existsSync(record.posterPrivatePath)) {
+        throw new Error(`Private poster for ${record.redactedReferenceId} is unavailable.`)
+      }
+      const posterChecksum = crypto.createHash('sha256').update(fs.readFileSync(record.posterPrivatePath)).digest('hex')
+      if (posterChecksum !== record.poster.sha256) {
+        throw new Error(`Private poster checksum mismatch for ${record.redactedReferenceId}.`)
+      }
+    }
   }
   return eligible.length
 }
@@ -126,20 +136,48 @@ export async function runBounded(tasks, concurrency = 3) {
 }
 
 export async function applyMediaManifest({ bucket, concurrency = 3, db, manifest, ownerUid }) {
+  const uploadPoster = async (record) => {
+    if (!record.poster) return 0
+    await bucket.upload(record.posterPrivatePath, {
+      destination: record.poster.storagePath,
+      resumable: false,
+      metadata: {
+        contentType: record.poster.contentType,
+        metadata: {
+          ...record.poster.storageMetadata,
+          ownerUid,
+        },
+      },
+    })
+    return record.poster.sizeBytes
+  }
+
   const applyRecord = async (record) => {
     const { sizeBytes, sha256, storagePath } = record.original
-    const existing = await inspectStorageObject(bucket, record.original.storagePath)
+    const [existing, existingPoster] = await Promise.all([
+      inspectStorageObject(bucket, record.original.storagePath),
+      record.poster ? inspectStorageObject(bucket, record.poster.storagePath) : Promise.resolve({ exists: false }),
+    ])
+    const posterConflict = record.poster && existingPoster.exists && (
+      existingPoster.sha256 !== record.poster.sha256 ||
+      existingPoster.sizeBytes !== record.poster.sizeBytes
+    )
+
     if (existing.exists) {
-      if (existing.sha256 === sha256 && existing.sizeBytes === sizeBytes) {
+      if (existing.sha256 === sha256 && existing.sizeBytes === sizeBytes && !posterConflict) {
+        const posterBytes = record.poster && !existingPoster.exists ? await uploadPoster(record) : 0
         await db.doc(`couples/${record.coupleId}/memories/${record.memoryId}`).set({
           mediaState: 'storage-verified',
           media: safeFirestoreMedia(record, ownerUid),
           schemaVersion: 1,
         }, { merge: true })
-        return { bytesUploaded: 0, conflicts: 0, firestoreUpdated: 1, skippedIdentical: 1, uploaded: 0 }
-      } else {
-        return { bytesUploaded: 0, conflicts: 1, firestoreUpdated: 0, skippedIdentical: 0, uploaded: 0 }
+        return { bytesUploaded: posterBytes, conflicts: 0, firestoreUpdated: 1, skippedIdentical: 1, uploaded: 0 }
       }
+      return { bytesUploaded: 0, conflicts: 1, firestoreUpdated: 0, skippedIdentical: 0, uploaded: 0 }
+    }
+
+    if (posterConflict) {
+      return { bytesUploaded: 0, conflicts: 1, firestoreUpdated: 0, skippedIdentical: 0, uploaded: 0 }
     }
 
     await bucket.upload(record.privatePath, {
@@ -154,12 +192,14 @@ export async function applyMediaManifest({ bucket, concurrency = 3, db, manifest
       },
     })
 
+    const posterBytes = record.poster && !existingPoster.exists ? await uploadPoster(record) : 0
+
     await db.doc(`couples/${record.coupleId}/memories/${record.memoryId}`).set({
       mediaState: 'storage-verified',
       media: safeFirestoreMedia(record, ownerUid),
       schemaVersion: 1,
     }, { merge: true })
-    return { bytesUploaded: sizeBytes, conflicts: 0, firestoreUpdated: 1, skippedIdentical: 0, uploaded: 1 }
+    return { bytesUploaded: sizeBytes + posterBytes, conflicts: 0, firestoreUpdated: 1, skippedIdentical: 0, uploaded: 1 }
   }
 
   const applyTasks = manifest.records.reduce((tasks, entry) => {

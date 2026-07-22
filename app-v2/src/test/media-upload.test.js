@@ -51,16 +51,19 @@ function fakeBucket({ exists = false, metadata = {} } = {}) {
   const uploads = []
   return {
     uploads,
-    file(_storagePath) {
+    file(storagePath) {
+      const pathConfig = metadata.byPath?.[storagePath] || {}
+      const pathExists = Object.hasOwn(pathConfig, 'exists') ? pathConfig.exists : exists
+      const pathMetadata = pathConfig.metadata || metadata
       return {
         async exists() {
-          return [exists]
+          return [pathExists]
         },
         async getMetadata() {
           return [{
-            contentType: metadata.contentType || 'video/mp4',
-            metadata: metadata.metadata || {},
-            size: metadata.size || 0,
+            contentType: pathMetadata.contentType || 'video/mp4',
+            metadata: pathMetadata.metadata || {},
+            size: pathMetadata.size || 0,
           }]
         },
       }
@@ -138,6 +141,52 @@ test('backup manifest captures redacted Firestore and Storage state', async () =
   assert.equal(backup.plannedRecords, 1)
   assert.equal(backup.firestore[0].hasMedia, true)
   assert.equal(serialized.includes('OUR MEMORIES'), false)
+})
+
+test('apply uploads verified poster derivatives and avoids partial upload on poster conflict', async () => {
+  const manifest = makeTempManifest()
+  const record = manifest.privateManifest.records[0]
+  const posterPath = path.join(path.dirname(record.privatePath), 'poster.jpg')
+  fs.writeFileSync(posterPath, Buffer.from([8, 9, 10]))
+  record.posterPrivatePath = posterPath
+  record.poster = {
+    contentType: 'image/jpeg',
+    sha256: '6e9fa019228fe1a9d342d4a0085ab80270c9726bd08cd5a35d7626a700b34e2f',
+    sizeBytes: 3,
+    storageMetadata: {
+      coupleId: record.coupleId,
+      extension: 'jpg',
+      kind: 'poster',
+      mediaId: record.mediaId,
+      schemaVersion: '1',
+      sha256: '6e9fa019228fe1a9d342d4a0085ab80270c9726bd08cd5a35d7626a700b34e2f',
+    },
+    storagePath: `couples/${record.coupleId}/media/${record.mediaId}/poster`,
+  }
+
+  assert.equal(validatePrivateManifest(manifest.privateManifest), 1)
+  const bucket = fakeBucket({ exists: false })
+  const db = fakeDocStore()
+  const result = await applyMediaManifest({ bucket, concurrency: 1, db, manifest: manifest.privateManifest, ownerUid: 'member_one' })
+  assert.equal(result.bytesUploaded, record.original.sizeBytes + record.poster.sizeBytes)
+  assert.equal(bucket.uploads.length, 2)
+  assert.equal(db.writes[0].data.media.posterPath, record.poster.storagePath)
+
+  const conflictingBucket = fakeBucket({
+    exists: false,
+    metadata: {
+      byPath: {
+        [record.original.storagePath]: { exists: false },
+        [record.poster.storagePath]: {
+          exists: true,
+          metadata: { metadata: { sha256: '0'.repeat(64) }, size: 3 },
+        },
+      },
+    },
+  })
+  const conflictResult = await applyMediaManifest({ bucket: conflictingBucket, concurrency: 1, db: fakeDocStore(), manifest: manifest.privateManifest, ownerUid: 'member_one' })
+  assert.equal(conflictResult.conflicts, 1)
+  assert.equal(conflictingBucket.uploads.length, 0)
 })
 
 test('apply uploads missing objects, skips identical objects, and writes no local paths to Firestore', async () => {

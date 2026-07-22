@@ -359,12 +359,14 @@ Current classification:
 - the 79 missing references are photo references with no matching local files in the owner-authorized project/archive locations currently available
 - no probable or ambiguous files may be uploaded automatically
 - missing photos must remain in the refined missing-media state unless source files are provided later
+- local browser-based poster generation was attempted for the 35 exact video matches; Chromium reported `video decode failed` for all 35, so no poster frames were generated or attached
 
 Candidate implementation now exists for:
 
 - private couple-scoped Storage rules at `storage.app-v2.rules`
 - Storage emulator coverage for active owner/member access, pending denial, signed-out denial, unauthorized denial, cross-couple denial, invalid paths, invalid MIME, oversized derivatives, unsupported extensions, and metadata tampering
 - deterministic exact-match media mapping and dry-run manifest generation
+- local ignored poster-frame generation tooling for videos, with redacted failure categories and no committed media output
 - guarded Admin SDK media apply tooling with Application Default Credentials, explicit project lock, explicit Couple Book Storage bucket selection, bounded concurrency, manifest checksum verification, derived confirmation token, local-file checksum verification, idempotent object handling, conflict detection, and redacted rollback backup output
 - strict Firestore `storage-verified` media metadata validation
 - Gallery rendering of verified private media through transient authenticated Storage URL resolution

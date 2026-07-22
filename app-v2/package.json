@@ -17,6 +17,7 @@
     "test:rules": "node scripts/run-firestore-rules-tests.mjs",
     "test:storage-rules": "node scripts/run-storage-rules-tests.mjs",
     "test:media-mapping": "node src/test/media-mapping.test.js",
+    "media:posters": "node scripts/media-generate-posters.mjs",
     "media:dry-run": "node scripts/media-dry-run.mjs",
     "media:apply": "node scripts/media-apply.mjs",
     "migration:plan": "node scripts/plan-firestore-migration.mjs",
