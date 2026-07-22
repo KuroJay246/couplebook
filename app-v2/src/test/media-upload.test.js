@@ -5,11 +5,13 @@ import os from 'node:os'
 import path from 'node:path'
 import test from 'node:test'
 import { buildMediaManifest, inventoryLocalMedia, readLegacyMediaReferences } from '../../scripts/lib/media-mapping.mjs'
+import { assertMediaBucketArg } from '../../scripts/lib/admin-firestore.mjs'
 import {
   applyMediaManifest,
   captureMediaBackup,
   confirmationToken,
   publicManifestChecksum,
+  runBounded,
   validateManifestForApply,
   validatePrivateManifest,
 } from '../../scripts/lib/media-upload.mjs'
@@ -93,6 +95,30 @@ test('private manifest checksum ignores private paths but validates apply gates'
   }))
 })
 
+test('media apply requires an explicit Couple Book Storage bucket', () => {
+  assert.equal(assertMediaBucketArg(['--bucket', 'couplebook-97830.appspot.com']), 'couplebook-97830.appspot.com')
+  assert.equal(assertMediaBucketArg(['--bucket=couplebook-97830.firebasestorage.app']), 'couplebook-97830.firebasestorage.app')
+  assert.throws(() => assertMediaBucketArg([]), /--bucket is required/)
+  assert.throws(() => assertMediaBucketArg(['--bucket', 'gathervibeshub.appspot.com']), /Couple Book Firebase project|prohibited/)
+  assert.throws(() => assertMediaBucketArg(['--bucket', 'other-project.appspot.com']), /Couple Book Firebase project/)
+})
+
+test('bounded media apply runner preserves order and limits concurrency', async () => {
+  let active = 0
+  let maxActive = 0
+  const tasks = Array.from({ length: 5 }, (_, index) => async () => {
+    active += 1
+    maxActive = Math.max(maxActive, active)
+    await new Promise((resolve) => setTimeout(resolve, 5))
+    active -= 1
+    return index
+  })
+
+  assert.deepEqual(await runBounded(tasks, 2), [0, 1, 2, 3, 4])
+  assert.equal(maxActive <= 2, true)
+  await assert.rejects(() => runBounded(tasks, 0), /positive integer/)
+})
+
 test('private manifest validation verifies local file checksums without logging paths', () => {
   const manifest = makeTempManifest()
   assert.equal(validatePrivateManifest(manifest.privateManifest), 1)
@@ -118,7 +144,7 @@ test('apply uploads missing objects, skips identical objects, and writes no loca
   const manifest = makeTempManifest()
   const missingBucket = fakeBucket({ exists: false })
   const db = fakeDocStore()
-  const result = await applyMediaManifest({ bucket: missingBucket, db, manifest: manifest.privateManifest, ownerUid: 'member_one' })
+  const result = await applyMediaManifest({ bucket: missingBucket, concurrency: 1, db, manifest: manifest.privateManifest, ownerUid: 'member_one' })
   assert.equal(result.uploaded, 1)
   assert.equal(result.firestoreUpdated, 1)
   assert.equal(JSON.stringify(db.writes).includes('OUR MEMORIES'), false)
@@ -132,7 +158,7 @@ test('apply uploads missing objects, skips identical objects, and writes no loca
       size: record.original.sizeBytes,
     },
   })
-  const skipResult = await applyMediaManifest({ bucket: identicalBucket, db: fakeDocStore(), manifest: manifest.privateManifest, ownerUid: 'member_one' })
+  const skipResult = await applyMediaManifest({ bucket: identicalBucket, concurrency: 1, db: fakeDocStore(), manifest: manifest.privateManifest, ownerUid: 'member_one' })
   assert.equal(skipResult.skippedIdentical, 1)
   assert.equal(skipResult.uploaded, 0)
 })

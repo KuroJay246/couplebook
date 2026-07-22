@@ -106,7 +106,26 @@ export function validatePrivateManifest(privateManifest) {
   return eligible.length
 }
 
-export async function applyMediaManifest({ bucket, db, manifest, ownerUid }) {
+export async function runBounded(tasks, concurrency = 3) {
+  const taskList = Array.isArray(tasks) ? tasks : []
+  const workerCount = Number.isInteger(concurrency) && concurrency > 0 ? Math.min(concurrency, taskList.length || 1) : 0
+  if (workerCount === 0) throw new Error('Media apply concurrency must be a positive integer.')
+  let nextIndex = 0
+  const results = []
+
+  const workers = Array.from({ length: workerCount }, async () => {
+    while (nextIndex < taskList.length) {
+      const currentIndex = nextIndex
+      nextIndex += 1
+      results[currentIndex] = await taskList[currentIndex]()
+    }
+  })
+
+  await Promise.all(workers)
+  return results
+}
+
+export async function applyMediaManifest({ bucket, concurrency = 3, db, manifest, ownerUid }) {
   const applyRecord = async (record) => {
     const { sizeBytes, sha256, storagePath } = record.original
     const existing = await inspectStorageObject(bucket, record.original.storagePath)
@@ -144,10 +163,10 @@ export async function applyMediaManifest({ bucket, db, manifest, ownerUid }) {
   }
 
   const applyTasks = manifest.records.reduce((tasks, entry) => {
-    if (entry.safeToUpload && entry.original) tasks.push(applyRecord(entry))
+    if (entry.safeToUpload && entry.original) tasks.push(() => applyRecord(entry))
     return tasks
   }, [])
-  const outcomes = await Promise.all(applyTasks)
+  const outcomes = await runBounded(applyTasks, concurrency)
   return outcomes.reduce(
     (totals, outcome) => ({
       bytesUploaded: totals.bytesUploaded + outcome.bytesUploaded,

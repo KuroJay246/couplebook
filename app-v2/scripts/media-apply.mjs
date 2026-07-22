@@ -31,6 +31,7 @@ const manifestPath = path.resolve(repoRoot, requireArg(args, '--manifest'))
 const checksum = requireArg(args, '--manifest-checksum')
 const confirm = requireArg(args, '--confirm')
 const ownerUid = requireArg(args, '--owner-uid')
+const concurrency = Number.parseInt(getArgValue(args, '--concurrency') || '3', 10)
 const manifest = parseJsonFile(manifestPath)
 
 validateManifestForApply(manifest, { checksum, confirm, ownerUid })
@@ -44,7 +45,7 @@ fs.mkdirSync(backupDir, { recursive: true })
 const backupPath = path.join(backupDir, `${new Date().toISOString().replace(/[:.]/g, '-')}-rollback-redacted.json`)
 fs.writeFileSync(backupPath, JSON.stringify(backup, null, 2))
 
-const result = await applyMediaManifest({ bucket, db, manifest, ownerUid })
+const result = await applyMediaManifest({ bucket, concurrency, db, manifest, ownerUid })
 process.stdout.write(JSON.stringify({
   backup: 'PASS',
   backupPath,
