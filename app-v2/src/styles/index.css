@@ -2521,10 +2521,17 @@ code {
 }
 
 .workflow-note,
+.workflow-mode-note,
 .workflow-feedback {
   grid-column: 1 / -1;
   color: var(--ink-soft);
   line-height: 1.65;
+}
+
+.workflow-mode-note {
+  margin-bottom: -4px;
+  color: var(--muted);
+  font-size: 0.82rem;
 }
 
 .workflow-feedback {

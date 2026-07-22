@@ -32,7 +32,8 @@ const THRESHOLDS = Object.freeze({
   initialRouteMs: 5000,
   routeTransitionMs: 2500,
   modalOpenMs: 1000,
-  mobileScrollMs: 1500,
+  mobileScrollMaxFrameGapMs: 120,
+  mobileScrollLongFrameCount: 2,
   cumulativeLayoutShift: 0.1,
 })
 
@@ -148,10 +149,11 @@ async function waitForRoute(page, route) {
 
 async function timed(label, callback) {
   const startedAt = performance.now()
-  await callback()
+  const value = await callback()
   return {
     label,
     ms: Math.round(performance.now() - startedAt),
+    ...(value === undefined ? {} : { value }),
   }
 }
 
@@ -223,15 +225,24 @@ async function measureMobileScroll(browser, baseUrl) {
     await waitForRoute(page, route)
 
     const result = await timed('mobile-scroll:/gallery', async () => {
-      await page.evaluate(async () => {
-        await new Promise((resolve) => {
+      return page.evaluate(async () => {
+        return new Promise((resolve) => {
           let frame = 0
+          let lastFrameAt = performance.now()
           const maxFrames = 45
+          const frameGaps = []
           const step = () => {
+            const now = performance.now()
+            frameGaps.push(Math.round(now - lastFrameAt))
+            lastFrameAt = now
             window.scrollBy(0, 140)
             frame += 1
             if (frame >= maxFrames || window.scrollY + window.innerHeight >= document.documentElement.scrollHeight) {
-              resolve()
+              resolve({
+                frameCount: frame,
+                longFrameCount: frameGaps.filter((gap) => gap > 50).length,
+                maxFrameGapMs: Math.max(...frameGaps),
+              })
               return
             }
             window.requestAnimationFrame(step)
@@ -243,7 +254,8 @@ async function measureMobileScroll(browser, baseUrl) {
 
     const overflowX = await page.evaluate(() => Math.max(0, document.documentElement.scrollWidth - document.documentElement.clientWidth))
     assert.equal(overflowX, 0, 'Mobile performance route should not overflow horizontally while scrolling.')
-    assert.equal(result.ms <= THRESHOLDS.mobileScrollMs, true, `Mobile Gallery scroll should stay below ${THRESHOLDS.mobileScrollMs}ms.`)
+    assert.equal(result.value.maxFrameGapMs <= THRESHOLDS.mobileScrollMaxFrameGapMs, true, `Mobile Gallery scroll frame gaps should stay below ${THRESHOLDS.mobileScrollMaxFrameGapMs}ms.`)
+    assert.equal(result.value.longFrameCount <= THRESHOLDS.mobileScrollLongFrameCount, true, `Mobile Gallery scroll should not repeatedly miss long-frame thresholds.`)
     assertCleanObserved(observed)
     return result
   } finally {

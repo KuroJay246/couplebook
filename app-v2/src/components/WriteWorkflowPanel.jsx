@@ -98,10 +98,11 @@ export function WriteWorkflowPanel({ kind, momentKey = 'birthday', onRefresh }) 
     return (
       <EditorialSection
         className="workflow-section"
-        description={`Write mode is ${writeMode}. Editing opens only in an approved Firestore write mode.`}
-        eyebrow="Writes disabled"
-        title="Safe editing workflow"
+        description="This preview is read-only. Editing opens only after approved Firestore write mode is enabled for the signed-in account."
+        eyebrow="Editing locked"
+        title="Preview changes are protected"
       >
+        <p className="workflow-mode-note">Current access: {writeMode}.</p>
         <p className="workflow-note">{statusMessage(kind)}</p>
       </EditorialSection>
     )

@@ -41,6 +41,8 @@ const ROUTES = Object.freeze([
   { path: '/confession', heading: 'Confession moment', fixture: browserRegressionAuthorizedFixture },
 ])
 
+const READ_ONLY_WORKFLOW_ROUTES = new Set(['/timeline', '/profile', '/favorites', '/settings', '/contract', '/birthday', '/valentine', '/confession'])
+
 function log(message) {
   process.stdout.write(`${message}\n`)
 }
@@ -310,6 +312,26 @@ async function assertMobileNavigation(page, route, viewport) {
   return { opened: true, closed: true }
 }
 
+async function assertReadOnlyWorkflow(page, route, viewport) {
+  if (!READ_ONLY_WORKFLOW_ROUTES.has(route.path)) return null
+
+  const workflow = page.locator('.workflow-section').first()
+  await workflow.waitFor({ state: 'visible', timeout: 5000 })
+  await workflow.getByText('Editing locked').waitFor({ state: 'visible', timeout: 5000 })
+  await workflow.getByRole('heading', { name: 'Preview changes are protected' }).waitFor({ state: 'visible', timeout: 5000 })
+  await workflow.getByText('This preview is read-only.').waitFor({ state: 'visible', timeout: 5000 })
+
+  const state = await workflow.evaluate((element) => ({
+    forms: element.querySelectorAll('form, input, textarea, select').length,
+    submitButtons: [...element.querySelectorAll('button')].filter((button) => /save|accept|archive/i.test(button.innerText || '')).length,
+    text: element.innerText,
+  }))
+  assert.equal(state.forms, 0, `${viewport.name} ${route.path} read-only workflow should not expose editable form controls.`)
+  assert.equal(state.submitButtons, 0, `${viewport.name} ${route.path} read-only workflow should not expose save/archive buttons.`)
+  assert.equal(/production-write-disabled/i.test(state.text), true, `${viewport.name} ${route.path} should keep the disabled write mode visible as a subordinate note.`)
+  return { readOnly: true }
+}
+
 async function run() {
   fs.rmSync(OUTPUT_ROOT, { recursive: true, force: true })
   fs.mkdirSync(OUTPUT_ROOT, { recursive: true })
@@ -353,6 +375,7 @@ async function run() {
           await assertKeyboardFocus(page, route, viewport)
           const dialog = await assertDialogInteraction(page, route, viewport)
           const mobileMenu = await assertMobileNavigation(page, route, viewport)
+          const workflow = await assertReadOnlyWorkflow(page, route, viewport)
           assertCleanObserved(observed)
           results.push({
             route: route.path,
@@ -363,6 +386,7 @@ async function run() {
             reducedMotion: metrics.reducedMotion,
             dialog,
             mobileMenu,
+            workflow,
           })
         } finally {
           await context.close()
