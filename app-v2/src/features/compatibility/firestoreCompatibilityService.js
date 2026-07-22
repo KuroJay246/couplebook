@@ -151,7 +151,19 @@ export async function loadFirestoreCompatibilitySnapshot(options = {}) {
   }
 
   const serviceOptions = { firestore: options.firestore }
-  const [couple, membership, profilesRaw, favoritesRaw, sharedSettings, privateSettings, contract, memories] = await Promise.all([
+  const [
+    couple,
+    membership,
+    profilesRaw,
+    favoritesRaw,
+    sharedSettings,
+    privateSettings,
+    contract,
+    memories,
+    birthday,
+    valentine,
+    confession,
+  ] = await Promise.all([
     getCoupleDocumentSnapshot(coupleId, serviceOptions),
     getCoupleMembership(coupleId, uid, serviceOptions),
     getFirestoreProfilesForCouple(coupleId, serviceOptions),
@@ -160,8 +172,6 @@ export async function loadFirestoreCompatibilitySnapshot(options = {}) {
     getFirestorePrivateSettings(coupleId, uid, serviceOptions),
     getFirestoreContract(coupleId, serviceOptions),
     getFirestoreMemoriesForCouple(coupleId, serviceOptions),
-  ])
-  const [birthday, valentine, confession] = await Promise.all([
     getFirestoreSpecialMoment(coupleId, 'birthday', serviceOptions),
     getFirestoreSpecialMoment(coupleId, 'valentine', serviceOptions),
     getFirestoreSpecialMoment(coupleId, 'confession', serviceOptions),

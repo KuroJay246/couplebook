@@ -3492,6 +3492,16 @@ code {
     border-radius: 16px;
   }
 
+  .shell-header {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .shell-menu-button {
+    width: fit-content;
+  }
+
   .hero-card h1,
   .state-card h2,
   .login-card h2,

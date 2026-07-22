@@ -1,4 +1,4 @@
-import { startTransition, useCallback, useEffect, useMemo, useState } from 'react'
+import { startTransition, useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { auth } from '../lib/firebaseClient'
 import { getBrowserTestAuthState } from '../lib/browserTestMode'
 import { isFirebaseConfigured, missingFirebaseConfigMessage } from '../lib/firebaseConfig'
@@ -14,26 +14,68 @@ function getAuthorizationMessage(status) {
   return UNAPPROVED_ACCOUNT_MESSAGE
 }
 
-function applySignedOutState(setters) {
+function createInitialAuthState(browserTestAuth, isBrowserTestMode) {
+  return {
+    user: browserTestAuth?.user || null,
+    approvedUser: browserTestAuth?.approvedUser || null,
+    isAuthorized: browserTestAuth?.isAuthorized || false,
+    loading: isBrowserTestMode ? false : isFirebaseConfigured,
+    authInitialized: isBrowserTestMode || !isFirebaseConfigured,
+    authError: browserTestAuth?.authError || (isFirebaseConfigured ? '' : missingFirebaseConfigMessage),
+  }
+}
+
+function authReducer(state, action) {
+  return { ...state, ...action.payload }
+}
+
+function transitionAuthState(dispatch, payload) {
   startTransition(() => {
-    setters.setUser(null)
-    setters.setApprovedUser(null)
-    setters.setIsAuthorized(false)
-    setters.setAuthError('')
-    setters.setAuthInitialized(true)
-    setters.setLoading(false)
+    dispatch({ payload })
   })
+}
+
+function applySignedOutState(dispatch) {
+  transitionAuthState(dispatch, {
+    user: null,
+    approvedUser: null,
+    isAuthorized: false,
+    authError: '',
+    authInitialized: true,
+    loading: false,
+  })
+}
+
+function createResolvedAuthState(nextUser, resolution) {
+  if (resolution.status === 'authorized') {
+    return {
+      user: nextUser,
+      approvedUser: resolution.approvedUser,
+      isAuthorized: true,
+      authError: '',
+      authInitialized: true,
+      loading: false,
+    }
+  }
+
+  return {
+    user: nextUser,
+    approvedUser: null,
+    isAuthorized: false,
+    authError: getAuthorizationMessage(resolution.status),
+    authInitialized: true,
+    loading: false,
+  }
 }
 
 export function AuthProvider({ children }) {
   const [browserTestAuth] = useState(() => getBrowserTestAuthState())
   const isBrowserTestMode = browserTestAuth !== null
-  const [user, setUser] = useState(browserTestAuth?.user || null)
-  const [approvedUser, setApprovedUser] = useState(browserTestAuth?.approvedUser || null)
-  const [isAuthorized, setIsAuthorized] = useState(browserTestAuth?.isAuthorized || false)
-  const [loading, setLoading] = useState(isBrowserTestMode ? false : isFirebaseConfigured)
-  const [authInitialized, setAuthInitialized] = useState(isBrowserTestMode || !isFirebaseConfigured)
-  const [authError, setAuthError] = useState(browserTestAuth?.authError || (isFirebaseConfigured ? '' : missingFirebaseConfigMessage))
+  const [authState, dispatchAuthState] = useReducer(
+    authReducer,
+    browserTestAuth,
+    (initialBrowserTestAuth) => createInitialAuthState(initialBrowserTestAuth, isBrowserTestMode),
+  )
 
   useEffect(() => {
     if (isBrowserTestMode) return undefined
@@ -42,55 +84,31 @@ export function AuthProvider({ children }) {
     let active = true
     let unsubscribe = () => {}
 
-    const setters = {
-      setUser,
-      setApprovedUser,
-      setIsAuthorized,
-      setAuthError,
-      setAuthInitialized,
-      setLoading,
-    }
-
     async function hydrateAuthorizedUser(nextUser) {
       if (!active) return
 
       if (!nextUser) {
-        applySignedOutState(setters)
+        applySignedOutState(dispatchAuthState)
         return
       }
 
-      setLoading(true)
+      dispatchAuthState({ payload: { loading: true } })
 
       try {
         const resolution = await resolveApprovedUser(nextUser)
         if (!active) return
 
-        startTransition(() => {
-          setUser(nextUser)
-
-          if (resolution.status === 'authorized') {
-            setApprovedUser(resolution.approvedUser)
-            setIsAuthorized(true)
-            setAuthError('')
-          } else {
-            setApprovedUser(null)
-            setIsAuthorized(false)
-            setAuthError(getAuthorizationMessage(resolution.status))
-          }
-
-          setAuthInitialized(true)
-          setLoading(false)
-        })
+        transitionAuthState(dispatchAuthState, createResolvedAuthState(nextUser, resolution))
       } catch (error) {
         if (!active) return
 
-        startTransition(() => {
-          setUser(nextUser)
-          setApprovedUser(null)
-          setIsAuthorized(false)
-          setAuthError(error?.message || 'Couple Book could not verify this account.')
-          setAuthInitialized(true)
-          setLoading(false)
+        transitionAuthState(dispatchAuthState, {
+          user: nextUser,
+          approvedUser: null,
+          isAuthorized: false,
+          authError: error?.message || 'Couple Book could not verify this account.',
+          authInitialized: true,
+          loading: false,
         })
       }
     }
@@ -107,13 +125,13 @@ export function AuthProvider({ children }) {
           (error) => {
             if (!active) return
 
-            startTransition(() => {
-              setUser(null)
-              setApprovedUser(null)
-              setIsAuthorized(false)
-              setAuthError(error?.message || 'Couple Book auth monitoring failed.')
-              setAuthInitialized(true)
-              setLoading(false)
+            transitionAuthState(dispatchAuthState, {
+              user: null,
+              approvedUser: null,
+              isAuthorized: false,
+              authError: error?.message || 'Couple Book auth monitoring failed.',
+              authInitialized: true,
+              loading: false,
             })
           },
         )
@@ -123,17 +141,17 @@ export function AuthProvider({ children }) {
         }
 
         if (!active || auth?.currentUser) return
-        applySignedOutState(setters)
+        applySignedOutState(dispatchAuthState)
       } catch (error) {
         if (!active) return
 
-        startTransition(() => {
-          setUser(null)
-          setApprovedUser(null)
-          setIsAuthorized(false)
-          setAuthError(error?.message || 'Couple Book could not initialize Firebase auth.')
-          setAuthInitialized(true)
-          setLoading(false)
+        transitionAuthState(dispatchAuthState, {
+          user: null,
+          approvedUser: null,
+          isAuthorized: false,
+          authError: error?.message || 'Couple Book could not initialize Firebase auth.',
+          authInitialized: true,
+          loading: false,
         })
       }
     }
@@ -151,39 +169,23 @@ export function AuthProvider({ children }) {
       throw new Error('Browser regression auth is injected locally and cannot be edited from the sign-in form.')
     }
 
-    setAuthError('')
-    setLoading(true)
+    dispatchAuthState({ payload: { authError: '', loading: true } })
 
     try {
       const result = await signInWithEmail(email, password)
       const resolution = await resolveApprovedUser(result.user)
 
-      startTransition(() => {
-        setUser(result.user)
-
-        if (resolution.status === 'authorized') {
-          setApprovedUser(resolution.approvedUser)
-          setIsAuthorized(true)
-          setAuthError('')
-        } else {
-          setApprovedUser(null)
-          setIsAuthorized(false)
-          setAuthError(getAuthorizationMessage(resolution.status))
-        }
-
-        setAuthInitialized(true)
-        setLoading(false)
-      })
+      transitionAuthState(dispatchAuthState, createResolvedAuthState(result.user, resolution))
 
       return result
     } catch (error) {
-      startTransition(() => {
-        setUser(null)
-        setApprovedUser(null)
-        setIsAuthorized(false)
-        setAuthError(error?.message || 'Unable to complete sign-in.')
-        setAuthInitialized(true)
-        setLoading(false)
+      transitionAuthState(dispatchAuthState, {
+        user: null,
+        approvedUser: null,
+        isAuthorized: false,
+        authError: error?.message || 'Unable to complete sign-in.',
+        authInitialized: true,
+        loading: false,
       })
       throw error
     }
@@ -191,32 +193,20 @@ export function AuthProvider({ children }) {
 
   const signOut = useCallback(async () => {
     if (isBrowserTestMode) {
-      applySignedOutState({
-        setUser,
-        setApprovedUser,
-        setIsAuthorized,
-        setAuthError,
-        setAuthInitialized,
-        setLoading,
-      })
+      applySignedOutState(dispatchAuthState)
       return
     }
 
-    setLoading(true)
+    dispatchAuthState({ payload: { loading: true } })
 
     try {
       await signOutCurrentUser()
     } finally {
-      applySignedOutState({
-        setUser,
-        setApprovedUser,
-        setIsAuthorized,
-        setAuthError,
-        setAuthInitialized,
-        setLoading,
-      })
+      applySignedOutState(dispatchAuthState)
     }
   }, [isBrowserTestMode])
+
+  const { approvedUser, authError, authInitialized, isAuthorized, loading, user } = authState
 
   const value = useMemo(
     () => ({

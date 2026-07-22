@@ -19,9 +19,12 @@ const REPO_ROOT = path.resolve(APP_ROOT, '..')
 const SCREENSHOT_ROOT = path.join(REPO_ROOT, '.visual-audit', 'visual-regression-current')
 
 const VIEWPORTS = Object.freeze([
-  { name: 'desktop', width: 1440, height: 1024 },
-  { name: 'tablet', width: 1024, height: 768 },
-  { name: 'mobile', width: 390, height: 844 },
+  { name: 'desktop-1440', family: 'desktop', width: 1440, height: 1024 },
+  { name: 'desktop-1280', family: 'desktop', width: 1280, height: 800 },
+  { name: 'tablet-landscape', family: 'tablet', width: 1024, height: 768 },
+  { name: 'tablet-portrait', family: 'tablet', width: 768, height: 1024 },
+  { name: 'mobile-390', family: 'mobile', width: 390, height: 844 },
+  { name: 'mobile-360', family: 'mobile', width: 360, height: 800 },
 ])
 
 const ROUTES = Object.freeze([
@@ -103,13 +106,13 @@ function assertRecoveredVisuals(route, viewport, metrics) {
     assert.equal(metrics.contentWidth <= 1120, true, `${viewport.name} ${route.path} should stay inside the recovered app width.`)
   }
 
-  if (viewport.name === 'mobile' && route.mode === 'authorized') {
+  if (viewport.family === 'mobile' && route.mode === 'authorized') {
     assert.equal(metrics.mobileNavVisible, true, `${viewport.name} ${route.path} should keep mobile navigation visible.`)
     assert.equal(metrics.mobileNavBottom >= 0, true, `${viewport.name} ${route.path} mobile navigation should remain in the viewport.`)
   }
 
   if (route.path === '/gallery') {
-    if (viewport.name === 'desktop') {
+    if (viewport.family === 'desktop') {
       assert.equal(
         metrics.galleryColumnsInFirstRows.some((columns) => columns >= 3),
         true,
@@ -124,7 +127,7 @@ function assertRecoveredVisuals(route, viewport, metrics) {
   }
 
   if (route.path === '/timeline') {
-    const maxTimelineCardWidth = viewport.name === 'mobile' ? 340 : 940
+    const maxTimelineCardWidth = viewport.family === 'mobile' ? 340 : 940
     assert.equal(
       metrics.timelineCardWidths.every((width) => width <= maxTimelineCardWidth),
       true,
