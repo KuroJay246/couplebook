@@ -1382,6 +1382,10 @@ code {
 }
 
 .timeline-special-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 0 10px;
   color: var(--accent);
 }
 
@@ -1613,6 +1617,10 @@ code {
 }
 
 .gallery-special-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 0 10px;
   color: var(--accent);
 }
 
@@ -3780,8 +3788,8 @@ code {
 
 .gallery-detail-trigger,
 .timeline-detail-trigger {
-  min-height: 34px;
-  padding: 0 12px;
+  min-height: 38px;
+  padding: 0 14px;
   color: var(--ink);
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid var(--line);
