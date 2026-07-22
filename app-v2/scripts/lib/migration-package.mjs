@@ -134,12 +134,12 @@ function packageChecksumFor(migrationPackage) {
   return sha256(withoutPackageChecksums(migrationPackage))
 }
 
-export function createMigrationPackage({ generatedAt = new Date().toISOString() } = {}) {
+export function createMigrationPackage({ approvedUids = null, generatedAt = new Date().toISOString() } = {}) {
   const memories = readJson(memoryPath, [])
   const plan = createMigrationPlan({ memories: Array.isArray(memories) ? memories : [], specialPayloads: readNormalizedSpecialMoments() })
   if (Object.keys(plan.blockers).length > 0) throw new Error('Migration plan has blockers.')
 
-  const uids = extractLegacyApprovedUids()
+  const uids = Array.isArray(approvedUids) ? approvedUids.map((uid) => safeId(uid, 'approved uid')) : extractLegacyApprovedUids()
   if (uids.length !== 2) throw new Error('Expected exactly two legacy approved UIDs.')
 
   const [ownerUid, partnerUid] = uids

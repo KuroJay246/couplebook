@@ -254,9 +254,11 @@ export function normalizeTimelineMemory(record, options = {}) {
   const id = toTrimmedString(record?.id) || `timeline-memory-${index + 1}`
   const title = toTrimmedString(record?.title)
   const description = toTrimmedString(record?.description)
+  const status = toTrimmedString(record?.status) === 'archived' ? 'archived' : 'active'
   const specialMoment = normalizeSpecialMoment(record, warnings)
   const normalized = {
     id,
+    status,
     title,
     description,
     titleKind: classifyTitleKind(title),

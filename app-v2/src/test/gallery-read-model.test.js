@@ -132,6 +132,27 @@ test('gallery read model exposes verified storage media without raw local refere
   assert.doesNotMatch(JSON.stringify(model), /C:\\\\|OUR MEMORIES|\/assets\/videos/)
 })
 
+test('gallery read model excludes archived memories from active collections', () => {
+  const model = buildGalleryReadModel({
+    compatibilitySnapshot: createSnapshot({
+      status: 'ready',
+      source: 'firestore',
+      data: {
+        hasBaseDataset: true,
+        memories: [
+          createMemoryRecord({ id: 'active-gallery-memory', title: 'Fictional active gallery', status: 'active' }),
+          createMemoryRecord({ id: 'archived-gallery-memory', title: 'Fictional archived gallery', status: 'archived' }),
+        ],
+      },
+      warnings: [],
+    }),
+  })
+
+  assert.equal(model.summary.totalMemories, 1)
+  assert.equal(model.photos.length, 1)
+  assert.doesNotMatch(JSON.stringify(model), /archived-gallery-memory|Fictional archived gallery/)
+})
+
 test('gallery read model distinguishes unavailable from empty and partial states', () => {
   const unavailableModel = buildGalleryReadModel({
     compatibilitySnapshot: createSnapshot({

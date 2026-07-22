@@ -86,6 +86,20 @@ test('Firestore memory normalizer accepts only safe verified Storage metadata', 
   assert.match(unsafeWarnings.join(' '), /invalid storage metadata/)
 })
 
+test('Firestore memory normalizer preserves archived status for active-view filtering', () => {
+  const warnings = []
+  const memory = normalizeFirestoreMemory('memory_one', {
+    title: 'Fictional archived memory',
+    date: '2026-07-22',
+    mediaState: 'none',
+    schemaVersion: 1,
+    status: 'archived',
+  }, warnings)
+
+  assert.equal(memory.status, 'archived')
+  assert.deepEqual(warnings, [])
+})
+
 test('app-v2 Firestore sources avoid broad users queries, writes, and arbitrary paths', async () => {
   const serviceFiles = [
     '../services/userService.js',

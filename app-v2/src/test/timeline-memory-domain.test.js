@@ -218,3 +218,33 @@ test('timeline selectors build stable summary, filter metadata, and year/special
   assert.equal(chapters[2].label, 'Undated memories')
   assert.doesNotMatch(JSON.stringify(chapters), /happiest|deeper|changed/i)
 })
+
+test('timeline selectors exclude archived memories from active story views', () => {
+  const normalized = normalizeTimelineMemories([
+    createLegacyMemoryRecord({
+      id: 'active-memory',
+      title: 'Fictional active chapter',
+      dateLabel: '2026-05-10',
+      tags: ['Story'],
+      status: 'active',
+    }),
+    createLegacyMemoryRecord({
+      id: 'archived-memory',
+      title: 'Fictional archived chapter',
+      dateLabel: '2026-05-11',
+      tags: ['Hidden'],
+      status: 'archived',
+    }),
+  ])
+
+  const summary = buildTimelineSummary(normalized)
+  const filters = buildTimelineFilters(normalized)
+  const chapters = buildTimelineChapters(normalized)
+  const displayMemories = selectTimelineDisplayMemories(normalized)
+
+  assert.equal(normalized[1].status, 'archived')
+  assert.equal(summary.totalMemories, 1)
+  assert.deepEqual(displayMemories.map((memory) => memory.id), ['active-memory'])
+  assert.deepEqual(filters.availableTags.map((tag) => tag.key), ['story'])
+  assert.doesNotMatch(JSON.stringify(chapters), /archived-memory|Fictional archived chapter|Hidden/)
+})

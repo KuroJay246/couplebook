@@ -58,8 +58,9 @@ export function selectTimelineTypeLabel(memory) {
 
 export function selectTimelineDisplayMemories(memories = []) {
   return freezeClone(
-    sortMemories(memories).map((memory) => ({
+    sortMemories(memories).filter((memory) => memory.status !== 'archived').map((memory) => ({
       id: memory.id,
+      status: memory.status,
       title: memory.title,
       description: memory.description,
       displayTitle: selectTimelineDisplayTitle(memory),
@@ -78,8 +79,9 @@ export function selectTimelineDisplayMemories(memories = []) {
 }
 
 export function buildTimelineSummary(memories = []) {
+  const activeMemories = memories.filter((memory) => memory.status !== 'archived')
   return freezeClone(
-    memories.reduce(
+    activeMemories.reduce(
       (summary, memory) => {
         summary.totalMemories += 1
         if (memory.date.status === 'valid') {
@@ -116,7 +118,7 @@ export function buildTimelineFilters(memories = []) {
   const yearMap = new Map()
   const typeMap = new Map()
 
-  for (const memory of memories) {
+  for (const memory of memories.filter((entry) => entry.status !== 'archived')) {
     for (const tag of memory.tags) {
       if (!tagMap.has(tag.key)) {
         tagMap.set(tag.key, { key: tag.key, label: tag.label, count: 0 })
