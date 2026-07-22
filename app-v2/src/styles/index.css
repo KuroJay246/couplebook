@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap");
 @import "tailwindcss";
 
 :root {
@@ -2842,4 +2843,757 @@ code {
     transition: none !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* ==========================================================================
+   Version 1.1 visual recovery layer
+   Restores the finished dark-glass Couple Book character from the static app
+   while preserving the React/Firebase behavior and component structure.
+   ========================================================================== */
+
+:root {
+  color-scheme: dark;
+  --paper: #141821;
+  --paper-deep: #0a0c10;
+  --paper-strong: rgba(20, 24, 33, 0.76);
+  --ink: #f8fafc;
+  --ink-soft: #cbd5e1;
+  --graphite: #e2e8f0;
+  --stone: #94a3b8;
+  --line: rgba(255, 255, 255, 0.09);
+  --line-strong: rgba(255, 255, 255, 0.18);
+  --accent: #ff4a6b;
+  --accent-soft: rgba(255, 74, 107, 0.34);
+  --accent-olive: #8b5cf6;
+  --muted: #94a3b8;
+  --success: #6ee7b7;
+  --warning: #fdba74;
+  --danger: #fb7185;
+  --focus: #3b82f6;
+  --shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.36);
+  --shadow-strong: 0 26px 80px rgba(0, 0, 0, 0.48);
+  --cb-bg-glass: rgba(20, 24, 33, 0.66);
+  --cb-bg-glass-hover: rgba(30, 36, 48, 0.86);
+  --cb-bg-glass-active: rgba(40, 48, 64, 0.95);
+  --cb-rose: #ff4a6b;
+  --cb-violet: #8b5cf6;
+  --cb-blue: #3b82f6;
+  --cb-gold: #fdba74;
+  --cb-gradient: linear-gradient(135deg, #ff4a6b 0%, #8b5cf6 100%);
+  --cb-glow-rose: 0 0 24px rgba(255, 74, 107, 0.28);
+  --cb-glow-violet: 0 0 24px rgba(139, 92, 246, 0.28);
+}
+
+html {
+  background: #0a0c10;
+}
+
+body {
+  min-width: 320px;
+  overflow-x: hidden;
+  font-family: "Outfit", "Segoe UI", sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 18% 12%, rgba(255, 74, 107, 0.18), transparent 26%),
+    radial-gradient(circle at 82% 18%, rgba(139, 92, 246, 0.18), transparent 28%),
+    radial-gradient(circle at 50% 50%, #161920 0%, #0a0c10 62%);
+  background-attachment: fixed;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.brand-panel h1,
+.login-hero-note strong,
+.profile-person-copy h3,
+.favorites-person-copy h3,
+.contract-document-copy h3 {
+  font-family: "Playfair Display", Georgia, serif;
+  letter-spacing: 0;
+}
+
+code {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.app-shell {
+  grid-template-columns: 252px minmax(0, 1fr);
+}
+
+.shell-main,
+.shell-frame {
+  width: min(100%, 1120px);
+  margin: 0 auto;
+  padding: 28px 20px 96px;
+}
+
+.shell-sidebar {
+  background:
+    linear-gradient(180deg, rgba(20, 24, 33, 0.9), rgba(10, 12, 16, 0.96)),
+    radial-gradient(circle at top, rgba(255, 74, 107, 0.2), transparent 34%);
+  border-right: 1px solid var(--line);
+  box-shadow: 18px 0 60px rgba(0, 0, 0, 0.28);
+}
+
+.brand-panel,
+.account-panel,
+.rail-section,
+.secondary-sheet-card,
+.secondary-sheet-account {
+  background: var(--cb-bg-glass);
+  border-color: var(--line);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(18px);
+}
+
+.brand-panel h1 {
+  color: var(--ink);
+  text-shadow: var(--cb-glow-rose);
+}
+
+.brand-panel p,
+.account-panel span,
+.rail-link small,
+.mobile-nav-link span,
+.sidebar-heading,
+.account-label,
+.shell-header-user span {
+  color: var(--stone);
+}
+
+.shell-header-user,
+.dashboard-now-card li,
+.timeline-hero-aside,
+.editorial-page-header-aside,
+.dashboard-hero-aside,
+.timeline-chapter-nav a,
+.quiet-status-list li,
+.settings-group-item,
+.contract-note-list li,
+.contract-clause-list li,
+.special-moment-content-note,
+.special-moment-content-timeline li {
+  color: var(--ink-soft);
+  background: rgba(255, 255, 255, 0.065);
+  border-color: var(--line);
+}
+
+.shell-header-user strong,
+.dashboard-now-card li strong,
+.timeline-hero-aside strong,
+.editorial-page-header-aside strong,
+.dashboard-hero-aside strong {
+  color: var(--ink);
+}
+
+.chapter-link,
+.rail-link,
+.mobile-nav-link {
+  border-color: transparent;
+  color: var(--ink-soft);
+}
+
+.chapter-link:not(.chapter-link-active),
+.rail-link:not(.rail-link-active),
+.mobile-nav-link:not(.mobile-nav-link-active) {
+  background: rgba(255, 255, 255, 0.045);
+  border-color: var(--line);
+}
+
+.chapter-link-active,
+.chapter-link:hover,
+.rail-link-active,
+.rail-link:hover,
+.mobile-nav-link-active {
+  color: var(--ink);
+  background: var(--cb-bg-glass-hover);
+  border-color: rgba(255, 74, 107, 0.28);
+  box-shadow: var(--cb-glow-rose);
+}
+
+.rail-link-shared {
+  color: #fecdd3;
+  background: rgba(255, 74, 107, 0.08);
+}
+
+.rail-link-special {
+  color: #ddd6fe;
+  background: rgba(139, 92, 246, 0.09);
+}
+
+.hero-card,
+.state-card,
+.login-card,
+.shell-header,
+.shell-content,
+.editorial-section,
+.dashboard-panel,
+.settings-group,
+.settings-opening-note,
+.settings-detail-card,
+.profile-hero,
+.profile-opening-note,
+.profile-person-panel,
+.profile-note-card,
+.profile-entry-card,
+.favorites-hero,
+.favorites-opening-note,
+.favorites-person-panel,
+.favorites-shared-card,
+.favorites-link-card,
+.favorites-category-block,
+.contract-hero,
+.contract-opening-note,
+.contract-record-card,
+.contract-link-card,
+.contract-privacy-card,
+.contract-document,
+.contract-document-section,
+.timeline-hero,
+.timeline-opening-note,
+.timeline-chapter,
+.timeline-group,
+.timeline-memory-card,
+.gallery-hero,
+.gallery-opening-note,
+.gallery-collection,
+.gallery-item-card,
+.special-moment-hero,
+.special-moment-panel,
+.special-moment-status,
+.dashboard-now-card,
+.source-card,
+.milestone-card,
+.supporting-link-card,
+.story-link-card,
+.memory-card,
+.birthday-card,
+.dashboard-inline-alert,
+.workflow-section {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.018)),
+    var(--cb-bg-glass);
+  border-color: var(--line);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(18px);
+}
+
+.hero-card:hover,
+.state-card:hover,
+.login-card:hover,
+.editorial-section:hover,
+.dashboard-panel:hover,
+.profile-person-panel:hover,
+.favorites-person-panel:hover,
+.timeline-memory-card:hover,
+.gallery-item-card:hover,
+.story-link-card:hover,
+.supporting-link-card:hover {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02)),
+    var(--cb-bg-glass-hover);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.shell-header {
+  align-items: center;
+  min-height: 96px;
+  background:
+    linear-gradient(135deg, rgba(255, 74, 107, 0.14), rgba(139, 92, 246, 0.12)),
+    var(--cb-bg-glass);
+}
+
+.shell-content {
+  padding: 26px;
+}
+
+.hero-card,
+.state-card,
+.login-card,
+.editorial-section,
+.dashboard-panel {
+  border-radius: 20px;
+}
+
+.hero-card h1,
+.state-card h2,
+.login-card h2,
+.shell-header h2,
+.page-frame h1,
+.editorial-page-header h1,
+.dashboard-hero h1 {
+  font-size: clamp(2.25rem, 4.2vw, 4rem);
+  line-height: 0.98;
+  text-shadow: 0 0 22px rgba(255, 74, 107, 0.2);
+}
+
+.hero-card p,
+.state-card p,
+.login-card p,
+.shell-header p,
+.page-frame p,
+.editorial-section-heading p,
+.dashboard-section-heading p,
+.timeline-memory-card-copy p,
+.gallery-item-copy p,
+.profile-person-copy p,
+.favorites-person-copy p,
+.contract-document-copy p,
+.special-moment-panel p {
+  color: var(--ink-soft);
+}
+
+.eyebrow,
+.state-badge,
+.folio-mark,
+.memory-card-date,
+.memory-card-kind,
+.source-card-status,
+.timeline-chapter-nav small,
+.timeline-group-heading span,
+.timeline-memory-card-meta,
+.gallery-item-meta,
+.gallery-media-status,
+.favorites-person-status,
+.profile-person-status,
+.contract-link-status,
+.contract-record-status {
+  color: var(--cb-gold);
+}
+
+.button,
+.state-action,
+.timeline-filter-button,
+.gallery-filter-button,
+.timeline-special-link,
+.gallery-special-link,
+.special-moment-return-nav a,
+.chapter-link,
+.rail-link,
+.mobile-nav-link {
+  border-radius: 14px;
+  transition:
+    transform 180ms ease,
+    background-color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.button:hover,
+.state-action:hover,
+.timeline-filter-button:hover,
+.gallery-filter-button:hover,
+.timeline-special-link:hover,
+.gallery-special-link:hover,
+.special-moment-return-nav a:hover {
+  transform: translateY(-1px);
+}
+
+.button-primary,
+.state-action,
+.timeline-filter-button-active,
+.gallery-filter-button-active,
+.timeline-show-more,
+.gallery-show-more {
+  color: #fff;
+  background: var(--cb-gradient);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: var(--cb-glow-rose);
+}
+
+.button-secondary,
+.timeline-filter-button,
+.gallery-filter-button,
+.timeline-year-filter select,
+.gallery-year-filter select,
+.workflow-field input,
+.workflow-field select,
+.workflow-field textarea,
+.field input {
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.07);
+  border-color: var(--line-strong);
+}
+
+.field input::placeholder,
+.workflow-field input::placeholder,
+.workflow-field textarea::placeholder {
+  color: rgba(203, 213, 225, 0.54);
+}
+
+.login-layout {
+  grid-template-columns: minmax(0, 1.05fr) minmax(340px, 0.85fr);
+}
+
+.login-hero {
+  min-height: 520px;
+  align-content: center;
+  background:
+    radial-gradient(circle at 24% 22%, rgba(255, 74, 107, 0.2), transparent 32%),
+    radial-gradient(circle at 78% 72%, rgba(139, 92, 246, 0.18), transparent 34%),
+    linear-gradient(145deg, rgba(20, 24, 33, 0.84), rgba(10, 12, 16, 0.94));
+}
+
+.login-card {
+  align-content: center;
+}
+
+.dashboard-grid,
+.favorites-shared-grid,
+.favorites-spread-grid,
+.profile-spread-grid,
+.contract-record-grid,
+.contract-link-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.source-status-grid,
+.supporting-link-grid,
+.milestone-card-grid,
+.favorites-link-grid,
+.profile-entry-grid {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.milestone-counter-box,
+.gallery-summary-grid article {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--line);
+}
+
+.milestone-counter-box span,
+.dashboard-now-card strong,
+.gallery-summary-grid strong {
+  color: var(--ink);
+}
+
+.timeline-toolbar,
+.gallery-toolbar,
+.source-status-toolbar {
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 12px;
+}
+
+.timeline-chapter {
+  position: relative;
+  padding-left: 38px;
+  overflow: hidden;
+}
+
+.timeline-chapter::before {
+  position: absolute;
+  top: 28px;
+  bottom: 28px;
+  left: 18px;
+  width: 2px;
+  content: "";
+  background: linear-gradient(180deg, transparent, var(--cb-rose), var(--cb-violet), transparent);
+  box-shadow: var(--cb-glow-violet);
+}
+
+.timeline-chapter-heading::before,
+.timeline-group-heading::before {
+  flex: 0 0 auto;
+  width: 11px;
+  height: 11px;
+  content: "";
+  border-radius: 999px;
+  background: var(--cb-gradient);
+  box-shadow: var(--cb-glow-rose);
+}
+
+.timeline-memory-list {
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.timeline-memory-card,
+.gallery-item-card,
+.memory-card,
+.story-link-card,
+.supporting-link-card {
+  min-height: 0;
+}
+
+.timeline-memory-card-special {
+  border-color: rgba(255, 74, 107, 0.34);
+  box-shadow: var(--shadow-soft), var(--cb-glow-rose);
+}
+
+.timeline-tag-list li,
+.timeline-media-pill,
+.favorites-chip-list li {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--line);
+  color: var(--ink-soft);
+}
+
+.gallery-item-grid {
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
+.gallery-item-frame {
+  min-height: 0;
+  aspect-ratio: 4 / 3;
+  background:
+    radial-gradient(circle at 30% 24%, rgba(255, 74, 107, 0.34), transparent 34%),
+    radial-gradient(circle at 72% 78%, rgba(139, 92, 246, 0.3), transparent 38%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
+}
+
+.gallery-item-frame span {
+  color: rgba(248, 250, 252, 0.78);
+}
+
+.profile-person-panel,
+.favorites-person-panel {
+  position: relative;
+  overflow: hidden;
+}
+
+.profile-person-panel::before,
+.favorites-person-panel::before {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  content: "";
+  background: radial-gradient(circle at top right, rgba(255, 74, 107, 0.18), transparent 36%);
+}
+
+.profile-person-panel:nth-child(2)::before,
+.favorites-person-panel:nth-child(2)::before {
+  background: radial-gradient(circle at top right, rgba(139, 92, 246, 0.2), transparent 36%);
+}
+
+.profile-highlight-chip,
+.favorites-category-block,
+.contract-document-section,
+.special-moment-content-section,
+.special-moment-media-status {
+  background: rgba(255, 255, 255, 0.055);
+  border-color: var(--line);
+}
+
+.contract-document {
+  max-width: 820px;
+  margin: 0 auto;
+}
+
+.contract-document-body {
+  gap: 18px;
+}
+
+.special-moment-page {
+  max-width: 820px;
+  margin: 0 auto;
+}
+
+.special-moment-hero {
+  min-height: 300px;
+  align-content: end;
+}
+
+.special-moment-page-gold .special-moment-hero {
+  background:
+    radial-gradient(circle at 22% 16%, rgba(253, 186, 116, 0.28), transparent 32%),
+    linear-gradient(145deg, rgba(42, 31, 13, 0.9), rgba(10, 12, 16, 0.96));
+  border-color: rgba(253, 186, 116, 0.28);
+}
+
+.special-moment-page-rose .special-moment-hero {
+  background:
+    radial-gradient(circle at 18% 22%, rgba(255, 74, 107, 0.32), transparent 34%),
+    linear-gradient(145deg, rgba(57, 16, 31, 0.9), rgba(10, 12, 16, 0.96));
+  border-color: rgba(255, 74, 107, 0.32);
+}
+
+.special-moment-page-oxblood .special-moment-hero {
+  background:
+    radial-gradient(circle at 72% 16%, rgba(139, 92, 246, 0.24), transparent 34%),
+    linear-gradient(145deg, rgba(49, 12, 24, 0.92), rgba(10, 12, 16, 0.96));
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
+.workflow-section {
+  border-color: rgba(59, 130, 246, 0.24);
+}
+
+.workflow-feedback-success {
+  color: var(--success);
+}
+
+.workflow-feedback-error,
+.form-error {
+  color: var(--danger);
+}
+
+.mobile-nav {
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
+  background: rgba(10, 12, 16, 0.94);
+  border-color: var(--line-strong);
+  backdrop-filter: blur(18px);
+}
+
+@media (max-width: 1100px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .shell-frame,
+  .shell-main {
+    width: min(100%, 980px);
+    padding: 16px 12px 110px;
+  }
+}
+
+@media (max-width: 980px) {
+  .login-layout,
+  .dashboard-grid,
+  .favorites-shared-grid,
+  .favorites-spread-grid,
+  .profile-spread-grid,
+  .contract-record-grid,
+  .contract-link-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .login-hero {
+    min-height: 360px;
+  }
+}
+
+@media (max-width: 720px) {
+  .shell-frame,
+  .shell-main {
+    width: 100%;
+    padding: 12px 10px 102px;
+  }
+
+  .shell-header,
+  .shell-content,
+  .hero-card,
+  .state-card,
+  .login-card,
+  .editorial-section,
+  .dashboard-panel,
+  .timeline-chapter,
+  .gallery-collection,
+  .profile-person-panel,
+  .favorites-person-panel,
+  .contract-document,
+  .special-moment-panel {
+    padding: 16px;
+    border-radius: 16px;
+  }
+
+  .hero-card h1,
+  .state-card h2,
+  .login-card h2,
+  .shell-header h2,
+  .page-frame h1,
+  .editorial-page-header h1,
+  .dashboard-hero h1 {
+    font-size: clamp(2rem, 12vw, 2.85rem);
+  }
+
+  .shell-header-user,
+  .timeline-toolbar,
+  .gallery-toolbar,
+  .source-status-toolbar,
+  .workflow-actions {
+    width: 100%;
+  }
+
+  .button,
+  .state-action,
+  .timeline-filter-button,
+  .gallery-filter-button {
+    min-height: 44px;
+  }
+
+  .timeline-chapter {
+    padding-left: 26px;
+  }
+
+  .timeline-chapter::before {
+    left: 12px;
+  }
+
+  .timeline-memory-list,
+  .gallery-item-grid,
+  .source-status-grid,
+  .supporting-link-grid,
+  .milestone-card-grid,
+  .favorites-link-grid,
+  .profile-entry-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .gallery-item-frame {
+    aspect-ratio: 1 / 0.82;
+  }
+
+  .mobile-nav {
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    gap: 4px;
+    padding: 8px 8px calc(8px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .mobile-nav-link {
+    min-width: 0;
+    min-height: 52px;
+    padding: 8px 4px;
+  }
+
+  .mobile-nav-link strong,
+  .mobile-nav-link span {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.special-moment-document {
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 18% 12%, rgba(253, 186, 116, 0.14), transparent 30%),
+    linear-gradient(145deg, rgba(20, 24, 33, 0.94), rgba(10, 12, 16, 0.98));
+  border: 1px solid rgba(253, 186, 116, 0.22);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.special-moment-document-header,
+.special-moment-content-section,
+.special-moment-content-note,
+.special-moment-content-timeline,
+.special-moment-support-grid > *,
+.special-moment-document .special-moment-return-nav a {
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--line);
+}
+
+.special-moment-document-header p,
+.special-moment-document-header time,
+.special-moment-content-section p,
+.special-moment-content-section blockquote,
+.special-moment-content-section li,
+.special-moment-content-note,
+.special-moment-content-timeline,
+.special-moment-document .special-moment-return-nav a {
+  color: var(--ink-soft);
+}
+
+.special-moment-document-kicker,
+.special-moment-content-section h3 {
+  color: var(--cb-gold);
 }

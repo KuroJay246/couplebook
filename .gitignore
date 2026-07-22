@@ -53,3 +53,4 @@ users_export.json
 app-v2/local-migration-packages/
 .local-backups/
 .local-migration-packages/
+.visual-audit/
