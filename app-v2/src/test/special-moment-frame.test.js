@@ -43,13 +43,12 @@ test('special routes use the shared protected frame instead of placeholders', as
     assert.doesNotMatch(source, /PlaceholderPage/)
   }
 
-  assert.match(frameSource, /Runtime content connected/)
+  assert.match(frameSource, /special-page-standalone/)
   assert.match(hookSource, /useCompatibilityData/)
   assert.match(adapterSource, /VITE_ENABLE_LEGACY_LOCAL_BRIDGE/)
   assert.match(adapterSource, /\/api\/special-moment\/\$\{momentKey\}/)
-  assert.match(frameSource, /Open timeline/)
-  assert.match(frameSource, /Open gallery/)
-  assert.match(frameSource, /Return to the shared book/)
+  assert.match(frameSource, /Return to Dashboard/)
+  assert.match(frameSource, /Open Gallery/)
   assert.doesNotMatch(`${frameSource}\n${hookSource}\n${adapterSource}`, /<img|<video|<audio|dangerouslySetInnerHTML|autoplay|confetti|legacy\.html/)
   assert.doesNotMatch(`${frameSource}\n${hookSource}`, /pages\/confession|pages\/valentine|omnia-happy-birthday/)
   assert.doesNotMatch(`${frameSource}\n${hookSource}\n${adapterSource}`, /\bsetItem\s*\(|\bupdateDoc\s*\(|\baddDoc\s*\(|\bdeleteDoc\s*\(|collectionGroup\(|collection\([^)]*users/)

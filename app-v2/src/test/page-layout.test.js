@@ -21,27 +21,28 @@ test('shared page layout exports the editorial primitives and semantic contracts
   assert.match(layoutSource, /editorial-page-header/)
 })
 
-test('settings page layout keeps the approved utility information architecture explicit', async () => {
+test('settings page layout keeps the faithful utility information architecture explicit', async () => {
   const settingsViewSource = await readSource('../features/settings/SettingsView.jsx')
 
-  assert.match(settingsViewSource, /Your account/)
+  assert.match(settingsViewSource, /Application Settings/)
+  assert.match(settingsViewSource, /settings-grid/)
+  assert.match(settingsViewSource, /settings-menu/)
+  assert.match(settingsViewSource, /settings-panel-shell/)
   assert.match(settingsViewSource, /Appearance/)
-  assert.match(settingsViewSource, /Privacy and access/)
-  assert.match(settingsViewSource, /Data and compatibility/)
-  assert.match(settingsViewSource, /Migration progress/)
-  assert.match(settingsViewSource, /Advanced/)
-  assert.match(settingsViewSource, /Danger zone/)
-  assert.match(settingsViewSource, /UtilityPageHeader/)
-  assert.match(settingsViewSource, /UtilitySection/)
-  assert.match(settingsViewSource, /SettingsGroup/)
+  assert.match(settingsViewSource, /Privacy/)
+  assert.match(settingsViewSource, /Data/)
+  assert.match(settingsViewSource, /theme-picker-grid/)
+  assert.match(settingsViewSource, /toggle-item/)
   assert.doesNotMatch(settingsViewSource, /jaylanspencer99@gmail\.com/i)
 })
 
-test('dashboard adopts the shared page layout system without placeholder fallbacks', async () => {
+test('dashboard adopts the faithful MemoryBook layout without placeholder fallbacks', async () => {
   const dashboardSource = await readSource('../features/dashboard/DashboardView.jsx')
 
-  assert.match(dashboardSource, /ChapterHeader/)
-  assert.match(dashboardSource, /EditorialSection/)
-  assert.match(dashboardSource, /EditorialEmptyState/)
+  assert.match(dashboardSource, /dashboard-story-band/)
+  assert.match(dashboardSource, /recent-memories-card/)
+  assert.match(dashboardSource, /clock-card/)
+  assert.match(dashboardSource, /special-moments-card/)
+  assert.match(dashboardSource, /quick-nav-container/)
   assert.doesNotMatch(dashboardSource, /PlaceholderPage/)
 })

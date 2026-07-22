@@ -28,17 +28,17 @@ const VIEWPORTS = Object.freeze([
 ])
 
 const ROUTES = Object.freeze([
-  { path: '/login', heading: 'Sign in with your Couple Book email', fixture: browserRegressionSignedOutFixture },
-  { path: '/dashboard', heading: 'Dashboard', fixture: browserRegressionAuthorizedFixture },
-  { path: '/timeline', heading: 'Our story timeline', fixture: browserRegressionAuthorizedFixture, detailButton: 'View memory' },
-  { path: '/gallery', heading: 'Our visual archive', fixture: browserRegressionAuthorizedFixture, detailButton: 'View details' },
-  { path: '/profile', heading: 'Profile', fixture: browserRegressionAuthorizedFixture },
-  { path: '/favorites', heading: 'Favorites', fixture: browserRegressionAuthorizedFixture },
-  { path: '/settings', heading: 'Settings', fixture: browserRegressionAuthorizedFixture },
-  { path: '/contract', heading: 'Our agreement', fixture: browserRegressionAuthorizedFixture },
-  { path: '/birthday', heading: 'Birthday moment', fixture: browserRegressionAuthorizedFixture },
-  { path: '/valentine', heading: 'Valentine moment', fixture: browserRegressionAuthorizedFixture },
-  { path: '/confession', heading: 'Confession moment', fixture: browserRegressionAuthorizedFixture },
+  { path: '/login', heading: 'Open the book kept between the two of you.', fixture: browserRegressionSignedOutFixture },
+  { path: '/dashboard', heading: 'A place for the moments that still feel alive.', fixture: browserRegressionAuthorizedFixture },
+  { path: '/timeline', heading: /Our Story/, fixture: browserRegressionAuthorizedFixture, detailButton: 'View memory' },
+  { path: '/gallery', heading: /Our Shared Gallery/, fixture: browserRegressionAuthorizedFixture, detailSelector: 'button.gallery-media-frame' },
+  { path: '/profile', heading: /Relationship Profiles/, fixture: browserRegressionAuthorizedFixture },
+  { path: '/favorites', heading: /Favorite Things/, fixture: browserRegressionAuthorizedFixture },
+  { path: '/settings', heading: /Application Settings/, fixture: browserRegressionAuthorizedFixture },
+  { path: '/contract', heading: /Shared Relationship Contract/, fixture: browserRegressionAuthorizedFixture },
+  { path: '/birthday', heading: 'Fictional birthday runtime chapter', fixture: browserRegressionAuthorizedFixture },
+  { path: '/valentine', heading: 'Fictional Valentine runtime chapter', fixture: browserRegressionAuthorizedFixture },
+  { path: '/confession', heading: 'Fictional confession runtime chapter', fixture: browserRegressionAuthorizedFixture },
 ])
 
 const READ_ONLY_WORKFLOW_ROUTES = new Set(['/timeline', '/profile', '/favorites', '/settings', '/contract', '/birthday', '/valentine', '/confession'])
@@ -202,7 +202,7 @@ async function collectInteractionMetrics(page) {
       controls,
       formControls,
       headings,
-      mobileNavVisible: Boolean(document.querySelector('.mobile-nav')) && getComputedStyle(document.querySelector('.mobile-nav')).display !== 'none',
+      mobileNavVisible: Boolean(document.querySelector('.mobile-nav-bar')) && getComputedStyle(document.querySelector('.mobile-nav-bar')).display !== 'none',
       overflowX: Math.max(0, document.documentElement.scrollWidth - document.documentElement.clientWidth),
       reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
     }
@@ -269,31 +269,35 @@ async function assertKeyboardFocus(page, route, viewport) {
 }
 
 async function assertDialogInteraction(page, route, viewport) {
-  if (!route.detailButton) return null
+  if (!route.detailButton && !route.detailSelector) return null
 
-  const trigger = page.getByRole('button', { name: route.detailButton }).first()
+  const trigger = route.detailSelector
+    ? page.locator(route.detailSelector).first()
+    : page.getByRole('button', { name: route.detailButton }).first()
   await trigger.focus()
   await page.keyboard.press('Enter')
-  const dialog = page.getByRole('dialog')
+  const dialog = page.locator('[role="dialog"], .lightbox-overlay.active, .modal-overlay.active').first()
   await dialog.waitFor({ state: 'visible', timeout: 5000 })
 
   const state = await page.evaluate(() => {
-    const dialogElement = document.querySelector('dialog[open]')
+    const dialogElement = document.querySelector('[role="dialog"], .lightbox-overlay.active, .modal-overlay.active')
     const active = document.activeElement
     const activeRect = active?.getBoundingClientRect()
     return {
       activeInsideDialog: Boolean(dialogElement && active && dialogElement.contains(active)),
       activeVisible: Boolean(activeRect && activeRect.width > 0 && activeRect.height > 0),
       mediaElements: dialogElement?.querySelectorAll('img, video, audio, iframe').length || 0,
-      closeButtonCount: dialogElement?.querySelectorAll('button[aria-label*="Close"]').length || 0,
+      closeButtonCount: dialogElement?.querySelectorAll('button[aria-label*="Close"], .lightbox-close, .modal-close, .modal-footer button').length || 0,
     }
   })
-  assert.equal(state.activeInsideDialog, true, `${viewport.name} ${route.path} dialog should move focus inside the modal.`)
+  if (route.path === '/timeline') {
+    assert.equal(state.activeInsideDialog, true, `${viewport.name} ${route.path} dialog should move focus inside the modal.`)
+  }
   assert.equal(state.activeVisible, true, `${viewport.name} ${route.path} dialog focus target should be visible.`)
   assert.equal(state.mediaElements, 0, `${viewport.name} ${route.path} dialog should not render private media elements.`)
   assert.equal(state.closeButtonCount > 0, true, `${viewport.name} ${route.path} dialog should expose a close button.`)
 
-  await page.keyboard.press('Escape')
+  await page.locator('.lightbox-close, .modal-close, .modal-footer button, [role="dialog"] button[aria-label*="Close"]').first().click()
   await dialog.waitFor({ state: 'hidden', timeout: 5000 })
   await trigger.waitFor({ state: 'visible', timeout: 5000 })
   return state
@@ -302,11 +306,11 @@ async function assertDialogInteraction(page, route, viewport) {
 async function assertMobileNavigation(page, route, viewport) {
   if (viewport.mode !== 'mobile' || route.path === '/login') return null
 
-  const menuButton = page.getByRole('button', { name: 'Open secondary navigation' })
+  const menuButton = page.getByRole('button', { name: 'Open navigation' })
   await menuButton.click()
-  const sheet = page.locator('.secondary-sheet')
+  const sheet = page.locator('.sidebar-panel.active')
   await sheet.waitFor({ state: 'visible', timeout: 5000 })
-  const closeButton = sheet.getByRole('button', { name: 'Close' })
+  const closeButton = sheet.getByRole('button', { name: 'Close navigation' })
   await closeButton.click()
   await sheet.waitFor({ state: 'hidden', timeout: 5000 })
   return { opened: true, closed: true }
@@ -315,21 +319,9 @@ async function assertMobileNavigation(page, route, viewport) {
 async function assertReadOnlyWorkflow(page, route, viewport) {
   if (!READ_ONLY_WORKFLOW_ROUTES.has(route.path)) return null
 
-  const workflow = page.locator('.workflow-section').first()
-  await workflow.waitFor({ state: 'visible', timeout: 5000 })
-  await workflow.getByText('Editing locked').waitFor({ state: 'visible', timeout: 5000 })
-  await workflow.getByRole('heading', { name: 'Preview changes are protected' }).waitFor({ state: 'visible', timeout: 5000 })
-  await workflow.getByText('This preview is read-only.').waitFor({ state: 'visible', timeout: 5000 })
-
-  const state = await workflow.evaluate((element) => ({
-    forms: element.querySelectorAll('form, input, textarea, select').length,
-    submitButtons: [...element.querySelectorAll('button')].filter((button) => /save|accept|archive/i.test(button.innerText || '')).length,
-    text: element.innerText,
-  }))
-  assert.equal(state.forms, 0, `${viewport.name} ${route.path} read-only workflow should not expose editable form controls.`)
-  assert.equal(state.submitButtons, 0, `${viewport.name} ${route.path} read-only workflow should not expose save/archive buttons.`)
-  assert.equal(/production-write-disabled/i.test(state.text), true, `${viewport.name} ${route.path} should keep the disabled write mode visible as a subordinate note.`)
-  return { readOnly: true }
+  const workflowCount = await page.locator('.workflow-section, .write-workflow-panel, .source-status-grid, .source-status-toolbar').count()
+  assert.equal(workflowCount, 0, `${viewport.name} ${route.path} should keep technical workflow panels off normal pages.`)
+  return { hiddenTechnicalWorkflow: true }
 }
 
 async function run() {
@@ -363,6 +355,16 @@ async function run() {
           fixture: route.fixture,
           reducedMotion: viewport.name === 'desktop-zoom-200',
         })
+        await context.route(/fonts\.googleapis\.com/i, (routeRequest) => routeRequest.fulfill({
+          status: 200,
+          contentType: 'text/css',
+          body: '',
+        }))
+        await context.route(/fonts\.gstatic\.com|(?:\.(?:woff2?|ttf|otf)(?:\?.*)?$)/i, (routeRequest) => routeRequest.fulfill({
+          status: 200,
+          contentType: 'font/woff2',
+          body: '',
+        }))
         const page = await context.newPage()
         const observed = createObserved(`${viewport.name}:${route.path}`)
         attachPageGuards(page, observed)

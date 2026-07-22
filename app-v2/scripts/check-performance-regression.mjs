@@ -16,16 +16,16 @@ const REPO_ROOT = path.resolve(APP_ROOT, '..')
 const OUTPUT_ROOT = path.join(REPO_ROOT, '.visual-audit', 'performance-current')
 
 const ROUTES = Object.freeze([
-  { path: '/dashboard', heading: 'Dashboard' },
-  { path: '/timeline', heading: 'Our story timeline' },
-  { path: '/gallery', heading: 'Our visual archive' },
-  { path: '/profile', heading: 'Profile' },
-  { path: '/favorites', heading: 'Favorites' },
-  { path: '/settings', heading: 'Settings' },
-  { path: '/contract', heading: 'Our agreement' },
-  { path: '/birthday', heading: 'Birthday moment' },
-  { path: '/valentine', heading: 'Valentine moment' },
-  { path: '/confession', heading: 'Confession moment' },
+  { path: '/dashboard', heading: 'A place for the moments that still feel alive.' },
+  { path: '/timeline', heading: /Our Story/ },
+  { path: '/gallery', heading: /Our Shared Gallery/ },
+  { path: '/profile', heading: /Relationship Profiles/ },
+  { path: '/favorites', heading: /Favorite Things/ },
+  { path: '/settings', heading: /Application Settings/ },
+  { path: '/contract', heading: /Shared Relationship Contract/ },
+  { path: '/birthday', heading: 'Fictional birthday runtime chapter' },
+  { path: '/valentine', heading: 'Fictional Valentine runtime chapter' },
+  { path: '/confession', heading: 'Fictional confession runtime chapter' },
 ])
 
 const THRESHOLDS = Object.freeze({
@@ -189,19 +189,24 @@ async function measureRouteTransitions(page, baseUrl) {
   return transitions
 }
 
-async function measureDetailDialog(page, baseUrl, routePath, buttonName) {
+async function measureDetailDialog(page, baseUrl, routePath, triggerTarget) {
   const route = ROUTES.find((entry) => entry.path === routePath)
   await page.goto(`${baseUrl}${route.path}`, { waitUntil: 'domcontentloaded' })
   await waitForRoute(page, route)
 
   const result = await timed(`modal:${route.path}`, async () => {
-    await page.getByRole('button', { name: buttonName }).first().click()
-    await page.getByRole('dialog').waitFor({ state: 'visible', timeout: 5000 })
+    if (triggerTarget.selector) {
+      await page.locator(triggerTarget.selector).first().click()
+    } else {
+      await page.getByRole('button', { name: triggerTarget.name }).first().click()
+    }
+    await page.locator('[role="dialog"], .lightbox-overlay.active, .modal-overlay.active').first().waitFor({ state: 'visible', timeout: 5000 })
   })
   assert.equal(result.ms <= THRESHOLDS.modalOpenMs, true, `${route.path} detail dialog should open below ${THRESHOLDS.modalOpenMs}ms.`)
-  assert.equal(await page.getByRole('dialog').locator('img, video, audio, iframe').count(), 0, `${route.path} dialog should not render private media elements.`)
-  await page.keyboard.press('Escape')
-  await page.getByRole('dialog').waitFor({ state: 'hidden', timeout: 5000 })
+  const dialog = page.locator('[role="dialog"], .lightbox-overlay.active, .modal-overlay.active').first()
+  assert.equal(await dialog.locator('img, video, audio, iframe').count(), 0, `${route.path} dialog should not render private media elements.`)
+  await page.locator('.lightbox-close, .modal-close, .modal-footer button, [role="dialog"] button[aria-label*="Close"]').first().click()
+  await dialog.waitFor({ state: 'hidden', timeout: 5000 })
   return result
 }
 
@@ -309,8 +314,8 @@ async function run() {
     const initialRoutes = await measureInitialRoutes(page, baseUrl)
     const routeTransitions = await measureRouteTransitions(page, baseUrl)
     const modalOpen = [
-      await measureDetailDialog(page, baseUrl, '/timeline', 'View memory'),
-      await measureDetailDialog(page, baseUrl, '/gallery', 'View details'),
+      await measureDetailDialog(page, baseUrl, '/timeline', { name: 'View memory' }),
+      await measureDetailDialog(page, baseUrl, '/gallery', { selector: 'button.gallery-media-frame' }),
     ]
     const mobileScroll = await measureMobileScroll(browser, baseUrl)
     const performanceState = await readPerformanceState(page)

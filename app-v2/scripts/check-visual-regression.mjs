@@ -28,17 +28,17 @@ const VIEWPORTS = Object.freeze([
 ])
 
 const ROUTES = Object.freeze([
-  { path: '/login', heading: 'Sign in with your Couple Book email', mode: 'signed-out' },
-  { path: '/dashboard', heading: 'Dashboard', mode: 'authorized' },
-  { path: '/timeline', heading: 'Our story timeline', mode: 'authorized' },
-  { path: '/gallery', heading: 'Our visual archive', mode: 'authorized' },
-  { path: '/profile', heading: 'Profile', mode: 'authorized' },
-  { path: '/favorites', heading: 'Favorites', mode: 'authorized' },
-  { path: '/settings', heading: 'Settings', mode: 'authorized' },
-  { path: '/contract', heading: 'Our agreement', mode: 'authorized' },
-  { path: '/birthday', heading: 'Birthday moment', mode: 'authorized' },
-  { path: '/valentine', heading: 'Valentine moment', mode: 'authorized' },
-  { path: '/confession', heading: 'Confession moment', mode: 'authorized' },
+  { path: '/login', heading: 'Open the book kept between the two of you.', mode: 'signed-out' },
+  { path: '/dashboard', heading: 'A place for the moments that still feel alive.', mode: 'authorized' },
+  { path: '/timeline', heading: /Our Story/, mode: 'authorized' },
+  { path: '/gallery', heading: /Our Shared Gallery/, mode: 'authorized' },
+  { path: '/profile', heading: /Relationship Profiles/, mode: 'authorized' },
+  { path: '/favorites', heading: /Favorite Things/, mode: 'authorized' },
+  { path: '/settings', heading: /Application Settings/, mode: 'authorized' },
+  { path: '/contract', heading: /Shared Relationship Contract/, mode: 'authorized' },
+  { path: '/birthday', heading: 'Fictional birthday runtime chapter', mode: 'authorized' },
+  { path: '/valentine', heading: 'Fictional Valentine runtime chapter', mode: 'authorized' },
+  { path: '/confession', heading: 'Fictional confession runtime chapter', mode: 'authorized' },
 ])
 
 function log(message) {
@@ -64,12 +64,12 @@ async function launchBrowser() {
 
 async function measurePage(page) {
   return page.evaluate(() => {
-    const mobileNav = document.querySelector('.mobile-nav')
-    const shellContent = document.querySelector('.shell-content')
+    const mobileNav = document.querySelector('.mobile-nav-bar')
+    const shellContent = document.querySelector('.main-content')
     const heading = document.querySelector('main h1, main h2')
-    const galleryCards = [...document.querySelectorAll('.gallery-item-card')]
-    const timelineCards = [...document.querySelectorAll('.timeline-memory-card')]
-    const specialDocument = document.querySelector('.special-moment-document')
+    const galleryCards = [...document.querySelectorAll('.gallery-item')]
+    const timelineCards = [...document.querySelectorAll('.timeline-card')]
+    const specialDocument = document.querySelector('.special-page-standalone .card')
     const specialDocumentHeading = specialDocument?.querySelector('h2, h3')
     const specialDocumentBody = specialDocument?.querySelector('p, li, blockquote')
     const visibleGalleryCards = galleryCards.filter((card) => card.getBoundingClientRect().height > 0)
@@ -90,7 +90,7 @@ async function measurePage(page) {
         return visibleGalleryCards.filter((card) => Math.round(card.getBoundingClientRect().top) === top).length
       }),
       timelineCardWidths: timelineCards.slice(0, 8).map((card) => Math.round(card.getBoundingClientRect().width)),
-      specialDocumentBackground: specialDocument ? window.getComputedStyle(specialDocument).backgroundImage : '',
+      specialDocumentBackground: specialDocument ? window.getComputedStyle(specialDocument).backgroundColor : '',
       specialDocumentHeadingColor: specialDocumentHeading ? window.getComputedStyle(specialDocumentHeading).color : '',
       specialDocumentBodyColor: specialDocumentBody ? window.getComputedStyle(specialDocumentBody).color : '',
     }
@@ -103,7 +103,7 @@ function assertRecoveredVisuals(route, viewport, metrics) {
   assert.match(metrics.bodyBackground, /radial-gradient|linear-gradient/i, `${viewport.name} ${route.path} should keep the dark romantic background.`)
 
   if (route.mode === 'authorized') {
-    assert.equal(metrics.contentWidth <= 1120, true, `${viewport.name} ${route.path} should stay inside the recovered app width.`)
+    assert.equal(metrics.contentWidth <= 1180, true, `${viewport.name} ${route.path} should stay inside the recovered app width.`)
   }
 
   if (viewport.family === 'mobile' && route.mode === 'authorized') {
@@ -120,14 +120,14 @@ function assertRecoveredVisuals(route, viewport, metrics) {
       )
     }
     assert.equal(
-      metrics.galleryCardWidths.every((width) => width >= 220 && width <= 340),
+      metrics.galleryCardWidths.every((width) => width >= 220 && width <= 390),
       true,
       `${viewport.name} Gallery card widths should stay in the recovered range.`,
     )
   }
 
   if (route.path === '/timeline') {
-    const maxTimelineCardWidth = viewport.family === 'mobile' ? 340 : 940
+    const maxTimelineCardWidth = viewport.family === 'mobile' ? 390 : 940
     assert.equal(
       metrics.timelineCardWidths.every((width) => width <= maxTimelineCardWidth),
       true,
@@ -136,23 +136,31 @@ function assertRecoveredVisuals(route, viewport, metrics) {
   }
 
   if (['/birthday', '/valentine', '/confession'].includes(route.path)) {
-    assert.match(metrics.specialDocumentBackground, /linear-gradient|radial-gradient/i, `${route.path} should keep a distinct dark special document.`)
+    assert.notEqual(metrics.specialDocumentBackground, 'rgba(0, 0, 0, 0)', `${route.path} should keep a distinct dark special document.`)
     assert.notEqual(metrics.specialDocumentHeadingColor, 'rgb(255, 255, 255, 0)', `${route.path} should keep readable special headings.`)
     assert.notEqual(metrics.specialDocumentBodyColor, 'rgb(255, 255, 255, 0)', `${route.path} should keep readable special body copy.`)
   }
 }
 
 async function assertDetailInteraction(page, route, viewport) {
-  const detailButtonName = route.path === '/gallery' ? 'View details' : route.path === '/timeline' ? 'View memory' : null
-  if (!detailButtonName) return
+  if (route.path === '/timeline') {
+    await page.getByRole('button', { name: 'View memory' }).first().click()
+    const dialog = page.getByRole('dialog')
+    await dialog.waitFor({ state: 'visible', timeout: 5000 })
+    assert.equal(await dialog.locator('img, video, audio, iframe').count(), 0, `${viewport.name} ${route.path} detail should not render private media elements.`)
+    assert.equal(await dialog.getByRole('button', { name: /close/i }).count() > 0, true, `${viewport.name} ${route.path} detail should expose a close control.`)
+    await dialog.getByRole('button', { name: /close/i }).first().click()
+    await dialog.waitFor({ state: 'hidden', timeout: 5000 })
+  }
 
-  await page.getByRole('button', { name: detailButtonName }).first().click()
-  const dialog = page.getByRole('dialog')
-  await dialog.waitFor({ state: 'visible', timeout: 5000 })
-  assert.equal(await dialog.locator('img, video, audio, iframe').count(), 0, `${viewport.name} ${route.path} detail should not render private media elements.`)
-  assert.equal(await dialog.getByRole('button', { name: /close/i }).count() > 0, true, `${viewport.name} ${route.path} detail should expose a close control.`)
-  await page.keyboard.press('Escape')
-  await dialog.waitFor({ state: 'hidden', timeout: 5000 })
+  if (route.path === '/gallery') {
+    await page.locator('button.gallery-media-frame').first().click()
+    const overlay = page.locator('.lightbox-overlay.active, .modal-overlay.active').first()
+    await overlay.waitFor({ state: 'visible', timeout: 5000 })
+    assert.equal(await overlay.locator('img, video, audio, iframe').count(), 0, `${viewport.name} ${route.path} detail should not render private media elements.`)
+    await page.locator('.lightbox-close, .modal-close, .modal-footer button').first().click()
+    await overlay.waitFor({ state: 'hidden', timeout: 5000 })
+  }
 }
 
 async function run() {

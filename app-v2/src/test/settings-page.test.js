@@ -14,13 +14,11 @@ test('settings route uses the read-only feature hook and utility view', async ()
 
   assert.match(settingsPageSource, /useSettingsData/)
   assert.match(settingsPageSource, /SettingsView/)
-  assert.match(settingsViewSource, /Identity stays narrow and readable\./)
-  assert.match(settingsViewSource, /The routed shell keeps one calm reading direction\./)
-  assert.match(settingsViewSource, /The private boundary stays plain\./)
-  assert.match(settingsViewSource, /Preserved sources stay explicit\./)
-  assert.match(settingsViewSource, /The next batches stay explicit\./)
-  assert.match(settingsViewSource, /Refresh reads/)
-  assert.doesNotMatch(settingsViewSource, /type="checkbox"|selectTheme|Remote sign-out|Delete account|Reset Local Device Data/)
+  assert.match(settingsViewSource, /Application Settings/)
+  assert.match(settingsViewSource, /settings-grid/)
+  assert.match(settingsViewSource, /theme-picker-grid/)
+  assert.match(settingsViewSource, /Privacy Toggles/)
+  assert.doesNotMatch(settingsViewSource, /selectTheme|Remote sign-out|Delete account|Reset Local Device Data/)
 })
 
 test('settings migration progress and utility navigation stay explicit', () => {

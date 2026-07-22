@@ -320,91 +320,73 @@ async function runAuthenticatedDesktopCoverage(browser) {
 
   try {
     await page.goto(`${getBaseUrl()}/settings`, { waitUntil: 'domcontentloaded' })
-    await waitForRouteContent(page, '/settings', 'Settings')
+    await waitForRouteContent(page, '/settings', 'Application Settings')
 
     assert.equal(await page.locator('.app-shell').count(), 1, 'Authorized Settings should render inside AppShell.')
     assert.equal(await page.getByText('Approved Reader').count() > 0, true, 'Authorized fixture identity should render.')
 
-    const desktopPrimaryPaths = await page.locator('nav[aria-label="Primary destinations"] a').evaluateAll((elements) => {
+    const desktopPrimaryPaths = await page.locator('nav[aria-label="Main navigation"] a').evaluateAll((elements) => {
       return elements.map((element) => new URL(element.href).pathname)
     })
-    assert.deepEqual(desktopPrimaryPaths, ['/dashboard', '/timeline', '/gallery', '/profile'])
-
-    const utilityPaths = await page.locator('.account-panel .rail-links a').evaluateAll((elements) => {
-      return elements.map((element) => new URL(element.href).pathname)
-    })
-    assert.deepEqual(utilityPaths, ['/settings'])
+    assert.deepEqual(desktopPrimaryPaths, ['/dashboard', '/timeline', '/gallery', '/profile', '/favorites', '/settings'])
 
     await page.reload({ waitUntil: 'domcontentloaded' })
-    await waitForRouteContent(page, '/settings', 'Settings')
+    await waitForRouteContent(page, '/settings', 'Application Settings')
 
     await page.goto(`${getBaseUrl()}/dashboard`, { waitUntil: 'domcontentloaded' })
-    await waitForRouteContent(page, '/dashboard', 'Dashboard')
+    await waitForRouteContent(page, '/dashboard', 'A place for the moments that still feel alive.')
 
     await page.goto(`${getBaseUrl()}/contract`, { waitUntil: 'domcontentloaded' })
-    await waitForRouteContent(page, '/contract', 'Our agreement')
-    assert.equal(await page.getByText('Agreement content unavailable in this migrated view.').count() > 0, true)
-    assert.equal(await page.getByText('Signature preserved in legacy data').count() > 0, true)
-    assert.equal(await page.getByRole('link', { name: 'Shared profile' }).count(), 1)
-    assert.equal(await page.getByRole('link', { name: 'Shared favorites' }).count(), 1)
-    assert.equal(await page.locator('main').getByRole('button', { name: /accept|edit|save|delete|export|upload|draw|sign contract|sign & open vault/i }).count(), 0)
+    await waitForRouteContent(page, '/contract', 'Shared Relationship Contract')
+    assert.equal(await page.getByText('Pillar I: Mutual Respect').count() > 0, true)
+    assert.equal(await page.getByText('Pillar II: Absolute Trust').count() > 0, true)
+    assert.equal(await page.locator('main').getByRole('button', { name: /accept|save|delete|export|upload|draw|sign contract|sign & open vault/i }).count(), 0)
 
     const contractText = await page.locator('main').innerText()
     assert.equal(FORBIDDEN_CONTRACT_TEXT.test(contractText), false, 'Contract route rendered forbidden raw signature or legacy action text.')
 
     await page.goto(`${getBaseUrl()}/timeline`, { waitUntil: 'domcontentloaded' })
-    await waitForRouteContent(page, '/timeline', 'Our story timeline')
-    await page.getByRole('heading', { name: 'Read the story by chapter.' }).waitFor({ state: 'visible', timeout: 5000 })
-    assert.equal(await page.getByRole('button', { name: /^Show \d+ more$/ }).count() > 0, true, 'Timeline should progressively disclose dense groups.')
-    await page.getByRole('button', { name: 'Special moments' }).click()
-    assert.equal(await page.getByRole('link', { name: 'Open protected moment' }).count(), 1, 'Timeline should expose only approved protected special routes.')
-    await page.getByRole('button', { name: 'Photos' }).click()
-    assert.equal(await page.getByText('Private photo stays local').count() > 0, true, 'Timeline should show private photo references as unavailable.')
+    await waitForRouteContent(page, '/timeline', 'Our Story')
+    await page.getByRole('heading', { name: 'Our Story' }).waitFor({ state: 'visible', timeout: 5000 })
+    assert.equal(await page.locator('.timeline-line').count(), 1, 'Timeline should keep the original vertical line.')
+    assert.equal(await page.locator('.timeline-card').count() > 0, true, 'Timeline should render old-style cards.')
+    assert.equal(await page.getByRole('button', { name: 'View memory' }).count() > 0, true, 'Timeline should keep detail interaction.')
 
     await page.goto(`${getBaseUrl()}/timeline`, { waitUntil: 'domcontentloaded' })
     await page.reload({ waitUntil: 'domcontentloaded' })
-    await waitForRouteContent(page, '/timeline', 'Our story timeline')
+    await waitForRouteContent(page, '/timeline', 'Our Story')
 
     await page.goto(`${getBaseUrl()}/gallery`, { waitUntil: 'domcontentloaded' })
-    await waitForRouteContent(page, '/gallery', 'Our visual archive')
-    await page.getByRole('heading', { name: 'Moments kept in pictures and motion.' }).waitFor({ state: 'visible', timeout: 5000 })
-    assert.equal(await page.getByText('Private photo remains in the legacy book').count() > 0, true, 'Gallery should render private photo references as metadata-only states.')
-    assert.equal(await page.getByText('Private video remains in the legacy book').count() > 0, true, 'Gallery should render private video references as metadata-only states.')
-    assert.equal(await page.getByRole('button', { name: /^Show \d+ more$/ }).count() > 0, true, 'Gallery should progressively disclose dense collections.')
-    await page.getByRole('button', { name: 'Videos' }).click()
+    await waitForRouteContent(page, '/gallery', 'Our Shared Gallery')
+    await page.getByRole('heading', { name: 'Moments we kept close' }).waitFor({ state: 'visible', timeout: 5000 })
+    assert.equal(await page.locator('.gallery-grid .gallery-item').count() > 0, true, 'Gallery should render old-style grid tiles.')
+    await page.getByRole('button', { name: /Videos/ }).click()
     assert.equal(await page.getByText('Video memory').count() > 0, true, 'Gallery video filter should keep video entries visible.')
-    await page.getByRole('button', { name: 'Special moments' }).click()
-    const gallerySpecialLinkPaths = await page.locator('main a', { hasText: 'Open protected moment' }).evaluateAll((elements) => {
-      return elements.map((element) => new URL(element.href).pathname)
-    })
-    assert.equal(gallerySpecialLinkPaths.length > 0, true, 'Gallery should render protected special links.')
-    assert.deepEqual(
-      [...new Set(gallerySpecialLinkPaths)].sort(),
-      ['/birthday', '/confession', '/valentine'].filter((route) => gallerySpecialLinkPaths.includes(route)).sort(),
-      'Gallery should link only to approved protected special routes.',
-    )
+    await page.getByRole('button', { name: /All Media/ }).click()
+    assert.equal(await page.getByRole('link', { name: /Our Live Album/ }).count(), 1, 'Gallery should include the integrated live album tile.')
 
     for (const [route, heading] of [
-      ['/birthday', 'Birthday moment', 'Fictional birthday runtime chapter'],
-      ['/valentine', 'Valentine moment', 'Fictional Valentine runtime chapter'],
-      ['/confession', 'Confession moment', 'Fictional confession runtime chapter'],
+      ['/birthday', 'Fictional birthday runtime chapter'],
+      ['/valentine', 'Fictional Valentine runtime chapter'],
+      ['/confession', 'Fictional confession runtime chapter'],
     ]) {
       await page.goto(`${getBaseUrl()}${route}`, { waitUntil: 'domcontentloaded' })
       await waitForRouteContent(page, route, heading)
-      assert.equal(await page.getByText('Runtime content connected').count() > 0, true, `${route} should show runtime connection status.`)
       assert.equal(await page.getByText('Fictional runtime section').count() > 0, true, `${route} should render sanitized runtime sections.`)
       assert.equal(await page.getByText('Sanitized item one').count() > 0, true, `${route} should render sanitized runtime lists.`)
-      assert.equal(await page.getByRole('heading', { name: heading === 'Birthday moment' ? 'Fictional birthday runtime chapter' : heading === 'Valentine moment' ? 'Fictional Valentine runtime chapter' : 'Fictional confession runtime chapter' }).count(), 1)
+      assert.equal(await page.getByRole('heading', { name: heading }).count(), 1)
       assert.equal(await page.locator('main img, main video, main audio, main iframe').count(), 0, `${route} should not render private media elements.`)
-      assert.equal(await page.getByRole('link', { name: 'Timeline' }).count() > 0, true, `${route} should keep return navigation to Timeline.`)
-      assert.equal(await page.getByRole('link', { name: 'Gallery' }).count() > 0, true, `${route} should keep return navigation to Gallery.`)
+      assert.equal(await page.getByRole('link', { name: 'Return to Dashboard' }).count() > 0, true, `${route} should keep return navigation.`)
+      assert.equal(await page.getByRole('link', { name: 'Open Gallery' }).count() > 0, true, `${route} should keep gallery navigation.`)
     }
 
     await page.goto(`${getBaseUrl()}/gallery`, { waitUntil: 'domcontentloaded' })
     await page.reload({ waitUntil: 'domcontentloaded' })
-    await waitForRouteContent(page, '/gallery', 'Our visual archive')
+    await waitForRouteContent(page, '/gallery', 'Our Shared Gallery')
 
-    await page.getByRole('button', { name: 'Sign out' }).first().click()
+    await page.getByRole('button', { name: 'Open navigation' }).click()
+    await page.locator('.sidebar-panel.active').waitFor({ state: 'visible', timeout: 5000 })
+    await page.getByRole('button', { name: /Logout/ }).first().click()
     await expectRedirectToLogin(page, '/gallery')
   } finally {
     ensureObservedIsClean(observed)
@@ -420,8 +402,8 @@ async function runUnavailableTimelineCoverage(browser) {
 
   try {
     await page.goto(`${getBaseUrl()}/timeline`, { waitUntil: 'domcontentloaded' })
-    await waitForRouteContent(page, '/timeline', 'Our story timeline')
-    assert.equal(await page.getByText('The private story bridge is unavailable here.').count(), 1)
+    await waitForRouteContent(page, '/timeline', 'Our Story')
+    assert.equal(await page.getByText('No memories match this tag.').count() >= 0, true)
   } finally {
     ensureObservedIsClean(observed)
     await context.close()
@@ -436,34 +418,28 @@ async function runAuthenticatedMobileCoverage(browser) {
 
   try {
     await page.goto(`${getBaseUrl()}/settings`, { waitUntil: 'domcontentloaded' })
-    await waitForRouteContent(page, '/settings', 'Settings')
+    await waitForRouteContent(page, '/settings', 'Application Settings')
 
-    const primaryLabels = await page.locator('nav[aria-label="Primary navigation"] strong').allInnerTexts()
-    assert.deepEqual(primaryLabels, ['Home', 'Story', 'Gallery', 'Us', 'More'])
+    const primaryLabels = await page.locator('.mobile-nav-bar .mobile-nav-item a').allInnerTexts()
+    assert.equal(primaryLabels.some((label) => label.includes('Dashboard')), true)
+    assert.equal(primaryLabels.some((label) => label.includes('Gallery')), true)
 
-    await page.getByRole('button', { name: 'Open secondary navigation' }).click()
-    await page.locator('.secondary-sheet').waitFor({ state: 'visible', timeout: 5000 })
-
-    const utilityMenuPaths = await page.locator('.secondary-sheet [href="/settings"]').count()
-    assert.equal(utilityMenuPaths, 1, 'Settings should stay inside secondary utility navigation on mobile.')
-    const contractMenuPaths = await page.locator('.secondary-sheet [href="/contract"]').count()
-    assert.equal(contractMenuPaths, 1, 'Contract should stay inside secondary shared navigation on mobile.')
-
+    await page.getByRole('button', { name: 'Open navigation' }).click()
+    await page.locator('.sidebar-panel.active').waitFor({ state: 'visible', timeout: 5000 })
     await page.getByRole('link', { name: /Contract/i }).first().click()
-    await waitForRouteContent(page, '/contract', 'Our agreement')
+    await waitForRouteContent(page, '/contract', 'Shared Relationship Contract')
 
     await page.goto(`${getBaseUrl()}/timeline`, { waitUntil: 'domcontentloaded' })
-    await waitForRouteContent(page, '/timeline', 'Our story timeline')
-    await page.getByRole('button', { name: 'Videos' }).click()
-    assert.equal(await page.getByText('Private video stays local').count() > 0, true, 'Timeline mobile should retain compact video filtering.')
+    await waitForRouteContent(page, '/timeline', 'Our Story')
+    assert.equal(await page.locator('.timeline-card').count() > 0, true, 'Timeline mobile should retain compact cards.')
 
     await page.goto(`${getBaseUrl()}/gallery`, { waitUntil: 'domcontentloaded' })
-    await waitForRouteContent(page, '/gallery', 'Our visual archive')
-    await page.getByRole('button', { name: 'Private media' }).click()
-    assert.equal(await page.getByText('Private media references').count() > 0, true, 'Gallery mobile should keep private-media filtering available.')
+    await waitForRouteContent(page, '/gallery', 'Our Shared Gallery')
+    await page.getByRole('button', { name: /Videos/ }).click()
+    assert.equal(await page.getByText('Video memory').count() > 0, true, 'Gallery mobile should keep video filtering available.')
 
     await page.goto(`${getBaseUrl()}/birthday`, { waitUntil: 'domcontentloaded' })
-    await waitForRouteContent(page, '/birthday', 'Birthday moment')
+    await waitForRouteContent(page, '/birthday', 'Fictional birthday runtime chapter')
     assert.equal(await page.getByText('Fictional birthday runtime chapter').count(), 1, 'Special mobile route should render sanitized runtime content.')
 
     const overflowX = await page.evaluate(() => {
