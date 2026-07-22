@@ -2,7 +2,7 @@ import { FIRESTORE_SOURCE, createCompatibilityResult } from '../data/adapterUtil
 import { readLegacyProfiles } from '../data/legacyProfileAdapter.js'
 import { db } from '../lib/firebaseClient.js'
 import { pathToString, profilePath, couplePath } from './firestorePaths.js'
-import { readCollection, readDocument, requireSchemaVersion, safeString } from './firestoreReaders.js'
+import { readCollection, requireSchemaVersion, safeString } from './firestoreReaders.js'
 
 export function buildProfileDocumentPath(coupleId, uid) {
   return pathToString(profilePath(coupleId, uid))
@@ -31,15 +31,6 @@ export function normalizeFirestoreProfile(uid, data, warnings) {
     joinedDate: safeString(data.joinedDate, 40),
     birthday: safeString(data.birthday, 40),
   }
-}
-
-export async function getFirestoreProfile(coupleId, uid, options = {}) {
-  return readDocument({
-    firestore: options.firestore || db,
-    path: profilePath(coupleId, uid),
-    getDocument: options.getDocument,
-    normalize: normalizeFirestoreProfile,
-  })
 }
 
 export async function getFirestoreProfilesForCouple(coupleId, options = {}) {

@@ -22,21 +22,6 @@ const GLOBAL_THEME_KEY = 'memorybook_theme'
  * @property {{ anniversaryConfig: string | null, privacyToggles: { localOnlyMode: boolean, hideOfflineWarning: boolean, unknownFields: Record<string, unknown> }, unknownFields: Record<string, unknown> }} settings
  */
 
-export const legacySettingsAdapterBoundary = Object.freeze({
-  adapter: 'legacySettingsAdapter',
-  currentSources: [
-    'localStorage: memorybook_settings_{username}',
-    'localStorage: memorybook_theme_{username}',
-    'localStorage: memorybook_theme',
-    'Firestore: users/{uid}.settings',
-    'Firestore: users/{uid}.theme',
-  ],
-  expectedNormalizedOutput:
-    'CompatibilityResult<NormalizedSettingsState> for one approved user without modifying theme or settings persistence.',
-  mode: 'read-only',
-  futureOwner: 'R3 compatibility mapping before settings domain service extraction',
-})
-
 function createEmptySettingsState(username) {
   return {
     username,

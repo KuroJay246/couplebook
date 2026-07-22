@@ -27,15 +27,6 @@ const DEFAULT_CATEGORIES = ['food', 'places', 'hobbies', 'activities']
  * @property {Record<string, unknown>} unknownTopLevelFields
  */
 
-export const legacyFavoritesAdapterBoundary = Object.freeze({
-  adapter: 'legacyFavoritesAdapter',
-  currentSources: ['localStorage: memorybook_favorites', 'Firestore: users/{uid}.favorites'],
-  expectedNormalizedOutput:
-    'CompatibilityResult<NormalizedFavoritesState> describing the local shared favorites surface without any writes.',
-  mode: 'read-only',
-  futureOwner: 'R3 compatibility mapping before favorites domain service extraction',
-})
-
 function createEmptyFavoritesState() {
   return {
     favoritesByOwner: {},

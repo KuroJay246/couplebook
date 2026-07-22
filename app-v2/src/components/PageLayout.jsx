@@ -22,7 +22,7 @@ function PageHeaderActions({ actions }) {
   )
 }
 
-export function EditorialPageHeader({
+function EditorialPageHeader({
   actions = [],
   aside = null,
   className = '',
@@ -153,14 +153,6 @@ export function QuietStatus({ className = '', description, eyebrow = 'Status', i
         </ul>
       ) : null}
     </aside>
-  )
-}
-
-export function PageDivider({ label = 'Continue' }) {
-  return (
-    <div className="page-divider" role="presentation">
-      <span>{label}</span>
-    </div>
   )
 }
 

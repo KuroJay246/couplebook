@@ -387,7 +387,7 @@ test('favorites read model does not create false fuzzy matches and falls back to
 
 test('favorites read model returns frozen data and leaves compatibility inputs untouched', () => {
   const snapshot = createSnapshot()
-  const before = JSON.parse(JSON.stringify(snapshot))
+  const before = structuredClone(snapshot)
   const model = buildFavoritesReadModel({
     compatibilitySnapshot: snapshot,
   })

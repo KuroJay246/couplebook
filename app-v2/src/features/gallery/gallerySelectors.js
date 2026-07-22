@@ -2,7 +2,7 @@ import { freezeClone } from '../../data/adapterUtils.js'
 import { selectTimelineDisplayMemories } from '../timeline/memorySelectors.js'
 
 function sortByNewest(items = []) {
-  return [...items].sort((left, right) => {
+  return items.toSorted((left, right) => {
     if (left.sort.timestamp !== null && right.sort.timestamp !== null && left.sort.timestamp !== right.sort.timestamp) {
       return right.sort.timestamp - left.sort.timestamp
     }

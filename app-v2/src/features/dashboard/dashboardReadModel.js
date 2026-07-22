@@ -161,7 +161,7 @@ function calculateBirthdayDetails(birthdayValue, nowValue) {
 function normalizeParticipants(profileSource, approvedUser) {
   const data = profileSource?.data
   const order = Array.isArray(data?.participantOrder)
-    ? data.participantOrder.filter(Boolean)
+    ? data.participantOrder.flatMap((entry) => (entry ? [entry] : []))
     : Object.keys(data?.profilesByUsername || {})
 
   const participants = order.map((username) => {
@@ -299,25 +299,27 @@ function filterAnniversaryParticipants(participants, settingsSource) {
 function buildMilestonesSection({ participants, settingsSource, now }) {
   const anniversaryParticipants = filterAnniversaryParticipants(participants, settingsSource)
   const anniversaryCards = anniversaryParticipants
-    .filter((participant) => participant.joinedDate)
-    .map((participant) => {
+    .flatMap((participant) => {
+      if (!participant.joinedDate) return []
+
       const duration = calculateDurationSince(participant.joinedDate, now)
 
-      return {
+      return [{
         id: `${participant.username.toLowerCase()}-anniversary`,
         label: `${participant.shortName}'s view`,
         dateLabel: formatDateLabel(participant.joinedDate),
         duration,
         totalDaysLabel: `${duration.totalDays} ${pluralize(duration.totalDays, 'day')} together`,
-      }
+      }]
     })
 
   const birthdayCards = participants
-    .filter((participant) => participant.birthday)
-    .map((participant) => {
+    .flatMap((participant) => {
+      if (!participant.birthday) return []
+
       const details = calculateBirthdayDetails(participant.birthday, now)
 
-      return {
+      return [{
         id: `${participant.username.toLowerCase()}-birthday`,
         label: `${participant.shortName}'s birthday`,
         dateLabel: formatDateLabel(participant.birthday),
@@ -326,7 +328,7 @@ function buildMilestonesSection({ participants, settingsSource, now }) {
           : `${details.days}d ${details.hours}h ${details.minutes}m ${details.seconds}s`,
         ageLabel: details.nextAge ? `Turning ${details.nextAge}` : 'Birthday not available',
         isToday: details.isToday,
-      }
+      }]
     })
 
   return {

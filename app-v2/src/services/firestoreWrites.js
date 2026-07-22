@@ -30,9 +30,13 @@ function cleanText(value, maxLength, label, { required = false } = {}) {
 function cleanStringList(value, { label, maxItems = 20, maxLength = 80 } = {}) {
   if (!Array.isArray(value)) return []
   const result = []
+  const seen = new Set()
   for (const item of value) {
     const text = cleanText(item, maxLength, label || 'Entry')
-    if (text && !result.includes(text)) result.push(text)
+    if (text && !seen.has(text)) {
+      seen.add(text)
+      result.push(text)
+    }
     if (result.length >= maxItems) break
   }
   return result

@@ -46,7 +46,10 @@ export function mergeLegacyMemorySources({
 } = {}) {
   const deletedIdSet = new Set(
     Array.isArray(deletedIds)
-      ? deletedIds.map((entry) => toTrimmedString(entry)).filter(Boolean)
+      ? deletedIds.flatMap((entry) => {
+          const normalized = toTrimmedString(entry)
+          return normalized ? [normalized] : []
+        })
       : [],
   )
   const overrideMap = isPlainObject(overrides) ? overrides : {}

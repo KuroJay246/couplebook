@@ -58,13 +58,13 @@ function summarizeSource(key, source) {
 export function selectProfilePeople(profileSource) {
   const data = profileSource?.data
   const order = Array.isArray(data?.participantOrder)
-    ? data.participantOrder.filter(Boolean)
+    ? data.participantOrder.flatMap((entry) => (entry ? [entry] : []))
     : Object.keys(data?.profilesByUsername || {})
 
   return order
-    .map((participantId) => {
+    .flatMap((participantId) => {
       const profile = data?.profilesByUsername?.[participantId]
-      if (!profile) return null
+      if (!profile) return []
 
       const displayName = toTrimmedString(profile.name) || participantId
       const bio = toTrimmedString(profile.bio)
@@ -73,7 +73,7 @@ export function selectProfilePeople(profileSource) {
       const joinedDate = toTrimmedString(profile.joinedDate) || null
       const birthday = toTrimmedString(profile.birthday) || null
 
-      return {
+      return [{
         id: participantId,
         displayName,
         shortName: displayName.split(/\s+/)[0] || displayName,
@@ -107,9 +107,8 @@ export function selectProfilePeople(profileSource) {
             status: birthday ? 'ready' : 'empty',
           },
         ],
-      }
+      }]
     })
-    .filter(Boolean)
 }
 
 export function selectRelationshipTitle(people) {
@@ -126,8 +125,10 @@ export function selectRelationshipTitle(people) {
 
 export function selectRelationshipAnniversaries(people) {
   return people
-    .filter((person) => person.joinedDate)
-    .map((person) => ({
+    .flatMap((person) => {
+      if (!person.joinedDate) return []
+
+      return [{
       id: `${person.id}-anniversary`,
       kind: 'anniversary',
       label: `${person.shortName}'s view`,
@@ -135,19 +136,23 @@ export function selectRelationshipAnniversaries(people) {
       dateLabel: person.joinedDateLabel,
       summary: person.anniversaryViewLabel || 'Shared relationship marker',
       status: 'ready',
-    }))
+      }]
+    })
 }
 
 export function selectRelationshipMilestones(people, contractSource) {
   const milestones = people
-    .filter((person) => person.birthday)
-    .map((person) => ({
+    .flatMap((person) => {
+      if (!person.birthday) return []
+
+      return [{
       id: `${person.id}-birthday`,
       kind: 'birthday',
       label: `${person.shortName}'s birthday`,
       value: person.birthdayLabel,
       status: 'ready',
-    }))
+      }]
+    })
 
   const signatures = contractSource?.data?.signaturesByUsername || {}
   const signatureList = Object.entries(signatures)
@@ -181,7 +186,9 @@ export function selectSharedHighlights(favoritesSource) {
     if (!ownerFavorites?.categories) continue
 
     for (const category of FAVORITE_CATEGORY_ORDER) {
-      const values = Array.isArray(ownerFavorites.categories[category]) ? ownerFavorites.categories[category].filter(Boolean) : []
+      const values = Array.isArray(ownerFavorites.categories[category])
+        ? ownerFavorites.categories[category].flatMap((value) => (value ? [value] : []))
+        : []
       if (values.length === 0) continue
 
       highlights.push({

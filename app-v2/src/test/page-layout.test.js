@@ -16,9 +16,7 @@ test('shared page layout exports the editorial primitives and semantic contracts
   assert.match(layoutSource, /export function UtilitySection/)
   assert.match(layoutSource, /export function SettingsGroup/)
   assert.match(layoutSource, /export function QuietStatus/)
-  assert.match(layoutSource, /export function PageDivider/)
   assert.match(layoutSource, /export function EditorialEmptyState/)
-  assert.match(layoutSource, /role="presentation"/)
   assert.match(layoutSource, /aria-labelledby=/)
   assert.match(layoutSource, /editorial-page-header/)
 })
@@ -39,13 +37,11 @@ test('settings page layout keeps the approved utility information architecture e
   assert.doesNotMatch(settingsViewSource, /jaylanspencer99@gmail\.com/i)
 })
 
-test('dashboard and placeholders adopt the shared page layout system', async () => {
+test('dashboard adopts the shared page layout system without placeholder fallbacks', async () => {
   const dashboardSource = await readSource('../features/dashboard/DashboardView.jsx')
-  const placeholderSource = await readSource('../components/PlaceholderPage.jsx')
 
   assert.match(dashboardSource, /ChapterHeader/)
   assert.match(dashboardSource, /EditorialSection/)
   assert.match(dashboardSource, /EditorialEmptyState/)
-  assert.match(placeholderSource, /ChapterHeader/)
-  assert.match(placeholderSource, /EditorialEmptyState/)
+  assert.doesNotMatch(dashboardSource, /PlaceholderPage/)
 })

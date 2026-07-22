@@ -28,8 +28,8 @@ export function withoutKeys(value, keysToRemove) {
   if (!value || typeof value !== 'object') return value
 
   return Object.fromEntries(
-    Object.entries(value)
-      .filter(([key]) => !keysToRemove.has(key))
-      .map(([key, entry]) => [key, withoutKeys(entry, keysToRemove)]),
+    Object.entries(value).flatMap(([key, entry]) => (
+      keysToRemove.has(key) ? [] : [[key, withoutKeys(entry, keysToRemove)]]
+    )),
   )
 }

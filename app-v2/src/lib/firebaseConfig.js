@@ -40,7 +40,6 @@ export function formatMissingFirebaseConfigMessage(missingKeys) {
 }
 
 export const firebaseConfig = createFirebaseConfig()
-export const firebaseProjectId = firebaseConfig.projectId
 export const missingFirebaseConfigKeys = getMissingFirebaseConfigKeys(firebaseConfig)
 export const missingFirebaseConfigMessage = formatMissingFirebaseConfigMessage(missingFirebaseConfigKeys)
 export const isFirebaseConfigured = missingFirebaseConfigKeys.length === 0

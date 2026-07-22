@@ -133,25 +133,30 @@ function matchesTypeFilter(memory, typeFilter) {
 
 function filterChapters(chapters, filters) {
   return chapters
-    .map((chapter) => {
-      const groups = chapter.groups
-        .map((group) => ({
-          ...group,
-          memories: group.memories.filter((memory) => {
-            if (!matchesTypeFilter(memory, filters.type)) return false
-            if (filters.year !== 'all' && String(memory.date.year) !== filters.year) return false
-            return true
-          }),
-        }))
-        .filter((group) => group.memories.length > 0)
+    .flatMap((chapter) => {
+      const groups = chapter.groups.flatMap((group) => {
+        const memories = group.memories.filter((memory) => {
+          if (!matchesTypeFilter(memory, filters.type)) return false
+          if (filters.year !== 'all' && String(memory.date.year) !== filters.year) return false
+          return true
+        })
 
-      return {
+        if (memories.length === 0) return []
+
+        return [{
+          ...group,
+          memories,
+        }]
+      })
+
+      if (groups.length === 0) return []
+
+      return [{
         ...chapter,
         groups,
         memories: groups.flatMap((group) => group.memories),
-      }
+      }]
     })
-    .filter((chapter) => chapter.groups.length > 0)
 }
 
 function createChapterDomId(chapterId) {

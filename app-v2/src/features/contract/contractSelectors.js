@@ -6,6 +6,12 @@ const SOURCE_LABELS = Object.freeze({
   unknown: 'Source pending review',
 })
 
+const DATE_LABEL_FORMATTER = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  day: 'numeric',
+  year: 'numeric',
+})
+
 function formatDateLabel(value) {
   const normalizedValue = toTrimmedString(value)
   if (!normalizedValue) return ''
@@ -13,11 +19,7 @@ function formatDateLabel(value) {
   const parsedDate = new Date(normalizedValue)
   if (Number.isNaN(parsedDate.getTime())) return ''
 
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  }).format(parsedDate)
+  return DATE_LABEL_FORMATTER.format(parsedDate)
 }
 
 function unique(values) {
@@ -72,10 +74,16 @@ function normalizeAgreementSection(rawSection, index) {
 
   const heading = toTrimmedString(rawSection.heading || rawSection.title)
   const paragraphs = Array.isArray(rawSection.paragraphs)
-    ? rawSection.paragraphs.map((entry) => toTrimmedString(entry)).filter(Boolean)
+    ? rawSection.paragraphs.flatMap((entry) => {
+        const normalized = toTrimmedString(entry)
+        return normalized ? [normalized] : []
+      })
     : []
   const clauses = Array.isArray(rawSection.clauses)
-    ? rawSection.clauses.map((entry) => toTrimmedString(entry)).filter(Boolean)
+    ? rawSection.clauses.flatMap((entry) => {
+        const normalized = toTrimmedString(entry)
+        return normalized ? [normalized] : []
+      })
     : []
 
   if (!heading || (paragraphs.length === 0 && clauses.length === 0)) {
@@ -93,7 +101,10 @@ function normalizeAgreementSection(rawSection, index) {
 export function selectAgreementDocument({ agreementSource = null, contractSource = null } = {}) {
   const version = findLatestVersion(contractSource, agreementSource)
   const sections = Array.isArray(agreementSource?.sections)
-    ? agreementSource.sections.map((entry, index) => normalizeAgreementSection(entry, index)).filter(Boolean)
+    ? agreementSource.sections.flatMap((entry, index) => {
+        const section = normalizeAgreementSection(entry, index)
+        return section ? [section] : []
+      })
     : []
 
   if (toTrimmedString(agreementSource?.status).toLowerCase() === 'ready' && sections.length > 0) {
@@ -339,17 +350,17 @@ function collectSignatureHistory({ actor, signature }) {
           },
         ]
 
-  return normalizedEntries
-    .map((entry, index) =>
-      buildHistoryEvent({
-        actorTitle: actor.title,
-        actorDisplayName: actor.displayName,
-        entry,
-        index,
-        versionFallback: signature.version,
-      }),
-    )
-    .filter(Boolean)
+  return normalizedEntries.flatMap((entry, index) => {
+    const event = buildHistoryEvent({
+      actorTitle: actor.title,
+      actorDisplayName: actor.displayName,
+      entry,
+      index,
+      versionFallback: signature.version,
+    })
+
+    return event ? [event] : []
+  })
 }
 
 export function selectContractHistory({ approvedUser = null, contractSource = null, profileSource = null } = {}) {

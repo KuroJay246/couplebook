@@ -1,7 +1,7 @@
 import { freezeClone } from '../../data/adapterUtils.js'
 
 function sortMemories(memories = []) {
-  return [...memories].sort((left, right) => {
+  return memories.toSorted((left, right) => {
     if (left.sort.timestamp !== null && right.sort.timestamp !== null && left.sort.timestamp !== right.sort.timestamp) {
       return right.sort.timestamp - left.sort.timestamp
     }

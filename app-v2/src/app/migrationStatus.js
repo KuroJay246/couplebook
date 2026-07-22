@@ -52,9 +52,10 @@ const SETTINGS_PROGRESS_PATHS = new Set([
   '/confession',
 ])
 
-const routeEntries = protectedRouteMeta
-  .filter((route) => SETTINGS_PROGRESS_PATHS.has(route.path))
-  .map((route) =>
+const routeEntries = protectedRouteMeta.flatMap((route) => {
+  if (!SETTINGS_PROGRESS_PATHS.has(route.path)) return []
+
+  return [
     Object.freeze({
       path: route.path,
       label: route.title,
@@ -62,7 +63,8 @@ const routeEntries = protectedRouteMeta
       status: ROUTE_STATUS_BY_PATH[route.path] || 'pending',
       summary: ROUTE_SUMMARY_BY_PATH[route.path] || route.summary,
     }),
-  )
+  ]
+})
 
 export const routeMigrationStatus = Object.freeze({
   entries: Object.freeze(routeEntries),

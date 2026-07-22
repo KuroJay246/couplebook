@@ -12,13 +12,7 @@ export function toTrimmedString(value) {
 
 export function deepClone(value) {
   if (value === null || value === undefined) return value
-
-  if (typeof globalThis.structuredClone === 'function') {
-    return globalThis.structuredClone(value)
-  }
-
-  // Last-resort fallback for runtimes without structuredClone.
-  return JSON.parse(JSON.stringify(value))
+  return structuredClone(value)
 }
 
 export function deepFreeze(value) {

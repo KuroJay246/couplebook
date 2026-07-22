@@ -21,6 +21,12 @@ const COMPATIBILITY_ITEM_LABELS = Object.freeze({
   memories: 'Local memory bridge',
 })
 
+const DATE_LABEL_FORMATTER = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  day: 'numeric',
+  year: 'numeric',
+})
+
 function toTitleCaseWords(value) {
   const normalized = toTrimmedString(value)
   if (!normalized) return ''
@@ -51,11 +57,7 @@ function formatDateLabel(value) {
   const parsedDate = new Date(normalizedValue)
   if (Number.isNaN(parsedDate.getTime())) return 'Not available yet'
 
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  }).format(parsedDate)
+  return DATE_LABEL_FORMATTER.format(parsedDate)
 }
 
 function getAccountName(approvedUser, authUser) {
