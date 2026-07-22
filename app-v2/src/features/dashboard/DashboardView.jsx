@@ -1,271 +1,180 @@
 import { Link } from 'react-router-dom'
-import { ChapterHeader, EditorialEmptyState, EditorialSection } from '../../components/PageLayout'
 
-function renderCompatibilityStateLabel(compatibilityState) {
-  if (compatibilityState === 'loading') return 'Refreshing'
-  if (compatibilityState === 'error') return 'Needs review'
-  if (compatibilityState === 'ready') return 'Ready'
-  return 'Partial'
-}
-
-function RecentMemoriesSection({ section }) {
+function RecentMemories({ section }) {
+  const items = section.items || []
   return (
-    <EditorialSection
-      action={section.action}
-      className="dashboard-panel dashboard-panel-recent"
-      description={section.description}
-      eyebrow={section.eyebrow}
-      title={section.title}
-    >
-      {section.state === 'ready' && section.items.length > 0 ? (
-        <ul className="memory-card-list">
-          {section.items.map((item) => (
-            <li className="memory-card" key={item.id}>
-              <div className="memory-card-meta">
-                <span className="memory-card-date">{item.dateLabel || 'Undated'}</span>
-                <span className="memory-card-kind">{item.mediaKind === 'video' ? 'Video memory' : 'Memory note'}</span>
-              </div>
-              <h3>{item.title}</h3>
-              <p>{item.description}</p>
-              <span className="memory-card-footnote">{item.mediaLabel}</span>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <EditorialEmptyState description={section.emptyState.description} title={section.emptyState.title} titleAs="h3" />
-      )}
-    </EditorialSection>
-  )
-}
-
-function AnniversaryCard({ card }) {
-  return (
-    <article className="milestone-card" key={card.id}>
-      <div className="milestone-card-header">
-        <strong>{card.label}</strong>
-        <span>{card.dateLabel || 'Date pending'}</span>
+    <section className="glass-card card-story recent-memories-card dashboard-feature-card">
+      <div className="recent-header">
+        <div>
+          <p className="dashboard-section-kicker">Latest Chapter</p>
+          <h2 className="recent-title">Recent memories worth reopening</h2>
+          <p className="dashboard-section-copy">The newest moments stay at the front so the book opens on what still feels closest.</p>
+        </div>
+        <Link className="btn btn-secondary recent-link-button" to="/timeline">View All</Link>
       </div>
-      <div className="milestone-counter-grid">
-        <div className="milestone-counter-box">
-          <span>{String(card.duration.years).padStart(2, '0')}</span>
-          <small>Years</small>
-        </div>
-        <div className="milestone-counter-box">
-          <span>{String(card.duration.months).padStart(2, '0')}</span>
-          <small>Months</small>
-        </div>
-        <div className="milestone-counter-box">
-          <span>{String(card.duration.days).padStart(2, '0')}</span>
-          <small>Days</small>
-        </div>
-        <div className="milestone-counter-box">
-          <span>{String(card.duration.seconds).padStart(2, '0')}</span>
-          <small>Seconds</small>
-        </div>
-      </div>
-      <p className="milestone-summary">{card.totalDaysLabel}</p>
-    </article>
-  )
-}
-
-function BirthdayCard({ card }) {
-  return (
-    <li className="birthday-card" key={card.id}>
-      <div>
-        <strong>{card.label}</strong>
-        <span>{card.dateLabel || 'Date pending'}</span>
-      </div>
-      <div className="birthday-card-countdown">
-        <strong>{card.countdownLabel}</strong>
-        <span>{card.ageLabel}</span>
-      </div>
-    </li>
-  )
-}
-
-function MilestonesSection({ section }) {
-  return (
-    <EditorialSection
-      className="dashboard-panel dashboard-panel-milestones"
-      description={section.description}
-      eyebrow={section.eyebrow}
-      title={section.title}
-    >
-      {section.hasContent ? (
-        <div className="milestone-stack">
-          {section.anniversaryCards.length > 0 ? (
-            <div className="milestone-group">
-              <div className="milestone-group-heading">
-                <h3>Anniversary views</h3>
-                <p>Relationship time stays present without becoming the first thing the page says.</p>
-              </div>
-              <div className="milestone-card-grid">
-                {section.anniversaryCards.map((card) => (
-                  <AnniversaryCard card={card} key={card.id} />
-                ))}
-              </div>
-            </div>
-          ) : null}
-
-          {section.birthdayCards.length > 0 ? (
-            <div className="milestone-group">
-              <div className="milestone-group-heading">
-                <h3>Upcoming birthdays</h3>
-                <p>Special dates stay visible here while the surrounding profile surfaces continue to migrate.</p>
-              </div>
-              <ul className="birthday-card-list">
-                {section.birthdayCards.map((card) => (
-                  <BirthdayCard card={card} key={card.id} />
-                ))}
-              </ul>
-            </div>
-          ) : null}
-        </div>
-      ) : (
-        <EditorialEmptyState description={section.emptyState.description} title={section.emptyState.title} titleAs="h3" />
-      )}
-    </EditorialSection>
-  )
-}
-
-function SpecialMomentsSection({ section }) {
-  return (
-    <EditorialSection
-      className="dashboard-panel dashboard-panel-special"
-      description={section.description}
-      eyebrow={section.eyebrow}
-      title={section.title}
-    >
-      <div className="story-link-list">
-        {section.items.map((item) => (
-          <Link className="story-link-card" key={item.href} to={item.href}>
-            <div>
-              <strong>{item.title}</strong>
-              <p>{item.description}</p>
-            </div>
-            <span className="story-link-arrow" aria-hidden="true">
-              {">"}
-            </span>
-          </Link>
-        ))}
-      </div>
-    </EditorialSection>
-  )
-}
-
-function SourceStateSection({ compatibilityError, compatibilityState, onRefresh, section }) {
-  return (
-    <EditorialSection
-      className="dashboard-panel dashboard-panel-source"
-      description={section.description}
-      eyebrow={section.eyebrow}
-      title={section.title}
-    >
-      <div className="source-status-toolbar">
-        <div className="source-status-copy">
-          <span className="source-status-pill">{renderCompatibilityStateLabel(compatibilityState)}</span>
-          <p>Read-only legacy inputs remain explicit while this Dashboard route is migrated.</p>
-        </div>
-        <button className="button button-secondary" onClick={onRefresh} type="button">
-          Refresh reads
-        </button>
-      </div>
-
-      {compatibilityError ? (
-        <div className="dashboard-inline-alert">
-          <strong>Compatibility refresh issue</strong>
-          <p>{compatibilityError}</p>
-        </div>
-      ) : null}
-
-      <div className="source-status-grid">
-        {section.items.map((item) => (
-          <article className="source-card" key={item.key}>
-            <div className="source-card-header">
-              <strong>{item.title}</strong>
-              <span className={`source-card-status source-card-status-${item.status}`}>{item.status}</span>
-            </div>
-            <p>{item.summary}</p>
-            <div className="source-card-meta">
-              <span>{item.sourceLabel}</span>
-              <span>{item.warningCount} warnings</span>
-            </div>
-          </article>
-        ))}
-      </div>
-
-      {section.warnings.length > 0 ? (
-        <div className="warning-ledger">
-          <h3>Current warnings</h3>
-          <ul>
-            {section.warnings.map((warning) => (
-              <li key={warning}>{warning}</li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
-    </EditorialSection>
-  )
-}
-
-function SupportingNavigationSection({ section }) {
-  return (
-    <EditorialSection
-      className="dashboard-panel dashboard-panel-supporting"
-      description={section.description}
-      eyebrow={section.eyebrow}
-      title={section.title}
-    >
-      <div className="supporting-link-grid">
-        {section.items.map((item) => (
-          <Link className="supporting-link-card" key={item.href} to={item.href}>
-            <span className="supporting-link-label">{item.label}</span>
-            <strong>{item.title}</strong>
+      <div className="recent-list">
+        {items.length > 0 ? items.map((item) => (
+          <article className="recent-memory-item" key={item.id}>
+            <span className="recent-memory-date">{item.dateLabel || 'Saved memory'}</span>
+            <h3>{item.title}</h3>
             <p>{item.description}</p>
-          </Link>
-        ))}
+          </article>
+        )) : (
+          <p style={{ gridColumn: 'span 3', textAlign: 'center', color: 'var(--color-muted)', padding: '2rem 0' }}>
+            No recent memories are ready yet.
+          </p>
+        )}
       </div>
-    </EditorialSection>
+    </section>
   )
 }
 
-export function DashboardView({ compatibilityError, compatibilityState, model, onRefresh }) {
+function AnniversaryCard({ card, tone }) {
+  return (
+    <div className={`glass-card card-story anniversary-card ${tone}-side`}>
+      <div className="anniversary-title">
+        <span className="anniversary-owner">{tone === 'jaylan' ? '❤️' : '💜'} {card.label}</span>
+        <span className="anniversary-date">{card.dateLabel || 'Date pending'}</span>
+      </div>
+      <div className="counter-grid">
+        <div className="counter-box"><div className="counter-number">{String(card.duration.years).padStart(2, '0')}</div><div className="counter-unit">Yrs</div></div>
+        <div className="counter-box"><div className="counter-number">{String(card.duration.months).padStart(2, '0')}</div><div className="counter-unit">Mth</div></div>
+        <div className="counter-box"><div className="counter-number">{String(card.duration.days).padStart(2, '0')}</div><div className="counter-unit">Days</div></div>
+        <div className="counter-box"><div className="counter-number">{String(card.duration.seconds).padStart(2, '0')}</div><div className="counter-unit">Sec</div></div>
+      </div>
+      <div style={{ fontSize: '0.75rem', textAlign: 'center', marginTop: '0.5rem', color: 'var(--color-muted)' }}>{card.totalDaysLabel}</div>
+    </div>
+  )
+}
+
+function Milestones({ section }) {
+  const anniversaries = section.anniversaryCards || []
+  const birthdays = section.birthdayCards || []
+  return (
+    <div className="dashboard-column dashboard-column--milestones">
+      <div className="glass-card card-story">
+        <div className="dashboard-section-heading">
+          <div>
+            <p className="dashboard-section-kicker">Milestones</p>
+            <h3 className="dashboard-subtitle">Dual anniversary counters</h3>
+            <p className="dashboard-section-copy">Relationship time stays present as supporting context.</p>
+          </div>
+        </div>
+        <div className="anniversaries-container">
+          {anniversaries.map((card, index) => (
+            <AnniversaryCard card={card} key={card.id} tone={index === 0 ? 'jaylan' : 'omia'} />
+          ))}
+        </div>
+      </div>
+      <div className="glass-card card-story birthdays-card">
+        <div className="dashboard-section-heading">
+          <div>
+            <p className="dashboard-section-kicker">Special Dates</p>
+            <h3 className="dashboard-subtitle">Upcoming birthdays</h3>
+          </div>
+        </div>
+        <div className="birthday-list">
+          {birthdays.map((card, index) => (
+            <div className={`birthday-row birthday-row--${index === 0 ? 'omia' : 'jaylan'}`} key={card.id}>
+              <div className="birthday-copy">
+                <div className={`birthday-title birthday-title--${index === 0 ? 'omia' : 'jaylan'}`}>{card.label}</div>
+                <div className="birthday-meta">{card.dateLabel || 'Date pending'}</div>
+              </div>
+              <div className="birthday-countdown">
+                <div className={`birthday-count birthday-count--${index === 0 ? 'omia' : 'jaylan'}`}>{card.countdownLabel}</div>
+                <div className="birthday-age">{card.ageLabel}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function SpecialMoments({ section }) {
+  return (
+    <div className="glass-card card-story special-moments-card">
+      <div>
+        <p className="dashboard-section-kicker">Special Pages</p>
+        <h3 className="dashboard-subtitle">Moments with their own page</h3>
+        <p className="dashboard-section-copy">Jump back into the birthday, Valentine, and confession spaces without digging through the full archive.</p>
+      </div>
+      <div className="special-moment-list">
+        {(section.items || []).map((item) => (
+          <Link className="special-moment-link" key={item.href} to={item.href}>
+            <div className="special-moment-copy">
+              <span className="special-moment-title">{item.title}</span>
+              <span className="special-moment-subtitle">{item.description}</span>
+            </div>
+            <span className="special-moment-arrow">↗</span>
+          </Link>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+export function DashboardView({ model }) {
   return (
     <section className="dashboard-page">
-      <ChapterHeader
-        actions={model.hero.actions}
-        aside={
-          <>
-            <div className="dashboard-now-card">
-              <span className="folio-mark">Right now</span>
-              <strong>{model.hero.timestampLabel}</strong>
-              <p>{model.hero.dateLabel}</p>
-            </div>
-            <ul className="dashboard-note-list">
-              {model.hero.notes.map((note) => (
-                <li key={note}>{note}</li>
-              ))}
-            </ul>
-          </>
-        }
-        className="dashboard-hero"
-        description={model.hero.description}
-        eyebrow={model.hero.eyebrow}
-        folio={model.hero.dateLabel}
-        title={model.hero.title}
-      />
+      <header className="page-header page-header--split">
+        <div className="page-heading">
+          <p className="page-eyebrow">Private Home</p>
+          <h1 className="page-title">A place for the moments that still feel alive.</h1>
+          <p className="page-subtitle">Your shared story, gallery, and relationship milestones stay together here in one protected keepsake space.</p>
+        </div>
+        <div className="page-actions">
+          <span className="utility-chip">Approved couple app</span>
+          <Link className="btn btn-secondary" to="/timeline">Open Story</Link>
+        </div>
+      </header>
 
       <div className="dashboard-grid">
-        <RecentMemoriesSection section={model.recentMemories} />
-        <MilestonesSection section={model.milestones} />
-        <SpecialMomentsSection section={model.specialMoments} />
-        <SourceStateSection
-          compatibilityError={compatibilityError}
-          compatibilityState={compatibilityState}
-          onRefresh={onRefresh}
-          section={model.sourceState}
-        />
-        <SupportingNavigationSection section={model.supportingNavigation} />
+        <section className="glass-card card-hero dashboard-story-band">
+          <div className="dashboard-story-copy">
+            <p className="dashboard-section-kicker">Story Entrance</p>
+            <h2 className="dashboard-story-title">Pick up where your story left off.</h2>
+            <p className="dashboard-story-text">This private home opens like the first page of your memory book: recent moments first, milestones close behind, and the sentimental pages always within reach.</p>
+            <div className="dashboard-story-actions">
+              <Link className="btn btn-primary" to="/timeline">Continue The Story</Link>
+              <Link className="btn btn-secondary" to="/gallery">Open Gallery</Link>
+            </div>
+          </div>
+          <div className="dashboard-story-aside">
+            <span className="utility-chip">Private and approved only</span>
+            <div className="dashboard-story-pill-list">
+              <span className="dashboard-story-pill">Recent memories first</span>
+              <span className="dashboard-story-pill">Milestones stay visible</span>
+              <span className="dashboard-story-pill">Special pages stay close</span>
+            </div>
+          </div>
+        </section>
+
+        <RecentMemories section={model.recentMemories} />
+        <div className="dashboard-column dashboard-column--support">
+          <div className="glass-card card-utility clock-card">
+            <p className="dashboard-section-kicker">Right Now</p>
+            <div className="live-time">{model.hero.timestampLabel}</div>
+            <div className="live-date">{model.hero.dateLabel}</div>
+          </div>
+          <SpecialMoments section={model.specialMoments} />
+        </div>
+        <Milestones section={model.milestones} />
+        <section className="dashboard-nav-shell">
+          <div className="dashboard-section-heading">
+            <div>
+              <p className="dashboard-section-kicker">Lower Navigation</p>
+              <h3 className="dashboard-subtitle">Everything else stays one step down</h3>
+            </div>
+          </div>
+          <div className="quick-nav-container">
+            <Link className="glass-card card-utility nav-card" to="/timeline"><div className="nav-card-icon">📖</div><div className="nav-card-title">Memories Book</div></Link>
+            <Link className="glass-card card-utility nav-card" to="/gallery"><div className="nav-card-icon">🖼️</div><div className="nav-card-title">Media Gallery</div></Link>
+            <Link className="glass-card card-utility nav-card" to="/profile"><div className="nav-card-icon">👤</div><div className="nav-card-title">Profiles & Contract</div></Link>
+            <Link className="glass-card card-utility nav-card" to="/settings"><div className="nav-card-icon">⚙️</div><div className="nav-card-title">Settings & Theme</div></Link>
+          </div>
+        </section>
       </div>
     </section>
   )
