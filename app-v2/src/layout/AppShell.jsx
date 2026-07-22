@@ -1,193 +1,140 @@
 import { useState } from 'react'
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
-import { DEFAULT_AUTHENTICATED_PATH, ROUTE_GROUPS, findRouteMeta, getRoutesByGroup } from '../app/routeConfig'
+import { NavLink, Outlet } from 'react-router-dom'
+import { protectedRouteMeta } from '../app/routeConfig'
 import { useAuth } from '../auth/useAuth'
-import { MobileNavigation } from './MobileNavigation'
 
-const primaryRoutes = getRoutesByGroup(ROUTE_GROUPS.primary)
-const sharedRoutes = getRoutesByGroup(ROUTE_GROUPS.shared)
-const specialRoutes = getRoutesByGroup(ROUTE_GROUPS.special)
-const utilityRoutes = getRoutesByGroup(ROUTE_GROUPS.utility)
+const NAV_ITEMS = [
+  { path: '/dashboard', label: 'Dashboard', icon: '✨', main: true },
+  { path: '/timeline', label: 'Memories', icon: '📖', main: true },
+  { path: '/gallery', label: 'Gallery', icon: '🖼️', main: true },
+  { path: '/profile', label: 'Profiles', icon: '👤', main: true },
+  { path: '/favorites', label: 'Favorites', icon: '🌟', main: true },
+  { path: '/settings', label: 'Settings', icon: '⚙️', main: true },
+  { path: '/contract', label: 'Contract', icon: '📜', main: false },
+  { path: '/birthday', label: 'Birthday', icon: '🎂', main: false },
+  { path: '/valentine', label: 'Valentine', icon: '💌', main: false },
+  { path: '/confession', label: 'Confession', icon: '💖', main: false },
+]
 
-function PrimaryRouteLink({ onNavigate, route }) {
+const routePaths = new Set(protectedRouteMeta.map((route) => route.path))
+const visibleNavItems = NAV_ITEMS.filter((item) => routePaths.has(item.path))
+
+function NavList({ items, onNavigate }) {
   return (
-    <NavLink
-      className={({ isActive }) => `chapter-link ${isActive ? 'chapter-link-active' : ''}`}
-      onClick={onNavigate}
-      to={route.path}
-    >
-      <span className="chapter-link-label">{route.navLabel}</span>
-      <small className="chapter-link-title">{route.label}</small>
-    </NavLink>
+    <ul className="nav-links">
+      {items.map((item) => (
+        <li className="nav-item" key={item.path}>
+          <NavLink className="faithful-header-link" onClick={onNavigate} to={item.path}>
+            <span aria-hidden="true">{item.icon}</span>
+            <span>{item.label}</span>
+          </NavLink>
+        </li>
+      ))}
+    </ul>
   )
 }
 
-function SecondaryRouteLink({ onNavigate, route, tone = 'shared' }) {
+function MobileNav({ items }) {
   return (
-    <NavLink
-      className={({ isActive }) => `rail-link rail-link-${tone} ${isActive ? 'rail-link-active' : ''}`}
-      onClick={onNavigate}
-      to={route.path}
-    >
-      <span>{route.label}</span>
-      {tone === 'special' ? <small>{route.title}</small> : null}
-    </NavLink>
-  )
-}
-
-function SecondaryMenuSection({ onNavigate, routes, title, tone = 'shared' }) {
-  return (
-    <section className="secondary-sheet-group">
-      <p className="sidebar-heading">{title}</p>
-      <div className="secondary-sheet-links">
-        {routes.map((route) => (
-          <SecondaryRouteLink key={route.path} onNavigate={onNavigate} route={route} tone={tone} />
+    <div className="mobile-nav-bar faithful-mobile-nav">
+      <ul className="mobile-nav-links">
+        {items.map((item) => (
+          <li className="mobile-nav-item" key={item.path}>
+            <NavLink to={item.path}>
+              <span className="mobile-nav-icon" aria-hidden="true">{item.icon}</span>
+              <span>{item.label}</span>
+            </NavLink>
+          </li>
         ))}
-      </div>
-    </section>
+      </ul>
+    </div>
   )
 }
 
-function getRouteContext(route) {
-  if (route.group === ROUTE_GROUPS.primary) {
-    return route.chapter || route.navLabel
-  }
-
-  if (route.group === ROUTE_GROUPS.shared) {
-    return 'Shared space'
-  }
-
-  if (route.group === ROUTE_GROUPS.special) {
-    return 'Special moment'
-  }
-
-  return 'Quiet utility'
+function Sidebar({ items, onClose, onNavigate, open, signOut }) {
+  return (
+    <>
+      <button
+        aria-label="Close navigation overlay"
+        className={`sidebar-overlay ${open ? 'active' : ''}`}
+        onClick={onClose}
+        type="button"
+      />
+      <div className={`sidebar-panel ${open ? 'active' : ''}`} id="sidebar-panel">
+        <div className="sidebar-header">
+          <h2 style={{ fontFamily: 'var(--font-accent)' }}>🧭 Quick Nav</h2>
+          <button
+            aria-label="Close navigation"
+            className="faithful-icon-button"
+            onClick={onClose}
+            style={{ fontSize: '1.5rem' }}
+            type="button"
+          >
+            ×
+          </button>
+        </div>
+        <div className="sidebar-content">
+          {items.map((item) => (
+            <NavLink className="sidebar-item faithful-sidebar-link" key={item.path} onClick={onNavigate} to={item.path}>
+              <span className="sidebar-icon" aria-hidden="true">{item.icon}</span>
+              {item.label}
+            </NavLink>
+          ))}
+          <hr style={{ borderColor: 'var(--border-glass)', margin: '1rem 0' }} />
+          <button className="btn btn-secondary faithful-signout" onClick={signOut} type="button">
+            🚪 Logout
+          </button>
+        </div>
+      </div>
+    </>
+  )
 }
 
 export function AppShell() {
   const [menuOpen, setMenuOpen] = useState(false)
-  const location = useLocation()
   const { approvedUser, signOut, user } = useAuth()
-  const currentRoute = findRouteMeta(location.pathname) || findRouteMeta(DEFAULT_AUTHENTICATED_PATH)
-  const displayName = approvedUser?.displayName || approvedUser?.username || user?.email || 'Approved account'
+  const displayName = approvedUser?.displayName || approvedUser?.username || user?.email || 'Guest'
+  const mainItems = visibleNavItems.filter((item) => item.main)
 
   return (
-    <div className="app-shell">
-      <aside className="shell-sidebar shell-sidebar-desktop">
-        <div className="shell-identity">
-          <div className="brand-panel">
-            <span className="eyebrow">Couple Book</span>
-            <h1>A private journal kept for two.</h1>
-            <p>The main journey now stays limited to Home, Story, Gallery, and Us while every quieter route sits lower in the book.</p>
+    <div className="app-shell faithful-shell-frame">
+      <div id="navigation-shell">
+        <header className="glass-header">
+          <div className="logo-container">
+            <button
+              aria-label="Open navigation"
+              className="faithful-icon-button"
+              onClick={() => setMenuOpen(true)}
+              style={{ fontSize: '1.5rem' }}
+              type="button"
+            >
+              ☰
+            </button>
+            <NavLink className="faithful-header-link logo-container" to="/dashboard">
+              <span className="logo-icon">❤️</span>
+              <span className="logo-text">MemoryBook</span>
+            </NavLink>
           </div>
-          <nav aria-label="Primary destinations" className="rail-primary">
-            {primaryRoutes.map((route) => (
-              <PrimaryRouteLink key={route.path} onNavigate={() => setMenuOpen(false)} route={route} />
-            ))}
+          <nav className="desktop-only-nav faithful-main-nav" aria-label="Main navigation">
+            <NavList items={mainItems} onNavigate={() => setMenuOpen(false)} />
           </nav>
-        </div>
-
-        <section className="rail-section">
-          <p className="sidebar-heading">Shared details</p>
-          <div className="rail-links">
-            {sharedRoutes.map((route) => (
-              <SecondaryRouteLink key={route.path} onNavigate={() => setMenuOpen(false)} route={route} />
-            ))}
-          </div>
-        </section>
-
-        <section className="rail-section rail-section-special">
-          <p className="sidebar-heading">Special moments</p>
-          <div className="rail-links">
-            {specialRoutes.map((route) => (
-              <SecondaryRouteLink key={route.path} onNavigate={() => setMenuOpen(false)} route={route} tone="special" />
-            ))}
-          </div>
-        </section>
-
-        <div className="account-panel">
-          <p className="account-label">Utilities</p>
-          <div className="rail-links">
-            {utilityRoutes.map((route) => (
-              <SecondaryRouteLink key={route.path} onNavigate={() => setMenuOpen(false)} route={route} tone="utility" />
-            ))}
-          </div>
-          <div className="account-panel-copy">
-            <strong>{displayName}</strong>
-            <span>{user?.email || 'Awaiting sign-in'}</span>
-          </div>
-          <button className="button button-secondary utility-signout" onClick={() => signOut()} type="button">
-            Sign out
-          </button>
-        </div>
-      </aside>
-
-      {menuOpen && (
-        <div className="shell-overlay" role="presentation">
-          <button
-            aria-label="Close navigation"
-            className="shell-overlay-dismiss"
-            onClick={() => setMenuOpen(false)}
-            type="button"
-          />
-          <aside aria-label="Secondary navigation" className="secondary-sheet">
-            <div className="secondary-sheet-card">
-              <div className="secondary-sheet-header">
-                <div>
-                  <span className="eyebrow">Contents</span>
-                  <h2>Everything beyond the main journey.</h2>
-                </div>
-                <button className="button button-secondary" onClick={() => setMenuOpen(false)} type="button">
-                  Close
-                </button>
-              </div>
-
-              <div className="secondary-sheet-account">
-                <strong>{displayName}</strong>
-                <span>{user?.email || 'Approved archive access'}</span>
-              </div>
-
-              <SecondaryMenuSection onNavigate={() => setMenuOpen(false)} routes={sharedRoutes} title="Shared details" />
-              <SecondaryMenuSection onNavigate={() => setMenuOpen(false)} routes={specialRoutes} title="Special moments" tone="special" />
-              <section className="secondary-sheet-group">
-                <p className="sidebar-heading">Utilities</p>
-                <div className="secondary-sheet-links">
-                  {utilityRoutes.map((route) => (
-                    <SecondaryRouteLink key={route.path} onNavigate={() => setMenuOpen(false)} route={route} tone="utility" />
-                  ))}
-                </div>
-              </section>
-
-              <button className="button button-secondary utility-signout" onClick={() => signOut()} type="button">
-                Sign out
-              </button>
-            </div>
-          </aside>
-        </div>
-      )}
-
-      <div className="shell-frame">
-        <header className="shell-header">
-          <button className="button button-secondary shell-menu-button" onClick={() => setMenuOpen(true)} type="button">
-            More
-          </button>
-          <div className="shell-header-copy">
-            <span className="eyebrow">{getRouteContext(currentRoute)}</span>
-            <h2>{currentRoute.title}</h2>
-            <p>{currentRoute.summary}</p>
-          </div>
-          <div className="shell-header-user">
-            <strong>{displayName}</strong>
-            <span>{user?.email || 'Approved archive access'}</span>
-          </div>
+          <NavLink aria-label={`Open profile for ${displayName}`} className="user-badge-header" to="/profile">
+            <span className="avatar-small" aria-hidden="true" />
+            <span className="badge-name">{displayName}</span>
+          </NavLink>
         </header>
-
-        <main className="shell-content">
-          <Outlet />
-        </main>
-
-        <MobileNavigation items={primaryRoutes} onOpenMenu={() => setMenuOpen(true)} />
+        <MobileNav items={mainItems} />
+        <Sidebar
+          items={visibleNavItems}
+          onClose={() => setMenuOpen(false)}
+          onNavigate={() => setMenuOpen(false)}
+          open={menuOpen}
+          signOut={signOut}
+        />
       </div>
+      <main className="main-content animate-fade-in">
+        <Outlet />
+      </main>
     </div>
   )
 }

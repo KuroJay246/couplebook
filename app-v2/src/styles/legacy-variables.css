@@ -1,0 +1,119 @@
+/* CSS Variables for MemoryBook Theme */
+:root {
+  /* Fonts */
+  --font-primary: 'Outfit', sans-serif;
+  --font-accent: 'Playfair Display', serif;
+  --page-max-width: 1180px;
+  --space-page-x: 2rem;
+  --space-page-y: 2rem;
+  --space-section: 1.5rem;
+  --space-stack: 1rem;
+  --radius-card: 20px;
+  --radius-soft: 14px;
+
+  /* Theme: Glassmorphism Dark (Default) */
+  --bg-main: #0a0c10;
+  --bg-gradient: radial-gradient(circle at 50% 50%, #161920 0%, #0a0c10 100%);
+  --bg-glass: rgba(20, 24, 33, 0.65);
+  --bg-glass-hover: rgba(30, 36, 48, 0.85);
+  --bg-glass-active: rgba(40, 48, 64, 0.95);
+  
+  /* Borders & Shadows */
+  --border-glass: rgba(255, 255, 255, 0.08);
+  --border-glass-hover: rgba(255, 255, 255, 0.18);
+  --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  --shadow-glow-red: 0 0 20px rgba(255, 74, 107, 0.35);
+  --shadow-glow-violet: 0 0 20px rgba(139, 92, 246, 0.35);
+
+  /* Colors */
+  --color-primary-text: #f8fafc;
+  --color-secondary-text: #94a3b8;
+  --color-muted: #64748b;
+  
+  --color-jaylan: #ff4a6b; /* Rose coral red */
+  --color-omia: #8b5cf6;   /* Electric violet */
+  --color-shared: #3b82f6;  /* Soft blue */
+  
+  --gradient-main: linear-gradient(135deg, #ff4a6b 0%, #8b5cf6 100%);
+  --gradient-jaylan: linear-gradient(135deg, #ff4a6b 0%, #f43f5e 100%);
+  --gradient-omia: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+  
+  /* Transition timings */
+  --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-fast: all 0.15s ease;
+}
+
+/* Light Theme overrides */
+[data-theme="light"] {
+  --bg-main: #f8fafc;
+  --bg-gradient: radial-gradient(circle at 50% 50%, #f1f5f9 0%, #e2e8f0 100%);
+  --bg-glass: rgba(255, 255, 255, 0.7);
+  --bg-glass-hover: rgba(255, 255, 255, 0.9);
+  --bg-glass-active: rgba(241, 245, 249, 0.95);
+  
+  --border-glass: rgba(15, 23, 42, 0.08);
+  --border-glass-hover: rgba(15, 23, 42, 0.18);
+  --shadow-glass: 0 8px 32px 0 rgba(15, 23, 42, 0.08);
+  
+  --color-primary-text: #0f172a;
+  --color-secondary-text: #475569;
+  --color-muted: #94a3b8;
+  
+  --shadow-glow-red: 0 0 15px rgba(255, 74, 107, 0.15);
+  --shadow-glow-violet: 0 0 15px rgba(139, 92, 246, 0.15);
+}
+
+/* Warm Sunset Theme overrides */
+[data-theme="sunset"] {
+  --bg-main: #140d1a;
+  --bg-gradient: linear-gradient(180deg, #1f0f2b 0%, #0d0614 100%);
+  --bg-glass: rgba(30, 20, 40, 0.6);
+  --bg-glass-hover: rgba(45, 30, 60, 0.85);
+  --bg-glass-active: rgba(60, 40, 80, 0.95);
+  
+  --border-glass: rgba(253, 186, 116, 0.12);
+  --border-glass-hover: rgba(253, 186, 116, 0.22);
+  --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+  
+  --color-primary-text: #ffedd5;
+  --color-secondary-text: #fdba74;
+  --color-muted: #b45309;
+  
+  --color-jaylan: #f97316; /* Orange */
+  --color-omia: #ec4899;   /* Pink */
+  
+  --gradient-main: linear-gradient(135deg, #f97316 0%, #ec4899 100%);
+  --gradient-jaylan: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  --gradient-omia: linear-gradient(135deg, #ec4899 0%, #db2777 100%);
+  
+  --shadow-glow-red: 0 0 20px rgba(249, 115, 22, 0.35);
+  --shadow-glow-violet: 0 0 20px rgba(236, 72, 153, 0.35);
+}
+
+/* Kuromi Theme overrides (Gothic Cute) */
+[data-theme="kuromi"] {
+  --bg-main: #1a0b2e;
+  --bg-gradient: radial-gradient(circle at 50% 50%, #2a1148 0%, #1a0b2e 100%);
+  --bg-glass: rgba(25, 10, 35, 0.7);
+  --bg-glass-hover: rgba(35, 15, 50, 0.85);
+  --bg-glass-active: rgba(45, 20, 65, 0.95);
+  
+  --border-glass: rgba(255, 119, 255, 0.2);
+  --border-glass-hover: rgba(255, 119, 255, 0.35);
+  --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.7);
+  
+  --color-primary-text: #ffeef8;
+  --color-secondary-text: #ffbbee;
+  --color-muted: #993366;
+  
+  --color-jaylan: #c026d3; /* Dark fuchsia */
+  --color-omia: #ff77ff;   /* Neon Pink */
+  --color-shared: #ff99dd; 
+  
+  --gradient-main: linear-gradient(135deg, #c026d3 0%, #ff77ff 100%);
+  --gradient-jaylan: linear-gradient(135deg, #c026d3 0%, #a21caf 100%);
+  --gradient-omia: linear-gradient(135deg, #ff77ff 0%, #ff33bb 100%);
+  
+  --shadow-glow-red: 0 0 20px rgba(192, 38, 211, 0.45);
+  --shadow-glow-violet: 0 0 20px rgba(255, 119, 255, 0.45);
+}
