@@ -11,6 +11,7 @@
     "lint": "eslint .",
     "test": "node --test",
     "test:browser": "node scripts/check-browser-regression.mjs",
+    "test:performance": "node scripts/check-performance-regression.mjs",
     "test:visual": "node scripts/check-visual-regression.mjs",
     "test:rules": "node scripts/run-firestore-rules-tests.mjs",
     "migration:plan": "node scripts/plan-firestore-migration.mjs",
