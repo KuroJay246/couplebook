@@ -1,3 +1,6 @@
+import { normalizeTimelineMemories } from '../timeline/memoryNormalizer.js'
+import { selectTimelineDisplayMemories } from '../timeline/memorySelectors.js'
+
 const SPECIAL_MOMENT_PATHS = ['/birthday', '/valentine', '/confession']
 const SUPPORTING_ROUTE_PATHS = ['/timeline', '/gallery', '/profile', '/favorites', '/settings', '/contract']
 const SOURCE_ORDER = ['profile', 'settings', 'favorites', 'contract', 'memories']
@@ -239,19 +242,82 @@ function buildHeroSection({ approvedUser, participants, recentMemories, sourceSt
   }
 }
 
+function normalizeInlineCopy(value, maxLength = 72) {
+  const trimmed = toTrimmedString(value).replace(/\s+/g, ' ')
+  if (!trimmed) return ''
+
+  const sentence = trimmed.split(/(?<=[.!?])\s+/)[0] || trimmed
+  const normalizedSentence = sentence.replace(/[.!?]+$/, '').trim()
+  if (normalizedSentence.length <= maxLength) return normalizedSentence
+
+  return `${normalizedSentence.slice(0, Math.max(0, maxLength - 1)).trimEnd()}…`
+}
+
+function selectDashboardFallbackLabel(memory) {
+  if (memory.specialMoment?.isSpecial) {
+    const labelByRoute = {
+      '/birthday': 'Birthday chapter',
+      '/valentine': 'Valentine chapter',
+      '/confession': 'Confession chapter',
+    }
+
+    const routeLabel = labelByRoute[memory.specialMoment.route]
+    if (routeLabel) return routeLabel
+  }
+
+  const meaningfulTag = (memory.tags || []).find((tag) => tag?.label && tag.label.length > 2 && tag.key !== 'auto-import')
+  if (meaningfulTag) {
+    return meaningfulTag.label
+  }
+
+  if (memory.displayDate) {
+    if (memory.media.kind === 'video') return `Video kept from ${memory.displayDate}`
+    if (memory.media.kind === 'image') return `Memory from ${memory.displayDate}`
+    return `Memory from ${memory.displayDate}`
+  }
+
+  if (memory.media.kind === 'video') return 'Saved video memory'
+  if (memory.media.kind === 'image') return 'Saved photo memory'
+  return 'Saved memory'
+}
+
+function selectDashboardCardTitle(memory) {
+  if (memory.titleKind === 'authored' && memory.title) return memory.title
+
+  const descriptionTitle = normalizeInlineCopy(memory.description)
+  if (memory.descriptionKind === 'authored' && descriptionTitle) return descriptionTitle
+
+  return selectDashboardFallbackLabel(memory)
+}
+
+function selectDashboardCardDescription(memory, title) {
+  if (memory.descriptionKind === 'authored' && memory.description && normalizeInlineCopy(memory.description) !== title) {
+    return memory.description
+  }
+
+  if (memory.displayDate && !title.includes(memory.displayDate)) {
+    return `Saved on ${memory.displayDate}.`
+  }
+
+  return memory.media.hasReference ? 'Original media stays outside this shell.' : 'A preserved text memory.'
+}
+
 function buildRecentMemoriesSection(memorySource) {
   const state = memorySource?.status || 'empty'
-  const memories = Array.isArray(memorySource?.data?.memories) ? memorySource.data.memories : []
-  const items = memories.slice(0, 3).map((memory) => ({
-    id: memory.id,
-    title: toTrimmedString(memory.title) || 'Untitled memory',
-    description:
-      toTrimmedString(memory.description) || 'A preserved archive entry is ready to be reopened once the full story surface lands.',
-    dateLabel: formatDateLabel(memory.dateLabel),
-    mediaKind: memory.mediaKind || 'unknown',
-    source: memory.source || 'unknown',
-    mediaLabel: memory.mediaPath ? 'Original media stays outside this shell.' : 'Text-only memory card.',
-  }))
+  const normalizedMemories = normalizeTimelineMemories(memorySource?.data?.memories || [])
+  const displayMemories = selectTimelineDisplayMemories(normalizedMemories)
+  const items = displayMemories.slice(0, 3).map((memory) => {
+    const title = selectDashboardCardTitle(memory)
+    return {
+      id: memory.id,
+      title,
+      description: selectDashboardCardDescription(memory, title),
+    dateLabel: memory.displayDate,
+    mediaKind: memory.media.kind || 'unknown',
+    source: memory.source?.type || 'unknown',
+    mediaLabel: memory.media.hasReference ? 'Original media stays outside this shell.' : 'Text-only memory card.',
+    }
+  })
 
   let emptyTitle = 'This chapter is still waiting on its archive.'
   let emptyDescription = 'Recent memories will appear here once the routed shell has a safe read-only path to them.'
@@ -277,7 +343,7 @@ function buildRecentMemoriesSection(memorySource) {
     description: 'The story should open on what still feels closest, not on admin counters or utility surfaces.',
     state,
     source: memorySource?.source || 'unknown',
-    totalCount: memories.length,
+    totalCount: displayMemories.length,
     items,
     action: { href: '/timeline', label: 'Open story' },
     emptyState: {

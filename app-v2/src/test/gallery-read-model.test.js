@@ -65,6 +65,7 @@ test('gallery read model classifies photos, videos, special moments, and unavail
   assert.equal(model.summary.unavailableMedia, 2)
   assert.equal(model.summary.invalidMedia, 1)
   assert.equal(model.summary.noMedia, 2)
+  assert.equal(model.items.length, 5)
   assert.equal(model.photos.length, 2)
   assert.equal(model.videos.length, 1)
   assert.equal(model.unavailableMedia.length, 3)
@@ -194,6 +195,47 @@ test('gallery read model distinguishes unavailable from empty and partial states
   assert.equal(unavailableModel.status, 'unavailable')
   assert.equal(emptyModel.status, 'empty')
   assert.equal(partialModel.status, 'partial')
+})
+
+test('gallery read model counts Firestore private media references with the same media semantics as timeline', () => {
+  const model = buildGalleryReadModel({
+    compatibilitySnapshot: createSnapshot({
+      status: 'ready',
+      source: 'firestore',
+      data: {
+        hasBaseDataset: true,
+        memories: [
+          createMemoryRecord({
+            id: 'firestore-photo',
+            dateLabel: '',
+            date: '2026-07-21',
+            mediaKind: '',
+            mediaPath: '',
+            mediaState: 'private-legacy-reference',
+            isVideo: false,
+          }),
+          createMemoryRecord({
+            id: 'firestore-video',
+            title: 'Video Clip 0722',
+            dateLabel: '',
+            date: '2026-07-22',
+            mediaKind: '',
+            mediaPath: '',
+            mediaState: 'private-legacy-reference',
+          }),
+        ],
+      },
+      warnings: [],
+    }),
+  })
+
+  assert.equal(model.summary.totalMemories, 2)
+  assert.equal(model.summary.photos, 1)
+  assert.equal(model.summary.videos, 1)
+  assert.equal(model.summary.unavailableMedia, 2)
+  assert.equal(model.items.length, 2)
+  assert.equal(model.photos[0].media.status, 'private-legacy-reference')
+  assert.equal(model.videos[0].media.status, 'private-legacy-reference')
 })
 
 test('gallery architecture stays read-only and routes Storage through the media service only', async () => {

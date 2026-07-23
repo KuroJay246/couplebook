@@ -33,6 +33,7 @@ export function normalizeFirestoreSettings(id, data, warnings) {
           reducedMotion: data.privacy.reducedMotion === true,
         }
       : {},
+    revision: Number.isInteger(data.revision) && data.revision > 0 ? data.revision : 0,
     schemaVersion: data.schemaVersion,
   }
 }

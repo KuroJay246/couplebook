@@ -32,6 +32,7 @@ function ProfileEditDialog({ onClose, onSave, person, status }) {
     anniversaryView: person?.anniversaryView || 'dual',
     joinedDate: person?.joinedDate || '',
     birthday: person?.birthday || '',
+    revision: person?.revision || 0,
   }))
 
   useEffect(() => {
@@ -139,6 +140,7 @@ export function ProfileView({ model, onRefresh }) {
       anniversaryView: 'dual',
       joinedDate: '',
       birthday: '',
+      revision: 0,
       details: [],
     }, ...basePeople]
   }, [model.people, writer.approvedUser])

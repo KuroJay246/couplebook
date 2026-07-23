@@ -138,12 +138,14 @@ export function selectFavoritePeople({ favoritesSource, profileSource } = {}) {
       const profileIdentity = profileIdentities.get(ownerKey)
       const unknownCategories = isPlainObject(ownerFavorites.unknownCategories) ? Object.keys(ownerFavorites.unknownCategories) : []
       const displayName = profileIdentity?.displayName || ownerKey
+      const revision = Number.isInteger(ownerFavorites.revision) && ownerFavorites.revision > 0 ? ownerFavorites.revision : 0
 
       return [{
         id: ownerKey,
         displayName,
         shortName: displayName.split(/\s+/)[0] || displayName,
         displayNameSource: profileIdentity ? 'profile' : 'owner',
+        revision,
         categories,
         categoryCount: categories.length,
         itemCount,

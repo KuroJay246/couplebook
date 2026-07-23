@@ -65,6 +65,8 @@ export function selectTimelineDisplayMemories(memories = []) {
       status: memory.status,
       title: memory.title,
       description: memory.description,
+      titleKind: memory.titleKind,
+      descriptionKind: memory.descriptionKind,
       displayTitle: selectTimelineDisplayTitle(memory),
       displayDescription: selectTimelineDisplayDescription(memory),
       displayDate: formatTimelineDate(memory.date),

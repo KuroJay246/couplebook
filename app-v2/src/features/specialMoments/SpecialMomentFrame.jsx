@@ -78,6 +78,7 @@ function SpecialMomentEditDialog({ copy, model, momentKey, onClose, onSave, stat
     title: model.moment?.title || model.config?.title || copy.title,
     subtitle: model.moment?.subtitle || '',
     date: model.moment?.date || '',
+    revision: model.moment?.revision || 0,
     sections: normalizeSections(model.moment),
   }))
 

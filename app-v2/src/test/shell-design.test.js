@@ -61,6 +61,7 @@ test('shared states and login shell keep the editorial-journal framing explicit'
 
 test('shared shell styles use the editorial token set and retire the old rose branding', async () => {
   const styleSource = await readSource('../styles/index.css')
+  const componentStyleSource = await readSource('../styles/legacy-components.css')
 
   assert.match(styleSource, /--paper:/)
   assert.match(styleSource, /--paper-deep:/)
@@ -68,6 +69,10 @@ test('shared shell styles use the editorial token set and retire the old rose br
   assert.match(styleSource, /--focus:/)
   assert.match(styleSource, /prefers-reduced-motion: reduce/)
   assert.match(styleSource, /safe-area-inset-bottom/)
+  assert.match(componentStyleSource, /page-header--split > \*[\s\S]*width:\s*100%/)
+  assert.match(componentStyleSource, /page-title,\s*\.page-subtitle\s*\{[\s\S]*inline-size:\s*100%/s)
+  assert.match(componentStyleSource, /page-actions\s*\{\s*width:\s*100%/s)
+  assert.match(componentStyleSource, /page-subtitle\s*\{\s*padding-right:\s*0\.5rem/s)
   assert.doesNotMatch(styleSource, /--rose:/)
   assert.doesNotMatch(styleSource, /--rose-deep:/)
   assert.doesNotMatch(styleSource, /--berry:/)

@@ -30,6 +30,7 @@ export function normalizeFirestoreProfile(uid, data, warnings) {
     anniversaryView: safeString(data.anniversaryView, 40),
     joinedDate: safeString(data.joinedDate, 40),
     birthday: safeString(data.birthday, 40),
+    revision: Number.isInteger(data.revision) && data.revision > 0 ? data.revision : 0,
   }
 }
 

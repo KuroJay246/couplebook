@@ -57,6 +57,7 @@ function memoryPayloadFromForm(form, fallback = {}) {
     title: form.title,
     description: form.description,
     date: form.date,
+    revision: fallback.revision || 0,
     tags,
     specialMomentType: fallback.specialMoment?.isSpecial ? fallback.specialMoment.type || 'ordinary' : 'ordinary',
     status: fallback.status || 'active',
@@ -277,7 +278,7 @@ export function TimelineView({ model, onRefresh }) {
     if (!window.confirm(`Archive "${memory.displayTitle}"?`)) return
     setStatus({ kind: '', message: '', saving: true })
     try {
-      await writer.archiveMemory(memory.id)
+      await writer.archiveMemory(memory.id, memory.revision || 0)
       setSelectedMemory(null)
       setStatus({ kind: 'success', message: 'Memory archived.', saving: false })
     } catch (error) {
@@ -313,7 +314,7 @@ export function TimelineView({ model, onRefresh }) {
         <div className="page-heading">
           <p className="page-eyebrow">Story Lane</p>
           <h1 className="page-title">📖 Our Story</h1>
-          <p className="page-subtitle">Search, filter, and reopen the memories that still shape this relationship without losing the quieter feel of the book.</p>
+          <p className="page-subtitle">Search and reopen the memories that still shape your story.</p>
         </div>
         <div className="page-actions">
           <span className="utility-chip">{filtered.length} {filtered.length === 1 ? 'memory' : 'memories'}</span>

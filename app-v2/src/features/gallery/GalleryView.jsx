@@ -9,20 +9,6 @@ const FILTERS = [
   { key: 'videos', label: '🎥 Videos' },
 ]
 
-function allGalleryItems(model) {
-  const byKey = new Map()
-  const collections = Array.isArray(model.collections) ? model.collections : Object.values(model.collections || {})
-  for (const item of [...(model.photos || []), ...(model.videos || []), ...collections.flatMap((collection) => collection.items || [])]) {
-    byKey.set(item.key || item.id, item)
-  }
-  return [...byKey.values()].sort((left, right) => {
-    if (left.sort?.timestamp !== null && right.sort?.timestamp !== null && left.sort?.timestamp !== right.sort?.timestamp) {
-      return right.sort.timestamp - left.sort.timestamp
-    }
-    return (left.sort?.ordinal || 0) - (right.sort?.ordinal || 0)
-  })
-}
-
 function matchesFilter(item, filter) {
   if (filter === 'photos') return item.media.kind === 'image'
   if (filter === 'videos') return item.media.kind === 'video'
@@ -42,10 +28,21 @@ function mediaStatus(item) {
   return 'Saved memory'
 }
 
+function galleryTileLabel(item) {
+  return [
+    item.title,
+    item.typeLabel,
+    item.displayDate,
+    item.media.kind === 'video' ? 'Open video memory details' : 'Open photo memory details',
+  ]
+    .filter(Boolean)
+    .join(', ')
+}
+
 function GalleryTile({ item, onSelect }) {
   return (
     <article className={`gallery-item ${item.specialMoment.isSpecial ? 'gallery-item--special' : ''} ${item.media.status !== 'storage-verified' ? 'gallery-item--unavailable' : ''}`}>
-      <button className="gallery-media-frame" onClick={() => onSelect(item)} type="button">
+      <button aria-label={galleryTileLabel(item)} className="gallery-media-frame" onClick={() => onSelect(item)} type="button">
         <div className="gallery-img" />
         <span className="gallery-media-status">{mediaStatus(item)}</span>
         {item.media.kind === 'video' ? <span className="gallery-item-video-icon">▶</span> : null}
@@ -166,7 +163,7 @@ export function GalleryView({ model }) {
   const [year, setYear] = useState('all')
   const [search, setSearch] = useState('')
   const [selectedItem, setSelectedItem] = useState(null)
-  const items = useMemo(() => allGalleryItems(model), [model])
+  const items = useMemo(() => (Array.isArray(model.items) ? model.items : []), [model])
   const years = model.filters?.availableYears || []
   const filtered = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase()

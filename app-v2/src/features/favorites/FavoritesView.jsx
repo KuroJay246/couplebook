@@ -21,7 +21,10 @@ function isOwnerFavorites(person, approvedUser) {
 }
 
 function buildFavoritesPayload(person, patch = {}) {
-  const payload = Object.fromEntries(EDITABLE_CATEGORIES.map((category) => [category.key, []]))
+  const payload = {
+    revision: person?.revision || 0,
+    ...Object.fromEntries(EDITABLE_CATEGORIES.map((category) => [category.key, []])),
+  }
   for (const category of person?.categories || []) {
     payload[category.key] = [...(category.items || [])]
   }
@@ -58,16 +61,20 @@ function sharedMatchesForPeople(people) {
     }
   }
 
-  return [...categoryMap.entries()].flatMap(([categoryKey, values]) =>
-    [...values.values()]
-      .filter((entry) => entry.owners.size >= 2)
-      .map((entry) => ({
+  const matches = []
+  for (const [categoryKey, values] of categoryMap.entries()) {
+    for (const entry of values.values()) {
+      if (entry.owners.size < 2) continue
+      matches.push({
         id: `${categoryKey}-${entry.label.toLowerCase()}`,
         categoryKey,
         label: entry.label,
         owners: [...entry.owners],
-      })),
-  )
+      })
+    }
+  }
+
+  return matches
 }
 
 function AddFavoriteDialog({ category, onClose, onSave, status }) {
@@ -108,7 +115,11 @@ function AddFavoriteDialog({ category, onClose, onSave, status }) {
 }
 
 function FavoriteSection({ canEdit, category, onAdd, onRemove, ownerId, search }) {
-  const filteredItems = (category.items || []).filter((item) => !search || comparableItem(item).includes(search))
+  const filteredItems = []
+  for (const item of category.items || []) {
+    if (search && !comparableItem(item).includes(search)) continue
+    filteredItems.push(item)
+  }
   return (
     <div className="favorites-section">
       <div className="favorites-section-title">
@@ -160,7 +171,7 @@ export function FavoritesView({ model, onRefresh }) {
       ]
     if (!writer.approvedUser || basePeople.some((person) => isOwnerFavorites(person, writer.approvedUser))) return basePeople
     const displayName = writer.approvedUser.displayName || writer.approvedUser.username || 'Jaylan'
-    return [{ id: writer.approvedUser.username || displayName, displayName, categories: [] }, ...basePeople]
+    return [{ id: writer.approvedUser.username || displayName, displayName, revision: 0, categories: [] }, ...basePeople]
   }, [model.people, writer.approvedUser])
   const ownerPerson = people.find((person) => isOwnerFavorites(person, writer.approvedUser)) || null
   const sharedMatches = useMemo(() => sharedMatchesForPeople(people), [people])

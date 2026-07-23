@@ -359,6 +359,12 @@ button.timeline-media-preview {
   .faithful-list-row {
     flex-direction: column;
   }
+
+  .special-page-standalone {
+    min-height: auto;
+    padding-block: 1.5rem 6.5rem;
+    place-items: start center;
+  }
 }
 
 @media (max-width: 480px) {

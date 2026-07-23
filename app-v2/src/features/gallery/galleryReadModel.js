@@ -60,6 +60,7 @@ export function buildGalleryReadModel({ compatibilitySnapshot = null } = {}) {
 
   return freezeClone({
     status: deriveGalleryStatus(memorySource, items),
+    items,
     summary: buildGallerySummary(items),
     collections: buildGalleryCollections(items),
     photos,

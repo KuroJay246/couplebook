@@ -81,6 +81,7 @@ export function buildSpecialMomentContentModel({ momentKey, contentSource = null
       title: content.title || config.title,
       subtitle: content.subtitle || config.runtimeSubtitle,
       date: content.date || null,
+      revision: Number.isInteger(content.revision) && content.revision > 0 ? content.revision : 0,
       sections: Array.isArray(content.sections) ? content.sections : [],
     },
     media: sourceData?.media || {

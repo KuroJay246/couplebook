@@ -74,6 +74,7 @@ export function normalizeFirestoreMemory(id, data, warnings) {
     isSpecialPage: Boolean(data.specialMomentType),
     pageUrl: safeString(data.specialMomentType, 40),
     migratedFromLegacy: data.migratedFromLegacy === true,
+    revision: Number.isInteger(data.revision) && data.revision > 0 ? data.revision : 0,
     schemaVersion: data.schemaVersion,
     status: safeString(data.status, 40) === 'archived' ? 'archived' : 'active',
   }

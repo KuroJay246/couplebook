@@ -37,6 +37,7 @@ test('special routes use the shared protected frame instead of placeholders', as
   const frameSource = await readSource('../features/specialMoments/SpecialMomentFrame.jsx')
   const hookSource = await readSource('../features/specialMoments/useSpecialMomentContent.js')
   const adapterSource = await readSource('../data/legacySpecialMomentAdapter.js')
+  const styleSource = await readSource('../styles/faithful-react.css')
 
   for (const source of [birthdayPageSource, valentinePageSource, confessionPageSource]) {
     assert.match(source, /SpecialMomentFrame/)
@@ -49,6 +50,8 @@ test('special routes use the shared protected frame instead of placeholders', as
   assert.match(adapterSource, /\/api\/special-moment\/\$\{momentKey\}/)
   assert.match(frameSource, /Return to Dashboard/)
   assert.match(frameSource, /Open Gallery/)
+  assert.match(styleSource, /special-page-standalone\s*\{\s*min-height:\s*auto;/s)
+  assert.match(styleSource, /place-items:\s*start center;/)
   assert.doesNotMatch(`${frameSource}\n${hookSource}\n${adapterSource}`, /<img|<video|<audio|dangerouslySetInnerHTML|autoplay|confetti|legacy\.html/)
   assert.doesNotMatch(`${frameSource}\n${hookSource}`, /pages\/confession|pages\/valentine|omnia-happy-birthday/)
   assert.doesNotMatch(`${frameSource}\n${hookSource}\n${adapterSource}`, /\bsetItem\s*\(|\bupdateDoc\s*\(|\baddDoc\s*\(|\bdeleteDoc\s*\(|collectionGroup\(|collection\([^)]*users/)

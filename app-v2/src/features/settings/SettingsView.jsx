@@ -16,15 +16,20 @@ const THEMES = [
   { key: 'plum', label: 'Kuromi Gothic' },
 ]
 
-export function SettingsView({ model, onRefresh }) {
-  const [active, setActive] = useState('appearance')
-  const writer = useOwnerWrite(onRefresh)
-  const [form, setForm] = useState(() => ({
+function buildFormState(model) {
+  return {
     theme: model.appearance?.preservedTheme?.value || 'paper',
     anniversaryView: model.appearance?.anniversaryView?.value || 'dual',
     localOnlyMode: model.appearance?.privacy?.localOnlyMode === true,
     reducedMotion: model.appearance?.privacy?.reducedMotion === true,
-  }))
+    revision: model.appearance?.revision || 0,
+  }
+}
+
+export function SettingsView({ model, onRefresh }) {
+  const [active, setActive] = useState('appearance')
+  const writer = useOwnerWrite(onRefresh)
+  const [form, setForm] = useState(() => buildFormState(model))
   const [status, setStatus] = useState({ kind: '', message: '', saving: false })
 
   function updateField(key, value) {
@@ -32,12 +37,7 @@ export function SettingsView({ model, onRefresh }) {
   }
 
   function resetCurrentPanel() {
-    setForm({
-      theme: model.appearance?.preservedTheme?.value || 'paper',
-      anniversaryView: model.appearance?.anniversaryView?.value || 'dual',
-      localOnlyMode: model.appearance?.privacy?.localOnlyMode === true,
-      reducedMotion: model.appearance?.privacy?.reducedMotion === true,
-    })
+    setForm(buildFormState(model))
     setStatus({ kind: 'success', message: 'Settings restored to the current saved view.', saving: false })
   }
 

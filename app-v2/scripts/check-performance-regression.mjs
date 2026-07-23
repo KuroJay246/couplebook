@@ -236,6 +236,13 @@ async function measureMobileScroll(browser, baseUrl) {
           let lastFrameAt = performance.now()
           const maxFrames = 45
           const frameGaps = []
+          const nodeCount = document.querySelectorAll('*').length
+          const tileCount = document.querySelectorAll('.gallery-item').length
+          const mediaFrameCount = document.querySelectorAll('.gallery-media-frame').length
+          const imageCount = document.querySelectorAll('img').length
+          const videoCount = document.querySelectorAll('video').length
+          const scrollHeight = document.documentElement.scrollHeight
+          const scrollWidth = document.documentElement.scrollWidth
           const step = () => {
             const now = performance.now()
             frameGaps.push(Math.round(now - lastFrameAt))
@@ -243,10 +250,21 @@ async function measureMobileScroll(browser, baseUrl) {
             window.scrollBy(0, 140)
             frame += 1
             if (frame >= maxFrames || window.scrollY + window.innerHeight >= document.documentElement.scrollHeight) {
+              const sortedFrameGaps = frameGaps.toSorted((left, right) => left - right)
               resolve({
                 frameCount: frame,
                 longFrameCount: frameGaps.filter((gap) => gap > 50).length,
                 maxFrameGapMs: Math.max(...frameGaps),
+                medianFrameGapMs: sortedFrameGaps[Math.floor(sortedFrameGaps.length / 2)],
+                nodeCount,
+                tileCount,
+                mediaFrameCount,
+                imageCount,
+                videoCount,
+                scrollHeight,
+                scrollWidth,
+                usedJsHeapSize: performance.memory?.usedJSHeapSize ?? null,
+                totalJsHeapSize: performance.memory?.totalJSHeapSize ?? null,
               })
               return
             }
@@ -259,8 +277,16 @@ async function measureMobileScroll(browser, baseUrl) {
 
     const overflowX = await page.evaluate(() => Math.max(0, document.documentElement.scrollWidth - document.documentElement.clientWidth))
     assert.equal(overflowX, 0, 'Mobile performance route should not overflow horizontally while scrolling.')
-    assert.equal(result.value.maxFrameGapMs <= THRESHOLDS.mobileScrollMaxFrameGapMs, true, `Mobile Gallery scroll frame gaps should stay below ${THRESHOLDS.mobileScrollMaxFrameGapMs}ms.`)
-    assert.equal(result.value.longFrameCount <= THRESHOLDS.mobileScrollLongFrameCount, true, `Mobile Gallery scroll should not repeatedly miss long-frame thresholds.`)
+    assert.equal(
+      result.value.maxFrameGapMs <= THRESHOLDS.mobileScrollMaxFrameGapMs,
+      true,
+      `Mobile Gallery scroll frame gaps should stay below ${THRESHOLDS.mobileScrollMaxFrameGapMs}ms. ${JSON.stringify(result.value)}`,
+    )
+    assert.equal(
+      result.value.longFrameCount <= THRESHOLDS.mobileScrollLongFrameCount,
+      true,
+      `Mobile Gallery scroll should not repeatedly miss long-frame thresholds. ${JSON.stringify(result.value)}`,
+    )
     assertCleanObserved(observed)
     return result
   } finally {
@@ -317,7 +343,6 @@ async function run() {
       await measureDetailDialog(page, baseUrl, '/timeline', { name: 'View memory' }),
       await measureDetailDialog(page, baseUrl, '/gallery', { selector: 'button.gallery-media-frame' }),
     ]
-    const mobileScroll = await measureMobileScroll(browser, baseUrl)
     const performanceState = await readPerformanceState(page)
 
     assert.equal(performanceState.cumulativeLayoutShift <= THRESHOLDS.cumulativeLayoutShift, true, 'Cumulative layout shift should stay below the recovery threshold.')
@@ -325,6 +350,7 @@ async function run() {
     assertCleanObserved(observed)
 
     await context.close()
+    const mobileScroll = await measureMobileScroll(browser, baseUrl)
 
     const report = {
       baseUrl,

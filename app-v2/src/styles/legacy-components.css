@@ -57,6 +57,8 @@
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .page-eyebrow {
@@ -420,9 +422,34 @@
   .page-header--split {
     flex-direction: column;
     align-items: flex-start;
+    width: 100%;
+    max-width: 100%;
   }
 
   .page-title {
     font-size: 1.8rem;
+  }
+
+  .page-header--split > * {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .page-actions {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-title,
+  .page-subtitle {
+    width: 100%;
+    inline-size: 100%;
+    max-width: 100%;
+  }
+
+  .page-subtitle {
+    padding-right: 0.5rem;
   }
 }

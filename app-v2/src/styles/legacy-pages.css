@@ -878,6 +878,9 @@
   background: rgba(9, 12, 18, 0.82);
   cursor: pointer;
   transition: var(--transition-smooth);
+  content-visibility: auto;
+  contain: layout style paint;
+  contain-intrinsic-size: 440px;
 }
 
 .gallery-item:hover {
@@ -1131,6 +1134,11 @@
 @media (max-width: 600px) {
   .gallery-grid {
     grid-template-columns: 1fr;
+  }
+
+  .gallery-media-status {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
   }
 
   .gallery-card-meta {

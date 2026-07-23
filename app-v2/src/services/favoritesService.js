@@ -29,7 +29,12 @@ export function normalizeFirestoreFavorites(uid, data, warnings) {
   for (const category of FAVORITE_CATEGORIES) {
     favorites[category] = safeStringArray(data[category], 50, 120)
   }
-  return { uid, favorites, schemaVersion: data.schemaVersion }
+  return {
+    uid,
+    favorites,
+    revision: Number.isInteger(data.revision) && data.revision > 0 ? data.revision : 0,
+    schemaVersion: data.schemaVersion,
+  }
 }
 
 export async function getFirestoreFavoritesForCouple(coupleId, options = {}) {

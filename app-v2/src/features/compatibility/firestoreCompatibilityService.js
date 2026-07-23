@@ -33,6 +33,7 @@ function profilesToCompatibility(result) {
       anniversaryView: entry.anniversaryView || null,
       joinedDate: entry.joinedDate || null,
       birthday: entry.birthday || null,
+      revision: Number.isInteger(entry.revision) && entry.revision > 0 ? entry.revision : 0,
       unknownFields: {},
     }
   }
@@ -54,6 +55,7 @@ function favoritesToCompatibility(result, profiles) {
     const owner = labelByUid.get(entry.uid) || normalizePersonKey(entry.uid)
     participantOrder.push(owner)
     favoritesByOwner[owner] = {
+      revision: Number.isInteger(entry.revision) && entry.revision > 0 ? entry.revision : 0,
       categories: {
         food: entry.favorites?.food || [],
         places: entry.favorites?.places || [],
@@ -83,6 +85,7 @@ function settingsToCompatibility({ shared, privateResult, username }) {
     data: {
       username,
       theme: privateData.theme || sharedData.theme || null,
+      revision: Number.isInteger(privateData.revision) && privateData.revision > 0 ? privateData.revision : 0,
       usedGlobalThemeFallback: false,
       settings: {
         anniversaryConfig: privateData.anniversaryView || sharedData.anniversaryView || null,

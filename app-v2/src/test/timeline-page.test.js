@@ -14,6 +14,7 @@ test('timeline route uses the read-only feature hook and story view', async () =
   assert.match(timelinePageSource, /TimelineView/)
   assert.doesNotMatch(timelinePageSource, /PlaceholderPage/)
   assert.match(timelineViewSource, /Our Story/)
+  assert.match(timelineViewSource, /Search and reopen the memories that still shape your story\./)
   assert.match(timelineViewSource, /timeline-line/)
   assert.match(timelineViewSource, /timeline-card/)
   assert.match(timelineViewSource, /View memory/)
