@@ -19,6 +19,7 @@ test('profile route uses the feature hook and owner editing view', async () => {
   assert.match(profileViewSource, /useOwnerWrite/)
   assert.match(profileViewSource, /ProfileEditDialog/)
   assert.match(profileViewSource, /saveProfile/)
+  assert.match(profileViewSource, /Relationship Snapshot/)
   assert.doesNotMatch(profileViewSource, /type="file"/)
 })
 

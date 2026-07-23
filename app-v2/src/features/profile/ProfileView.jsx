@@ -16,6 +16,14 @@ function isOwnerProfile(person, approvedUser) {
   return currentNames.includes(normalizeName(person.id)) || currentNames.includes(normalizeName(person.displayName))
 }
 
+function daysTogether(value) {
+  if (!value) return null
+  const start = new Date(value)
+  if (Number.isNaN(start.getTime())) return null
+  const now = new Date()
+  return Math.max(0, Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)))
+}
+
 function ProfileEditDialog({ onClose, onSave, person, status }) {
   const firstFieldRef = useRef(null)
   const [form, setForm] = useState(() => ({
@@ -85,6 +93,7 @@ function ProfileEditDialog({ onClose, onSave, person, status }) {
 
 function ProfileCard({ canEdit, onEdit, person, index }) {
   const tone = personTone(index)
+  const togetherDays = daysTogether(person.joinedDate)
   return (
     <div className={`glass-card card-story profile-card ${tone}-side`}>
       <div className="profile-avatar-container">
@@ -97,9 +106,15 @@ function ProfileCard({ canEdit, onEdit, person, index }) {
         {(person.details || []).slice(0, 3).map((detail) => (
           <div className="profile-meta-item" key={detail.key}>
             <span className="profile-meta-label">{detail.label}:</span>
-            <span className="profile-meta-val">{detail.value || '-'}</span>
+            <span className="profile-meta-val">{detail.value || 'Still to be added'}</span>
           </div>
         ))}
+        {togetherDays !== null ? (
+          <div className="profile-meta-item">
+            <span className="profile-meta-label">Days together:</span>
+            <span className="profile-meta-val">{togetherDays}</span>
+          </div>
+        ) : null}
       </div>
       <div style={{ display: 'flex', gap: '0.5rem' }}>
         {canEdit ? <button className="btn btn-secondary" onClick={() => onEdit(person)} style={{ flex: 1 }} type="button">Edit Profile</button> : null}
@@ -145,9 +160,33 @@ export function ProfileView({ model, onRefresh }) {
         <div className="page-heading">
           <p className="page-eyebrow">Shared Profile</p>
           <h1 className="page-title">👥 Relationship Profiles</h1>
-          <p className="page-subtitle">Manage personal bios, shared preferences, and the relationship contract inside one paired space.</p>
+          <p className="page-subtitle">Keep both profiles, the relationship timeline, and your shared commitments together in one paired space.</p>
         </div>
       </header>
+
+      <section className="glass-card card-utility faithful-summary-card">
+        <div className="dashboard-section-heading">
+          <div>
+            <p className="dashboard-section-kicker">Relationship Snapshot</p>
+            <h2 className="dashboard-subtitle">{model.relationship?.title || 'Shared profile'}</h2>
+            <p className="dashboard-section-copy">{model.relationship?.summary}</p>
+          </div>
+        </div>
+        <div className="faithful-stat-grid">
+          <div className="faithful-stat-tile">
+            <span className="faithful-stat-value">{people.length}</span>
+            <span className="faithful-stat-label">profiles in view</span>
+          </div>
+          <div className="faithful-stat-tile">
+            <span className="faithful-stat-value">{(model.relationship?.anniversaries || []).length}</span>
+            <span className="faithful-stat-label">anniversary views</span>
+          </div>
+          <div className="faithful-stat-tile">
+            <span className="faithful-stat-value">{(model.relationship?.milestones || []).length}</span>
+            <span className="faithful-stat-label">milestones saved</span>
+          </div>
+        </div>
+      </section>
 
       <div className="profiles-layout">
         {people.map((person, index) => (
@@ -164,7 +203,7 @@ export function ProfileView({ model, onRefresh }) {
         ))}
         <div className="glass-card card-utility contract-card-profile">
           <h2 style={{ fontFamily: 'var(--font-accent)', fontWeight: 700, textAlign: 'center', marginBottom: '1rem' }}>📜 Shared Relationship Contract</h2>
-          <p style={{ color: 'var(--color-secondary-text)', textAlign: 'center', fontSize: '0.85rem' }}>The agreed-upon core principles of our partnership.</p>
+          <p style={{ color: 'var(--color-secondary-text)', textAlign: 'center', fontSize: '0.85rem' }}>A quick look at the promises, milestones, and next step back into the full agreement page.</p>
           <div className="contract-display-container">
             <div className="contract-clause"><div className="contract-clause-title">🤝 Pillar I: Mutual Respect</div><div className="contract-clause-desc">We commit to respecting each other's opinions, goals, personal spaces, and individual uniqueness.</div></div>
             <div className="contract-clause"><div className="contract-clause-title">🔒 Pillar II: Absolute Trust</div><div className="contract-clause-desc">We pledge honesty, loyalty, and support while guarding our commitments to one another.</div></div>
@@ -174,6 +213,10 @@ export function ProfileView({ model, onRefresh }) {
           <div className="contract-status-box">
             <div className="signee-status"><div className="signee-name">Jaylan</div><span className="badge" style={{ background: 'rgba(16, 185, 129, 0.12)', color: '#6ee7b7' }}>Protected</span></div>
             <div className="signee-status"><div className="signee-name">Omia</div><span className="badge" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#f87171' }}>Pending</span></div>
+          </div>
+          <div className="faithful-inline-actions" style={{ justifyContent: 'center', marginTop: '1rem' }}>
+            <Link className="btn btn-primary" to="/contract">Open Contract</Link>
+            <Link className="btn btn-secondary" to="/favorites">View Shared Favorites</Link>
           </div>
         </div>
       </div>

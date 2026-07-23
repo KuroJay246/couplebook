@@ -157,6 +157,90 @@ dialog.lightbox-overlay::backdrop {
   min-height: 36px;
 }
 
+.faithful-filter-grid {
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  align-items: end;
+}
+
+.faithful-filter-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.faithful-filter-summary,
+.faithful-empty-copy {
+  color: var(--color-secondary-text);
+  font-size: 0.9rem;
+}
+
+.faithful-inline-actions {
+  display: flex;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.faithful-summary-card {
+  display: grid;
+  gap: 1rem;
+}
+
+.faithful-stat-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+}
+
+.faithful-stat-tile {
+  min-height: 96px;
+  padding: 0.85rem;
+  border: 1px solid var(--border-glass);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  display: grid;
+  align-content: center;
+  gap: 0.35rem;
+}
+
+.faithful-stat-value {
+  font-family: var(--font-accent);
+  font-size: 1.7rem;
+  line-height: 1;
+}
+
+.faithful-stat-label {
+  color: var(--color-secondary-text);
+  font-size: 0.82rem;
+}
+
+.faithful-chip-list {
+  display: flex;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.faithful-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.faithful-list-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-glass);
+}
+
+.faithful-list-row:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
 .add-btn,
 .btn-icon {
   display: inline-flex;
@@ -246,6 +330,12 @@ button.timeline-media-preview {
   text-align: left;
 }
 
+.faithful-special-subtitle {
+  max-width: 40ch;
+  margin: 0 auto 0.75rem;
+  color: var(--color-secondary-text);
+}
+
 @media (max-width: 768px) {
   .faithful-main-nav {
     display: none;
@@ -264,6 +354,10 @@ button.timeline-media-preview {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .faithful-list-row {
+    flex-direction: column;
   }
 }
 

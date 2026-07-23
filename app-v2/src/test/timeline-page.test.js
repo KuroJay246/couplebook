@@ -17,7 +17,9 @@ test('timeline route uses the read-only feature hook and story view', async () =
   assert.match(timelineViewSource, /timeline-line/)
   assert.match(timelineViewSource, /timeline-card/)
   assert.match(timelineViewSource, /View memory/)
-  assert.match(timelineViewSource, /Browse by tag:/)
+  assert.match(timelineViewSource, /Browse by tag/)
+  assert.match(timelineViewSource, /Search memories/)
+  assert.match(timelineViewSource, /Clear filters/)
 })
 
 test('timeline view avoids static route dependencies and direct Storage calls', async () => {

@@ -63,6 +63,46 @@ function memoryPayloadFromForm(form, fallback = {}) {
   }
 }
 
+function sortMemories(memories, order) {
+  const sorted = [...memories]
+  sorted.sort((left, right) => {
+    const leftTimestamp = left.sort?.timestamp
+    const rightTimestamp = right.sort?.timestamp
+
+    if (leftTimestamp !== null && rightTimestamp !== null && leftTimestamp !== rightTimestamp) {
+      return order === 'oldest' ? leftTimestamp - rightTimestamp : rightTimestamp - leftTimestamp
+    }
+
+    if (leftTimestamp !== null && rightTimestamp === null) return -1
+    if (leftTimestamp === null && rightTimestamp !== null) return 1
+
+    return order === 'oldest'
+      ? (left.sort?.ordinal || 0) - (right.sort?.ordinal || 0)
+      : (right.sort?.ordinal || 0) - (left.sort?.ordinal || 0)
+  })
+  return sorted
+}
+
+function buildMonthOptions(memories) {
+  const monthMap = new Map()
+  for (const memory of memories) {
+    const date = memory.date
+    if (date?.status !== 'valid' || !date.year || !date.month) continue
+    const key = `${date.year}-${String(date.month).padStart(2, '0')}`
+    if (!monthMap.has(key)) {
+      monthMap.set(key, {
+        key,
+        label: new Date(Date.UTC(date.year, date.month - 1, 1)).toLocaleDateString('en-US', {
+          month: 'long',
+          year: 'numeric',
+          timeZone: 'UTC',
+        }),
+      })
+    }
+  }
+  return [...monthMap.values()].sort((left, right) => right.key.localeCompare(left.key))
+}
+
 function MemoryFormDialog({ memory = null, mode, onClose, onSave, status }) {
   const firstFieldRef = useRef(null)
   const [form, setForm] = useState(() => ({
@@ -171,14 +211,51 @@ function DetailModal({ memory, onArchive, onClose, onEdit, status }) {
 
 export function TimelineView({ model, onRefresh }) {
   const [selectedTag, setSelectedTag] = useState('all')
+  const [selectedYear, setSelectedYear] = useState('all')
+  const [selectedType, setSelectedType] = useState('all')
+  const [selectedMonth, setSelectedMonth] = useState('all')
+  const [search, setSearch] = useState('')
+  const [sortOrder, setSortOrder] = useState('newest')
   const [selectedMemory, setSelectedMemory] = useState(null)
   const [editingMemory, setEditingMemory] = useState(null)
   const [formMode, setFormMode] = useState('')
   const [status, setStatus] = useState({ kind: '', message: '', saving: false })
   const writer = useOwnerWrite(onRefresh)
   const memories = useMemo(() => allMemories(model), [model])
-  const filtered = selectedTag === 'all' ? memories : memories.filter((memory) => memory.tags.some((tag) => tag.key === selectedTag))
   const tags = model.filters.availableTags || []
+  const years = model.filters.availableYears || []
+  const types = model.filters.availableTypes || []
+  const monthOptions = useMemo(() => buildMonthOptions(memories), [memories])
+  const filtered = useMemo(() => {
+    const normalizedSearch = search.trim().toLowerCase()
+    return sortMemories(
+      memories.filter((memory) => {
+        if (selectedTag !== 'all' && !memory.tags.some((tag) => tag.key === selectedTag)) return false
+        if (selectedYear !== 'all' && String(memory.date?.year || '') !== selectedYear) return false
+        if (selectedMonth !== 'all') {
+          const monthKey = memory.date?.status === 'valid'
+            ? `${memory.date.year}-${String(memory.date.month).padStart(2, '0')}`
+            : ''
+          if (monthKey !== selectedMonth) return false
+        }
+        if (selectedType !== 'all') {
+          if (selectedType === 'special' && !memory.specialMoment?.isSpecial) return false
+          if (selectedType === 'photo' && memory.media?.kind !== 'image') return false
+          if (selectedType === 'video' && memory.media?.kind !== 'video') return false
+          if (selectedType === 'no-media' && !['none', 'special-route-only'].includes(memory.media?.status)) return false
+        }
+        if (!normalizedSearch) return true
+        const haystack = [
+          memory.displayTitle,
+          memory.displayDescription,
+          memory.displayDate,
+          ...memory.tags.map((tag) => tag.label),
+        ].join(' ').toLowerCase()
+        return haystack.includes(normalizedSearch)
+      }),
+      sortOrder,
+    )
+  }, [memories, search, selectedMonth, selectedTag, selectedType, selectedYear, sortOrder])
 
   async function saveForm(payload) {
     setStatus({ kind: '', message: '', saving: true })
@@ -221,30 +298,89 @@ export function TimelineView({ model, onRefresh }) {
     setStatus({ kind: '', message: '', saving: false })
   }
 
+  function clearFilters() {
+    setSearch('')
+    setSelectedTag('all')
+    setSelectedYear('all')
+    setSelectedType('all')
+    setSelectedMonth('all')
+    setSortOrder('newest')
+  }
+
   return (
     <section className="timeline-page">
       <header className="page-header page-header--split">
         <div className="page-heading">
           <p className="page-eyebrow">Story Lane</p>
           <h1 className="page-title">📖 Our Story</h1>
-          <p className="page-subtitle">A quieter chronology of milestones, saved clips, and little moments that still shape this relationship.</p>
+          <p className="page-subtitle">Search, filter, and reopen the memories that still shape this relationship without losing the quieter feel of the book.</p>
         </div>
         <div className="page-actions">
-          <span className="utility-chip">Story order</span>
+          <span className="utility-chip">{filtered.length} {filtered.length === 1 ? 'memory' : 'memories'}</span>
           <button className="btn btn-primary" onClick={openAddForm} type="button">+ Add Memory</button>
         </div>
       </header>
       {status.message && !formMode ? <p className={`workflow-feedback ${status.kind === 'error' ? 'workflow-feedback-error' : 'workflow-feedback-success'}`} role="status">{status.message}</p> : null}
 
       <div className="glass-card card-utility filter-toolbar timeline-filter-toolbar">
-        <span className="filter-toolbar-label">Browse by tag:</span>
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-          <button className={`tab-btn ${selectedTag === 'all' ? 'active' : ''}`} onClick={() => setSelectedTag('all')} type="button">All</button>
-          {tags.map((tag) => (
-            <button className={`tab-btn ${selectedTag === tag.key ? 'active' : ''}`} key={tag.key} onClick={() => setSelectedTag(tag.key)} type="button">
-              {tag.label}
-            </button>
-          ))}
+        <div className="faithful-filter-grid">
+          <label className="form-group">
+            <span className="filter-toolbar-label">Search memories</span>
+            <input
+              className="form-input"
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search titles, details, and tags"
+              type="search"
+              value={search}
+            />
+          </label>
+          <label className="form-group">
+            <span className="filter-toolbar-label">Year</span>
+            <select className="form-select" onChange={(event) => setSelectedYear(event.target.value)} value={selectedYear}>
+              <option value="all">All years</option>
+              {years.map((year) => <option key={year.key} value={year.key}>{year.label}</option>)}
+            </select>
+          </label>
+          <label className="form-group">
+            <span className="filter-toolbar-label">Month</span>
+            <select className="form-select" onChange={(event) => setSelectedMonth(event.target.value)} value={selectedMonth}>
+              <option value="all">Any month</option>
+              {monthOptions.map((month) => <option key={month.key} value={month.key}>{month.label}</option>)}
+            </select>
+          </label>
+          <label className="form-group">
+            <span className="filter-toolbar-label">Type</span>
+            <select className="form-select" onChange={(event) => setSelectedType(event.target.value)} value={selectedType}>
+              <option value="all">All types</option>
+              {types.map((type) => <option key={type.key} value={type.key}>{type.label}</option>)}
+            </select>
+          </label>
+          <label className="form-group">
+            <span className="filter-toolbar-label">Sort</span>
+            <select className="form-select" onChange={(event) => setSortOrder(event.target.value)} value={sortOrder}>
+              <option value="newest">Newest first</option>
+              <option value="oldest">Oldest first</option>
+            </select>
+          </label>
+          <div className="form-group">
+            <span className="filter-toolbar-label">Browse by tag</span>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <button className={`tab-btn ${selectedTag === 'all' ? 'active' : ''}`} onClick={() => setSelectedTag('all')} type="button">All</button>
+              {tags.map((tag) => (
+                <button className={`tab-btn ${selectedTag === tag.key ? 'active' : ''}`} key={tag.key} onClick={() => setSelectedTag(tag.key)} type="button">
+                  {tag.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="faithful-filter-actions">
+            <button className="btn btn-secondary" onClick={clearFilters} type="button">Clear filters</button>
+            <p className="faithful-filter-summary">
+              {filtered.length === memories.length
+                ? 'Showing the full story.'
+                : `Showing ${filtered.length} of ${memories.length} memories.`}
+            </p>
+          </div>
         </div>
       </div>
 
@@ -254,7 +390,14 @@ export function TimelineView({ model, onRefresh }) {
           {filtered.length > 0 ? filtered.map((memory) => (
             <TimelineCard key={memory.id} memory={memory} onSelect={setSelectedMemory} />
           )) : (
-            <p className="timeline-empty-state">No memories match this tag.</p>
+            <div className="glass-card card-utility timeline-empty-state">
+              <h3>No memories match this view yet.</h3>
+              <p>Try a different year, month, tag, or search phrase. Your saved memories will still be here when you clear the filters.</p>
+              <div className="faithful-inline-actions">
+                <button className="btn btn-secondary" onClick={clearFilters} type="button">Show everything</button>
+                <button className="btn btn-primary" onClick={openAddForm} type="button">Add a new memory</button>
+              </div>
+            </div>
           )}
         </div>
       </div>

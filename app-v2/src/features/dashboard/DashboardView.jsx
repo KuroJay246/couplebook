@@ -1,17 +1,38 @@
 import { Link } from 'react-router-dom'
 
+function parseDateLabel(value) {
+  const parsed = Date.parse(value || '')
+  return Number.isNaN(parsed) ? null : new Date(parsed)
+}
+
+function buildOnThisDay(items = []) {
+  const now = new Date()
+  return items.find((item) => {
+    const date = parseDateLabel(item.dateLabel)
+    return date && date.getMonth() === now.getMonth() && date.getDate() === now.getDate()
+  }) || null
+}
+
 function RecentMemories({ section }) {
   const items = section.items || []
+  const onThisDay = buildOnThisDay(items)
   return (
     <section className="glass-card card-story recent-memories-card dashboard-feature-card">
       <div className="recent-header">
         <div>
           <p className="dashboard-section-kicker">Latest Chapter</p>
           <h2 className="recent-title">Recent memories worth reopening</h2>
-          <p className="dashboard-section-copy">The newest moments stay at the front so the book opens on what still feels closest.</p>
+          <p className="dashboard-section-copy">The newest moments stay close, with one quick path back to the wider story when you want it.</p>
         </div>
         <Link className="btn btn-secondary recent-link-button" to="/timeline">View All</Link>
       </div>
+      {onThisDay ? (
+        <div className="glass-card card-utility faithful-summary-card" style={{ marginBottom: '1rem' }}>
+          <p className="dashboard-section-kicker">On This Day</p>
+          <h3 className="dashboard-subtitle" style={{ marginBottom: '0.35rem' }}>{onThisDay.title}</h3>
+          <p className="dashboard-section-copy" style={{ marginBottom: 0 }}>{onThisDay.description}</p>
+        </div>
+      ) : null}
       <div className="recent-list">
         {items.length > 0 ? items.map((item) => (
           <article className="recent-memory-item" key={item.id}>
@@ -115,6 +136,38 @@ function SpecialMoments({ section }) {
   )
 }
 
+function RelationshipSummary({ model }) {
+  const summary = [
+    { label: 'Memories saved', value: model.recentMemories?.totalCount || 0 },
+    { label: 'Special pages', value: (model.specialMoments?.items || []).length },
+    { label: 'Birthday reminders', value: (model.milestones?.birthdayCards || []).length },
+  ]
+
+  return (
+    <section className="glass-card card-utility faithful-summary-card">
+      <div className="dashboard-section-heading">
+        <div>
+          <p className="dashboard-section-kicker">Relationship Summary</p>
+          <h3 className="dashboard-subtitle">What feels closest right now</h3>
+          <p className="dashboard-section-copy">Quick access to the pages you are most likely to reopen.</p>
+        </div>
+      </div>
+      <div className="faithful-stat-grid">
+        {summary.map((item) => (
+          <div className="faithful-stat-tile" key={item.label}>
+            <span className="faithful-stat-value">{item.value}</span>
+            <span className="faithful-stat-label">{item.label}</span>
+          </div>
+        ))}
+      </div>
+      <div className="faithful-inline-actions">
+        <Link className="btn btn-primary" to="/favorites">Open Favorites</Link>
+        <Link className="btn btn-secondary" to="/contract">Open Contract</Link>
+      </div>
+    </section>
+  )
+}
+
 export function DashboardView({ model }) {
   return (
     <section className="dashboard-page">
@@ -122,10 +175,10 @@ export function DashboardView({ model }) {
         <div className="page-heading">
           <p className="page-eyebrow">Private Home</p>
           <h1 className="page-title">A place for the moments that still feel alive.</h1>
-          <p className="page-subtitle">Your shared story, gallery, and relationship milestones stay together here in one protected keepsake space.</p>
+          <p className="page-subtitle">Your shared story, gallery, favorite things, and relationship milestones stay together here in one personal keepsake space.</p>
         </div>
         <div className="page-actions">
-          <span className="utility-chip">Approved couple app</span>
+          <span className="utility-chip">Shared home</span>
           <Link className="btn btn-secondary" to="/timeline">Open Story</Link>
         </div>
       </header>
@@ -135,17 +188,18 @@ export function DashboardView({ model }) {
           <div className="dashboard-story-copy">
             <p className="dashboard-section-kicker">Story Entrance</p>
             <h2 className="dashboard-story-title">Pick up where your story left off.</h2>
-            <p className="dashboard-story-text">This private home opens like the first page of your memory book: recent moments first, milestones close behind, and the sentimental pages always within reach.</p>
+            <p className="dashboard-story-text">This private home opens like the first page of your memory book: recent moments first, upcoming dates close behind, and the sentimental pages always within reach.</p>
             <div className="dashboard-story-actions">
               <Link className="btn btn-primary" to="/timeline">Continue The Story</Link>
               <Link className="btn btn-secondary" to="/gallery">Open Gallery</Link>
+              <Link className="btn btn-secondary" to="/favorites">Favorite Things</Link>
             </div>
           </div>
           <div className="dashboard-story-aside">
-            <span className="utility-chip">Private and approved only</span>
+            <span className="utility-chip">Warm, private, and personal</span>
             <div className="dashboard-story-pill-list">
               <span className="dashboard-story-pill">Recent memories first</span>
-              <span className="dashboard-story-pill">Milestones stay visible</span>
+              <span className="dashboard-story-pill">Upcoming dates stay visible</span>
               <span className="dashboard-story-pill">Special pages stay close</span>
             </div>
           </div>
@@ -158,14 +212,15 @@ export function DashboardView({ model }) {
             <div className="live-time">{model.hero.timestampLabel}</div>
             <div className="live-date">{model.hero.dateLabel}</div>
           </div>
+          <RelationshipSummary model={model} />
           <SpecialMoments section={model.specialMoments} />
         </div>
         <Milestones section={model.milestones} />
         <section className="dashboard-nav-shell">
           <div className="dashboard-section-heading">
             <div>
-              <p className="dashboard-section-kicker">Lower Navigation</p>
-              <h3 className="dashboard-subtitle">Everything else stays one step down</h3>
+              <p className="dashboard-section-kicker">Quick Access</p>
+              <h3 className="dashboard-subtitle">Everything important stays one step away</h3>
             </div>
           </div>
           <div className="quick-nav-container">
@@ -173,6 +228,9 @@ export function DashboardView({ model }) {
             <Link className="glass-card card-utility nav-card" to="/gallery"><div className="nav-card-icon">🖼️</div><div className="nav-card-title">Media Gallery</div></Link>
             <Link className="glass-card card-utility nav-card" to="/profile"><div className="nav-card-icon">👤</div><div className="nav-card-title">Profiles & Contract</div></Link>
             <Link className="glass-card card-utility nav-card" to="/settings"><div className="nav-card-icon">⚙️</div><div className="nav-card-title">Settings & Theme</div></Link>
+            <Link className="glass-card card-utility nav-card" to="/birthday"><div className="nav-card-icon">🎂</div><div className="nav-card-title">Birthday Page</div></Link>
+            <Link className="glass-card card-utility nav-card" to="/valentine"><div className="nav-card-icon">💌</div><div className="nav-card-title">Valentine Page</div></Link>
+            <Link className="glass-card card-utility nav-card" to="/confession"><div className="nav-card-icon">💖</div><div className="nav-card-title">Confession Page</div></Link>
           </div>
         </section>
       </div>

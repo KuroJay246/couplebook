@@ -11,18 +11,21 @@ const COPY = {
     badge: '🎂',
     title: 'Birthday Page',
     fallback: 'A private birthday chapter from the legacy book.',
+    returnLabel: 'Return to Dashboard',
   },
   valentine: {
     className: 'special-page-valentine',
     badge: '💌',
     title: 'Valentine Page',
     fallback: 'A private Valentine chapter from the legacy book.',
+    returnLabel: 'Return to Dashboard',
   },
   confession: {
     className: 'special-page-confession',
     badge: '💖',
     title: 'Confession Page',
     fallback: 'A private confession chapter from the legacy book.',
+    returnLabel: 'Return to Dashboard',
   },
 }
 
@@ -150,6 +153,7 @@ export function SpecialMomentFrame({ momentKey }) {
   const [status, setStatus] = useState({ kind: '', message: '', saving: false })
   const copy = COPY[momentKey] || COPY.confession
   const title = model.moment?.title || config?.title || copy.title
+  const subtitle = model.moment?.subtitle || model.config?.summary || 'A private page kept inside Couple Book.'
 
   async function saveMoment(type, payload) {
     setStatus({ kind: '', message: '', saving: true })
@@ -167,10 +171,12 @@ export function SpecialMomentFrame({ momentKey }) {
       <main className="card glass-card" aria-live="polite">
         <div className="badge">{copy.badge}</div>
         <h1>{title}</h1>
+        <p className="faithful-special-subtitle">{subtitle}</p>
+        {model.moment?.date ? <p className="faithful-empty-copy">{new Date(model.moment.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p> : null}
         <SpecialMomentSections model={model} fallback={copy.fallback} />
         <div className="actions">
           <button className="btn btn-secondary" onClick={() => setEditing(true)} type="button">Edit</button>
-          <Link className="btn btn-primary" to="/dashboard">Return to Dashboard</Link>
+          <Link className="btn btn-primary" to="/dashboard">{copy.returnLabel}</Link>
           <Link className="btn btn-secondary" to="/gallery">Open Gallery</Link>
         </div>
         {status.message && !editing ? <p className={`workflow-feedback ${status.kind === 'error' ? 'workflow-feedback-error' : 'workflow-feedback-success'}`} role="status">{status.message}</p> : null}

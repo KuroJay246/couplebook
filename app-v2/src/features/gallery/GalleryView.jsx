@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useEffectEvent, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 
@@ -27,6 +27,11 @@ function matchesFilter(item, filter) {
   if (filter === 'photos') return item.media.kind === 'image'
   if (filter === 'videos') return item.media.kind === 'video'
   return true
+}
+
+function matchesYear(item, year) {
+  if (year === 'all') return true
+  return String(item.date?.year || '') === year
 }
 
 function mediaStatus(item) {
@@ -74,8 +79,10 @@ function LiveAlbumTile() {
   )
 }
 
-function GalleryLightbox({ item, onClose }) {
+function GalleryLightbox({ item, items, onClose, onNext, onPrevious }) {
   const dialogRef = useRef(null)
+  const handleNext = useEffectEvent(() => onNext())
+  const handlePrevious = useEffectEvent(() => onPrevious())
 
   useEffect(() => {
     if (!item) return
@@ -85,8 +92,22 @@ function GalleryLightbox({ item, onClose }) {
     dialogRef.current?.querySelector('button')?.focus()
   }, [item])
 
+  useEffect(() => {
+    if (!item) return undefined
+
+    function handleKeyDown(event) {
+      if (event.key === 'ArrowRight') handleNext()
+      if (event.key === 'ArrowLeft') handlePrevious()
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [item])
+
   if (!item) return null
   const isVideo = item.media.kind === 'video'
+  const currentIndex = items.findIndex((entry) => (entry.key || entry.id) === (item.key || item.id))
+  const canStep = items.length > 1 && currentIndex >= 0
   return createPortal(
     isVideo ? (
       <dialog aria-labelledby="gallery-video-title" className="modal-overlay active" onCancel={onClose} ref={dialogRef}>
@@ -106,7 +127,12 @@ function GalleryLightbox({ item, onClose }) {
           </div>
           <div className="modal-footer" style={{ background: '#0d0f14', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
             <span className="gallery-video-status">{item.displayDate || 'Date review'}</span>
-            <button className="btn btn-secondary" onClick={onClose} type="button">Close</button>
+            <div className="faithful-inline-actions">
+              {canStep ? <button className="btn btn-secondary" onClick={onPrevious} type="button">Previous</button> : null}
+              {canStep ? <button className="btn btn-secondary" onClick={onNext} type="button">Next</button> : null}
+              <Link className="btn btn-secondary" to="/timeline">Open Story</Link>
+              <button className="btn btn-secondary" onClick={onClose} type="button">Close</button>
+            </div>
           </div>
         </div>
       </dialog>
@@ -123,6 +149,11 @@ function GalleryLightbox({ item, onClose }) {
         <div className="lightbox-caption-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', marginTop: '1rem' }}>
           <div className="lightbox-caption">{item.displayDate || 'Date review'}</div>
           <div className="gallery-lightbox-status">Story preserved. Image stays private.</div>
+          <div className="faithful-inline-actions">
+            {canStep ? <button className="btn btn-secondary" onClick={onPrevious} type="button">Previous</button> : null}
+            {canStep ? <button className="btn btn-secondary" onClick={onNext} type="button">Next</button> : null}
+            <Link className="btn btn-secondary" to="/timeline">Open Story</Link>
+          </div>
         </div>
       </dialog>
     ),
@@ -132,9 +163,31 @@ function GalleryLightbox({ item, onClose }) {
 
 export function GalleryView({ model }) {
   const [filter, setFilter] = useState('all')
+  const [year, setYear] = useState('all')
+  const [search, setSearch] = useState('')
   const [selectedItem, setSelectedItem] = useState(null)
   const items = useMemo(() => allGalleryItems(model), [model])
-  const filtered = items.filter((item) => matchesFilter(item, filter))
+  const years = model.filters?.availableYears || []
+  const filtered = useMemo(() => {
+    const normalizedSearch = search.trim().toLowerCase()
+    return items.filter((item) => {
+      if (!matchesFilter(item, filter)) return false
+      if (!matchesYear(item, year)) return false
+      if (!normalizedSearch) return true
+      return [item.title, item.description, item.displayDate, ...(item.tags || []).map((tag) => tag.label)]
+        .join(' ')
+        .toLowerCase()
+        .includes(normalizedSearch)
+    })
+  }, [filter, items, search, year])
+
+  function showNeighbor(direction) {
+    if (!selectedItem || filtered.length <= 1) return
+    const index = filtered.findIndex((item) => (item.key || item.id) === (selectedItem.key || selectedItem.id))
+    if (index < 0) return
+    const nextIndex = (index + direction + filtered.length) % filtered.length
+    setSelectedItem(filtered[nextIndex])
+  }
 
   return (
     <section className="gallery-page">
@@ -142,7 +195,7 @@ export function GalleryView({ model }) {
         <div className="page-heading">
           <p className="page-eyebrow">Gallery</p>
           <h1 className="page-title">🖼️ Our Shared Gallery</h1>
-          <p className="page-subtitle">Browse photos and video clips from your special moments without changing the private media boundaries.</p>
+          <p className="page-subtitle">Browse photos and video memories, reopen the related story, and keep the live album close without changing private media boundaries.</p>
         </div>
       </header>
 
@@ -163,14 +216,27 @@ export function GalleryView({ model }) {
         <div className="gallery-toolbar-copy">
           <p className="gallery-toolbar-label">Collection view</p>
           <h2 className="gallery-filter-summary">{filter === 'all' ? 'All visual memories' : filter === 'photos' ? 'Photo memories' : 'Video memories'}</h2>
-          <p className="gallery-filter-detail">Photos, videos and private memories from your story.</p>
+          <p className="gallery-filter-detail">{filtered.length} {filtered.length === 1 ? 'result' : 'results'} across photos, videos, and protected memory references.</p>
         </div>
-        <div className="media-tabs" aria-label="Gallery filters">
-          {FILTERS.map((entry) => (
-            <button className={`tab-btn ${filter === entry.key ? 'active' : ''}`} key={entry.key} onClick={() => setFilter(entry.key)} type="button">
-              {entry.label}
-            </button>
-          ))}
+        <div className="faithful-filter-grid">
+          <div className="media-tabs" aria-label="Gallery filters">
+            {FILTERS.map((entry) => (
+              <button className={`tab-btn ${filter === entry.key ? 'active' : ''}`} key={entry.key} onClick={() => setFilter(entry.key)} type="button">
+                {entry.label}
+              </button>
+            ))}
+          </div>
+          <label className="form-group">
+            <span className="filter-toolbar-label">Year</span>
+            <select className="form-select" onChange={(event) => setYear(event.target.value)} value={year}>
+              <option value="all">All years</option>
+              {years.map((entry) => <option key={entry.key} value={entry.key}>{entry.label}</option>)}
+            </select>
+          </label>
+          <label className="form-group">
+            <span className="filter-toolbar-label">Search gallery</span>
+            <input className="form-input" onChange={(event) => setSearch(event.target.value)} placeholder="Search dates, titles, and tags" type="search" value={search} />
+          </label>
         </div>
       </section>
 
@@ -180,12 +246,18 @@ export function GalleryView({ model }) {
           <GalleryTile item={item} key={item.key || item.id} onSelect={setSelectedItem} />
         )) : (
           <div className="gallery-empty-state glass-card">
-            <h3 className="gallery-empty-state-title">No Gallery entries match this view.</h3>
-            <p className="gallery-empty-state-copy">Try another tab or return to all media.</p>
+            <h3 className="gallery-empty-state-title">No gallery entries match this view.</h3>
+            <p className="gallery-empty-state-copy">Try another filter, open the live album, or return to all media to reopen the full collection.</p>
           </div>
         )}
       </div>
-      <GalleryLightbox item={selectedItem} onClose={() => setSelectedItem(null)} />
+      <GalleryLightbox
+        item={selectedItem}
+        items={filtered}
+        onClose={() => setSelectedItem(null)}
+        onNext={() => showNeighbor(1)}
+        onPrevious={() => showNeighbor(-1)}
+      />
     </section>
   )
 }

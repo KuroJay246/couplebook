@@ -19,6 +19,8 @@ test('favorites route uses the feature hook and owner editing view', async () =>
   assert.match(favoritesViewSource, /useOwnerWrite/)
   assert.match(favoritesViewSource, /AddFavoriteDialog/)
   assert.match(favoritesViewSource, /saveFavorites/)
+  assert.match(favoritesViewSource, /Search favorites/)
+  assert.match(favoritesViewSource, /shared matches/i)
   assert.doesNotMatch(favoritesViewSource, /prompt\(/)
 })
 

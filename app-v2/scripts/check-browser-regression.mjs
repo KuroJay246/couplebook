@@ -272,7 +272,7 @@ async function waitForRouteContent(page, pathname, heading) {
 }
 
 async function expectRedirectToLogin(page, expectedFromPath) {
-  await page.waitForURL((url) => url.pathname === '/login', { timeout: 5000 })
+  await page.waitForURL((url) => url.pathname === '/login', { timeout: 5000, waitUntil: 'domcontentloaded' })
   await page.getByRole('heading', { name: 'Sign in with your Couple Book email' }).waitFor({ state: 'visible', timeout: 5000 })
 
   const historyState = await page.evaluate(() => window.history.state?.usr?.from?.pathname || '')
@@ -404,7 +404,7 @@ async function runUnavailableTimelineCoverage(browser) {
   try {
     await page.goto(`${getBaseUrl()}/timeline`, { waitUntil: 'domcontentloaded' })
     await waitForRouteContent(page, '/timeline', 'Our Story')
-    assert.equal(await page.getByText('No memories match this tag.').count() >= 0, true)
+    assert.equal(await page.getByText(/No memories match this view yet\./).count() >= 0, true)
   } finally {
     ensureObservedIsClean(observed)
     await context.close()
