@@ -72,6 +72,7 @@ export function selectProfilePeople(profileSource) {
       const anniversaryView = toTrimmedString(profile.anniversaryView) || null
       const joinedDate = toTrimmedString(profile.joinedDate) || null
       const birthday = toTrimmedString(profile.birthday) || null
+      const revision = Number.isInteger(profile.revision) && profile.revision > 0 ? profile.revision : 0
 
       return [{
         id: participantId,
@@ -87,6 +88,7 @@ export function selectProfilePeople(profileSource) {
         joinedDateLabel: formatDateLabel(joinedDate),
         birthday,
         birthdayLabel: formatDateLabel(birthday),
+        revision,
         details: [
           {
             key: 'anniversary-view',

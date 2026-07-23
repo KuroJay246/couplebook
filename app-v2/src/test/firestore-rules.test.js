@@ -86,19 +86,19 @@ test.beforeEach(async () => {
     await setDoc(doc(db, 'couples', ids.otherCouple, 'members', ids.otherMember), { active: true, role: 'member', schemaVersion: 1 })
 
     for (const uid of [ids.memberOne, ids.memberTwo]) {
-      await setDoc(doc(db, 'couples', ids.couple, 'profiles', uid), { name: uid, bio: 'Fictional bio', schemaVersion: 1 })
-      await setDoc(doc(db, 'couples', ids.couple, 'favorites', uid), { food: ['fictional cake'], places: [], hobbies: [], activities: [], schemaVersion: 1 })
+      await setDoc(doc(db, 'couples', ids.couple, 'profiles', uid), { name: uid, bio: 'Fictional bio', revision: 1, schemaVersion: 1 })
+      await setDoc(doc(db, 'couples', ids.couple, 'favorites', uid), { food: ['fictional cake'], places: [], hobbies: [], activities: [], revision: 1, schemaVersion: 1 })
     }
-    await setDoc(doc(db, 'couples', ids.otherCouple, 'profiles', ids.otherMember), { name: 'Other', schemaVersion: 1 })
+    await setDoc(doc(db, 'couples', ids.otherCouple, 'profiles', ids.otherMember), { name: 'Other', revision: 1, schemaVersion: 1 })
     await setDoc(doc(db, 'couples', ids.couple, 'settings', 'shared'), { theme: 'paper', schemaVersion: 1 })
-    await setDoc(doc(db, 'couples', ids.couple, 'settings', ids.memberOne), { theme: 'paper', privacy: { localOnlyMode: true }, schemaVersion: 1 })
-    await setDoc(doc(db, 'couples', ids.couple, 'settings', ids.memberTwo), { theme: 'paper', privacy: { localOnlyMode: false }, schemaVersion: 1 })
+    await setDoc(doc(db, 'couples', ids.couple, 'settings', ids.memberOne), { theme: 'paper', privacy: { localOnlyMode: true, reducedMotion: false }, revision: 1, schemaVersion: 1 })
+    await setDoc(doc(db, 'couples', ids.couple, 'settings', ids.memberTwo), { theme: 'paper', privacy: { localOnlyMode: false, reducedMotion: false }, revision: 1, schemaVersion: 1 })
     await setDoc(doc(db, 'couples', ids.couple, 'contracts', 'current'), { title: 'Fictional contract', acceptedBy: [ids.memberOne], signatureStatus: 'status-only', schemaVersion: 1 })
-    await setDoc(doc(db, 'couples', ids.couple, 'memories', 'memory_one'), { title: 'Fictional memory', date: '2026-01-01', mediaState: 'none', schemaVersion: 1 })
-    await setDoc(doc(db, 'couples', ids.couple, 'specialMoments', 'birthday'), { title: 'Fictional birthday', sections: [{ kind: 'paragraph', content: 'Fictional text' }], schemaVersion: 1 })
-    await setDoc(doc(db, 'couples', ids.couple, 'specialMoments', 'valentine'), { title: 'Fictional valentine', sections: [{ kind: 'note', content: 'Fictional text' }], schemaVersion: 1 })
-    await setDoc(doc(db, 'couples', ids.couple, 'specialMoments', 'confession'), { title: 'Fictional confession', sections: [{ kind: 'quote', content: 'Fictional text' }], schemaVersion: 1 })
-    await setDoc(doc(db, 'couples', ids.couple, 'specialMoments', 'unapproved'), { title: 'Nope', schemaVersion: 1 })
+    await setDoc(doc(db, 'couples', ids.couple, 'memories', 'memory_one'), { title: 'Fictional memory', date: '2026-01-01', mediaState: 'none', createdBy: ids.memberOne, updatedBy: ids.memberOne, revision: 1, schemaVersion: 1, status: 'active' })
+    await setDoc(doc(db, 'couples', ids.couple, 'specialMoments', 'birthday'), { title: 'Fictional birthday', sections: [{ kind: 'paragraph', content: 'Fictional text' }], revision: 1, schemaVersion: 1 })
+    await setDoc(doc(db, 'couples', ids.couple, 'specialMoments', 'valentine'), { title: 'Fictional valentine', sections: [{ kind: 'note', content: 'Fictional text' }], revision: 1, schemaVersion: 1 })
+    await setDoc(doc(db, 'couples', ids.couple, 'specialMoments', 'confession'), { title: 'Fictional confession', sections: [{ kind: 'quote', content: 'Fictional text' }], revision: 1, schemaVersion: 1 })
+    await setDoc(doc(db, 'couples', ids.couple, 'specialMoments', 'unapproved'), { title: 'Nope', revision: 1, schemaVersion: 1 })
   })
 })
 
@@ -183,6 +183,7 @@ test('active members can perform valid candidate emulator writes', { skip: !hasE
   const db = authed(ids.memberOne)
   await assertSucceeds(setDoc(doc(db, 'couples', ids.couple, 'profiles', ids.memberOne), {
     schemaVersion: 1,
+    revision: 2,
     name: 'Member One Revised',
     bio: 'A safe fictional profile note.',
     anniversaryView: 'shared',
@@ -191,6 +192,7 @@ test('active members can perform valid candidate emulator writes', { skip: !hasE
   }))
   await assertSucceeds(setDoc(doc(db, 'couples', ids.couple, 'favorites', ids.memberOne), {
     schemaVersion: 1,
+    revision: 2,
     food: ['fictional cake'],
     songs: [],
     movies: [],
@@ -200,12 +202,14 @@ test('active members can perform valid candidate emulator writes', { skip: !hasE
   }))
   await assertSucceeds(setDoc(doc(db, 'couples', ids.couple, 'settings', ids.memberOne), {
     schemaVersion: 1,
+    revision: 2,
     theme: 'olive',
     anniversaryView: 'shared',
     privacy: { localOnlyMode: true, reducedMotion: true },
   }))
   await assertSucceeds(setDoc(doc(db, 'couples', ids.couple, 'memories', 'new_memory'), {
     schemaVersion: 1,
+    revision: 1,
     title: 'Fictional new memory',
     description: 'Text only.',
     date: '2026-02-14',
@@ -218,6 +222,7 @@ test('active members can perform valid candidate emulator writes', { skip: !hasE
   }))
   await assertSucceeds(setDoc(doc(db, 'couples', ids.couple, 'memories', 'verified_media_memory'), {
     schemaVersion: 1,
+    revision: 1,
     title: 'Fictional verified media memory',
     description: 'Storage metadata only.',
     date: '2026-02-15',
@@ -237,14 +242,9 @@ test('active members can perform valid candidate emulator writes', { skip: !hasE
     updatedBy: ids.memberOne,
     status: 'active',
   }))
-  await assertSucceeds(updateDoc(doc(db, 'couples', ids.couple, 'contracts', 'current'), {
-    schemaVersion: 1,
-    title: 'Fictional contract',
-    acceptedBy: [ids.memberOne, ids.memberTwo],
-    signatureStatus: 'status-only',
-  }))
   await assertSucceeds(setDoc(doc(db, 'couples', ids.couple, 'specialMoments', 'birthday'), {
     schemaVersion: 1,
+    revision: 2,
     title: 'Fictional birthday update',
     subtitle: 'Safe text only',
     date: '2026-07-21',
@@ -254,11 +254,18 @@ test('active members can perform valid candidate emulator writes', { skip: !hasE
   const memberTwoDb = authed(ids.memberTwo)
   await assertSucceeds(updateDoc(doc(memberTwoDb, 'couples', ids.couple, 'profiles', ids.memberTwo), {
     schemaVersion: 1,
+    revision: 2,
     name: 'Member Two Revised',
     bio: 'Another safe fictional profile note.',
     anniversaryView: '',
     joinedDate: '',
     birthday: '',
+  }))
+  await assertSucceeds(updateDoc(doc(memberTwoDb, 'couples', ids.couple, 'contracts', 'current'), {
+    schemaVersion: 1,
+    title: 'Fictional contract',
+    acceptedBy: [ids.memberOne, ids.memberTwo],
+    signatureStatus: 'status-only',
   }))
 })
 
@@ -268,6 +275,7 @@ test('candidate write rules reject unauthorized, cross-couple, partner-private, 
   await assertFails(setDoc(doc(db, 'couples', ids.couple, 'profiles', ids.memberTwo), { schemaVersion: 1, name: 'Changed' }))
   await assertFails(updateDoc(doc(db, 'couples', ids.couple, 'settings', ids.memberTwo), {
     schemaVersion: 1,
+    revision: 2,
     theme: 'paper',
     privacy: { localOnlyMode: false, reducedMotion: false },
   }))
@@ -275,15 +283,18 @@ test('candidate write rules reject unauthorized, cross-couple, partner-private, 
   await assertFails(setDoc(doc(db, 'couples', ids.otherCouple, 'profiles', ids.memberOne), { schemaVersion: 1, name: 'Cross couple' }))
   await assertFails(setDoc(doc(db, 'couples', ids.couple, 'profiles', ids.memberOne), {
     schemaVersion: 1,
+    revision: 2,
     name: 'Changed',
     role: 'admin',
   }))
   await assertFails(setDoc(doc(db, 'couples', ids.couple, 'profiles', ids.memberOne), {
     schemaVersion: 2,
+    revision: 2,
     name: 'Changed',
   }))
   await assertFails(setDoc(doc(db, 'couples', ids.couple, 'memories', 'unsafe_memory'), {
     schemaVersion: 1,
+    revision: 1,
     title: '<script>alert(1)</script>',
     date: '2026-02-14',
     tags: [],
@@ -294,6 +305,7 @@ test('candidate write rules reject unauthorized, cross-couple, partner-private, 
   }))
   await assertFails(setDoc(doc(db, 'couples', ids.couple, 'memories', 'unsafe_media'), {
     schemaVersion: 1,
+    revision: 1,
     title: 'Unsafe media',
     date: '2026-02-14',
     tags: [],
@@ -304,6 +316,7 @@ test('candidate write rules reject unauthorized, cross-couple, partner-private, 
   }))
   await assertFails(setDoc(doc(db, 'couples', ids.couple, 'memories', 'unsafe_storage_media'), {
     schemaVersion: 1,
+    revision: 1,
     title: 'Unsafe Storage media',
     date: '2026-02-14',
     tags: [],
@@ -322,6 +335,7 @@ test('candidate write rules reject unauthorized, cross-couple, partner-private, 
   }))
   await assertFails(setDoc(doc(db, 'couples', ids.couple, 'memories', 'missing_storage_media'), {
     schemaVersion: 1,
+    revision: 1,
     title: 'Missing Storage media',
     date: '2026-02-14',
     tags: [],
@@ -332,6 +346,7 @@ test('candidate write rules reject unauthorized, cross-couple, partner-private, 
   }))
   await assertFails(setDoc(doc(db, 'couples', ids.couple, 'memories', 'unsupported_special'), {
     schemaVersion: 1,
+    revision: 1,
     title: 'Unsafe route',
     date: '2026-02-14',
     tags: [],
@@ -343,6 +358,7 @@ test('candidate write rules reject unauthorized, cross-couple, partner-private, 
   }))
   await assertFails(setDoc(doc(db, 'couples', ids.couple, 'specialMoments', 'anniversary'), {
     schemaVersion: 1,
+    revision: 1,
     title: 'Unsupported',
     sections: [],
   }))
@@ -356,11 +372,65 @@ test('candidate write rules reject unauthorized, cross-couple, partner-private, 
       transaction.update(doc(db, 'couples', ids.couple, 'contracts', 'current'), { signatureStatus: 'raw-signature-uploaded' })
     }),
   )
+  await assertFails(updateDoc(doc(db, 'couples', ids.couple, 'contracts', 'current'), {
+    schemaVersion: 1,
+    title: 'Fictional contract',
+    acceptedBy: [ids.memberOne, ids.memberTwo],
+    signatureStatus: 'status-only',
+  }))
 
   for (const uid of [ids.outsider, ids.inactive, ids.otherMember]) {
     const deniedDb = authed(uid)
-    await assertFails(setDoc(doc(deniedDb, 'couples', ids.couple, 'favorites', uid), { schemaVersion: 1, food: [] }))
+    await assertFails(setDoc(doc(deniedDb, 'couples', ids.couple, 'favorites', uid), { schemaVersion: 1, revision: 1, food: [] }))
   }
+})
+
+test('candidate revision rules reject stale and conflicting same-document writes', { skip: !hasEmulator }, async () => {
+  const memberOneDb = authed(ids.memberOne)
+  const memberTwoDb = authed(ids.memberTwo)
+
+  await assertSucceeds(updateDoc(doc(memberOneDb, 'couples', ids.couple, 'memories', 'memory_one'), {
+    schemaVersion: 1,
+    revision: 2,
+    title: 'Fictional memory',
+    description: 'Updated once.',
+    date: '2026-01-01',
+    tags: ['updated'],
+    mediaState: 'none',
+    createdBy: ids.memberOne,
+    updatedBy: ids.memberOne,
+    status: 'active',
+  }))
+
+  await assertFails(updateDoc(doc(memberOneDb, 'couples', ids.couple, 'memories', 'memory_one'), {
+    schemaVersion: 1,
+    revision: 2,
+    title: 'Fictional memory',
+    description: 'Stale overwrite.',
+    date: '2026-01-01',
+    tags: ['stale'],
+    mediaState: 'none',
+    createdBy: ids.memberOne,
+    updatedBy: ids.memberOne,
+    status: 'active',
+  }))
+
+  await assertSucceeds(updateDoc(doc(memberTwoDb, 'couples', ids.couple, 'contracts', 'current'), {
+    schemaVersion: 1,
+    title: 'Fictional contract',
+    acceptedBy: [ids.memberOne, ids.memberTwo],
+    signatureStatus: 'status-only',
+  }))
+
+  await assertFails(updateDoc(doc(memberTwoDb, 'couples', ids.couple, 'profiles', ids.memberTwo), {
+    schemaVersion: 1,
+    revision: 1,
+    name: 'Member Two Stale',
+    bio: 'Should fail.',
+    anniversaryView: '',
+    joinedDate: '',
+    birthday: '',
+  }))
 })
 
 test('app-v2 Firestore source mode reads seeded fictional data through read models', { skip: !hasEmulator }, async () => {

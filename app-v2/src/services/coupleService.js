@@ -6,6 +6,10 @@ export function buildCoupleDocumentPath(coupleId) {
   return pathToString(couplePath(coupleId))
 }
 
+export function buildMemberDocumentPath(coupleId, uid) {
+  return pathToString(memberPath(coupleId, uid))
+}
+
 export function normalizeCoupleDocument(id, data, warnings) {
   if (!requireSchemaVersion(data, warnings)) return null
   return {

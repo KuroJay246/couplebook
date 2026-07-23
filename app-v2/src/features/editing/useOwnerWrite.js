@@ -51,7 +51,7 @@ export function useOwnerWrite(onRefresh) {
       })
     },
     updateMemory: (memoryId, payload) => runWrite((context) => saveMemory(memoryId, payload, context)),
-    archiveMemory: (memoryId) => runWrite((context) => archiveMemory(memoryId, context)),
+    archiveMemory: (memoryId, revision = 0) => runWrite((context) => archiveMemory(memoryId, revision, context)),
     saveProfile: (payload) => runWrite((context) => saveOwnProfile(payload, context)),
     saveFavorites: (payload) => runWrite((context) => saveOwnFavorites(payload, context)),
     saveSettings: (payload) => runWrite((context) => saveOwnSettings(payload, context)),

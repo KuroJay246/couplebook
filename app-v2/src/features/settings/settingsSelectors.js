@@ -149,6 +149,7 @@ export function selectSettingsAppearance(settingsSource) {
       localOnlyMode: privacyToggles.localOnlyMode === true,
       reducedMotion: privacyToggles.reducedMotion === true,
     },
+    revision: Number.isInteger(settingsData?.revision) && settingsData.revision > 0 ? settingsData.revision : 0,
     items: [
       {
         label: 'Current routed theme',

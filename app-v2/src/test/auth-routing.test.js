@@ -9,6 +9,7 @@ import {
 } from '../app/routeConfig.js'
 import { formatMissingFirebaseConfigMessage } from '../lib/firebaseConfig.js'
 import { resolveApprovedUser } from '../services/authorizationService.js'
+import { buildMemberDocumentPath } from '../services/coupleService.js'
 import { buildUserDocumentPath } from '../services/userService.js'
 import { getRequestedReturnPath, sanitizeReturnPath } from '../utils/navigation.js'
 
@@ -109,21 +110,29 @@ test('direct reload keeps the intended protected destination after auth restorat
 })
 
 test('authorization uses a targeted users uid lookup only', async () => {
-  const calls = []
+  const userCalls = []
+  const membershipCalls = []
   const resolution = await resolveApprovedUser(
     { uid: 'uid-123', email: 'approved@example.com' },
     {
       readUserProfileByUid: async (uid) => {
-        calls.push(uid)
-        return { uid, approved: true, accessStatus: 'active', username: 'Jaylan', profileName: 'Jaylan' }
+        userCalls.push(uid)
+        return { uid, approved: true, accessStatus: 'active', username: 'Jaylan', profileName: 'Jaylan', coupleId: 'couple-alpha' }
+      },
+      readCoupleMembership: async (coupleId, uid) => {
+        membershipCalls.push(`${coupleId}/${uid}`)
+        return { status: 'ready', data: { uid, active: true, role: 'member', schemaVersion: 1 } }
       },
     },
   )
 
   assert.equal(buildUserDocumentPath('uid-123'), 'users/uid-123')
-  assert.deepEqual(calls, ['uid-123'])
+  assert.equal(buildMemberDocumentPath('couple-alpha', 'uid-123'), 'couples/couple-alpha/members/uid-123')
+  assert.deepEqual(userCalls, ['uid-123'])
+  assert.deepEqual(membershipCalls, ['couple-alpha/uid-123'])
   assert.equal(resolution.status, 'authorized')
   assert.equal(resolution.approvedUser.displayName, 'Jaylan')
+  assert.equal(resolution.approvedUser.memberRole, 'member')
 })
 
 test('pending approved accounts receive the safe unopened-book status', async () => {
@@ -135,6 +144,28 @@ test('pending approved accounts receive the safe unopened-book status', async ()
         approved: true,
         accessStatus: 'pending',
         coupleId: 'couple-alpha',
+      }),
+    },
+  )
+
+  assert.equal(resolution.status, 'pending')
+  assert.equal(resolution.approvedUser, null)
+})
+
+test('approved users without active couple membership remain blocked', async () => {
+  const resolution = await resolveApprovedUser(
+    { uid: 'missing-member', email: 'approved@example.com' },
+    {
+      readUserProfileByUid: async (uid) => ({
+        uid,
+        approved: true,
+        accessStatus: 'active',
+        coupleId: 'couple-alpha',
+        username: 'Jaylan',
+      }),
+      readCoupleMembership: async () => ({
+        status: 'unavailable',
+        data: null,
       }),
     },
   )

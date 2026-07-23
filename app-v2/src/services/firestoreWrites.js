@@ -52,6 +52,18 @@ function cleanDate(value) {
   return text
 }
 
+function normalizeRevision(value) {
+  if (value === '' || value === null || value === undefined) return null
+  const numeric = Number(value)
+  return Number.isInteger(numeric) && numeric >= 0 ? numeric : null
+}
+
+function currentRevisionFromSnapshot(snapshot) {
+  if (!snapshot?.exists()) return 0
+  const data = snapshot.data()
+  return Number.isInteger(data?.revision) && data.revision > 0 ? data.revision : 0
+}
+
 function docRef(firestore, path, createDoc = doc) {
   return createDoc(firestore, ...path)
 }
@@ -81,39 +93,59 @@ async function assertWriteContext({ approvedUser, createDoc = doc, env, firestor
   return { coupleId, createDoc, firestore, getDocument, uid: user.uid }
 }
 
+async function resolveNextRevision(reference, expectedRevision, getDocument, conflictLabel) {
+  const snapshot = await getDocument(reference)
+  const currentRevision = currentRevisionFromSnapshot(snapshot)
+  const normalizedExpectedRevision = normalizeRevision(expectedRevision)
+
+  if (normalizedExpectedRevision !== null && normalizedExpectedRevision !== currentRevision) {
+    throw new Error(`${conflictLabel} changed in another session. Refresh and try again.`)
+  }
+
+  return currentRevision + 1
+}
+
 export async function saveOwnProfile(payload, context) {
-  const { coupleId, createDoc, firestore, uid } = await assertWriteContext(context)
+  const { coupleId, createDoc, firestore, getDocument, uid } = await assertWriteContext(context)
   const writeDocument = context.setDocument || setDoc
+  const reference = docRef(firestore, profilePath(coupleId, uid), createDoc)
+  const nextRevision = await resolveNextRevision(reference, payload.revision, getDocument, 'Profile')
   const next = {
     schemaVersion: 1,
+    revision: nextRevision,
     name: cleanText(payload.name, 80, 'Name', { required: true }),
     bio: cleanText(payload.bio, 500, 'Bio'),
     anniversaryView: cleanText(payload.anniversaryView, 40, 'Anniversary view'),
     joinedDate: payload.joinedDate ? cleanDate(payload.joinedDate) : '',
     birthday: payload.birthday ? cleanDate(payload.birthday) : '',
   }
-  await writeDocument(docRef(firestore, profilePath(coupleId, uid), createDoc), next, { merge: true })
+  await writeDocument(reference, next, { merge: true })
   return next
 }
 
 export async function saveOwnFavorites(payload, context) {
-  const { coupleId, createDoc, firestore, uid } = await assertWriteContext(context)
+  const { coupleId, createDoc, firestore, getDocument, uid } = await assertWriteContext(context)
   const writeDocument = context.setDocument || setDoc
-  const next = { schemaVersion: 1 }
+  const reference = docRef(firestore, favoritesPath(coupleId, uid), createDoc)
+  const nextRevision = await resolveNextRevision(reference, payload.revision, getDocument, 'Favorites')
+  const next = { schemaVersion: 1, revision: nextRevision }
   for (const category of FAVORITE_WRITE_CATEGORIES) {
     next[category] = cleanStringList(payload[category], { label: category, maxItems: 50, maxLength: 120 })
   }
-  await writeDocument(docRef(firestore, favoritesPath(coupleId, uid), createDoc), next, { merge: true })
+  await writeDocument(reference, next, { merge: true })
   return next
 }
 
 export async function saveOwnSettings(payload, context) {
-  const { coupleId, createDoc, firestore, uid } = await assertWriteContext(context)
+  const { coupleId, createDoc, firestore, getDocument, uid } = await assertWriteContext(context)
   const writeDocument = context.setDocument || setDoc
+  const reference = docRef(firestore, privateSettingsPath(coupleId, uid), createDoc)
+  const nextRevision = await resolveNextRevision(reference, payload.revision, getDocument, 'Settings')
   const theme = cleanText(payload.theme, 40, 'Theme') || 'paper'
   if (!APPEARANCE_THEMES.includes(theme)) throw new Error('Theme is not supported.')
   const next = {
     schemaVersion: 1,
+    revision: nextRevision,
     theme,
     anniversaryView: cleanText(payload.anniversaryView, 40, 'Anniversary view'),
     privacy: {
@@ -121,17 +153,20 @@ export async function saveOwnSettings(payload, context) {
       reducedMotion: payload.reducedMotion === true,
     },
   }
-  await writeDocument(docRef(firestore, privateSettingsPath(coupleId, uid), createDoc), next, { merge: true })
+  await writeDocument(reference, next, { merge: true })
   return next
 }
 
 export async function saveMemory(memoryId, payload, context) {
-  const { coupleId, createDoc, firestore, uid } = await assertWriteContext(context)
+  const { coupleId, createDoc, firestore, getDocument, uid } = await assertWriteContext(context)
   const writeDocument = context.setDocument || setDoc
+  const reference = docRef(firestore, memoryPath(coupleId, memoryId), createDoc)
+  const nextRevision = await resolveNextRevision(reference, payload.revision, getDocument, 'Memory')
   const type = cleanText(payload.specialMomentType, 40, 'Memory type') || 'ordinary'
   if (!MEMORY_TYPES.includes(type)) throw new Error('Memory type is not supported.')
   const next = {
     schemaVersion: 1,
+    revision: nextRevision,
     title: cleanText(payload.title, 180, 'Title', { required: true }),
     description: cleanText(payload.description, 2000, 'Description'),
     date: cleanDate(payload.date),
@@ -142,7 +177,7 @@ export async function saveMemory(memoryId, payload, context) {
     status: payload.status === 'archived' ? 'archived' : 'active',
   }
   if (type !== 'ordinary') next.specialMomentType = type
-  await writeDocument(docRef(firestore, memoryPath(coupleId, memoryId), createDoc), next, { merge: true })
+  await writeDocument(reference, next, { merge: true })
   return next
 }
 
@@ -163,11 +198,14 @@ export async function acceptContract(context) {
 }
 
 export async function saveSpecialMomentText(momentType, payload, context) {
-  const { coupleId, createDoc, firestore } = await assertWriteContext(context)
+  const { coupleId, createDoc, firestore, getDocument } = await assertWriteContext(context)
   const writeDocument = context.setDocument || setDoc
+  const reference = docRef(firestore, specialMomentPath(coupleId, momentType), createDoc)
+  const nextRevision = await resolveNextRevision(reference, payload.revision, getDocument, 'Special page')
   const sections = Array.isArray(payload.sections) ? payload.sections : []
   const next = {
     schemaVersion: 1,
+    revision: nextRevision,
     title: cleanText(payload.title, 120, 'Title', { required: true }),
     subtitle: cleanText(payload.subtitle, 180, 'Subtitle'),
     date: payload.date ? cleanDate(payload.date) : '',
@@ -180,14 +218,16 @@ export async function saveSpecialMomentText(momentType, payload, context) {
       }
     }),
   }
-  await writeDocument(docRef(firestore, specialMomentPath(coupleId, momentType), createDoc), next, { merge: true })
+  await writeDocument(reference, next, { merge: true })
   return next
 }
 
-export async function archiveMemory(memoryId, context) {
-  const { coupleId, createDoc, firestore, uid } = await assertWriteContext(context)
+export async function archiveMemory(memoryId, revision, context) {
+  const { coupleId, createDoc, firestore, getDocument, uid } = await assertWriteContext(context)
   const patchDocument = context.updateDocument || updateDoc
-  const next = { status: 'archived', updatedBy: uid, schemaVersion: 1 }
-  await patchDocument(docRef(firestore, memoryPath(coupleId, memoryId), createDoc), next)
+  const reference = docRef(firestore, memoryPath(coupleId, memoryId), createDoc)
+  const nextRevision = await resolveNextRevision(reference, revision, getDocument, 'Memory')
+  const next = { status: 'archived', updatedBy: uid, schemaVersion: 1, revision: nextRevision }
+  await patchDocument(reference, next)
   return next
 }

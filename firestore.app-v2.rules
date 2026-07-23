@@ -123,11 +123,22 @@ service cloud.firestore {
       return value is list && value.size() <= maxSize;
     }
 
+    function currentRevision() {
+      return resource == null || !(resource.data.revision is int) ? 0 : resource.data.revision;
+    }
+
+    function hasNextRevision() {
+      return request.resource.data.revision is int
+        && request.resource.data.revision >= 1
+        && request.resource.data.revision == currentRevision() + 1;
+    }
+
     function isValidProfile(uid) {
       return isOwnUser(uid)
-        && hasOnly(['schemaVersion', 'name', 'bio', 'anniversaryView', 'joinedDate', 'birthday'])
-        && hasAll(['schemaVersion', 'name'])
+        && hasOnly(['schemaVersion', 'revision', 'name', 'bio', 'anniversaryView', 'joinedDate', 'birthday'])
+        && hasAll(['schemaVersion', 'revision', 'name'])
         && request.resource.data.schemaVersion == 1
+        && hasNextRevision()
         && isRequiredSafeString(request.resource.data.name, 80)
         && (!('bio' in request.resource.data) || isSafeString(request.resource.data.bio, 500))
         && (!('anniversaryView' in request.resource.data) || isSafeString(request.resource.data.anniversaryView, 40))
@@ -137,8 +148,9 @@ service cloud.firestore {
 
     function isValidFavorites(uid) {
       return isOwnUser(uid)
-        && hasOnly(['schemaVersion', 'food', 'songs', 'movies', 'places', 'memories', 'notes'])
+        && hasOnly(['schemaVersion', 'revision', 'food', 'songs', 'movies', 'places', 'memories', 'notes'])
         && request.resource.data.schemaVersion == 1
+        && hasNextRevision()
         && (!('food' in request.resource.data) || isStringList(request.resource.data.food, 50))
         && (!('songs' in request.resource.data) || isStringList(request.resource.data.songs, 50))
         && (!('movies' in request.resource.data) || isStringList(request.resource.data.movies, 50))
@@ -149,8 +161,9 @@ service cloud.firestore {
 
     function isValidPrivateSettings(uid) {
       return isOwnUser(uid)
-        && hasOnly(['schemaVersion', 'theme', 'anniversaryView', 'privacy'])
+        && hasOnly(['schemaVersion', 'revision', 'theme', 'anniversaryView', 'privacy'])
         && request.resource.data.schemaVersion == 1
+        && hasNextRevision()
         && request.resource.data.theme in ['paper', 'rose', 'olive', 'plum']
         && (!('anniversaryView' in request.resource.data) || isSafeString(request.resource.data.anniversaryView, 40))
         && request.resource.data.privacy is map
@@ -160,9 +173,10 @@ service cloud.firestore {
     }
 
     function isValidMemory() {
-      return hasOnly(['schemaVersion', 'title', 'description', 'date', 'tags', 'mediaState', 'media', 'specialMomentType', 'createdBy', 'updatedBy', 'status'])
-        && hasAll(['schemaVersion', 'title', 'date', 'mediaState', 'createdBy', 'updatedBy', 'status'])
+      return hasOnly(['schemaVersion', 'revision', 'title', 'description', 'date', 'tags', 'mediaState', 'media', 'specialMomentType', 'createdBy', 'updatedBy', 'status'])
+        && hasAll(['schemaVersion', 'revision', 'title', 'date', 'mediaState', 'createdBy', 'updatedBy', 'status'])
         && request.resource.data.schemaVersion == 1
+        && hasNextRevision()
         && isRequiredSafeString(request.resource.data.title, 180)
         && (!('description' in request.resource.data) || isSafeString(request.resource.data.description, 2000))
         && request.resource.data.date.matches('^\\d{4}-\\d{2}-\\d{2}$')
@@ -207,17 +221,60 @@ service cloud.firestore {
         && request.resource.data.schemaVersion == 1
         && (!('title' in request.resource.data) || isSafeString(request.resource.data.title, 160))
         && (!('bodyStatus' in request.resource.data) || isSafeString(request.resource.data.bodyStatus, 60))
-        && request.resource.data.acceptedBy is list
-        && request.resource.data.acceptedBy.size() <= 2
+        && isValidAcceptedByList(request.resource.data.acceptedBy)
         && request.auth.uid in request.resource.data.acceptedBy
         && request.resource.data.signatureStatus in ['status-only', 'not-connected'];
     }
 
+    function isValidAcceptedByEntry(value) {
+      return value is string && value.matches('^[A-Za-z0-9_-]{1,120}$');
+    }
+
+    function isValidAcceptedByList(value) {
+      return value is list
+        && value.size() <= 2
+        && (
+          value.size() == 0
+          || (value.size() == 1 && isValidAcceptedByEntry(value[0]))
+          || (value.size() == 2 && isValidAcceptedByEntry(value[0]) && isValidAcceptedByEntry(value[1]))
+        );
+    }
+
+    function existingAcceptedEntriesRemain() {
+      return !(resource.data.acceptedBy is list)
+        || (
+          (!(resource.data.acceptedBy.size() >= 1) || resource.data.acceptedBy[0] in request.resource.data.acceptedBy)
+          && (!(resource.data.acceptedBy.size() >= 2) || resource.data.acceptedBy[1] in request.resource.data.acceptedBy)
+        );
+    }
+
+    function requestedAcceptedEntriesAreKnown() {
+      return !(request.resource.data.acceptedBy is list)
+        || (
+          (!(request.resource.data.acceptedBy.size() >= 1)
+            || request.resource.data.acceptedBy[0] == request.auth.uid
+            || (resource.data.acceptedBy is list && request.resource.data.acceptedBy[0] in resource.data.acceptedBy))
+          && (!(request.resource.data.acceptedBy.size() >= 2)
+            || request.resource.data.acceptedBy[1] == request.auth.uid
+            || (resource.data.acceptedBy is list && request.resource.data.acceptedBy[1] in resource.data.acceptedBy))
+        );
+    }
+
+    function isValidContractAcceptanceUpdate() {
+      return isValidContractAcceptance()
+        && request.resource.data.get('title', null) == resource.data.get('title', null)
+        && request.resource.data.get('bodyStatus', null) == resource.data.get('bodyStatus', null)
+        && request.resource.data.get('signatureStatus', null) == resource.data.get('signatureStatus', null)
+        && existingAcceptedEntriesRemain()
+        && requestedAcceptedEntriesAreKnown();
+    }
+
     function isValidSpecialMoment(momentType) {
       return isApprovedMomentType(momentType)
-        && hasOnly(['schemaVersion', 'title', 'subtitle', 'date', 'sections'])
-        && hasAll(['schemaVersion', 'title', 'sections'])
+        && hasOnly(['schemaVersion', 'revision', 'title', 'subtitle', 'date', 'sections'])
+        && hasAll(['schemaVersion', 'revision', 'title', 'sections'])
         && request.resource.data.schemaVersion == 1
+        && hasNextRevision()
         && isRequiredSafeString(request.resource.data.title, 120)
         && (!('subtitle' in request.resource.data) || isSafeString(request.resource.data.subtitle, 180))
         && (!('date' in request.resource.data) || isDateOrEmpty(request.resource.data.date))
@@ -268,7 +325,8 @@ service cloud.firestore {
 
       match /contracts/current {
         allow get: if isActiveCoupleMember(coupleId);
-        allow create, update: if isActiveCoupleMember(coupleId) && isValidContractAcceptance();
+        allow create: if isActiveCoupleMember(coupleId) && isValidContractAcceptance();
+        allow update: if isActiveCoupleMember(coupleId) && isValidContractAcceptanceUpdate();
         allow delete: if false;
       }
 
