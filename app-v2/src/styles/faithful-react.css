@@ -157,6 +157,32 @@ dialog.lightbox-overlay::backdrop {
   min-height: 36px;
 }
 
+.add-btn,
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0.55rem 0.85rem;
+  border: 1px solid var(--border-glass);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--color-primary-text);
+  cursor: pointer;
+}
+
+.btn-icon {
+  width: 44px;
+  padding-inline: 0;
+}
+
+.add-btn:hover,
+.btn-icon:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: var(--border-glass-hover);
+}
+
 button.timeline-media-preview {
   display: block;
   width: 100%;

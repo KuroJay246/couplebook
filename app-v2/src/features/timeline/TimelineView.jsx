@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
+import { useOwnerWrite } from '../editing/useOwnerWrite.js'
 
 function allMemories(model) {
   return (model.chapters || []).flatMap((chapter) => chapter.groups.flatMap((group) => group.memories))
@@ -43,7 +44,84 @@ function TimelineCard({ memory, onSelect }) {
   )
 }
 
-function DetailModal({ memory, onClose }) {
+function memoryDateValue(memory) {
+  if (typeof memory?.date?.raw === 'string') return memory.date.raw.slice(0, 10)
+  if (typeof memory?.date?.value === 'string') return memory.date.value.slice(0, 10)
+  if (memory?.date?.timestamp) return new Date(memory.date.timestamp).toISOString().slice(0, 10)
+  return new Date().toISOString().slice(0, 10)
+}
+
+function memoryPayloadFromForm(form, fallback = {}) {
+  const tags = form.tags.split(',').map((tag) => tag.trim()).filter(Boolean)
+  return {
+    title: form.title,
+    description: form.description,
+    date: form.date,
+    tags,
+    specialMomentType: fallback.specialMoment?.isSpecial ? fallback.specialMoment.type || 'ordinary' : 'ordinary',
+    status: fallback.status || 'active',
+  }
+}
+
+function MemoryFormDialog({ memory = null, mode, onClose, onSave, status }) {
+  const firstFieldRef = useRef(null)
+  const [form, setForm] = useState(() => ({
+    title: memory?.title || memory?.displayTitle || '',
+    date: memoryDateValue(memory),
+    description: memory?.description || memory?.displayDescription || '',
+    tags: (memory?.tags || []).map((tag) => tag.label || tag.key).join(', '),
+  }))
+
+  useEffect(() => {
+    firstFieldRef.current?.focus()
+  }, [])
+
+  function updateField(key, value) {
+    setForm((current) => ({ ...current, [key]: value }))
+  }
+
+  async function handleSubmit(event) {
+    event.preventDefault()
+    await onSave(memoryPayloadFromForm(form, memory || {}))
+  }
+
+  return createPortal(
+    <dialog aria-labelledby="memory-form-title" className="modal-overlay active faithful-modal-open" onCancel={onClose} open>
+      <form className="modal-container faithful-edit-form" onSubmit={handleSubmit}>
+        <div className="modal-header">
+          <h3 className="modal-title" id="memory-form-title">{mode === 'edit' ? 'Edit memory' : 'Add memory'}</h3>
+          <button aria-label="Close memory form" className="modal-close" onClick={onClose} type="button">×</button>
+        </div>
+        <div className="modal-body">
+          <label className="form-group">
+            <span className="form-label">Title</span>
+            <input className="form-input" onChange={(event) => updateField('title', event.target.value)} ref={firstFieldRef} required type="text" value={form.title} />
+          </label>
+          <label className="form-group">
+            <span className="form-label">Date</span>
+            <input className="form-input" onChange={(event) => updateField('date', event.target.value)} required type="date" value={form.date} />
+          </label>
+          <label className="form-group">
+            <span className="form-label">Description</span>
+            <textarea className="form-textarea" onChange={(event) => updateField('description', event.target.value)} rows={5} value={form.description} />
+          </label>
+          <label className="form-group">
+            <span className="form-label">Tags</span>
+            <input className="form-input" onChange={(event) => updateField('tags', event.target.value)} placeholder="date night, favorite, travel" type="text" value={form.tags} />
+          </label>
+          {status?.message ? <p className={`workflow-feedback ${status.kind === 'error' ? 'workflow-feedback-error' : 'workflow-feedback-success'}`} role="status">{status.message}</p> : null}
+        </div>
+        <div className="modal-footer">
+          <button className="btn btn-secondary" onClick={onClose} type="button">Cancel</button>
+          <button className="btn btn-primary" disabled={status?.saving} type="submit">{status?.saving ? 'Saving...' : 'Save'}</button>
+        </div>
+      </form>
+    </dialog>,
+    document.body,
+  )
+}
+
+function DetailModal({ memory, onArchive, onClose, onEdit, status }) {
   const closeRef = useRef(null)
   useEffect(() => {
     if (!memory) return
@@ -80,8 +158,8 @@ function DetailModal({ memory, onClose }) {
         </div>
         <div className="modal-footer" style={{ justifyContent: 'space-between', width: '100%' }}>
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-            <button className="btn btn-secondary" type="button">✏️ Edit</button>
-            <button className="btn btn-danger" type="button">Archive</button>
+            <button className="btn btn-secondary" onClick={() => onEdit(memory)} type="button">Edit</button>
+            <button className="btn btn-danger" disabled={status?.saving} onClick={() => onArchive(memory)} type="button">Archive</button>
           </div>
           <button className="btn btn-secondary" onClick={onClose} type="button">Close</button>
         </div>
@@ -91,12 +169,57 @@ function DetailModal({ memory, onClose }) {
   )
 }
 
-export function TimelineView({ model }) {
+export function TimelineView({ model, onRefresh }) {
   const [selectedTag, setSelectedTag] = useState('all')
   const [selectedMemory, setSelectedMemory] = useState(null)
+  const [editingMemory, setEditingMemory] = useState(null)
+  const [formMode, setFormMode] = useState('')
+  const [status, setStatus] = useState({ kind: '', message: '', saving: false })
+  const writer = useOwnerWrite(onRefresh)
   const memories = useMemo(() => allMemories(model), [model])
   const filtered = selectedTag === 'all' ? memories : memories.filter((memory) => memory.tags.some((tag) => tag.key === selectedTag))
   const tags = model.filters.availableTags || []
+
+  async function saveForm(payload) {
+    setStatus({ kind: '', message: '', saving: true })
+    try {
+      if (formMode === 'edit' && editingMemory?.id) {
+        await writer.updateMemory(editingMemory.id, payload)
+      } else {
+        await writer.createMemory(payload)
+      }
+      setStatus({ kind: 'success', message: 'Memory saved.', saving: false })
+      setEditingMemory(null)
+      setFormMode('')
+    } catch (error) {
+      setStatus({ kind: 'error', message: error?.message || 'Editing is temporarily unavailable.', saving: false })
+    }
+  }
+
+  async function archiveSelected(memory) {
+    if (!window.confirm(`Archive "${memory.displayTitle}"?`)) return
+    setStatus({ kind: '', message: '', saving: true })
+    try {
+      await writer.archiveMemory(memory.id)
+      setSelectedMemory(null)
+      setStatus({ kind: 'success', message: 'Memory archived.', saving: false })
+    } catch (error) {
+      setStatus({ kind: 'error', message: error?.message || 'Editing is temporarily unavailable.', saving: false })
+    }
+  }
+
+  function openAddForm() {
+    setEditingMemory(null)
+    setFormMode('add')
+    setStatus({ kind: '', message: '', saving: false })
+  }
+
+  function openEditForm(memory) {
+    setSelectedMemory(null)
+    setEditingMemory(memory)
+    setFormMode('edit')
+    setStatus({ kind: '', message: '', saving: false })
+  }
 
   return (
     <section className="timeline-page">
@@ -108,9 +231,10 @@ export function TimelineView({ model }) {
         </div>
         <div className="page-actions">
           <span className="utility-chip">Story order</span>
-          <button className="btn btn-primary" type="button">+ Add Memory</button>
+          <button className="btn btn-primary" onClick={openAddForm} type="button">+ Add Memory</button>
         </div>
       </header>
+      {status.message && !formMode ? <p className={`workflow-feedback ${status.kind === 'error' ? 'workflow-feedback-error' : 'workflow-feedback-success'}`} role="status">{status.message}</p> : null}
 
       <div className="glass-card card-utility filter-toolbar timeline-filter-toolbar">
         <span className="filter-toolbar-label">Browse by tag:</span>
@@ -134,7 +258,19 @@ export function TimelineView({ model }) {
           )}
         </div>
       </div>
-      <DetailModal memory={selectedMemory} onClose={() => setSelectedMemory(null)} />
+      <DetailModal memory={selectedMemory} onArchive={archiveSelected} onClose={() => setSelectedMemory(null)} onEdit={openEditForm} status={status} />
+      {formMode ? (
+        <MemoryFormDialog
+          memory={editingMemory}
+          mode={formMode}
+          onClose={() => {
+            setFormMode('')
+            setEditingMemory(null)
+          }}
+          onSave={saveForm}
+          status={status}
+        />
+      ) : null}
     </section>
   )
 }

@@ -88,6 +88,7 @@ function settingsToCompatibility({ shared, privateResult, username }) {
         anniversaryConfig: privateData.anniversaryView || sharedData.anniversaryView || null,
         privacyToggles: {
           localOnlyMode: privateData.privacy?.localOnlyMode === true,
+          reducedMotion: privateData.privacy?.reducedMotion === true,
           hideOfflineWarning: false,
           unknownFields: {},
         },

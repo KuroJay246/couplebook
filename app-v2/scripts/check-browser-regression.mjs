@@ -340,7 +340,8 @@ async function runAuthenticatedDesktopCoverage(browser) {
     await waitForRouteContent(page, '/contract', 'Shared Relationship Contract')
     assert.equal(await page.getByText('Pillar I: Mutual Respect').count() > 0, true)
     assert.equal(await page.getByText('Pillar II: Absolute Trust').count() > 0, true)
-    assert.equal(await page.locator('main').getByRole('button', { name: /accept|save|delete|export|upload|draw|sign contract|sign & open vault/i }).count(), 0)
+    assert.equal(await page.locator('main').getByRole('button', { name: /delete|export|upload|draw|sign contract|sign & open vault/i }).count(), 0)
+    assert.equal(await page.locator('main').getByRole('button', { name: /accept contract|accepted/i }).count(), 1)
 
     const contractText = await page.locator('main').innerText()
     assert.equal(FORBIDDEN_CONTRACT_TEXT.test(contractText), false, 'Contract route rendered forbidden raw signature or legacy action text.')

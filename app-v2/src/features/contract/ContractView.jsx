@@ -1,5 +1,25 @@
-export function ContractView({ model }) {
+import { useState } from 'react'
+import { useOwnerWrite } from '../editing/useOwnerWrite.js'
+
+export function ContractView({ model, onRefresh }) {
   const signatures = [model.signatures?.currentUser, model.signatures?.partner].filter(Boolean)
+  const writer = useOwnerWrite(onRefresh)
+  const [status, setStatus] = useState({ kind: '', message: '', saving: false })
+  const currentAcceptance = model.acceptance?.currentUser
+  const accepted = currentAcceptance?.status === 'accepted'
+
+  async function handleAccept() {
+    if (accepted) return
+    if (!window.confirm('Record your acceptance of the relationship contract?')) return
+    setStatus({ kind: '', message: '', saving: true })
+    try {
+      await writer.acceptContract()
+      setStatus({ kind: 'success', message: 'Contract acceptance recorded.', saving: false })
+    } catch (error) {
+      setStatus({ kind: 'error', message: error?.message || 'Editing is temporarily unavailable.', saving: false })
+    }
+  }
+
   return (
     <section className="contract-page">
       <header className="page-header">
@@ -25,6 +45,12 @@ export function ContractView({ model }) {
             </div>
           )) : null}
         </div>
+        <div className="actions" style={{ marginTop: '1rem' }}>
+          <button className="btn btn-primary" disabled={accepted || status.saving} onClick={handleAccept} type="button">
+            {accepted ? 'Accepted' : status.saving ? 'Saving...' : 'Accept Contract'}
+          </button>
+        </div>
+        {status.message ? <p className={`workflow-feedback ${status.kind === 'error' ? 'workflow-feedback-error' : 'workflow-feedback-success'}`} role="status">{status.message}</p> : null}
       </div>
     </section>
   )

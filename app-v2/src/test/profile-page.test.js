@@ -6,7 +6,7 @@ async function readSource(relativePath) {
   return readFile(new URL(relativePath, import.meta.url), 'utf8')
 }
 
-test('profile route uses the read-only feature hook and shared-space view', async () => {
+test('profile route uses the feature hook and owner editing view', async () => {
   const profilePageSource = await readSource('../pages/ProfilePage.jsx')
   const profileViewSource = await readSource('../features/profile/ProfileView.jsx')
 
@@ -16,7 +16,10 @@ test('profile route uses the read-only feature hook and shared-space view', asyn
   assert.match(profileViewSource, /profiles-layout/)
   assert.match(profileViewSource, /profile-card/)
   assert.match(profileViewSource, /Shared Relationship Contract/)
-  assert.doesNotMatch(profileViewSource, /openEditProfile|saveProfile|type="file"/)
+  assert.match(profileViewSource, /useOwnerWrite/)
+  assert.match(profileViewSource, /ProfileEditDialog/)
+  assert.match(profileViewSource, /saveProfile/)
+  assert.doesNotMatch(profileViewSource, /type="file"/)
 })
 
 test('profile view keeps unavailable states calm and does not invent private details', async () => {
