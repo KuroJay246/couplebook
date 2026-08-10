@@ -22,7 +22,7 @@ test('dashboard page uses the dedicated feature slice instead of the migration p
   assert.match(viewSource, /model\.specialMoments/)
   assert.match(viewSource, /dashboard-story-band/)
   assert.match(viewSource, /quick-nav-container/)
-  assert.match(viewSource, /Relationship Summary/)
+  assert.match(viewSource, /Little Things/)
   assert.match(viewSource, /Birthday Page/)
   assert.match(legacyStyleSource, /\.dashboard-story-band/)
   assert.match(legacyStyleSource, /\.anniversary-card/)

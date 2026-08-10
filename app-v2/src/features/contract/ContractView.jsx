@@ -29,17 +29,17 @@ export function ContractView({ model, onRefresh }) {
         <div className="page-heading">
           <p className="page-eyebrow">Relationship Contract</p>
           <h1 className="page-title">📜 Shared Relationship Contract</h1>
-          <p className="page-subtitle">The promises you are keeping, the current status of each record, and the agreement history that is safe to show here.</p>
+          <p className="page-subtitle">The promises you are keeping and the deliberate acceptance that makes this page matter.</p>
         </div>
       </header>
       <div className="glass-card card-utility contract-card-profile">
         {model.agreement?.version ? (
-          <div className="faithful-chip-list" style={{ marginBottom: '1rem' }}>
+          <div className="faithful-chip-list contract-quiet-meta" style={{ marginBottom: '1rem' }}>
             <span className="utility-chip">Version {model.agreement.version}</span>
             <span className="utility-chip">{accepted ? 'Your acceptance is recorded' : 'Waiting on your acceptance'}</span>
           </div>
         ) : null}
-        <div className="contract-display-container">
+        <div className="contract-display-container contract-promises">
           {agreementSections.length > 0 ? agreementSections.map((section) => (
             <div className="contract-clause" key={section.id}>
               <div className="contract-clause-title">{section.heading}</div>
@@ -70,8 +70,11 @@ export function ContractView({ model, onRefresh }) {
           )) : null}
         </div>
         {history.length > 0 ? (
-          <div className="glass-card card-utility faithful-summary-card" style={{ marginTop: '1rem' }}>
-            <p className="dashboard-section-kicker">Agreement History</p>
+          <details className="glass-card card-utility faithful-summary-card contract-history-details" style={{ marginTop: '1rem' }}>
+            <summary className="timeline-filter-summary-control">
+              <span>Agreement details</span>
+              <span className="faithful-filter-summary">{history.length} saved entries</span>
+            </summary>
             <div className="faithful-list">
               {history.slice(0, 4).map((entry) => (
                 <div className="faithful-list-row" key={entry.id}>
@@ -86,7 +89,7 @@ export function ContractView({ model, onRefresh }) {
                 </div>
               ))}
             </div>
-          </div>
+          </details>
         ) : null}
         <div className="actions" style={{ marginTop: '1rem' }}>
           <button className="btn btn-primary" disabled={accepted || status.saving} onClick={handleAccept} type="button">

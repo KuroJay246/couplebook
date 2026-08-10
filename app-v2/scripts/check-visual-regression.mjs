@@ -32,7 +32,7 @@ const ROUTES = Object.freeze([
   { path: '/dashboard', heading: 'A place for the moments that still feel alive.', mode: 'authorized' },
   { path: '/timeline', heading: /Our Story/, mode: 'authorized' },
   { path: '/gallery', heading: /Our Shared Gallery/, mode: 'authorized' },
-  { path: '/profile', heading: /Relationship Profiles/, mode: 'authorized' },
+  { path: '/profile', heading: /Us/, mode: 'authorized' },
   { path: '/favorites', heading: /Favorite Things/, mode: 'authorized' },
   { path: '/settings', heading: /Application Settings/, mode: 'authorized' },
   { path: '/contract', heading: /Shared Relationship Contract/, mode: 'authorized' },

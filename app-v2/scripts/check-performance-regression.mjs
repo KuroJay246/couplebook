@@ -19,7 +19,7 @@ const ROUTES = Object.freeze([
   { path: '/dashboard', heading: 'A place for the moments that still feel alive.' },
   { path: '/timeline', heading: /Our Story/ },
   { path: '/gallery', heading: /Our Shared Gallery/ },
-  { path: '/profile', heading: /Relationship Profiles/ },
+  { path: '/profile', heading: /Us/ },
   { path: '/favorites', heading: /Favorite Things/ },
   { path: '/settings', heading: /Application Settings/ },
   { path: '/contract', heading: /Shared Relationship Contract/ },

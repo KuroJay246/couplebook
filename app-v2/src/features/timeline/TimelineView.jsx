@@ -14,12 +14,23 @@ function mediaLabel(memory) {
   return 'Saved memory'
 }
 
+function memoryStyle(memory) {
+  if (memory.specialMoment.isSpecial) return 'milestone'
+  if (memory.media.kind === 'video') return 'video'
+  if (memory.media.kind === 'image') return 'photo'
+  return 'written'
+}
+
 function TimelineCard({ memory, onSelect }) {
+  const style = memoryStyle(memory)
   return (
-    <article className={`timeline-card glass-card card-story ${memory.media.status !== 'storage-verified' ? 'timeline-card--media-unavailable' : ''}`}>
+    <article className={`timeline-card timeline-card--${style} glass-card card-story ${memory.media.status !== 'storage-verified' ? 'timeline-card--media-unavailable' : ''}`}>
       <div className="timeline-dot" aria-hidden="true" />
       <div className="timeline-card-header">
-        <h3 className="timeline-card-title">{memory.displayTitle}</h3>
+        <div>
+          <p className="timeline-card-kind">{mediaLabel(memory)}</p>
+          <h3 className="timeline-card-title">{memory.displayTitle}</h3>
+        </div>
         <time className="timeline-card-date">{memory.displayDate || 'Date review'}</time>
       </div>
       <div className="timeline-card-meta">
@@ -42,6 +53,11 @@ function TimelineCard({ memory, onSelect }) {
       </div>
     </article>
   )
+}
+
+function chapterLabel(memory) {
+  if (memory.date?.status === 'valid' && memory.date?.year) return String(memory.date.year)
+  return 'Date Review'
 }
 
 function memoryDateValue(memory) {
@@ -323,11 +339,20 @@ export function TimelineView({ model, onRefresh }) {
       </header>
       {status.message && !formMode ? <p className={`workflow-feedback ${status.kind === 'error' ? 'workflow-feedback-error' : 'workflow-feedback-success'}`} role="status">{status.message}</p> : null}
 
-      <div className="glass-card card-utility filter-toolbar timeline-filter-toolbar">
-        <div className="faithful-filter-grid">
+      <details className="glass-card card-utility filter-toolbar timeline-filter-toolbar">
+        <summary className="timeline-filter-summary-control">
+          <span>Find a memory</span>
+          <span className="faithful-filter-summary">
+            {filtered.length === memories.length
+              ? 'Full story'
+              : `${filtered.length} of ${memories.length}`}
+          </span>
+        </summary>
+        <div className="faithful-filter-grid timeline-filter-grid">
           <label className="form-group">
             <span className="filter-toolbar-label">Search memories</span>
             <input
+              aria-label="Search memories"
               className="form-input"
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search titles, details, and tags"
@@ -337,28 +362,28 @@ export function TimelineView({ model, onRefresh }) {
           </label>
           <label className="form-group">
             <span className="filter-toolbar-label">Year</span>
-            <select className="form-select" onChange={(event) => setSelectedYear(event.target.value)} value={selectedYear}>
+            <select aria-label="Filter by year" className="form-select" onChange={(event) => setSelectedYear(event.target.value)} value={selectedYear}>
               <option value="all">All years</option>
               {years.map((year) => <option key={year.key} value={year.key}>{year.label}</option>)}
             </select>
           </label>
           <label className="form-group">
             <span className="filter-toolbar-label">Month</span>
-            <select className="form-select" onChange={(event) => setSelectedMonth(event.target.value)} value={selectedMonth}>
+            <select aria-label="Filter by month" className="form-select" onChange={(event) => setSelectedMonth(event.target.value)} value={selectedMonth}>
               <option value="all">Any month</option>
               {monthOptions.map((month) => <option key={month.key} value={month.key}>{month.label}</option>)}
             </select>
           </label>
           <label className="form-group">
             <span className="filter-toolbar-label">Type</span>
-            <select className="form-select" onChange={(event) => setSelectedType(event.target.value)} value={selectedType}>
+            <select aria-label="Filter by memory type" className="form-select" onChange={(event) => setSelectedType(event.target.value)} value={selectedType}>
               <option value="all">All types</option>
               {types.map((type) => <option key={type.key} value={type.key}>{type.label}</option>)}
             </select>
           </label>
           <label className="form-group">
             <span className="filter-toolbar-label">Sort</span>
-            <select className="form-select" onChange={(event) => setSortOrder(event.target.value)} value={sortOrder}>
+            <select aria-label="Sort memories" className="form-select" onChange={(event) => setSortOrder(event.target.value)} value={sortOrder}>
               <option value="newest">Newest first</option>
               <option value="oldest">Oldest first</option>
             </select>
@@ -366,16 +391,16 @@ export function TimelineView({ model, onRefresh }) {
           <div className="form-group">
             <span className="filter-toolbar-label">Browse by tag</span>
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <button className={`tab-btn ${selectedTag === 'all' ? 'active' : ''}`} onClick={() => setSelectedTag('all')} type="button">All</button>
+              <button aria-label="Show all tags" className={`tab-btn ${selectedTag === 'all' ? 'active' : ''}`} onClick={() => setSelectedTag('all')} type="button">All</button>
               {tags.map((tag) => (
-                <button className={`tab-btn ${selectedTag === tag.key ? 'active' : ''}`} key={tag.key} onClick={() => setSelectedTag(tag.key)} type="button">
+                <button aria-label={`Filter by ${tag.label}`} className={`tab-btn ${selectedTag === tag.key ? 'active' : ''}`} key={tag.key} onClick={() => setSelectedTag(tag.key)} type="button">
                   {tag.label}
                 </button>
               ))}
             </div>
           </div>
           <div className="faithful-filter-actions">
-            <button className="btn btn-secondary" onClick={clearFilters} type="button">Clear filters</button>
+            <button aria-label="Clear timeline filters" className="btn btn-secondary" onClick={clearFilters} type="button">Clear filters</button>
             <p className="faithful-filter-summary">
               {filtered.length === memories.length
                 ? 'Showing the full story.'
@@ -383,14 +408,26 @@ export function TimelineView({ model, onRefresh }) {
             </p>
           </div>
         </div>
-      </div>
+      </details>
 
       <div className="timeline-container">
         <div className="timeline-line" />
         <div>
-          {filtered.length > 0 ? filtered.map((memory) => (
-            <TimelineCard key={memory.id} memory={memory} onSelect={setSelectedMemory} />
-          )) : (
+          {filtered.length > 0 ? filtered.map((memory, index) => {
+            const previous = filtered[index - 1]
+            const currentChapter = chapterLabel(memory)
+            const previousChapter = previous ? chapterLabel(previous) : null
+            return (
+              <div className="timeline-entry" key={memory.id}>
+                {currentChapter !== previousChapter ? (
+                  <div className="timeline-chapter-marker">
+                    <span>{currentChapter}</span>
+                  </div>
+                ) : null}
+                <TimelineCard memory={memory} onSelect={setSelectedMemory} />
+              </div>
+            )
+          }) : (
             <div className="glass-card card-utility timeline-empty-state">
               <h3>No memories match this view yet.</h3>
               <p>Try a different year, month, tag, or search phrase. Your saved memories will still be here when you clear the filters.</p>

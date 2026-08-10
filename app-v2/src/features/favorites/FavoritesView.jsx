@@ -3,13 +3,15 @@ import { createPortal } from 'react-dom'
 import { useOwnerWrite } from '../editing/useOwnerWrite.js'
 
 const EDITABLE_CATEGORIES = [
-  { key: 'food', label: 'Food' },
-  { key: 'songs', label: 'Songs' },
-  { key: 'movies', label: 'Movies' },
-  { key: 'places', label: 'Places' },
-  { key: 'memories', label: 'Memories' },
-  { key: 'notes', label: 'Notes' },
+  { key: 'food', label: 'Food', icon: '🍽️' },
+  { key: 'songs', label: 'Songs', icon: '🎵' },
+  { key: 'movies', label: 'Movies', icon: '🎬' },
+  { key: 'places', label: 'Places', icon: '📍' },
+  { key: 'memories', label: 'Memories', icon: '📖' },
+  { key: 'notes', label: 'Notes', icon: '✍️' },
 ]
+
+const CATEGORY_ICONS = Object.fromEntries(EDITABLE_CATEGORIES.map((category) => [category.key, category.icon]))
 
 function normalizeName(value) {
   return String(value || '').trim().toLowerCase()
@@ -123,7 +125,7 @@ function FavoriteSection({ canEdit, category, onAdd, onRemove, ownerId, search }
   return (
     <div className="favorites-section">
       <div className="favorites-section-title">
-        {category.label}
+        <span className="favorites-section-heading"><span aria-hidden="true">{category.icon || CATEGORY_ICONS[category.key] || '♡'}</span>{category.label}</span>
         {canEdit ? <button className="add-btn" onClick={() => onAdd(category)} type="button">+ Add</button> : null}
       </div>
       <ul className="favorites-list">
@@ -149,7 +151,7 @@ function FavoritesCard({ canEdit, onAdd, onRemove, person, index, search }) {
       : EDITABLE_CATEGORIES.slice(0, 4).map((category) => ({ ...category, items: [] }))
   return (
     <div className="glass-card card-story favorites-card">
-      <h2 style={{ fontFamily: 'var(--font-accent)', textAlign: 'center', color, marginBottom: '1.5rem' }}>{person.displayName}'s Favorites</h2>
+      <h2 style={{ fontFamily: 'var(--font-accent)', textAlign: 'center', color, marginBottom: '1.5rem' }}>{person.displayName}</h2>
       {categories.map((category) => (
         <FavoriteSection canEdit={canEdit} category={category} key={category.key} onAdd={onAdd} onRemove={onRemove} ownerId={person.id} search={search} />
       ))}
@@ -227,8 +229,8 @@ export function FavoritesView({ model, onRefresh }) {
       <section className="glass-card card-utility faithful-summary-card">
         <div className="dashboard-section-heading">
           <div>
-            <p className="dashboard-section-kicker">Browse Favorites</p>
-            <h2 className="dashboard-subtitle">Find a shared detail fast</h2>
+            <p className="dashboard-section-kicker">Shared Matches</p>
+            <h2 className="dashboard-subtitle">Things you both reach for</h2>
           </div>
         </div>
         <div className="faithful-filter-grid">
@@ -243,9 +245,9 @@ export function FavoritesView({ model, onRefresh }) {
           </div>
         </div>
         {sharedMatches.length > 0 ? (
-          <div className="faithful-chip-list">
+          <div className="faithful-chip-list favorites-shared-match-list">
             {sharedMatches.slice(0, 6).map((match) => (
-              <span className="utility-chip" key={match.id}>{match.label}</span>
+              <span className="utility-chip favorites-shared-match" key={match.id}>{CATEGORY_ICONS[match.categoryKey] || '♡'} {match.label}</span>
             ))}
           </div>
         ) : null}

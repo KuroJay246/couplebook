@@ -281,7 +281,7 @@ button.timeline-media-preview {
 }
 
 .special-page-standalone .card {
-  width: min(100%, 560px);
+  width: min(100%, 920px);
 }
 
 .special-page-birthday {
@@ -289,7 +289,10 @@ button.timeline-media-preview {
 }
 
 .special-page-birthday .card {
-  background: rgba(20, 9, 38, 0.8);
+  background:
+    radial-gradient(circle at 18% 18%, rgba(255, 214, 102, 0.18), transparent 30%),
+    radial-gradient(circle at 88% 12%, rgba(255, 74, 107, 0.16), transparent 28%),
+    rgba(20, 9, 38, 0.86);
   border-color: rgba(243, 229, 255, 0.18);
 }
 
@@ -298,7 +301,9 @@ button.timeline-media-preview {
 }
 
 .special-page-valentine .card {
-  background: rgba(33, 10, 17, 0.78);
+  background:
+    linear-gradient(135deg, rgba(255, 74, 107, 0.16), transparent 38%),
+    rgba(33, 10, 17, 0.82);
   border-color: rgba(255, 226, 235, 0.18);
 }
 
@@ -307,8 +312,88 @@ button.timeline-media-preview {
 }
 
 .special-page-confession .card {
-  background: rgba(28, 8, 16, 0.76);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.08), transparent 34%),
+    rgba(17, 10, 18, 0.86);
   border-color: rgba(255, 216, 226, 0.18);
+}
+
+.special-page-layout {
+  display: grid;
+  grid-template-columns: minmax(210px, 0.72fr) minmax(0, 1.28fr);
+  gap: 1.5rem;
+  align-items: stretch;
+}
+
+.special-page-aside {
+  display: grid;
+  align-content: center;
+  gap: 0.85rem;
+  min-height: 360px;
+  padding: 1.25rem;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.special-page-aside .badge {
+  width: 72px;
+  height: 72px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  font-size: 2rem;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.special-page-aside h2 {
+  margin: 0;
+  font-family: var(--font-accent);
+  font-size: clamp(1.65rem, 3vw, 2.4rem);
+}
+
+.special-page-aside p {
+  margin: 0;
+  color: var(--color-secondary-text);
+  line-height: 1.6;
+}
+
+.special-page-letter {
+  display: grid;
+  align-content: center;
+  gap: 1rem;
+  min-height: 360px;
+  padding: 1.5rem;
+  border-radius: 18px;
+  background: rgba(0, 0, 0, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.special-page-letter h1 {
+  margin: 0;
+  font-family: var(--font-accent);
+  font-size: clamp(2.1rem, 4vw, 3.6rem);
+  line-height: 1.02;
+}
+
+.special-page-actions {
+  grid-column: 1 / -1;
+  justify-content: center;
+}
+
+.special-page-valentine .special-page-letter {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.02)),
+    rgba(0, 0, 0, 0.14);
+}
+
+.special-page-confession .special-page-layout {
+  grid-template-columns: minmax(0, 0.42fr) minmax(0, 1.58fr);
+}
+
+.special-page-confession .special-page-aside {
+  min-height: 280px;
+  opacity: 0.86;
 }
 
 .special-page-section {
@@ -364,6 +449,16 @@ button.timeline-media-preview {
     min-height: auto;
     padding-block: 1.5rem 6.5rem;
     place-items: start center;
+  }
+
+  .special-page-layout,
+  .special-page-confession .special-page-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .special-page-aside,
+  .special-page-letter {
+    min-height: auto;
   }
 }
 

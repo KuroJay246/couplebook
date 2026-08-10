@@ -9,23 +9,32 @@ const COPY = {
   birthday: {
     className: 'special-page-birthday',
     badge: '🎂',
-    title: 'Birthday Page',
+    title: 'Birthday Chapter',
     fallback: 'A private birthday chapter from the legacy book.',
     returnLabel: 'Return to Dashboard',
+    kicker: 'A day to celebrate',
+    sideTitle: 'The reveal',
+    sideCopy: 'A small birthday stage for the date, the note, and the memories attached to this page.',
   },
   valentine: {
     className: 'special-page-valentine',
     badge: '💌',
-    title: 'Valentine Page',
+    title: 'Valentine Letter',
     fallback: 'A private Valentine chapter from the legacy book.',
     returnLabel: 'Return to Dashboard',
+    kicker: 'A kept love note',
+    sideTitle: 'For us',
+    sideCopy: 'A slower romantic page built around the message first, then the date and memories beneath it.',
   },
   confession: {
     className: 'special-page-confession',
     badge: '💖',
-    title: 'Confession Page',
+    title: 'Private Confession',
     fallback: 'A private confession chapter from the legacy book.',
     returnLabel: 'Return to Dashboard',
+    kicker: 'Private reading',
+    sideTitle: 'Held quietly',
+    sideCopy: 'An intimate letter space where the words stay centered and the controls stay secondary.',
   },
 }
 
@@ -169,13 +178,20 @@ export function SpecialMomentFrame({ momentKey }) {
 
   return (
     <section className={`special-page-standalone ${copy.className}`}>
-      <main className="card glass-card" aria-live="polite">
-        <div className="badge">{copy.badge}</div>
-        <h1>{title}</h1>
-        <p className="faithful-special-subtitle">{subtitle}</p>
-        {model.moment?.date ? <p className="faithful-empty-copy">{new Date(model.moment.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p> : null}
-        <SpecialMomentSections model={model} fallback={copy.fallback} />
-        <div className="actions">
+      <main className="card glass-card special-page-layout" aria-live="polite">
+        <aside className="special-page-aside" aria-hidden="true">
+          <div className="badge">{copy.badge}</div>
+          <p className="dashboard-section-kicker">{copy.kicker}</p>
+          <h2>{copy.sideTitle}</h2>
+          <p>{copy.sideCopy}</p>
+        </aside>
+        <div className="special-page-letter">
+          <h1>{title}</h1>
+          <p className="faithful-special-subtitle">{subtitle}</p>
+          {model.moment?.date ? <p className="faithful-empty-copy">{new Date(model.moment.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p> : null}
+          <SpecialMomentSections model={model} fallback={copy.fallback} />
+        </div>
+        <div className="actions special-page-actions">
           <button className="btn btn-secondary" onClick={() => setEditing(true)} type="button">Edit</button>
           <Link className="btn btn-primary" to="/dashboard">{copy.returnLabel}</Link>
           <Link className="btn btn-secondary" to="/gallery">Open Gallery</Link>

@@ -76,9 +76,9 @@ function Milestones({ section }) {
       <div className="glass-card card-story">
         <div className="dashboard-section-heading">
           <div>
-            <p className="dashboard-section-kicker">Milestones</p>
-            <h3 className="dashboard-subtitle">Dual anniversary counters</h3>
-            <p className="dashboard-section-copy">Relationship time stays present as supporting context.</p>
+          <p className="dashboard-section-kicker">Coming Up</p>
+            <h3 className="dashboard-subtitle">Dates worth holding close</h3>
+            <p className="dashboard-section-copy">Anniversaries and birthdays sit together as the next page markers.</p>
           </div>
         </div>
         <div className="anniversaries-container">
@@ -90,7 +90,7 @@ function Milestones({ section }) {
       <div className="glass-card card-story birthdays-card">
         <div className="dashboard-section-heading">
           <div>
-            <p className="dashboard-section-kicker">Special Dates</p>
+            <p className="dashboard-section-kicker">Birthdays</p>
             <h3 className="dashboard-subtitle">Upcoming birthdays</h3>
           </div>
         </div>
@@ -117,8 +117,8 @@ function SpecialMoments({ section }) {
   return (
     <div className="glass-card card-story special-moments-card">
       <div>
-        <p className="dashboard-section-kicker">Special Pages</p>
-        <h3 className="dashboard-subtitle">Moments with their own page</h3>
+        <p className="dashboard-section-kicker">Keep Exploring</p>
+        <h3 className="dashboard-subtitle">Private pages with their own feeling</h3>
         <p className="dashboard-section-copy">Jump back into the birthday, Valentine, and confession spaces without digging through the full archive.</p>
       </div>
       <div className="special-moment-list">
@@ -147,9 +147,9 @@ function RelationshipSummary({ model }) {
     <section className="glass-card card-utility faithful-summary-card">
       <div className="dashboard-section-heading">
         <div>
-          <p className="dashboard-section-kicker">Relationship Summary</p>
-          <h3 className="dashboard-subtitle">What feels closest right now</h3>
-          <p className="dashboard-section-copy">Quick access to the pages you are most likely to reopen.</p>
+          <p className="dashboard-section-kicker">Little Things</p>
+          <h3 className="dashboard-subtitle">The details that make it yours</h3>
+          <p className="dashboard-section-copy">A small count of what this book is already holding.</p>
         </div>
       </div>
       <div className="faithful-stat-grid">
@@ -161,8 +161,8 @@ function RelationshipSummary({ model }) {
         ))}
       </div>
       <div className="faithful-inline-actions">
-        <Link className="btn btn-primary" to="/favorites">Open Favorites</Link>
-        <Link className="btn btn-secondary" to="/contract">Open Contract</Link>
+        <Link className="btn btn-primary" to="/favorites">Favorite Things</Link>
+        <Link className="btn btn-secondary" to="/contract">Our Promises</Link>
       </div>
     </section>
   )
@@ -186,7 +186,7 @@ export function DashboardView({ model }) {
       <div className="dashboard-grid">
         <section className="glass-card card-hero dashboard-story-band">
           <div className="dashboard-story-copy">
-            <p className="dashboard-section-kicker">Story Entrance</p>
+            <p className="dashboard-section-kicker">Today In Us</p>
             <h2 className="dashboard-story-title">Pick up where your story left off.</h2>
             <p className="dashboard-story-text">This private home opens like the first page of your memory book: recent moments first, upcoming dates close behind, and the sentimental pages always within reach.</p>
             <div className="dashboard-story-actions">
@@ -208,7 +208,7 @@ export function DashboardView({ model }) {
         <RecentMemories section={model.recentMemories} />
         <div className="dashboard-column dashboard-column--support">
           <div className="glass-card card-utility clock-card">
-            <p className="dashboard-section-kicker">Right Now</p>
+            <p className="dashboard-section-kicker">Today</p>
             <div className="live-time">{model.hero.timestampLabel}</div>
             <div className="live-date">{model.hero.dateLabel}</div>
           </div>
@@ -219,8 +219,8 @@ export function DashboardView({ model }) {
         <section className="dashboard-nav-shell">
           <div className="dashboard-section-heading">
             <div>
-              <p className="dashboard-section-kicker">Quick Access</p>
-              <h3 className="dashboard-subtitle">Everything important stays one step away</h3>
+              <p className="dashboard-section-kicker">Keep Exploring</p>
+              <h3 className="dashboard-subtitle">The rest of the book stays one step away</h3>
             </div>
           </div>
           <div className="quick-nav-container">

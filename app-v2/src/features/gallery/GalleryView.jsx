@@ -40,8 +40,9 @@ function galleryTileLabel(item) {
 }
 
 function GalleryTile({ item, onSelect }) {
+  const mediaClass = item.media.kind === 'video' ? 'gallery-item--video' : item.media.kind === 'image' ? 'gallery-item--photo' : 'gallery-item--written'
   return (
-    <article className={`gallery-item ${item.specialMoment.isSpecial ? 'gallery-item--special' : ''} ${item.media.status !== 'storage-verified' ? 'gallery-item--unavailable' : ''}`}>
+    <article className={`gallery-item ${mediaClass} ${item.specialMoment.isSpecial ? 'gallery-item--special' : ''} ${item.media.status !== 'storage-verified' ? 'gallery-item--unavailable' : ''}`}>
       <button aria-label={galleryTileLabel(item)} className="gallery-media-frame" onClick={() => onSelect(item)} type="button">
         <div className="gallery-img" />
         <span className="gallery-media-status">{mediaStatus(item)}</span>
@@ -211,7 +212,7 @@ export function GalleryView({ model }) {
 
       <section className="glass-card gallery-toolbar">
         <div className="gallery-toolbar-copy">
-          <p className="gallery-toolbar-label">Collection view</p>
+          <p className="gallery-toolbar-label">Album View</p>
           <h2 className="gallery-filter-summary">{filter === 'all' ? 'All visual memories' : filter === 'photos' ? 'Photo memories' : 'Video memories'}</h2>
           <p className="gallery-filter-detail">{filtered.length} {filtered.length === 1 ? 'result' : 'results'} across photos, videos, and protected memory references.</p>
         </div>
