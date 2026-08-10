@@ -11,6 +11,20 @@ function normalizeName(value) {
   return String(value || '').trim().toLowerCase()
 }
 
+function relationshipDisplayName(value, index = 0) {
+  const normalized = normalizeName(value)
+  if (normalized === 'approved reader') return 'Jaylan'
+  if (normalized === 'partner record') return 'Omia'
+  return value || (index === 0 ? 'Jaylan' : 'Omia')
+}
+
+function relationshipTitle(title, people) {
+  const cleaned = String(title || '').replaceAll('Approved Reader', relationshipDisplayName('Approved Reader', 0)).replaceAll('Partner Record', relationshipDisplayName('Partner Record', 1))
+  if (cleaned.trim()) return cleaned
+  if (people.length >= 2) return `${relationshipDisplayName(people[0].displayName, 0)} and ${relationshipDisplayName(people[1].displayName, 1)}`
+  return 'About us'
+}
+
 function isOwnerProfile(person, approvedUser) {
   const currentNames = [approvedUser?.username, approvedUser?.displayName, approvedUser?.profileName].map(normalizeName).filter(Boolean)
   return currentNames.includes(normalizeName(person.id)) || currentNames.includes(normalizeName(person.displayName))
@@ -95,12 +109,13 @@ function ProfileEditDialog({ onClose, onSave, person, status }) {
 function ProfileCard({ canEdit, onEdit, person, index }) {
   const tone = personTone(index)
   const togetherDays = daysTogether(person.joinedDate)
+  const displayName = relationshipDisplayName(person.displayName, index)
   return (
     <div className={`glass-card card-story profile-card ${tone}-side`}>
       <div className="profile-avatar-container">
         <div className="profile-avatar" aria-hidden="true" />
       </div>
-      <h2 className="profile-name">{person.displayName}</h2>
+      <h2 className="profile-name">{displayName}</h2>
       <span className="badge" style={{ background: tone === 'jaylan' ? 'rgba(255, 74, 107, 0.15)' : 'rgba(139, 92, 246, 0.15)', color: tone === 'jaylan' ? 'var(--color-jaylan)' : 'var(--color-omia)', marginBottom: '1rem' }}>One half of us</span>
       <p className="profile-bio">{person.bio || 'A personal note is waiting to be written.'}</p>
       <div className="profile-meta-list">
@@ -144,6 +159,7 @@ export function ProfileView({ model, onRefresh }) {
       details: [],
     }, ...basePeople]
   }, [model.people, writer.approvedUser])
+  const displayRelationshipTitle = relationshipTitle(model.relationship?.title, people)
 
   async function saveProfile(payload) {
     setStatus({ kind: '', message: '', saving: true })
@@ -170,7 +186,7 @@ export function ProfileView({ model, onRefresh }) {
         <div className="dashboard-section-heading">
           <div>
             <p className="dashboard-section-kicker">Our Story</p>
-            <h2 className="dashboard-subtitle">{model.relationship?.title || 'About us'}</h2>
+            <h2 className="dashboard-subtitle">{displayRelationshipTitle}</h2>
             <p className="dashboard-section-copy">{model.relationship?.summary}</p>
           </div>
         </div>

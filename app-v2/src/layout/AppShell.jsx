@@ -19,6 +19,11 @@ const NAV_ITEMS = [
 const routePaths = new Set(protectedRouteMeta.map((route) => route.path))
 const visibleNavItems = NAV_ITEMS.filter((item) => routePaths.has(item.path))
 
+function surfaceDisplayName(value) {
+  if (String(value || '').trim().toLowerCase() === 'approved reader') return 'Jaylan'
+  return value
+}
+
 function NavList({ items, onNavigate }) {
   return (
     <ul className="nav-links">
@@ -93,7 +98,7 @@ function Sidebar({ items, onClose, onNavigate, open, signOut }) {
 export function AppShell() {
   const [menuOpen, setMenuOpen] = useState(false)
   const { approvedUser, signOut, user } = useAuth()
-  const displayName = approvedUser?.displayName || approvedUser?.username || user?.email || 'Guest'
+  const displayName = surfaceDisplayName(approvedUser?.displayName || approvedUser?.username || user?.email) || 'Guest'
   const mainItems = visibleNavItems.filter((item) => item.main)
 
   return (
