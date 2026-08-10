@@ -72,7 +72,6 @@ try {
 
   const documents = await readTargetDocuments(db, migrationPackage)
   const rules = fs.readFileSync(path.join(repoRoot, 'firestore.rules'), 'utf8')
-  const appV2Rules = fs.readFileSync(path.join(repoRoot, 'firestore.app-v2.rules'), 'utf8')
   const metadata = {
     projectId,
     createdAt: new Date().toISOString(),
@@ -82,7 +81,7 @@ try {
     staticProductionCommit: getGitCommit(repoRoot),
     hostingRelease: getHostingReleaseMetadata(projectId, repoRoot),
   }
-  const backup = { metadata, documents, rules, appV2Rules }
+  const backup = { metadata, documents, rules }
   const checksum = sha256(withoutKeys(backup, new Set(['checksum'])))
   backup.metadata.checksum = checksum
 

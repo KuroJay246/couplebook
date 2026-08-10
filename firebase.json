@@ -4,7 +4,6 @@
     "ignore": [
       "firebase.json",
       "firestore.rules",
-      "firestore.app-v2.rules",
       "**/.*",
       "**/node_modules/**",
       "**/*.map",

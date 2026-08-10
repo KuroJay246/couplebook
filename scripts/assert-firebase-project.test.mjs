@@ -10,7 +10,7 @@ const validOptions = Object.freeze({
   migrationProjectId: REQUIRED_PROJECT_ID,
   firebaserc: { projects: { default: REQUIRED_PROJECT_ID } },
   firebaseJsonText: JSON.stringify({ hosting: { public: 'public' } }),
-  firebaseAppV2JsonText: JSON.stringify({ firestore: { rules: 'firestore.app-v2.rules' } }),
+  firebaseAppV2JsonText: JSON.stringify({ firestore: { rules: 'firestore.rules' } }),
   appEnv: {
     VITE_FIREBASE_PROJECT_ID: REQUIRED_PROJECT_ID,
     VITE_FIREBASE_AUTH_DOMAIN: `${REQUIRED_PROJECT_ID}.firebaseapp.com`,

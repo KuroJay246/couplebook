@@ -31,7 +31,7 @@ import { buildSpecialMomentContentModel } from '../features/specialMoments/speci
 import { buildTimelineReadModel } from '../features/timeline/timelineReadModel.js'
 
 const projectId = 'demo-couplebook-app-v2'
-const rules = readFileSync(path.resolve('../firestore.app-v2.rules'), 'utf8')
+const rules = readFileSync(path.resolve('../firestore.rules'), 'utf8')
 const hasEmulator = Boolean(process.env.FIRESTORE_EMULATOR_HOST)
 
 const ids = Object.freeze({
@@ -124,7 +124,7 @@ function domainRefs(db, coupleId = ids.couple, uid = ids.memberOne) {
   ]
 }
 
-test('signed out cannot read or write candidate app-v2 data', { skip: !hasEmulator }, async () => {
+test('signed out cannot read or write app-v2 data', { skip: !hasEmulator }, async () => {
   const db = signedOut()
   for (const reference of domainRefs(db)) {
     await assertFails(getDoc(reference))
@@ -179,7 +179,7 @@ test('pending, unauthorized, inactive, and cross-couple users fail closed', { sk
   }
 })
 
-test('active members can perform valid candidate emulator writes', { skip: !hasEmulator }, async () => {
+test('active members can perform valid emulator writes', { skip: !hasEmulator }, async () => {
   const db = authed(ids.memberOne)
   await assertSucceeds(setDoc(doc(db, 'couples', ids.couple, 'profiles', ids.memberOne), {
     schemaVersion: 1,
@@ -269,7 +269,7 @@ test('active members can perform valid candidate emulator writes', { skip: !hasE
   }))
 })
 
-test('candidate write rules reject unauthorized, cross-couple, partner-private, and malformed writes', { skip: !hasEmulator }, async () => {
+test('write rules reject unauthorized, cross-couple, partner-private, and malformed writes', { skip: !hasEmulator }, async () => {
   const db = authed(ids.memberOne)
   await assertFails(getDoc(doc(db, 'couples', ids.couple, 'unknown', 'doc')))
   await assertFails(setDoc(doc(db, 'couples', ids.couple, 'profiles', ids.memberTwo), { schemaVersion: 1, name: 'Changed' }))
@@ -385,7 +385,7 @@ test('candidate write rules reject unauthorized, cross-couple, partner-private, 
   }
 })
 
-test('candidate revision rules reject stale and conflicting same-document writes', { skip: !hasEmulator }, async () => {
+test('revision rules reject stale and conflicting same-document writes', { skip: !hasEmulator }, async () => {
   const memberOneDb = authed(ids.memberOne)
   const memberTwoDb = authed(ids.memberTwo)
 

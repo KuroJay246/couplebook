@@ -16,7 +16,13 @@
     "check:prototype": "node scripts/qa/check-prototype.js",
     "check:docs": "node scripts/qa/check-docs.js",
     "check:all": "node scripts/qa/check-all.js",
-    "release:preflight": "set EXPECTED_FIREBASE_PROJECT_ID=couplebook-97830&& node scripts/assert-firebase-project.mjs --project couplebook-97830"
+    "docs:check": "node scripts/qa/check-docs.js",
+    "app:v2:dev": "npm --prefix app-v2 run dev",
+    "app:v2:build": "npm --prefix app-v2 run build",
+    "app:v2:test": "npm --prefix app-v2 test",
+    "product:qa": "node scripts/product-qa.mjs",
+    "product:audit": "node scripts/product-audit.mjs",
+    "release:preflight": "set EXPECTED_FIREBASE_PROJECT_ID=couplebook-97830&& node scripts/assert-firebase-project.mjs --project couplebook-97830 && npm run docs:check"
   },
   "keywords": [
     "relationship",

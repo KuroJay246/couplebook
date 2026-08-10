@@ -12,7 +12,7 @@ export const SCHEMA_VERSION = 1
 const repoRoot = path.resolve(process.cwd(), '..')
 const memoryPath = path.join(repoRoot, 'core', 'memories.json')
 const statePath = path.join(repoRoot, 'core', 'state.js')
-const legacyRulesPath = path.join(repoRoot, 'firestore.rules')
+const rulesPath = path.join(repoRoot, 'firestore.rules')
 const packageRoot = path.join(process.cwd(), 'local-migration-packages', REQUIRED_PROJECT_ID)
 
 function readText(filePath) {
@@ -42,7 +42,7 @@ function cleanText(value, maxLength) {
 }
 
 function extractLegacyApprovedUids() {
-  const source = readText(legacyRulesPath)
+  const source = readText(rulesPath)
   const uids = [...source.matchAll(/'([A-Za-z0-9]{20,40})'/g)].map((match) => match[1])
   return [...new Set(uids)].slice(0, 2)
 }
