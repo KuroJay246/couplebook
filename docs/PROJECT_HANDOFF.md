@@ -36,4 +36,4 @@ Public route:
 - Partner account remains pending.
 - Firebase Storage and private media migration remain deferred.
 - Production deployment is not part of repository standardization.
-- Historical docs may contain old phase language; active workflow docs live in `docs/`.
+- Historical docs may contain old phase language; active workflow docs live in `README.md` and the top-level `docs/` canonical set.

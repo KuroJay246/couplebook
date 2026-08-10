@@ -32,9 +32,6 @@
   ],
   "author": "Jaylan & Omia",
   "license": "ISC",
-  "dependencies": {
-    "firebase": "^12.14.0"
-  },
   "devDependencies": {
     "playwright": "1.61.1"
   }

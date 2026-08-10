@@ -25,6 +25,10 @@ Rules coverage includes signed-out denial, active-member access, pending and ina
 
 Browser checks are local app-v2 checks. Authenticated production browser checks require explicit authorization and a signed-in session.
 
+Automated browser checks use fixture-based auth through `window.__COUPLEBOOK_BROWSER_TEST__`. They must not commit Playwright auth-state files, passwords, browser profiles, traces, videos, or private screenshots. Manual real-owner acceptance is separate from fixture-based automation and must be reported as manual, read-only or write-authorized, and production or local.
+
+The current local browser scripts use Chromium through Playwright. Cross-browser support is available through Playwright dependencies, but Firefox and WebKit are not part of the default fast QA command.
+
 ## Reporting Standard
 
 Always report:

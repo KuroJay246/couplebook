@@ -27,6 +27,20 @@ firebase-service-account*.json
 .parcel-cache/
 .vite/
 coverage/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+playwright-traces/
+traces/
+videos/
+screenshots/
+*.trace.zip
+*.har
+*.webm
+.auth/
+auth-state*.json
+storage-state*.json
 tmp/
 temp/
 hosting..cache/
@@ -54,6 +68,7 @@ app-v2/local-migration-packages/
 .local-backups/
 .local-migration-packages/
 .visual-audit/
+.visual-product-review/
 Couple Book Private Media/
 Couple Book Media Recovery.manifests/
 media-inventory*.json

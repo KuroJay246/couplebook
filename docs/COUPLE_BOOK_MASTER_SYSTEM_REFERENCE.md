@@ -29,7 +29,7 @@ The active Firestore rules source is `firestore.rules`. The app-v2 emulator conf
 
 ## Write Model
 
-Client writes are gated by `VITE_WRITE_MODE=firestore-emulator-write` or another explicitly approved Firestore write mode. The write service verifies:
+Client writes default to disabled. `app-v2/.env.example` uses `VITE_WRITE_MODE=production-write-disabled`; local write testing should use `firestore-emulator-write`. Production writes require explicit approval and `firestore-production-write` in a production build. The write service verifies:
 
 - Firestore is configured.
 - The authenticated user matches the approved user.

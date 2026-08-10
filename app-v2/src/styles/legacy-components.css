@@ -384,6 +384,7 @@
   position: absolute;
   top: 1.5rem;
   right: 1.5rem;
+  z-index: 2;
   background: rgba(255,255,255,0.1);
   border: none;
   color: white;

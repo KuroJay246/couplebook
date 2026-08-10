@@ -12,6 +12,15 @@ Current app surface: `app-v2`, a Vite React app protected by Firebase Auth and F
 - Full local audit: `npm run product:audit`
 - Docs guard: `npm run docs:check`
 
+## Deployment
+
+Deployment is target-specific and approval-gated.
+
+- Hosting release: `firebase deploy --only hosting --project couplebook-97830`
+- Firestore rules release, only when rules changed and were approved: `firebase deploy --only firestore:rules --project couplebook-97830`
+- Do not use generic `firebase deploy` as the normal Couple Book release command.
+- Rollback is performed from Firebase Hosting release history for `couplebook-97830`, using the last known good Hosting version.
+
 ## Boundaries
 
 - Firebase project: `couplebook-97830`
