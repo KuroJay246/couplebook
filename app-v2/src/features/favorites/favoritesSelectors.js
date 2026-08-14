@@ -1,9 +1,13 @@
 import { isPlainObject, normalizePersonKey, toTrimmedString } from '../../data/adapterUtils.js'
 
-const FAVORITE_CATEGORY_ORDER = ['food', 'places', 'hobbies', 'activities']
+const FAVORITE_CATEGORY_ORDER = ['food', 'songs', 'movies', 'places', 'memories', 'notes', 'hobbies', 'activities']
 const FAVORITE_CATEGORY_LABELS = Object.freeze({
   food: 'Food',
+  songs: 'Songs',
+  movies: 'Movies',
   places: 'Places',
+  memories: 'Memories',
+  notes: 'Notes',
   hobbies: 'Hobbies',
   activities: 'Activities',
 })
@@ -133,8 +137,6 @@ export function selectFavoritePeople({ favoritesSource, profileSource } = {}) {
       })
 
       const itemCount = categories.reduce((total, category) => total + category.itemCount, 0)
-      if (itemCount === 0) return []
-
       const profileIdentity = profileIdentities.get(ownerKey)
       const unknownCategories = isPlainObject(ownerFavorites.unknownCategories) ? Object.keys(ownerFavorites.unknownCategories) : []
       const displayName = profileIdentity?.displayName || ownerKey

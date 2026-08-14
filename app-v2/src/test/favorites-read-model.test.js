@@ -105,7 +105,7 @@ test('favorites read model keeps two people, exact overlap, and related links ho
   assert.match(model.sourceStatus.notes.join(' '), /favorite field stays tucked away/i)
 })
 
-test('favorites read model stays partial when only one preserved collection is available', () => {
+test('favorites read model keeps empty owner documents available for first-item edits', () => {
   const model = buildFavoritesReadModel({
     compatibilitySnapshot: createSnapshot({
       sources: {
@@ -166,11 +166,11 @@ test('favorites read model stays partial when only one preserved collection is a
     }),
   })
 
-  assert.equal(model.status, 'partial')
-  assert.equal(model.people.length, 1)
+  assert.equal(model.status, 'ready')
+  assert.equal(model.people.length, 2)
   assert.equal(model.people[0].displayName, 'Jaylan')
   assert.equal(model.shared.exactMatches.length, 0)
-  assert.match(model.sourceStatus.notes.join(' '), /One preserved collection is visible here already/)
+  assert.match(model.sourceStatus.notes.join(' '), /Different favorites, one shared collection/)
 })
 
 test('favorites read model distinguishes empty, unavailable, and invalid states', () => {
@@ -310,9 +310,9 @@ test('favorites read model distinguishes empty, unavailable, and invalid states'
     }),
   })
 
-  assert.equal(emptyModel.status, 'empty')
-  assert.equal(emptyModel.people.length, 0)
-  assert.match(emptyModel.sourceStatus.notes.join(' '), /Favorites will gather here as the shared book grows\./)
+  assert.equal(emptyModel.status, 'ready')
+  assert.equal(emptyModel.people.length, 2)
+  assert.match(emptyModel.sourceStatus.notes.join(' '), /Different favorites, one shared collection/)
   assert.equal(unavailableModel.status, 'unavailable')
   assert.match(unavailableModel.sourceStatus.notes.join(' '), /saved favorites remain safely in the legacy book/i)
   assert.equal(invalidModel.status, 'invalid')
