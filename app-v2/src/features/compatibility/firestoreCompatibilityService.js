@@ -33,6 +33,7 @@ function profilesToCompatibility(result) {
       anniversaryView: entry.anniversaryView || null,
       joinedDate: entry.joinedDate || null,
       birthday: entry.birthday || null,
+      revision: Number.isInteger(entry.revision) && entry.revision > 0 ? entry.revision : 0,
       unknownFields: {},
     }
   }
@@ -54,6 +55,7 @@ function favoritesToCompatibility(result, profiles) {
     const owner = labelByUid.get(entry.uid) || normalizePersonKey(entry.uid)
     participantOrder.push(owner)
     favoritesByOwner[owner] = {
+      revision: Number.isInteger(entry.revision) && entry.revision > 0 ? entry.revision : 0,
       categories: {
         food: entry.favorites?.food || [],
         places: entry.favorites?.places || [],
@@ -83,11 +85,13 @@ function settingsToCompatibility({ shared, privateResult, username }) {
     data: {
       username,
       theme: privateData.theme || sharedData.theme || null,
+      revision: Number.isInteger(privateData.revision) && privateData.revision > 0 ? privateData.revision : 0,
       usedGlobalThemeFallback: false,
       settings: {
         anniversaryConfig: privateData.anniversaryView || sharedData.anniversaryView || null,
         privacyToggles: {
           localOnlyMode: privateData.privacy?.localOnlyMode === true,
+          reducedMotion: privateData.privacy?.reducedMotion === true,
           hideOfflineWarning: false,
           unknownFields: {},
         },
@@ -151,7 +155,19 @@ export async function loadFirestoreCompatibilitySnapshot(options = {}) {
   }
 
   const serviceOptions = { firestore: options.firestore }
-  const [couple, membership, profilesRaw, favoritesRaw, sharedSettings, privateSettings, contract, memories] = await Promise.all([
+  const [
+    couple,
+    membership,
+    profilesRaw,
+    favoritesRaw,
+    sharedSettings,
+    privateSettings,
+    contract,
+    memories,
+    birthday,
+    valentine,
+    confession,
+  ] = await Promise.all([
     getCoupleDocumentSnapshot(coupleId, serviceOptions),
     getCoupleMembership(coupleId, uid, serviceOptions),
     getFirestoreProfilesForCouple(coupleId, serviceOptions),
@@ -160,8 +176,6 @@ export async function loadFirestoreCompatibilitySnapshot(options = {}) {
     getFirestorePrivateSettings(coupleId, uid, serviceOptions),
     getFirestoreContract(coupleId, serviceOptions),
     getFirestoreMemoriesForCouple(coupleId, serviceOptions),
-  ])
-  const [birthday, valentine, confession] = await Promise.all([
     getFirestoreSpecialMoment(coupleId, 'birthday', serviceOptions),
     getFirestoreSpecialMoment(coupleId, 'valentine', serviceOptions),
     getFirestoreSpecialMoment(coupleId, 'confession', serviceOptions),

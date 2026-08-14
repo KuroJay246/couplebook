@@ -1,3 +1,4 @@
+import { getCoupleMembership } from './coupleService.js'
 import { readUserProfileByUid } from './userService.js'
 
 export function deriveDisplayName(firebaseUser, approvedUser) {
@@ -26,11 +27,22 @@ export async function resolveApprovedUser(firebaseUser, options = {}) {
     return { status: 'pending', approvedUser: null }
   }
 
+  if (!approvedUser.coupleId) {
+    return { status: 'pending', approvedUser: null }
+  }
+
+  const readMembership = options.readCoupleMembership || getCoupleMembership
+  const membership = await readMembership(approvedUser.coupleId, firebaseUser.uid, options)
+  if (!membership || !['ready', 'partial'].includes(membership.status)) {
+    return { status: 'pending', approvedUser: null }
+  }
+
   return {
     status: 'authorized',
     approvedUser: {
       ...approvedUser,
       displayName: deriveDisplayName(firebaseUser, approvedUser),
+      memberRole: membership.data?.role || 'member',
     },
   }
 }

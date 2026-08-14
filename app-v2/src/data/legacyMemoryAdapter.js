@@ -45,25 +45,6 @@ const OVERRIDDEN_MEMORIES_KEY = 'memorybook_overridden_memories'
  * @property {number} customMemoryCount
  */
 
-export const legacyMemoryAdapterBoundary = Object.freeze({
-  adapter: 'legacyMemoryAdapter',
-  currentSources: [
-    'core/memories.json',
-    'public/core/memories.json',
-    'localStorage: memorybook_custom_memories',
-    'localStorage: memorybook_deleted_memories',
-    'localStorage: memorybook_overridden_memories',
-  ],
-  deferredLegacySources: [
-    'local dev server: /api/scan-media',
-    'core/state.js fallback seeded memory',
-  ],
-  expectedNormalizedOutput:
-    'CompatibilityResult<NormalizedMemoryState> for the routed shell without mutating legacy memory state.',
-  mode: 'read-only',
-  futureOwner: 'R3 compatibility mapping before R4 domain services',
-})
-
 export function createLegacyBridgeConfig(env = readRuntimeEnv()) {
   return {
     enabled: env.VITE_ENABLE_LEGACY_LOCAL_BRIDGE === 'true',
@@ -85,9 +66,10 @@ function inferMediaKind(record) {
 function normalizeMemoryTags(value) {
   if (!Array.isArray(value)) return []
 
-  return value
-    .map((entry) => toTrimmedString(entry))
-    .filter(Boolean)
+  return value.flatMap((entry) => {
+    const normalized = toTrimmedString(entry)
+    return normalized ? [normalized] : []
+  })
 }
 
 function normalizeMemoryRecord(rawRecord, index, source) {
@@ -149,7 +131,10 @@ function readMemoryOverlayState(storage, warnings) {
         : [],
     deletedIds:
       deletedResult.ok && Array.isArray(deletedResult.value)
-        ? deletedResult.value.map((entry) => toTrimmedString(entry)).filter(Boolean)
+        ? deletedResult.value.flatMap((entry) => {
+            const normalized = toTrimmedString(entry)
+            return normalized ? [normalized] : []
+          })
         : [],
     overrides: overriddenResult.ok && isPlainObject(overriddenResult.value) ? overriddenResult.value : {},
     hadMalformedState:

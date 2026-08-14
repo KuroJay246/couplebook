@@ -5,6 +5,8 @@ import { createMigrationPackage, validateMigrationPackage } from '../../scripts/
 import { planMigrationOperations } from '../../scripts/lib/migration-engine.mjs'
 import { assertProjectArg, REQUIRED_PROJECT_ID } from '../../scripts/lib/project-guard.mjs'
 
+const TEST_APPROVED_UIDS = Object.freeze(['fictional_owner_uid', 'fictional_partner_uid'])
+
 test('production project guard rejects missing and prohibited project targets', () => {
   assert.equal(assertProjectArg(['--project', REQUIRED_PROJECT_ID]), REQUIRED_PROJECT_ID)
   assert.throws(() => assertProjectArg([]), /project guard/i)
@@ -12,7 +14,7 @@ test('production project guard rejects missing and prohibited project targets', 
 })
 
 test('migration package validates counts and excludes raw private paths', () => {
-  const migrationPackage = createMigrationPackage({ generatedAt: '2026-07-21T00:00:00.000Z' })
+  const migrationPackage = createMigrationPackage({ approvedUids: TEST_APPROVED_UIDS, generatedAt: '2026-07-21T00:00:00.000Z' })
   const validation = validateMigrationPackage(migrationPackage)
   const serialized = JSON.stringify(migrationPackage)
 
@@ -27,7 +29,7 @@ test('migration package validates counts and excludes raw private paths', () => 
 })
 
 test('migration planner treats existing non-user differing documents as conflicts', async () => {
-  const validPackage = createMigrationPackage({ generatedAt: '2026-07-21T00:00:00.000Z' })
+  const validPackage = createMigrationPackage({ approvedUids: TEST_APPROVED_UIDS, generatedAt: '2026-07-21T00:00:00.000Z' })
   const db = {
     doc(path) {
       return {

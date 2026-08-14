@@ -20,7 +20,3 @@ export function resolveDataSourceMode(env = readRuntimeEnv()) {
 
   return mode
 }
-
-export function isFirestoreSourceMode(env = readRuntimeEnv()) {
-  return resolveDataSourceMode(env) === DATA_SOURCE_MODES.firestore
-}

@@ -1,7 +1,7 @@
 import { freezeClone } from '../../data/adapterUtils.js'
 
 function sortMemories(memories = []) {
-  return [...memories].sort((left, right) => {
+  return memories.toSorted((left, right) => {
     if (left.sort.timestamp !== null && right.sort.timestamp !== null && left.sort.timestamp !== right.sort.timestamp) {
       return right.sort.timestamp - left.sort.timestamp
     }
@@ -57,11 +57,16 @@ export function selectTimelineTypeLabel(memory) {
 }
 
 export function selectTimelineDisplayMemories(memories = []) {
-  return freezeClone(
-    sortMemories(memories).map((memory) => ({
+  const displayMemories = []
+  for (const memory of sortMemories(memories)) {
+    if (memory.status === 'archived') continue
+    displayMemories.push({
       id: memory.id,
+      status: memory.status,
       title: memory.title,
       description: memory.description,
+      titleKind: memory.titleKind,
+      descriptionKind: memory.descriptionKind,
       displayTitle: selectTimelineDisplayTitle(memory),
       displayDescription: selectTimelineDisplayDescription(memory),
       displayDate: formatTimelineDate(memory.date),
@@ -73,13 +78,15 @@ export function selectTimelineDisplayMemories(memories = []) {
       warnings: memory.warnings,
       sort: memory.sort,
       typeLabel: selectTimelineTypeLabel(memory),
-    })),
-  )
+    })
+  }
+  return freezeClone(displayMemories)
 }
 
 export function buildTimelineSummary(memories = []) {
+  const activeMemories = memories.filter((memory) => memory.status !== 'archived')
   return freezeClone(
-    memories.reduce(
+    activeMemories.reduce(
       (summary, memory) => {
         summary.totalMemories += 1
         if (memory.date.status === 'valid') {
@@ -116,7 +123,7 @@ export function buildTimelineFilters(memories = []) {
   const yearMap = new Map()
   const typeMap = new Map()
 
-  for (const memory of memories) {
+  for (const memory of memories.filter((entry) => entry.status !== 'archived')) {
     for (const tag of memory.tags) {
       if (!tagMap.has(tag.key)) {
         tagMap.set(tag.key, { key: tag.key, label: tag.label, count: 0 })

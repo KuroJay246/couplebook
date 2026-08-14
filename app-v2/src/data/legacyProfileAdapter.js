@@ -30,15 +30,6 @@ const STORAGE_KEY = 'memorybook_profiles'
  * @property {Record<string, unknown>} unknownTopLevelFields
  */
 
-export const legacyProfileAdapterBoundary = Object.freeze({
-  adapter: 'legacyProfileAdapter',
-  currentSources: ['localStorage: memorybook_profiles', 'Firestore: users/{uid}.profile'],
-  expectedNormalizedOutput:
-    'CompatibilityResult<NormalizedProfileState> for the shared relationship profile surface without mutating legacy sources.',
-  mode: 'read-only',
-  futureOwner: 'R3 compatibility mapping before profile domain service extraction',
-})
-
 function createEmptyProfileState() {
   return {
     profilesByUsername: {},

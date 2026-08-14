@@ -1,458 +1,260 @@
-import { useState } from 'react'
+import { useEffect, useEffectEvent, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
-import { EditorialEmptyState, EditorialSection, QuietStatus, SharedSpaceHeader } from '../../components/PageLayout'
 
-const COLLECTION_LIMIT = 4
-const TYPE_FILTERS = Object.freeze([
-  { key: 'all', label: 'All' },
-  { key: 'photos', label: 'Photos' },
-  { key: 'videos', label: 'Videos' },
-  { key: 'special', label: 'Special moments' },
-  { key: 'private', label: 'Private media' },
-])
+const LIVE_SHARED_ALBUM_URL = 'https://www.icloud.com/photos/#/sa,20BC8532-D41C-4AB3-9C83-B05458C10B78/'
+const FILTERS = [
+  { key: 'all', label: 'All Media' },
+  { key: 'photos', label: '📷 Photos' },
+  { key: 'videos', label: '🎥 Videos' },
+]
 
-function pluralize(count, singular, plural = `${singular}s`) {
-  return `${count} ${count === 1 ? singular : plural}`
-}
-
-function renderGalleryStatusLabel(status) {
-  if (status === 'ready') return 'Read-only archive'
-  if (status === 'partial') return 'Partial archive'
-  if (status === 'unavailable') return 'Archive unavailable'
-  if (status === 'invalid') return 'Needs review'
-  return 'Awaiting visual entries'
-}
-
-function renderCompatibilityStateLabel(compatibilityState) {
-  if (compatibilityState === 'loading') return 'Refreshing'
-  if (compatibilityState === 'error') return 'Needs review'
-  if (compatibilityState === 'ready') return 'Ready'
-  return 'Waiting'
-}
-
-function describeGalleryState(model) {
-  if (model.status === 'ready') {
-    return 'The visual archive now opens as a private, read-only collection of photo, video, and special-moment references without reopening private files.'
-  }
-
-  if (model.status === 'partial') {
-    return 'Some visual references are readable here now, while unavailable media and deferred inventory stay clearly marked.'
-  }
-
-  if (model.status === 'unavailable') {
-    return 'The private visual archive has not been connected to this build yet. The route stays live without pretending the archive is empty.'
-  }
-
-  if (model.status === 'invalid') {
-    return 'Stored visual metadata needs review before this route can safely render the archive.'
-  }
-
-  return 'This route is ready for protected visual references, but no readable Gallery entries are available in this build yet.'
-}
-
-function getAllGalleryItems(model) {
-  const byKey = new Map()
-  const addItems = (items = []) => {
-    for (const item of items) {
-      byKey.set(item.key, item)
-    }
-  }
-
-  addItems(model.photos)
-  addItems(model.videos)
-  addItems(model.unavailableMedia)
-  addItems(model.collections.featured.find((collection) => collection.key === 'special-moments')?.items || [])
-
-  return [...byKey.values()].sort((left, right) => {
-    if (left.sort.timestamp !== null && right.sort.timestamp !== null && left.sort.timestamp !== right.sort.timestamp) {
-      return right.sort.timestamp - left.sort.timestamp
-    }
-
-    if (left.sort.timestamp !== null && right.sort.timestamp === null) return -1
-    if (left.sort.timestamp === null && right.sort.timestamp !== null) return 1
-
-    return left.sort.ordinal - right.sort.ordinal
-  })
-}
-
-function matchesTypeFilter(item, type) {
-  if (type === 'all') return true
-  if (type === 'photos') return item.media.kind === 'image'
-  if (type === 'videos') return item.media.kind === 'video'
-  if (type === 'special') return item.specialMoment.isSpecial
-  if (type === 'private') return ['private-legacy-reference', 'unavailable', 'invalid'].includes(item.media.status)
+function matchesFilter(item, filter) {
+  if (filter === 'photos') return item.media.kind === 'image'
+  if (filter === 'videos') return item.media.kind === 'video'
   return true
 }
 
-function filterItems(items, filters) {
-  return items.filter((item) => {
-    if (!matchesTypeFilter(item, filters.type)) return false
-    if (filters.year !== 'all' && String(item.date.year) !== filters.year) return false
-    return true
-  })
+function matchesYear(item, year) {
+  if (year === 'all') return true
+  return String(item.date?.year || '') === year
 }
 
-function groupByYear(items) {
-  const yearMap = new Map()
-  for (const item of items) {
-    const key = item.date.year === null ? 'date-review' : String(item.date.year)
-    if (!yearMap.has(key)) {
-      yearMap.set(key, [])
-    }
-    yearMap.get(key).push(item)
-  }
-
-  return [...yearMap.entries()]
-    .sort(([left], [right]) => {
-      if (left === 'date-review') return 1
-      if (right === 'date-review') return -1
-      return Number(right) - Number(left)
-    })
-    .map(([key, yearItems]) => ({
-      key: `year-${key}`,
-      label: key === 'date-review' ? 'Date review' : key,
-      description: key === 'date-review' ? 'Visual references waiting for date review.' : `Visual references from ${key}.`,
-      items: yearItems,
-    }))
+function mediaStatus(item) {
+  if (item.media.status === 'storage-verified') return item.media.kind === 'video' ? 'Verified private video' : 'Verified private photo'
+  if (item.media.kind === 'video') return 'Private video stored safely'
+  if (item.media.kind === 'image') return 'Private image stored safely'
+  if (item.specialMoment.isSpecial) return 'Protected special page'
+  return 'Saved memory'
 }
 
-function mediaStatusLabel(item) {
-  if (item.media.status === 'private-legacy-reference') {
-    return item.media.kind === 'video' ? 'Private video remains in the legacy book' : 'Private photo remains in the legacy book'
-  }
-
-  if (item.media.status === 'invalid') return 'Media reference held for review'
-  if (item.media.status === 'unavailable') return 'Media unavailable in this build'
-  if (item.media.status === 'special-route-only') return 'Protected special route'
-  if (item.media.status === 'available-local-reference') return 'Local reference not previewed'
-  return 'No media preview'
+function galleryTileLabel(item) {
+  return [
+    item.title,
+    item.typeLabel,
+    item.displayDate,
+    item.media.kind === 'video' ? 'Open video memory details' : 'Open photo memory details',
+  ]
+    .filter(Boolean)
+    .join(', ')
 }
 
-function OpeningNote({ model }) {
+function GalleryTile({ item, onSelect }) {
+  const mediaClass = item.media.kind === 'video' ? 'gallery-item--video' : item.media.kind === 'image' ? 'gallery-item--photo' : 'gallery-item--written'
   return (
-    <QuietStatus
-      className="gallery-opening-note"
-      description="Gallery reads safe metadata only. Media previews, uploads, lightboxes, video playback, and synchronization stay outside this route."
-      eyebrow={renderGalleryStatusLabel(model.status)}
-      items={[
-        pluralize(model.summary.photos, 'photo reference'),
-        pluralize(model.summary.videos, 'video reference'),
-        pluralize(model.summary.unavailableMedia + model.summary.invalidMedia, 'private media item'),
-      ]}
-      title="The archive stays visual without exposing private files."
-    />
-  )
-}
-
-function GalleryFilters({ filters, model, onChange }) {
-  return (
-    <div className="gallery-toolbar" aria-label="Gallery filters">
-      <div className="gallery-filter-group" role="group" aria-label="Visual type">
-        {TYPE_FILTERS.map((filter) => {
-          const active = filters.type === filter.key
-          return (
-            <button
-              aria-pressed={active}
-              className={`gallery-filter-button ${active ? 'gallery-filter-button-active' : ''}`}
-              key={filter.key}
-              onClick={() => onChange({ ...filters, type: filter.key })}
-              type="button"
-            >
-              {filter.label}
-            </button>
-          )
-        })}
-      </div>
-      <label className="gallery-year-filter">
-        <span>Year</span>
-        <select value={filters.year} onChange={(event) => onChange({ ...filters, year: event.target.value })}>
-          <option value="all">All years</option>
-          {model.filters.availableYears.map((year) => (
-            <option key={year.key} value={year.key}>
-              {year.label}
-            </option>
-          ))}
-        </select>
-      </label>
-    </div>
-  )
-}
-
-function GallerySummary({ model }) {
-  const years = model.filters.availableYears.length
-
-  return (
-    <div className="gallery-summary-grid" aria-label="Gallery summary">
-      <article>
-        <strong>{model.summary.photos}</strong>
-        <span>Photo references</span>
-      </article>
-      <article>
-        <strong>{model.summary.videos}</strong>
-        <span>Video references</span>
-      </article>
-      <article>
-        <strong>{years}</strong>
-        <span>{years === 1 ? 'Year represented' : 'Years represented'}</span>
-      </article>
-      <article>
-        <strong>{model.summary.specialMoments}</strong>
-        <span>Special references</span>
-      </article>
-    </div>
-  )
-}
-
-function GalleryItem({ item }) {
-  const typeMark = item.media.kind === 'video' ? 'Motion' : item.specialMoment.isSpecial ? 'Special' : 'Image'
-
-  return (
-    <article className={`gallery-item-card gallery-item-card-${item.media.status}`}>
-      <div className="gallery-item-frame" aria-hidden="true">
-        <span>{typeMark}</span>
-      </div>
-      <div className="gallery-item-copy">
-        <div className="gallery-item-meta">
-          <span>{item.typeLabel}</span>
-          <span>{item.displayDate || 'Date to review'}</span>
+    <article className={`gallery-item ${mediaClass} ${item.specialMoment.isSpecial ? 'gallery-item--special' : ''} ${item.media.status !== 'storage-verified' ? 'gallery-item--unavailable' : ''}`}>
+      <button aria-label={galleryTileLabel(item)} className="gallery-media-frame" onClick={() => onSelect(item)} type="button">
+        <div className="gallery-img" />
+        <span className="gallery-media-status">{mediaStatus(item)}</span>
+        {item.media.kind === 'video' ? <span className="gallery-item-video-icon">▶</span> : null}
+      </button>
+      <div className="gallery-card-body">
+        <div className="gallery-card-meta">
+          <span className="gallery-card-chip">{item.typeLabel}</span>
+          <span className="gallery-item-date">{item.displayDate || 'Date review'}</span>
         </div>
-        <h3>{item.title}</h3>
-        <p>{item.description}</p>
-      </div>
-      <div className="gallery-item-footer">
-        <span className="gallery-media-status">{mediaStatusLabel(item)}</span>
-        {item.specialMoment.route ? (
-          <Link className="gallery-special-link" to={item.specialMoment.route}>
-            Open protected moment
-          </Link>
-        ) : null}
+        <h3 className="gallery-item-title">{item.title}</h3>
+        <p className="gallery-card-support">{item.description}</p>
+        {item.specialMoment.route ? <Link className="btn btn-secondary timeline-action-link" to={item.specialMoment.route}>Open Page</Link> : null}
       </div>
     </article>
   )
 }
 
-function GalleryCollection({ collection, expandedCollections, onToggle }) {
-  const isExpandable = collection.items.length > COLLECTION_LIMIT
-  const isExpanded = expandedCollections.has(collection.key)
-  const visibleItems = isExpandable && !isExpanded ? collection.items.slice(0, COLLECTION_LIMIT) : collection.items
-
-  if (collection.items.length === 0) return null
-
+function LiveAlbumTile() {
   return (
-    <section className="gallery-collection" aria-labelledby={`gallery-collection-${collection.key}`}>
-      <div className="gallery-collection-heading">
-        <div>
-          <span className="folio-mark">{pluralize(collection.items.length, 'entry')}</span>
-          <h3 id={`gallery-collection-${collection.key}`}>{collection.label}</h3>
-          <p>{collection.description}</p>
+    <a className="gallery-item faithful-live-album-tile" href={LIVE_SHARED_ALBUM_URL} rel="noopener noreferrer" target="_blank">
+      <div className="gallery-media-frame"><span>Us</span></div>
+      <div className="gallery-card-body">
+        <div className="gallery-card-meta">
+          <span className="gallery-card-chip">Live album</span>
+          <span className="gallery-item-date">iCloud</span>
         </div>
+        <h3 className="gallery-item-title">Our Live Album</h3>
+        <p className="gallery-card-support">Open the shared iCloud album for the newest photos and videos added outside Couple Book.</p>
       </div>
-      <div className="gallery-item-grid">
-        {visibleItems.map((item) => (
-          <GalleryItem item={item} key={item.key} />
-        ))}
-      </div>
-      {isExpandable ? (
-        <button
-          aria-expanded={isExpanded}
-          className="gallery-show-more"
-          onClick={() => onToggle(collection.key)}
-          type="button"
-        >
-          {isExpanded ? 'Show less' : `Show ${collection.items.length - COLLECTION_LIMIT} more`}
-        </button>
-      ) : null}
-    </section>
+    </a>
   )
 }
 
-function GalleryCollections({ collections }) {
-  const [expandedCollections, setExpandedCollections] = useState(() => new Set())
+function GalleryLightbox({ item, items, onClose, onNext, onPrevious }) {
+  const dialogRef = useRef(null)
+  const handleNext = useEffectEvent(() => onNext())
+  const handlePrevious = useEffectEvent(() => onPrevious())
 
-  const toggleCollection = (collectionKey) => {
-    setExpandedCollections((current) => {
-      const next = new Set(current)
-      if (next.has(collectionKey)) {
-        next.delete(collectionKey)
-      } else {
-        next.add(collectionKey)
-      }
-      return next
-    })
-  }
+  useEffect(() => {
+    if (!item) return
+    if (!dialogRef.current?.open) {
+      dialogRef.current?.showModal()
+    }
+    dialogRef.current?.querySelector('button')?.focus()
+  }, [item])
 
-  return (
-    <div className="gallery-collection-stack">
-      {collections.map((collection) => (
-        <GalleryCollection
-          collection={collection}
-          expandedCollections={expandedCollections}
-          key={collection.key}
-          onToggle={toggleCollection}
-        />
-      ))}
-    </div>
-  )
-}
+  useEffect(() => {
+    if (!item) return undefined
 
-function GalleryEmptyState({ model }) {
-  if (model.status === 'unavailable') {
-    return (
-      <EditorialEmptyState
-        description="The private visual archive is not connected to this build. This is a source boundary, not an empty collection."
-        title="The visual archive is unavailable here."
-        titleAs="h3"
-      />
-    )
-  }
+    function handleKeyDown(event) {
+      if (event.key === 'ArrowRight') handleNext()
+      if (event.key === 'ArrowLeft') handlePrevious()
+    }
 
-  if (model.status === 'invalid') {
-    return (
-      <EditorialEmptyState
-        description="The page is holding back stored visual metadata until it can be reviewed safely."
-        title="The visual archive needs review."
-        titleAs="h3"
-      />
-    )
-  }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [item])
 
-  return (
-    <EditorialEmptyState
-      description="Try another type or year filter. Gallery keeps entries read-only and does not invent missing visuals."
-      title="No Gallery entries match this view."
-      titleAs="h3"
-    />
-  )
-}
-
-function SourceStateSection({ compatibilityError, compatibilityState, model, onRefresh }) {
-  const sourceCards = [
-    {
-      key: 'memoryArchive',
-      label: model.sourceStatus.memoryArchive.label,
-      status: model.sourceStatus.memoryArchive.status,
-      summary:
-        model.sourceStatus.memoryArchive.status === 'ready'
-          ? `${pluralize(model.sourceStatus.memoryArchive.count, 'memory record')} available as safe metadata.`
-          : 'The private story archive is not connected in this build.',
-    },
-    {
-      key: 'mediaInventory',
-      label: model.sourceStatus.mediaInventory.label,
-      status: model.sourceStatus.mediaInventory.status,
-      summary: 'Media inventory, previews, playback, uploads, and Storage remain deferred.',
-    },
-    {
-      key: 'bridge',
-      label: 'Read bridge',
-      status: model.sourceStatus.bridge.status,
-      summary: `${pluralize(model.sourceStatus.bridge.warningCount, 'review note')} recorded without exposing technical details.`,
-    },
-  ]
-
-  return (
-    <EditorialSection
-      action={{ label: 'Refresh reads', onClick: onRefresh, tone: 'secondary' }}
-      className="gallery-section"
-      description="Gallery reports source state without exposing storage keys, raw media values, adapter names, or old static routes."
-      eyebrow="Source status"
-      title="Source status stays quiet and safe."
-    >
-      <div className="source-status-toolbar">
-        <div className="source-status-copy">
-          <span className="source-status-pill">{renderCompatibilityStateLabel(compatibilityState)}</span>
-          <p>Unavailable, empty, partial, and invalid states stay distinct so Gallery never becomes a broken media grid.</p>
-        </div>
-      </div>
-      {compatibilityError ? (
-        <div className="dashboard-inline-alert">
-          <strong>Compatibility refresh issue</strong>
-          <p>The latest protected refresh did not complete. Existing read-only Gallery metadata remains unchanged.</p>
-        </div>
-      ) : null}
-      <div className="source-status-grid">
-        {sourceCards.map((item) => (
-          <article className="source-card" key={item.key}>
-            <div className="source-card-header">
-              <strong>{item.label}</strong>
-              <span className={`source-card-status source-card-status-${item.status}`}>{item.status}</span>
+  if (!item) return null
+  const isVideo = item.media.kind === 'video'
+  const currentIndex = items.findIndex((entry) => (entry.key || entry.id) === (item.key || item.id))
+  const canStep = items.length > 1 && currentIndex >= 0
+  return createPortal(
+    isVideo ? (
+      <dialog aria-labelledby="gallery-video-title" className="modal-overlay active" onCancel={onClose} ref={dialogRef}>
+        <div className="modal-container" style={{ maxWidth: '700px', background: '#000000', borderColor: 'rgba(255,255,255,0.15)' }}>
+          <div className="modal-header" style={{ background: '#0d0f14', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+            <h3 className="modal-title" id="gallery-video-title" style={{ color: 'white' }}>{item.title}</h3>
+            <button aria-label="Close gallery details" className="modal-close" onClick={onClose} style={{ color: 'white' }} type="button">×</button>
+          </div>
+          <div className="modal-body" style={{ padding: 0, lineHeight: 0, background: '#000000' }}>
+            <div className="gallery-video-unavailable">
+              <div className="gallery-video-unavailable-copy">
+                <p className="gallery-video-unavailable-label">Private video stored safely</p>
+                <h4 className="gallery-video-unavailable-title">This video remains protected.</h4>
+                <p className="gallery-video-unavailable-text">The story stays visible here without copying private media into the public app.</p>
+              </div>
             </div>
-            <p>{item.summary}</p>
-          </article>
-        ))}
-      </div>
-    </EditorialSection>
+          </div>
+          <div className="modal-footer" style={{ background: '#0d0f14', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+            <span className="gallery-video-status">{item.displayDate || 'Date review'}</span>
+            <div className="faithful-inline-actions">
+              {canStep ? <button className="btn btn-secondary" onClick={onPrevious} type="button">Previous</button> : null}
+              {canStep ? <button className="btn btn-secondary" onClick={onNext} type="button">Next</button> : null}
+              <Link className="btn btn-secondary" to="/timeline">Open Story</Link>
+              <button className="btn btn-secondary" onClick={onClose} type="button">Close</button>
+            </div>
+          </div>
+        </div>
+      </dialog>
+    ) : (
+      <dialog aria-labelledby="gallery-image-title" className="lightbox-overlay active" onCancel={onClose} ref={dialogRef}>
+        <button aria-label="Close gallery details" className="lightbox-close" onClick={onClose} type="button">×</button>
+        <div className="lightbox-content gallery-video-unavailable">
+          <div className="gallery-video-unavailable-copy">
+            <p className="gallery-video-unavailable-label">Private image stored safely</p>
+            <h4 className="gallery-video-unavailable-title" id="gallery-image-title">{item.title}</h4>
+            <p className="gallery-video-unavailable-text">{item.description}</p>
+          </div>
+        </div>
+        <div className="lightbox-caption-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', marginTop: '1rem' }}>
+          <div className="lightbox-caption">{item.displayDate || 'Date review'}</div>
+          <div className="gallery-lightbox-status">Story preserved. Image stays private.</div>
+          <div className="faithful-inline-actions">
+            {canStep ? <button className="btn btn-secondary" onClick={onPrevious} type="button">Previous</button> : null}
+            {canStep ? <button className="btn btn-secondary" onClick={onNext} type="button">Next</button> : null}
+            <Link className="btn btn-secondary" to="/timeline">Open Story</Link>
+          </div>
+        </div>
+      </dialog>
+    ),
+    document.body,
   )
 }
 
-export function GalleryView({ compatibilityError, compatibilityState, model, onRefresh }) {
-  const [filters, setFilters] = useState({ type: 'all', year: 'all' })
-  const allItems = getAllGalleryItems(model)
-  const filteredItems = filterItems(allItems, filters)
-  const recentCollection = {
-    key: 'recent-filtered',
-    label: 'Recent visual memories',
-    description: 'Newest photo, video, and protected special references with private media kept closed.',
-    items: filteredItems.slice(0, 8),
+export function GalleryView({ model }) {
+  const [filter, setFilter] = useState('all')
+  const [year, setYear] = useState('all')
+  const [search, setSearch] = useState('')
+  const [selectedItem, setSelectedItem] = useState(null)
+  const items = useMemo(() => (Array.isArray(model.items) ? model.items : []), [model])
+  const years = model.filters?.availableYears || []
+  const filtered = useMemo(() => {
+    const normalizedSearch = search.trim().toLowerCase()
+    return items.filter((item) => {
+      if (!matchesFilter(item, filter)) return false
+      if (!matchesYear(item, year)) return false
+      if (!normalizedSearch) return true
+      return [item.title, item.description, item.displayDate, ...(item.tags || []).map((tag) => tag.label)]
+        .join(' ')
+        .toLowerCase()
+        .includes(normalizedSearch)
+    })
+  }, [filter, items, search, year])
+
+  function showNeighbor(direction) {
+    if (!selectedItem || filtered.length <= 1) return
+    const index = filtered.findIndex((item) => (item.key || item.id) === (selectedItem.key || selectedItem.id))
+    if (index < 0) return
+    const nextIndex = (index + direction + filtered.length) % filtered.length
+    setSelectedItem(filtered[nextIndex])
   }
-  const yearCollections = groupByYear(filteredItems)
-  const privateCollection = {
-    key: 'private-filtered',
-    label: 'Private media references',
-    description: 'Visual memories connected to the story while the media itself remains outside this build.',
-    items: filteredItems.filter((item) => ['private-legacy-reference', 'unavailable', 'invalid'].includes(item.media.status)),
-  }
-  const specialCollection = {
-    key: 'special-filtered',
-    label: 'Special moments',
-    description: 'Protected special routes represented without importing private page content.',
-    items: filteredItems.filter((item) => item.specialMoment.isSpecial),
-  }
-  const collections = [recentCollection, ...yearCollections, privateCollection, specialCollection].filter(
-    (collection) => collection.items.length > 0,
-  )
 
   return (
     <section className="gallery-page">
-      <SharedSpaceHeader
-        actions={[
-          { href: '/timeline', label: 'Open timeline' },
-          { href: '/profile', label: 'Open profile', tone: 'secondary' },
-        ]}
-        aside={<OpeningNote model={model} />}
-        className="gallery-hero"
-        description={describeGalleryState(model)}
-        eyebrow="Gallery"
-        folio={renderGalleryStatusLabel(model.status)}
-        title="Our visual archive"
-      />
+      <header className="page-header">
+        <div className="page-heading">
+          <p className="page-eyebrow">Gallery</p>
+          <h1 className="page-title">🖼️ Our Shared Gallery</h1>
+          <p className="page-subtitle">Browse photos and video memories, reopen the related story, and keep the live album close without changing private media boundaries.</p>
+        </div>
+      </header>
 
-      <EditorialSection
-        className="gallery-section"
-        description="Photo, video, and special-route references stay grouped as a private collection without loading private media."
-        eyebrow="Archive"
-        title="Moments kept in pictures and motion."
-      >
-        <GallerySummary model={model} />
-        <GalleryFilters filters={filters} model={model} onChange={setFilters} />
-        {compatibilityState === 'loading' && model.summary.totalMemories === 0 ? (
-          <EditorialEmptyState
-            description="The protected shell is restoring read-only Gallery metadata."
-            title="Restoring Gallery reads."
-            titleAs="h3"
-          />
-        ) : collections.length > 0 ? (
-          <GalleryCollections collections={collections} />
-        ) : (
-          <GalleryEmptyState model={model} />
+      <section className="glass-card gallery-story-entrance">
+        <div className="gallery-story-copy">
+          <p className="gallery-story-label">Our visual archive</p>
+          <h2 className="gallery-story-title">Moments we kept close</h2>
+          <p className="gallery-story-text">Photos, videos, and private keepsakes from your story stay visible here, even when the original media lives only on the original device.</p>
+        </div>
+        <div className="gallery-story-stats">
+          <div className="gallery-story-stat"><span className="gallery-story-stat-value">{model.summary.totalMemories}</span><span className="gallery-story-stat-label">moments with media</span></div>
+          <div className="gallery-story-stat"><span className="gallery-story-stat-value">{model.summary.photos}</span><span className="gallery-story-stat-label">photos</span></div>
+          <div className="gallery-story-stat"><span className="gallery-story-stat-value">{model.summary.videos}</span><span className="gallery-story-stat-label">video memories</span></div>
+        </div>
+      </section>
+
+      <section className="glass-card gallery-toolbar">
+        <div className="gallery-toolbar-copy">
+          <p className="gallery-toolbar-label">Album View</p>
+          <h2 className="gallery-filter-summary">{filter === 'all' ? 'All visual memories' : filter === 'photos' ? 'Photo memories' : 'Video memories'}</h2>
+          <p className="gallery-filter-detail">{filtered.length} {filtered.length === 1 ? 'result' : 'results'} across photos, videos, and protected memory references.</p>
+        </div>
+        <div className="faithful-filter-grid">
+          <div className="media-tabs" aria-label="Gallery filters">
+            {FILTERS.map((entry) => (
+              <button className={`tab-btn ${filter === entry.key ? 'active' : ''}`} key={entry.key} onClick={() => setFilter(entry.key)} type="button">
+                {entry.label}
+              </button>
+            ))}
+          </div>
+          <label className="form-group">
+            <span className="filter-toolbar-label">Year</span>
+            <select className="form-select" onChange={(event) => setYear(event.target.value)} value={year}>
+              <option value="all">All years</option>
+              {years.map((entry) => <option key={entry.key} value={entry.key}>{entry.label}</option>)}
+            </select>
+          </label>
+          <label className="form-group">
+            <span className="filter-toolbar-label">Search gallery</span>
+            <input className="form-input" onChange={(event) => setSearch(event.target.value)} placeholder="Search dates, titles, and tags" type="search" value={search} />
+          </label>
+        </div>
+      </section>
+
+      <div className="gallery-grid">
+        <LiveAlbumTile />
+        {filtered.length > 0 ? filtered.map((item) => (
+          <GalleryTile item={item} key={item.key || item.id} onSelect={setSelectedItem} />
+        )) : (
+          <div className="gallery-empty-state glass-card">
+            <h3 className="gallery-empty-state-title">No gallery entries match this view.</h3>
+            <p className="gallery-empty-state-copy">Try another filter, open the live album, or return to all media to reopen the full collection.</p>
+          </div>
         )}
-      </EditorialSection>
-
-      <SourceStateSection
-        compatibilityError={compatibilityError}
-        compatibilityState={compatibilityState}
-        model={model}
-        onRefresh={onRefresh}
+      </div>
+      <GalleryLightbox
+        item={selectedItem}
+        items={filtered}
+        onClose={() => setSelectedItem(null)}
+        onNext={() => showNeighbor(1)}
+        onPrevious={() => showNeighbor(-1)}
       />
     </section>
   )

@@ -1,422 +1,457 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
-import { EditorialEmptyState, EditorialSection, QuietStatus, SharedSpaceHeader } from '../../components/PageLayout'
-import { WriteWorkflowPanel } from '../../components/WriteWorkflowPanel'
+import { useOwnerWrite } from '../editing/useOwnerWrite.js'
 
-const ORDINARY_GROUP_LIMIT = 4
-const TYPE_FILTERS = Object.freeze([
-  { key: 'all', label: 'All' },
-  { key: 'special', label: 'Special moments' },
-  { key: 'photo', label: 'Photos' },
-  { key: 'video', label: 'Videos' },
-  { key: 'no-media', label: 'No media' },
-])
-
-function pluralize(count, singular, plural = `${singular}s`) {
-  return `${count} ${count === 1 ? singular : plural}`
+function allMemories(model) {
+  return (model.chapters || []).flatMap((chapter) => chapter.groups.flatMap((group) => group.memories))
 }
 
-function renderTimelineStatusLabel(status) {
-  if (status === 'ready') return 'Read-only story'
-  if (status === 'partial') return 'Partial story bridge'
-  if (status === 'unavailable') return 'Story source unavailable'
-  if (status === 'invalid') return 'Needs review'
-  return 'Awaiting story entries'
-}
-
-function renderCompatibilityStateLabel(compatibilityState) {
-  if (compatibilityState === 'loading') return 'Refreshing'
-  if (compatibilityState === 'error') return 'Needs review'
-  if (compatibilityState === 'ready') return 'Ready'
-  return 'Waiting'
-}
-
-function describeTimelineState(model) {
-  if (model.status === 'ready') {
-    return 'The relationship story now opens as a protected, read-only timeline with years, chapters, and private media kept behind the boundary.'
-  }
-
-  if (model.status === 'partial') {
-    return 'Some preserved memories can be read here now, while deferred sources and unavailable media remain clearly marked instead of being guessed.'
-  }
-
-  if (model.status === 'unavailable') {
-    return 'The private legacy story has not been connected to this build yet. The routed page stays live without pretending the archive is empty.'
-  }
-
-  if (model.status === 'invalid') {
-    return 'Stored story data needs review before this route can safely render the timeline.'
-  }
-
-  return 'This route is ready for protected story entries, but no readable memories are available in this build yet.'
-}
-
-function mediaStatusLabel(memory) {
-  if (memory.media.status === 'private-legacy-reference') {
-    return memory.media.kind === 'video' ? 'Private video stays local' : 'Private photo stays local'
-  }
-
-  if (memory.media.status === 'invalid-reference') return 'Media reference needs review'
-  if (memory.media.status === 'special-route-only') return 'Protected moment route'
+function mediaLabel(memory) {
   if (memory.media.kind === 'video') return 'Video memory'
   if (memory.media.kind === 'image') return 'Photo memory'
-  return 'No media attached'
+  if (memory.specialMoment.isSpecial) return 'Special moment'
+  return 'Saved memory'
 }
 
-function matchesTypeFilter(memory, typeFilter) {
-  if (typeFilter === 'all') return true
-  if (typeFilter === 'special') return memory.specialMoment.isSpecial
-  if (typeFilter === 'photo') return memory.media.kind === 'image'
-  if (typeFilter === 'video') return memory.media.kind === 'video'
-  if (typeFilter === 'no-media') return memory.media.status === 'none' || memory.media.status === 'special-route-only'
-  return true
+function memoryStyle(memory) {
+  if (memory.specialMoment.isSpecial) return 'milestone'
+  if (memory.media.kind === 'video') return 'video'
+  if (memory.media.kind === 'image') return 'photo'
+  return 'written'
 }
 
-function filterChapters(chapters, filters) {
-  return chapters
-    .map((chapter) => {
-      const groups = chapter.groups
-        .map((group) => ({
-          ...group,
-          memories: group.memories.filter((memory) => {
-            if (!matchesTypeFilter(memory, filters.type)) return false
-            if (filters.year !== 'all' && String(memory.date.year) !== filters.year) return false
-            return true
-          }),
-        }))
-        .filter((group) => group.memories.length > 0)
-
-      return {
-        ...chapter,
-        groups,
-        memories: groups.flatMap((group) => group.memories),
-      }
-    })
-    .filter((chapter) => chapter.groups.length > 0)
-}
-
-function createChapterDomId(chapterId) {
-  return `timeline-chapter-${chapterId.replace(/[^a-z0-9]+/gi, '-')}`
-}
-
-function OpeningNote({ model }) {
+function TimelineCard({ memory, onSelect }) {
+  const style = memoryStyle(memory)
   return (
-    <QuietStatus
-      className="timeline-opening-note"
-      description="The page reads normalized memory metadata only. Images, videos, editing, deleting, and synchronization stay outside this route."
-      eyebrow={renderTimelineStatusLabel(model.status)}
-      items={[
-        pluralize(model.summary.totalMemories, 'memory'),
-        pluralize(model.summary.specialMoments, 'special moment'),
-        pluralize(model.summary.unavailableMedia + model.summary.invalidMedia, 'media item held back'),
-      ]}
-      title="The story is readable without reopening private files."
-    />
-  )
-}
-
-function TimelineFilters({ filters, model, onChange }) {
-  return (
-    <div className="timeline-toolbar" aria-label="Timeline filters">
-      <div className="timeline-filter-group" role="group" aria-label="Memory type">
-        {TYPE_FILTERS.map((filter) => {
-          const active = filters.type === filter.key
-          return (
-            <button
-              aria-pressed={active}
-              className={`timeline-filter-button ${active ? 'timeline-filter-button-active' : ''}`}
-              key={filter.key}
-              onClick={() => onChange({ ...filters, type: filter.key })}
-              type="button"
-            >
-              {filter.label}
-            </button>
-          )
-        })}
+    <article className={`timeline-card timeline-card--${style} glass-card card-story ${memory.media.status !== 'storage-verified' ? 'timeline-card--media-unavailable' : ''}`}>
+      <div className="timeline-dot" aria-hidden="true" />
+      <div className="timeline-card-header">
+        <div>
+          <p className="timeline-card-kind">{mediaLabel(memory)}</p>
+          <h3 className="timeline-card-title">{memory.displayTitle}</h3>
+        </div>
+        <time className="timeline-card-date">{memory.displayDate || 'Date review'}</time>
       </div>
-      <label className="timeline-year-filter">
-        <span>Year</span>
-        <select value={filters.year} onChange={(event) => onChange({ ...filters, year: event.target.value })}>
-          <option value="all">All years</option>
-          {model.filters.availableYears.map((year) => (
-            <option key={year.key} value={year.key}>
-              {year.label}
-            </option>
-          ))}
-        </select>
-      </label>
-    </div>
-  )
-}
-
-function ChapterNavigation({ chapters }) {
-  if (chapters.length === 0) return null
-
-  return (
-    <nav aria-label="Timeline chapters" className="timeline-chapter-nav">
-      {chapters.map((chapter) => (
-        <a href={`#${createChapterDomId(chapter.id)}`} key={chapter.id}>
-          <span>{chapter.label}</span>
-          <small>{pluralize(chapter.memories.length, 'memory')}</small>
-        </a>
-      ))}
-    </nav>
-  )
-}
-
-function MemoryCard({ memory }) {
-  return (
-    <article className={`timeline-memory-card ${memory.specialMoment.isSpecial ? 'timeline-memory-card-special' : ''}`}>
-      <div className="timeline-memory-card-meta">
-        <span>{memory.typeLabel}</span>
-        <span>{memory.displayDate || 'Date to review'}</span>
+      <div className="timeline-card-meta">
+        <div className="timeline-card-status">
+          <span className="timeline-card-chip">{mediaLabel(memory)}</span>
+          {memory.tags.slice(0, 2).map((tag) => <span className="timeline-card-chip timeline-card-chip--muted" key={tag.key}>{tag.label}</span>)}
+        </div>
       </div>
-      <div className="timeline-memory-card-copy">
-        <h4>{memory.displayTitle}</h4>
-        <p>{memory.displayDescription}</p>
-      </div>
-      {memory.tags.length > 0 ? (
-        <ul className="timeline-tag-list" aria-label="Memory tags">
-          {memory.tags.slice(0, 4).map((tag) => (
-            <li key={tag.key}>{tag.label}</li>
-          ))}
-        </ul>
+      <p className="timeline-card-desc">{memory.displayDescription}</p>
+      {memory.media.hasReference ? (
+        <button className="timeline-media-preview" onClick={() => onSelect(memory)} type="button">
+          <div className="timeline-media" />
+          <span className="timeline-media-status">{memory.media.status === 'storage-verified' ? 'Private media' : 'Private media stays protected'}</span>
+          <span className="timeline-media-preview-icon" aria-hidden="true">{memory.media.kind === 'video' ? '▶' : '🖼️'}</span>
+        </button>
       ) : null}
-      <div className="timeline-memory-card-footer">
-        <span className={`timeline-media-pill timeline-media-pill-${memory.media.status}`}>{mediaStatusLabel(memory)}</span>
-        {memory.specialMoment.route ? (
-          <Link className="timeline-special-link" to={memory.specialMoment.route}>
-            Open protected moment
-          </Link>
-        ) : null}
+      <div className="timeline-card-actions">
+        {memory.specialMoment.route ? <Link className="btn btn-secondary timeline-action-link" to={memory.specialMoment.route}>Open Page</Link> : null}
+        <button className="btn btn-secondary timeline-action-link" onClick={() => onSelect(memory)} type="button">View memory</button>
       </div>
     </article>
   )
 }
 
-function TimelineGroup({ expandedGroups, group, onToggle }) {
-  const isExpandable = group.kind !== 'special' && group.memories.length > ORDINARY_GROUP_LIMIT
-  const isExpanded = expandedGroups.has(group.id)
-  const visibleMemories = isExpandable && !isExpanded ? group.memories.slice(0, ORDINARY_GROUP_LIMIT) : group.memories
-
-  return (
-    <section className="timeline-group" aria-labelledby={`timeline-group-${group.id.replace(/[^a-z0-9]+/gi, '-')}`}>
-      <div className="timeline-group-heading">
-        <h3 id={`timeline-group-${group.id.replace(/[^a-z0-9]+/gi, '-')}`}>{group.label}</h3>
-        <span>{pluralize(group.memories.length, 'memory')}</span>
-      </div>
-      <div className="timeline-memory-list">
-        {visibleMemories.map((memory) => (
-          <MemoryCard key={memory.id} memory={memory} />
-        ))}
-      </div>
-      {isExpandable ? (
-        <button className="timeline-show-more" onClick={() => onToggle(group.id)} type="button">
-          {isExpanded ? 'Show less' : `Show ${group.memories.length - ORDINARY_GROUP_LIMIT} more`}
-        </button>
-      ) : null}
-    </section>
-  )
+function chapterLabel(memory) {
+  if (memory.date?.status === 'valid' && memory.date?.year) return String(memory.date.year)
+  return 'Date Review'
 }
 
-function TimelineChapters({ chapters }) {
-  const [expandedGroups, setExpandedGroups] = useState(() => new Set())
-
-  const toggleGroup = (groupId) => {
-    setExpandedGroups((current) => {
-      const next = new Set(current)
-      if (next.has(groupId)) {
-        next.delete(groupId)
-      } else {
-        next.add(groupId)
-      }
-      return next
-    })
-  }
-
-  return (
-    <div className="timeline-chapter-stack">
-      {chapters.map((chapter) => (
-        <article className="timeline-chapter" id={createChapterDomId(chapter.id)} key={chapter.id}>
-          <header className="timeline-chapter-heading">
-            <span className="folio-mark">{chapter.kind === 'undated' ? 'Date review' : 'Year chapter'}</span>
-            <h2>{chapter.label}</h2>
-          </header>
-          <div className="timeline-group-stack">
-            {chapter.groups.map((group) => (
-              <TimelineGroup expandedGroups={expandedGroups} group={group} key={group.id} onToggle={toggleGroup} />
-            ))}
-          </div>
-        </article>
-      ))}
-    </div>
-  )
+function memoryDateValue(memory) {
+  if (typeof memory?.date?.raw === 'string') return memory.date.raw.slice(0, 10)
+  if (typeof memory?.date?.value === 'string') return memory.date.value.slice(0, 10)
+  if (memory?.date?.timestamp) return new Date(memory.date.timestamp).toISOString().slice(0, 10)
+  return new Date().toISOString().slice(0, 10)
 }
 
-function TimelineEmptyState({ filters, model }) {
-  if (model.status === 'unavailable') {
-    return (
-      <EditorialEmptyState
-        description="The private legacy story is not connected to this build. This is a source boundary, not an empty archive."
-        title="The private story bridge is unavailable here."
-        titleAs="h3"
-      />
-    )
+function memoryPayloadFromForm(form, fallback = {}) {
+  const tags = form.tags.split(',').map((tag) => tag.trim()).filter(Boolean)
+  return {
+    title: form.title,
+    description: form.description,
+    date: form.date,
+    revision: fallback.revision || 0,
+    tags,
+    specialMomentType: fallback.specialMoment?.isSpecial ? fallback.specialMoment.type || 'ordinary' : 'ordinary',
+    status: fallback.status || 'active',
   }
-
-  if (model.status === 'invalid') {
-    return (
-      <EditorialEmptyState
-        description="The page is holding back stored story data until it can be reviewed safely."
-        title="The story needs review before it can render."
-        titleAs="h3"
-      />
-    )
-  }
-
-  if (model.summary.totalMemories > 0) {
-    return (
-      <EditorialEmptyState
-        description="Try a different type or year filter. Hidden results remain read-only and unchanged."
-        title="No memories match these filters."
-        titleAs="h3"
-      />
-    )
-  }
-
-  return (
-    <EditorialEmptyState
-      description={`No readable memories are available for ${filters.year === 'all' ? 'this view' : filters.year}. The route does not invent story entries.`}
-      title="No readable memories are available yet."
-      titleAs="h3"
-    />
-  )
 }
 
-function SourceStateSection({ compatibilityError, compatibilityState, model, onRefresh }) {
-  const sourceCards = [
-    {
-      key: 'base',
-      label: 'Private story archive',
-      status: model.sourceStatus.base.status,
-      summary:
-        model.sourceStatus.base.status === 'ready'
-          ? `${pluralize(model.sourceStatus.base.count, 'archive memory')} available through the local bridge.`
-          : 'The base story archive is not connected in this build.',
-    },
-    {
-      key: 'custom',
-      label: 'Local custom notes',
-      status: model.sourceStatus.custom.status,
-      summary: `${pluralize(model.sourceStatus.custom.count, 'custom memory')} visible through read-only compatibility.`,
-    },
-    {
-      key: 'overrides',
-      label: 'Preserved corrections',
-      status: model.sourceStatus.overrides.status,
-      summary: `${pluralize(model.sourceStatus.overrides.count, 'preserved correction')} applied before rendering.`,
-    },
-    {
-      key: 'deferred',
-      label: 'Deferred media scan',
-      status: 'deferred',
-      summary: 'Automatic media inventory and fallback seed entries remain outside app-v2 until a safer boundary exists.',
-    },
-  ]
+function sortMemories(memories, order) {
+  const sorted = [...memories]
+  sorted.sort((left, right) => {
+    const leftTimestamp = left.sort?.timestamp
+    const rightTimestamp = right.sort?.timestamp
 
-  return (
-    <EditorialSection
-      action={{ label: 'Refresh reads', onClick: onRefresh, tone: 'secondary' }}
-      className="timeline-section"
-      description="Timeline reports safe read state without exposing storage keys, adapter names, raw paths, or old static routes."
-      eyebrow="Source status"
-      title="Source status stays readable and narrow."
-    >
-      <div className="source-status-toolbar">
-        <div className="source-status-copy">
-          <span className="source-status-pill">{renderCompatibilityStateLabel(compatibilityState)}</span>
-          <p>Unavailable, empty, partial, and invalid story states stay distinct so the page never flattens missing data into a false empty archive.</p>
+    if (leftTimestamp !== null && rightTimestamp !== null && leftTimestamp !== rightTimestamp) {
+      return order === 'oldest' ? leftTimestamp - rightTimestamp : rightTimestamp - leftTimestamp
+    }
+
+    if (leftTimestamp !== null && rightTimestamp === null) return -1
+    if (leftTimestamp === null && rightTimestamp !== null) return 1
+
+    return order === 'oldest'
+      ? (left.sort?.ordinal || 0) - (right.sort?.ordinal || 0)
+      : (right.sort?.ordinal || 0) - (left.sort?.ordinal || 0)
+  })
+  return sorted
+}
+
+function buildMonthOptions(memories) {
+  const monthMap = new Map()
+  for (const memory of memories) {
+    const date = memory.date
+    if (date?.status !== 'valid' || !date.year || !date.month) continue
+    const key = `${date.year}-${String(date.month).padStart(2, '0')}`
+    if (!monthMap.has(key)) {
+      monthMap.set(key, {
+        key,
+        label: new Date(Date.UTC(date.year, date.month - 1, 1)).toLocaleDateString('en-US', {
+          month: 'long',
+          year: 'numeric',
+          timeZone: 'UTC',
+        }),
+      })
+    }
+  }
+  return [...monthMap.values()].sort((left, right) => right.key.localeCompare(left.key))
+}
+
+function MemoryFormDialog({ memory = null, mode, onClose, onSave, status }) {
+  const firstFieldRef = useRef(null)
+  const [form, setForm] = useState(() => ({
+    title: memory?.title || memory?.displayTitle || '',
+    date: memoryDateValue(memory),
+    description: memory?.description || memory?.displayDescription || '',
+    tags: (memory?.tags || []).map((tag) => tag.label || tag.key).join(', '),
+  }))
+
+  useEffect(() => {
+    firstFieldRef.current?.focus()
+  }, [])
+
+  function updateField(key, value) {
+    setForm((current) => ({ ...current, [key]: value }))
+  }
+
+  async function handleSubmit(event) {
+    event.preventDefault()
+    await onSave(memoryPayloadFromForm(form, memory || {}))
+  }
+
+  return createPortal(
+    <dialog aria-labelledby="memory-form-title" className="modal-overlay active faithful-modal-open" onCancel={onClose} open>
+      <form className="modal-container faithful-edit-form" onSubmit={handleSubmit}>
+        <div className="modal-header">
+          <h3 className="modal-title" id="memory-form-title">{mode === 'edit' ? 'Edit memory' : 'Add memory'}</h3>
+          <button aria-label="Close memory form" className="modal-close" onClick={onClose} type="button">×</button>
         </div>
-      </div>
-      {compatibilityError ? (
-        <div className="dashboard-inline-alert">
-          <strong>Compatibility refresh issue</strong>
-          <p>The latest protected refresh did not complete. Existing read-only timeline content remains unchanged.</p>
+        <div className="modal-body">
+          <label className="form-group">
+            <span className="form-label">Title</span>
+            <input className="form-input" onChange={(event) => updateField('title', event.target.value)} ref={firstFieldRef} required type="text" value={form.title} />
+          </label>
+          <label className="form-group">
+            <span className="form-label">Date</span>
+            <input className="form-input" onChange={(event) => updateField('date', event.target.value)} required type="date" value={form.date} />
+          </label>
+          <label className="form-group">
+            <span className="form-label">Description</span>
+            <textarea className="form-textarea" onChange={(event) => updateField('description', event.target.value)} rows={5} value={form.description} />
+          </label>
+          <label className="form-group">
+            <span className="form-label">Tags</span>
+            <input className="form-input" onChange={(event) => updateField('tags', event.target.value)} placeholder="date night, favorite, travel" type="text" value={form.tags} />
+          </label>
+          {status?.message ? <p className={`workflow-feedback ${status.kind === 'error' ? 'workflow-feedback-error' : 'workflow-feedback-success'}`} role="status">{status.message}</p> : null}
         </div>
-      ) : null}
-      <div className="source-status-grid">
-        {sourceCards.map((item) => (
-          <article className="source-card" key={item.key}>
-            <div className="source-card-header">
-              <strong>{item.label}</strong>
-              <span className={`source-card-status source-card-status-${item.status}`}>{item.status}</span>
+        <div className="modal-footer">
+          <button className="btn btn-secondary" onClick={onClose} type="button">Cancel</button>
+          <button className="btn btn-primary" disabled={status?.saving} type="submit">{status?.saving ? 'Saving...' : 'Save'}</button>
+        </div>
+      </form>
+    </dialog>,
+    document.body,
+  )
+}
+
+function DetailModal({ memory, onArchive, onClose, onEdit, status }) {
+  const closeRef = useRef(null)
+  useEffect(() => {
+    if (!memory) return
+    const dialog = closeRef.current?.closest('dialog')
+    if (dialog && !dialog.open) dialog.showModal()
+    closeRef.current?.focus()
+  }, [memory])
+
+  if (!memory) return null
+  return createPortal(
+    <dialog aria-labelledby="detail-title" className="modal-overlay active" onCancel={onClose}>
+      <div className="modal-container" style={{ maxWidth: '600px' }}>
+        <div className="modal-header" style={{ borderBottom: 'none' }}>
+          <h3 className="modal-title" id="detail-title" style={{ fontSize: '1.4rem' }}>{memory.displayTitle}</h3>
+          <button aria-label="Close memory details" className="modal-close" onClick={onClose} ref={closeRef} type="button">×</button>
+        </div>
+        <div className="modal-body" style={{ paddingTop: 0 }}>
+          <div style={{ borderRadius: '12px', overflow: 'hidden', marginBottom: '1rem', border: '1px solid var(--border-glass)' }}>
+            <div className="gallery-video-unavailable">
+              <div className="gallery-video-unavailable-copy">
+                <p className="gallery-video-unavailable-label">Private media protected</p>
+                <h4 className="gallery-video-unavailable-title">{mediaLabel(memory)}</h4>
+                <p className="gallery-video-unavailable-text">The story is visible here without copying the original private file into the app bundle.</p>
+              </div>
             </div>
-            <p>{item.summary}</p>
-          </article>
-        ))}
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-muted)' }}>{memory.displayDate || 'Date review'}</span>
+            <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+              {memory.tags.slice(0, 4).map((tag) => <span className="badge badge-tag" key={tag.key}>{tag.label}</span>)}
+            </div>
+          </div>
+          <p style={{ color: 'var(--color-secondary-text)', fontSize: '0.95rem', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{memory.displayDescription}</p>
+        </div>
+        <div className="modal-footer" style={{ justifyContent: 'space-between', width: '100%' }}>
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <button className="btn btn-secondary" onClick={() => onEdit(memory)} type="button">Edit</button>
+            <button className="btn btn-danger" disabled={status?.saving} onClick={() => onArchive(memory)} type="button">Archive</button>
+          </div>
+          <button className="btn btn-secondary" onClick={onClose} type="button">Close</button>
+        </div>
       </div>
-    </EditorialSection>
+    </dialog>,
+    document.body,
   )
 }
 
-export function TimelineView({ compatibilityError, compatibilityState, model, onRefresh }) {
-  const [filters, setFilters] = useState({ type: 'all', year: 'all' })
-  const visibleChapters = filterChapters(model.chapters, filters)
+export function TimelineView({ model, onRefresh }) {
+  const [selectedTag, setSelectedTag] = useState('all')
+  const [selectedYear, setSelectedYear] = useState('all')
+  const [selectedType, setSelectedType] = useState('all')
+  const [selectedMonth, setSelectedMonth] = useState('all')
+  const [search, setSearch] = useState('')
+  const [sortOrder, setSortOrder] = useState('newest')
+  const [selectedMemory, setSelectedMemory] = useState(null)
+  const [editingMemory, setEditingMemory] = useState(null)
+  const [formMode, setFormMode] = useState('')
+  const [status, setStatus] = useState({ kind: '', message: '', saving: false })
+  const writer = useOwnerWrite(onRefresh)
+  const memories = useMemo(() => allMemories(model), [model])
+  const tags = model.filters.availableTags || []
+  const years = model.filters.availableYears || []
+  const types = model.filters.availableTypes || []
+  const monthOptions = useMemo(() => buildMonthOptions(memories), [memories])
+  const filtered = useMemo(() => {
+    const normalizedSearch = search.trim().toLowerCase()
+    return sortMemories(
+      memories.filter((memory) => {
+        if (selectedTag !== 'all' && !memory.tags.some((tag) => tag.key === selectedTag)) return false
+        if (selectedYear !== 'all' && String(memory.date?.year || '') !== selectedYear) return false
+        if (selectedMonth !== 'all') {
+          const monthKey = memory.date?.status === 'valid'
+            ? `${memory.date.year}-${String(memory.date.month).padStart(2, '0')}`
+            : ''
+          if (monthKey !== selectedMonth) return false
+        }
+        if (selectedType !== 'all') {
+          if (selectedType === 'special' && !memory.specialMoment?.isSpecial) return false
+          if (selectedType === 'photo' && memory.media?.kind !== 'image') return false
+          if (selectedType === 'video' && memory.media?.kind !== 'video') return false
+          if (selectedType === 'no-media' && !['none', 'special-route-only'].includes(memory.media?.status)) return false
+        }
+        if (!normalizedSearch) return true
+        const haystack = [
+          memory.displayTitle,
+          memory.displayDescription,
+          memory.displayDate,
+          ...memory.tags.map((tag) => tag.label),
+        ].join(' ').toLowerCase()
+        return haystack.includes(normalizedSearch)
+      }),
+      sortOrder,
+    )
+  }, [memories, search, selectedMonth, selectedTag, selectedType, selectedYear, sortOrder])
+
+  async function saveForm(payload) {
+    setStatus({ kind: '', message: '', saving: true })
+    try {
+      if (formMode === 'edit' && editingMemory?.id) {
+        await writer.updateMemory(editingMemory.id, payload)
+      } else {
+        await writer.createMemory(payload)
+      }
+      setStatus({ kind: 'success', message: 'Memory saved.', saving: false })
+      setEditingMemory(null)
+      setFormMode('')
+    } catch (error) {
+      setStatus({ kind: 'error', message: error?.message || 'Editing is temporarily unavailable.', saving: false })
+    }
+  }
+
+  async function archiveSelected(memory) {
+    if (!window.confirm(`Archive "${memory.displayTitle}"?`)) return
+    setStatus({ kind: '', message: '', saving: true })
+    try {
+      await writer.archiveMemory(memory.id, memory.revision || 0)
+      setSelectedMemory(null)
+      setStatus({ kind: 'success', message: 'Memory archived.', saving: false })
+    } catch (error) {
+      setStatus({ kind: 'error', message: error?.message || 'Editing is temporarily unavailable.', saving: false })
+    }
+  }
+
+  function openAddForm() {
+    setEditingMemory(null)
+    setFormMode('add')
+    setStatus({ kind: '', message: '', saving: false })
+  }
+
+  function openEditForm(memory) {
+    setSelectedMemory(null)
+    setEditingMemory(memory)
+    setFormMode('edit')
+    setStatus({ kind: '', message: '', saving: false })
+  }
+
+  function clearFilters() {
+    setSearch('')
+    setSelectedTag('all')
+    setSelectedYear('all')
+    setSelectedType('all')
+    setSelectedMonth('all')
+    setSortOrder('newest')
+  }
 
   return (
     <section className="timeline-page">
-      <SharedSpaceHeader
-        actions={[
-          { href: '/gallery', label: 'Open gallery' },
-          { href: '/profile', label: 'Open profile', tone: 'secondary' },
-        ]}
-        aside={<OpeningNote model={model} />}
-        className="timeline-hero"
-        description={describeTimelineState(model)}
-        eyebrow="Story"
-        folio={renderTimelineStatusLabel(model.status)}
-        title="Our story timeline"
-      />
+      <header className="page-header page-header--split">
+        <div className="page-heading">
+          <p className="page-eyebrow">Story Lane</p>
+          <h1 className="page-title">📖 Our Story</h1>
+          <p className="page-subtitle">Search and reopen the memories that still shape your story.</p>
+        </div>
+        <div className="page-actions">
+          <span className="utility-chip">{filtered.length} {filtered.length === 1 ? 'memory' : 'memories'}</span>
+          <button className="btn btn-primary" onClick={openAddForm} type="button">+ Add Memory</button>
+        </div>
+      </header>
+      {status.message && !formMode ? <p className={`workflow-feedback ${status.kind === 'error' ? 'workflow-feedback-error' : 'workflow-feedback-success'}`} role="status">{status.message}</p> : null}
 
-      <WriteWorkflowPanel kind="memory" onRefresh={onRefresh} />
-      <EditorialSection
-        className="timeline-section"
-        description="Years lead the structure, special moments stay distinct, and dense periods open a few entries at a time."
-        eyebrow="Timeline"
-        title="Read the story by chapter."
-      >
-        <TimelineFilters filters={filters} model={model} onChange={setFilters} />
-        <ChapterNavigation chapters={visibleChapters} />
-        {compatibilityState === 'loading' && model.summary.totalMemories === 0 ? (
-          <EditorialEmptyState
-            description="The protected shell is restoring the read-only story state."
-            title="Restoring timeline reads."
-            titleAs="h3"
-          />
-        ) : visibleChapters.length > 0 ? (
-          <TimelineChapters chapters={visibleChapters} />
-        ) : (
-          <TimelineEmptyState filters={filters} model={model} />
-        )}
-      </EditorialSection>
+      <details className="glass-card card-utility filter-toolbar timeline-filter-toolbar">
+        <summary className="timeline-filter-summary-control">
+          <span>Find a memory</span>
+          <span className="faithful-filter-summary">
+            {filtered.length === memories.length
+              ? 'Full story'
+              : `${filtered.length} of ${memories.length}`}
+          </span>
+        </summary>
+        <div className="faithful-filter-grid timeline-filter-grid">
+          <label className="form-group">
+            <span className="filter-toolbar-label">Search memories</span>
+            <input
+              aria-label="Search memories"
+              className="form-input"
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search titles, details, and tags"
+              type="search"
+              value={search}
+            />
+          </label>
+          <label className="form-group">
+            <span className="filter-toolbar-label">Year</span>
+            <select aria-label="Filter by year" className="form-select" onChange={(event) => setSelectedYear(event.target.value)} value={selectedYear}>
+              <option value="all">All years</option>
+              {years.map((year) => <option key={year.key} value={year.key}>{year.label}</option>)}
+            </select>
+          </label>
+          <label className="form-group">
+            <span className="filter-toolbar-label">Month</span>
+            <select aria-label="Filter by month" className="form-select" onChange={(event) => setSelectedMonth(event.target.value)} value={selectedMonth}>
+              <option value="all">Any month</option>
+              {monthOptions.map((month) => <option key={month.key} value={month.key}>{month.label}</option>)}
+            </select>
+          </label>
+          <label className="form-group">
+            <span className="filter-toolbar-label">Type</span>
+            <select aria-label="Filter by memory type" className="form-select" onChange={(event) => setSelectedType(event.target.value)} value={selectedType}>
+              <option value="all">All types</option>
+              {types.map((type) => <option key={type.key} value={type.key}>{type.label}</option>)}
+            </select>
+          </label>
+          <label className="form-group">
+            <span className="filter-toolbar-label">Sort</span>
+            <select aria-label="Sort memories" className="form-select" onChange={(event) => setSortOrder(event.target.value)} value={sortOrder}>
+              <option value="newest">Newest first</option>
+              <option value="oldest">Oldest first</option>
+            </select>
+          </label>
+          <div className="form-group">
+            <span className="filter-toolbar-label">Browse by tag</span>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <button aria-label="Show all tags" className={`tab-btn ${selectedTag === 'all' ? 'active' : ''}`} onClick={() => setSelectedTag('all')} type="button">All</button>
+              {tags.map((tag) => (
+                <button aria-label={`Filter by ${tag.label}`} className={`tab-btn ${selectedTag === tag.key ? 'active' : ''}`} key={tag.key} onClick={() => setSelectedTag(tag.key)} type="button">
+                  {tag.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="faithful-filter-actions">
+            <button aria-label="Clear timeline filters" className="btn btn-secondary" onClick={clearFilters} type="button">Clear filters</button>
+            <p className="faithful-filter-summary">
+              {filtered.length === memories.length
+                ? 'Showing the full story.'
+                : `Showing ${filtered.length} of ${memories.length} memories.`}
+            </p>
+          </div>
+        </div>
+      </details>
 
-      {model.status === 'partial' ? (
-        <EditorialSection
-          className="timeline-section timeline-section-subdued"
-          description="Some legacy memory sources are still deferred. The visible chapters are not rewritten or synchronized from this route."
-          eyebrow="Partial bridge"
-          title="The route shows what is safe now."
-        >
-          <p className="timeline-boundary-note">Private media files, automatic scans, editing, deleting, adding, and Storage remain out of scope.</p>
-        </EditorialSection>
+      <div className="timeline-container">
+        <div className="timeline-line" />
+        <div>
+          {filtered.length > 0 ? filtered.map((memory, index) => {
+            const previous = filtered[index - 1]
+            const currentChapter = chapterLabel(memory)
+            const previousChapter = previous ? chapterLabel(previous) : null
+            return (
+              <div className="timeline-entry" key={memory.id}>
+                {currentChapter !== previousChapter ? (
+                  <div className="timeline-chapter-marker">
+                    <span>{currentChapter}</span>
+                  </div>
+                ) : null}
+                <TimelineCard memory={memory} onSelect={setSelectedMemory} />
+              </div>
+            )
+          }) : (
+            <div className="glass-card card-utility timeline-empty-state">
+              <h3>No memories match this view yet.</h3>
+              <p>Try a different year, month, tag, or search phrase. Your saved memories will still be here when you clear the filters.</p>
+              <div className="faithful-inline-actions">
+                <button className="btn btn-secondary" onClick={clearFilters} type="button">Show everything</button>
+                <button className="btn btn-primary" onClick={openAddForm} type="button">Add a new memory</button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+      <DetailModal memory={selectedMemory} onArchive={archiveSelected} onClose={() => setSelectedMemory(null)} onEdit={openEditForm} status={status} />
+      {formMode ? (
+        <MemoryFormDialog
+          memory={editingMemory}
+          mode={formMode}
+          onClose={() => {
+            setFormMode('')
+            setEditingMemory(null)
+          }}
+          onSave={saveForm}
+          status={status}
+        />
       ) : null}
-
-      <SourceStateSection
-        compatibilityError={compatibilityError}
-        compatibilityState={compatibilityState}
-        model={model}
-        onRefresh={onRefresh}
-      />
     </section>
   )
 }

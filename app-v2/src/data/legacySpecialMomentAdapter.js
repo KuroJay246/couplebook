@@ -83,9 +83,10 @@ function normalizeSection(rawSection, index, warnings) {
 
   const heading = rejectUnsafeText(rawSection.heading, warnings, 'Section heading')
   const content = rejectUnsafeText(rawSection.content, warnings, 'Section content')
-  const items = normalizeStringArray(rawSection.items)
-    .map((item) => rejectUnsafeText(item, warnings, 'Section item'))
-    .filter(Boolean)
+  const items = normalizeStringArray(rawSection.items).flatMap((item) => {
+    const safeItem = rejectUnsafeText(item, warnings, 'Section item')
+    return safeItem ? [safeItem] : []
+  })
 
   if (!heading && !content && items.length === 0) {
     warnings.push('An empty special-moment section was omitted.')
@@ -159,7 +160,10 @@ export function normalizeSpecialMomentPayload(momentKey, payload, options = {}) 
 
   const rawMoment = isPlainObject(payload.moment) ? payload.moment : payload
   const rawSections = Array.isArray(rawMoment.sections) ? rawMoment.sections : []
-  const sections = rawSections.map((section, index) => normalizeSection(section, index, warnings)).filter(Boolean)
+  const sections = rawSections.flatMap((section, index) => {
+    const normalizedSection = normalizeSection(section, index, warnings)
+    return normalizedSection ? [normalizedSection] : []
+  })
   const type = toTrimmedString(rawMoment.type).toLowerCase() || normalizedKey
 
   if (type !== normalizedKey || !isSpecialMomentKey(type)) {

@@ -1,9 +1,13 @@
 import { isPlainObject, normalizePersonKey, toTrimmedString } from '../../data/adapterUtils.js'
 
-const FAVORITE_CATEGORY_ORDER = ['food', 'places', 'hobbies', 'activities']
+const FAVORITE_CATEGORY_ORDER = ['food', 'songs', 'movies', 'places', 'memories', 'notes', 'hobbies', 'activities']
 const FAVORITE_CATEGORY_LABELS = Object.freeze({
   food: 'Food',
+  songs: 'Songs',
+  movies: 'Movies',
   places: 'Places',
+  memories: 'Memories',
+  notes: 'Notes',
   hobbies: 'Hobbies',
   activities: 'Activities',
 })
@@ -13,7 +17,7 @@ const SOURCE_LABELS = Object.freeze({
 })
 
 function uniqueValues(values) {
-  return [...new Set((values || []).filter(Boolean))]
+  return [...new Set((values || []).flatMap((value) => (value ? [value] : [])))]
 }
 
 function normalizeDisplayText(value) {
@@ -26,10 +30,6 @@ function normalizeComparableText(value) {
 
 function slugify(value) {
   return normalizeComparableText(value).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'item'
-}
-
-function pluralize(count, singular, plural = `${singular}s`) {
-  return `${count} ${count === 1 ? singular : plural}`
 }
 
 function summarizeSource(key, source) {
@@ -63,7 +63,10 @@ function summarizeSource(key, source) {
 function collectProfileIdentities(profileSource) {
   const data = profileSource?.data
   const order = Array.isArray(data?.participantOrder)
-    ? data.participantOrder.map((entry) => normalizePersonKey(entry)).filter(Boolean)
+    ? data.participantOrder.flatMap((entry) => {
+        const normalized = normalizePersonKey(entry)
+        return normalized ? [normalized] : []
+      })
     : Object.keys(data?.profilesByUsername || {}).map((entry) => normalizePersonKey(entry))
 
   const identities = new Map()
@@ -85,7 +88,10 @@ function collectProfileIdentities(profileSource) {
 function collectOwnerKeys(favoritesSource) {
   const data = favoritesSource?.data
   const order = Array.isArray(data?.participantOrder)
-    ? data.participantOrder.map((entry) => normalizePersonKey(entry)).filter(Boolean)
+    ? data.participantOrder.flatMap((entry) => {
+        const normalized = normalizePersonKey(entry)
+        return normalized ? [normalized] : []
+      })
     : Object.keys(data?.favoritesByOwner || {}).map((entry) => normalizePersonKey(entry))
 
   return uniqueValues(order)
@@ -114,41 +120,40 @@ export function selectFavoritePeople({ favoritesSource, profileSource } = {}) {
   const profileIdentities = collectProfileIdentities(profileSource)
 
   return collectOwnerKeys(favoritesSource)
-    .map((ownerKey) => {
+    .flatMap((ownerKey) => {
       const ownerFavorites = data?.favoritesByOwner?.[ownerKey]
-      if (!ownerFavorites?.categories) return null
+      if (!ownerFavorites?.categories) return []
 
-      const categories = FAVORITE_CATEGORY_ORDER.map((categoryKey) => {
+      const categories = FAVORITE_CATEGORY_ORDER.flatMap((categoryKey) => {
         const items = normalizeCategoryItems(ownerFavorites, categoryKey)
-        if (items.length === 0) return null
+        if (items.length === 0) return []
 
-        return {
+        return [{
           key: categoryKey,
           label: FAVORITE_CATEGORY_LABELS[categoryKey] || categoryKey,
           items,
           itemCount: items.length,
-        }
-      }).filter(Boolean)
+        }]
+      })
 
       const itemCount = categories.reduce((total, category) => total + category.itemCount, 0)
-      if (itemCount === 0) return null
-
       const profileIdentity = profileIdentities.get(ownerKey)
       const unknownCategories = isPlainObject(ownerFavorites.unknownCategories) ? Object.keys(ownerFavorites.unknownCategories) : []
       const displayName = profileIdentity?.displayName || ownerKey
+      const revision = Number.isInteger(ownerFavorites.revision) && ownerFavorites.revision > 0 ? ownerFavorites.revision : 0
 
-      return {
+      return [{
         id: ownerKey,
         displayName,
         shortName: displayName.split(/\s+/)[0] || displayName,
         displayNameSource: profileIdentity ? 'profile' : 'owner',
+        revision,
         categories,
         categoryCount: categories.length,
         itemCount,
         hiddenCategoryCount: unknownCategories.length,
-      }
+      }]
     })
-    .filter(Boolean)
 }
 
 export function selectSharedFavorites(people) {
@@ -180,16 +185,18 @@ export function selectSharedFavorites(people) {
       }
     }
 
-    const categoryMatches = [...matchesByValue.entries()]
-      .filter(([, match]) => match.ownerIds.size >= 2)
-      .map(([comparableValue, match]) => ({
+    const categoryMatches = [...matchesByValue.entries()].flatMap(([comparableValue, match]) => {
+      if (match.ownerIds.size < 2) return []
+
+      return [{
         id: `${categoryKey}-${slugify(comparableValue)}`,
         label: match.label,
         categoryKey,
         categoryLabel: FAVORITE_CATEGORY_LABELS[categoryKey] || categoryKey,
         ownerCount: match.ownerIds.size,
         owners: [...match.ownerLabels],
-      }))
+      }]
+    })
 
     if (categoryMatches.length === 0) continue
 
@@ -209,7 +216,7 @@ export function selectSharedFavorites(people) {
 }
 
 export function selectCategoryIndex(people) {
-  return FAVORITE_CATEGORY_ORDER.map((categoryKey) => {
+  return FAVORITE_CATEGORY_ORDER.flatMap((categoryKey) => {
     const label = FAVORITE_CATEGORY_LABELS[categoryKey] || categoryKey
     const owners = people.filter((person) => person.categories.some((category) => category.key === categoryKey))
     const itemCount = owners.reduce((total, person) => {
@@ -217,15 +224,15 @@ export function selectCategoryIndex(people) {
       return total + (category?.itemCount || 0)
     }, 0)
 
-    if (itemCount === 0) return null
+    if (itemCount === 0) return []
 
-    return {
+    return [{
       key: categoryKey,
       label,
       ownerCount: owners.length,
       itemCount,
-    }
-  }).filter(Boolean)
+    }]
+  })
 }
 
 function selectProfileEntry(profileSource, people) {
@@ -348,15 +355,4 @@ export function deriveFavoritesStatus({ favoritesSource, people, profileSource }
   if (people.length === 1) return 'partial'
   if (profileStatus === 'unavailable' || profileStatus === 'invalid') return 'partial'
   return 'ready'
-}
-
-export function describeFavoritesCounts(model) {
-  const visiblePeople = pluralize(model.people.length, 'collection')
-  const visibleCategories = pluralize(model.categoryIndex.length, 'category', 'categories')
-
-  if (model.shared.exactMatches.length > 0) {
-    return `${visiblePeople} visible, ${visibleCategories} preserved, and ${pluralize(model.shared.exactMatches.length, 'exact overlap')} ready.`
-  }
-
-  return `${visiblePeople} visible and ${visibleCategories} preserved.`
 }

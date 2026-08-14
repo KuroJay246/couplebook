@@ -215,7 +215,7 @@ test('profile read model stays partial when only one person or one source is ava
 
 test('profile read model returns frozen data and does not mutate compatibility inputs', () => {
   const snapshot = createSnapshot()
-  const before = JSON.parse(JSON.stringify(snapshot))
+  const before = structuredClone(snapshot)
   const model = buildProfileReadModel({
     compatibilitySnapshot: snapshot,
   })

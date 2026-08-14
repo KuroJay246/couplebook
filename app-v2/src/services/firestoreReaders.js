@@ -81,7 +81,12 @@ export function safeString(value, maxLength = 500) {
 
 export function safeStringArray(value, maxItems = 20, maxLength = 80) {
   if (!Array.isArray(value)) return []
-  return value.map((item) => safeString(item, maxLength)).filter(Boolean).slice(0, maxItems)
+  return value
+    .flatMap((item) => {
+      const safeItem = safeString(item, maxLength)
+      return safeItem ? [safeItem] : []
+    })
+    .slice(0, maxItems)
 }
 
 export function rejectUnsafeMediaReference(value) {

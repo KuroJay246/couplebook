@@ -356,7 +356,7 @@ test('legacy memory bridge accepts localhost, normalizes data, and never persist
   })
 
   const before = storage.snapshot()
-  const fixtureClone = JSON.parse(JSON.stringify(sanitizedLegacyMemoryFixture))
+  const fixtureClone = structuredClone(sanitizedLegacyMemoryFixture)
   const result = await readLegacyMemories({
     env: {
       MODE: 'development',

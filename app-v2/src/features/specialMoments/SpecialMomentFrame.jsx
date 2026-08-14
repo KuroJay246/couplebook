@@ -1,207 +1,204 @@
+import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
-import { EditorialEmptyState, EditorialSection, QuietStatus, SharedSpaceHeader } from '../../components/PageLayout'
-import { WriteWorkflowPanel } from '../../components/WriteWorkflowPanel'
+import { useOwnerWrite } from '../editing/useOwnerWrite.js'
 import { getSpecialMomentConfig } from './specialMomentConfig.js'
 import { useSpecialMomentContent } from './useSpecialMomentContent.js'
 
-function SpecialMomentNavigation() {
-  return (
-    <nav aria-label="Return to the shared book" className="special-moment-return-nav">
-      <Link to="/dashboard">Home</Link>
-      <Link to="/timeline">Timeline</Link>
-      <Link to="/gallery">Gallery</Link>
-    </nav>
-  )
+const COPY = {
+  birthday: {
+    className: 'special-page-birthday',
+    badge: '🎂',
+    title: 'Birthday Chapter',
+    fallback: 'A private birthday chapter from the legacy book.',
+    returnLabel: 'Return to Dashboard',
+    kicker: 'A day to celebrate',
+    sideTitle: 'The reveal',
+    sideCopy: 'A small birthday stage for the date, the note, and the memories attached to this page.',
+  },
+  valentine: {
+    className: 'special-page-valentine',
+    badge: '💌',
+    title: 'Valentine Letter',
+    fallback: 'A private Valentine chapter from the legacy book.',
+    returnLabel: 'Return to Dashboard',
+    kicker: 'A kept love note',
+    sideTitle: 'For us',
+    sideCopy: 'A slower romantic page built around the message first, then the date and memories beneath it.',
+  },
+  confession: {
+    className: 'special-page-confession',
+    badge: '💖',
+    title: 'Private Confession',
+    fallback: 'A private confession chapter from the legacy book.',
+    returnLabel: 'Return to Dashboard',
+    kicker: 'Private reading',
+    sideTitle: 'Held quietly',
+    sideCopy: 'An intimate letter space where the words stay centered and the controls stay secondary.',
+  },
 }
 
-function renderContentStatusLabel(status) {
-  if (status === 'ready') return 'Runtime content connected'
-  if (status === 'partial') return 'Partial runtime content'
-  if (status === 'loading') return 'Checking runtime source'
-  if (status === 'invalid') return 'Runtime content held back'
-  if (status === 'empty') return 'No runtime content'
-  return 'Runtime source unavailable'
+function sectionText(model) {
+  const sections = model.moment?.sections || []
+  const text = sections.flatMap((section) => [section.content, ...(section.items || [])]).filter(Boolean)
+  return text.length > 0 ? text : [model.moment?.subtitle || model.config?.summary || 'This private moment is protected inside Couple Book.']
 }
 
-function SpecialMomentStatus({ config, model }) {
-  return (
-    <QuietStatus
-      className="special-moment-status"
-      description="This page reads only from protected runtime content sources after the routed shell authorizes the viewer."
-      eyebrow={renderContentStatusLabel(model.status)}
-      items={[
-        'Protected route',
-        'Private content not bundled',
-        'Read-only runtime source',
-        `${config.label} accent: ${config.accentDescription}`,
-      ]}
-      title="The private chapter stays outside the public JavaScript bundle."
-    />
-  )
-}
+function SpecialMomentSections({ model, fallback }) {
+  const sections = model.moment?.sections || []
 
-function SpecialMomentSourceStatus({ model }) {
-  return (
-    <QuietStatus
-      className="special-moment-source-status"
-      description="This status reports the privacy boundary without exposing paths, filenames, raw source data, or private content."
-      eyebrow="Runtime boundary"
-      items={[
-        model.privacy.privateContentBundled ? 'Needs review' : 'No private content bundled',
-        model.privacy.runtimeOnly ? 'Runtime-only content' : 'Runtime boundary unavailable',
-        `Connection: ${model.sourceStatus.connection}`,
-      ]}
-      title="Content source stays narrow."
-      tone={model.status === 'invalid' ? 'warning' : 'default'}
-    />
-  )
-}
-
-function SpecialMomentMediaStatus({ media }) {
-  return (
-    <aside className={`special-moment-media-status special-moment-media-status-${media.status}`}>
-      <span className="folio-mark">Companion media</span>
-      <h3>
-        {media.status === 'none'
-          ? 'No companion media'
-          : media.status === 'private-legacy-reference'
-            ? 'Media preserved privately'
-            : 'Media unavailable in this build'}
-      </h3>
-      <p>{media.note}</p>
-    </aside>
-  )
-}
-
-function SpecialMomentSection({ section }) {
-  const heading = section.heading ? <h3>{section.heading}</h3> : null
-
-  if (section.kind === 'quote') {
-    return (
-      <figure className="special-moment-content-section special-moment-content-quote">
-        {heading}
-        {section.content ? <blockquote>{section.content}</blockquote> : null}
-      </figure>
-    )
+  if (sections.length === 0) {
+    return sectionText(model).slice(0, 3).map((paragraph) => (
+      <p key={paragraph}>{paragraph || fallback}</p>
+    ))
   }
 
-  if (section.kind === 'list' || section.kind === 'timeline') {
-    const ListTag = section.kind === 'timeline' ? 'ol' : 'ul'
-    return (
-      <section className={`special-moment-content-section special-moment-content-${section.kind}`}>
-        {heading}
-        {section.content ? <p>{section.content}</p> : null}
-        <ListTag>
-          {section.items.map((item) => (
-            <li key={item}>{item}</li>
-          ))}
-        </ListTag>
-      </section>
-    )
-  }
-
-  return (
-    <section className={`special-moment-content-section special-moment-content-${section.kind}`}>
-      {heading}
+  return sections.slice(0, 4).map((section) => (
+    <section className="special-page-section" key={section.id || section.heading || section.content}>
+      {section.heading ? <h2>{section.heading}</h2> : null}
       {section.content ? <p>{section.content}</p> : null}
-      {section.items.length > 0 ? (
-        <ul>
+      {section.items?.length > 0 ? (
+        <ul className="special-page-list">
           {section.items.map((item) => (
             <li key={item}>{item}</li>
           ))}
         </ul>
       ) : null}
     </section>
-  )
+  ))
 }
 
-function SpecialMomentRuntimeContent({ model }) {
-  if (model.status === 'loading') {
-    return (
-      <div className="special-moment-panel special-moment-panel-unavailable" aria-live="polite">
-        <EditorialEmptyState
-          description="Couple Book is checking for a protected runtime source before this private chapter opens."
-          support="No fallback public static page is requested."
-          title="Checking runtime content."
-          titleAs="h3"
-        />
-      </div>
-    )
+function normalizeSections(moment) {
+  const sections = Array.isArray(moment?.sections) ? moment.sections : []
+  if (sections.length === 0) {
+    return [{ id: 'section-1', kind: 'paragraph', content: moment?.subtitle || '' }]
   }
 
-  if (!model.moment) {
-    return (
-      <div className="special-moment-panel special-moment-panel-unavailable">
-        <EditorialEmptyState
-          description={model.config.unavailableDescription}
-          support="The route is migrated and protected, but private text is not copied into the public React bundle."
-          title={model.config.unavailableTitle}
-          titleAs="h3"
-        />
-        <SpecialMomentNavigation />
-      </div>
-    )
+  return sections.slice(0, 8).map((section, index) => ({
+    id: section.id || section.heading || `section-${index + 1}`,
+    kind: ['paragraph', 'note', 'quote', 'list'].includes(section.kind) ? section.kind : 'paragraph',
+    content: section.content || (section.items || []).join('\n') || section.heading || '',
+  }))
+}
+
+function SpecialMomentEditDialog({ copy, model, momentKey, onClose, onSave, status }) {
+  const firstFieldRef = useRef(null)
+  const [form, setForm] = useState(() => ({
+    title: model.moment?.title || model.config?.title || copy.title,
+    subtitle: model.moment?.subtitle || '',
+    date: model.moment?.date || '',
+    revision: model.moment?.revision || 0,
+    sections: normalizeSections(model.moment),
+  }))
+
+  useEffect(() => {
+    firstFieldRef.current?.focus()
+  }, [])
+
+  function updateField(key, value) {
+    setForm((current) => ({ ...current, [key]: value }))
   }
 
-  return (
-    <article className="special-moment-document">
-      <header className="special-moment-document-header">
-        <span className="folio-mark">Runtime-only private chapter</span>
-        <h2>{model.moment.title}</h2>
-        {model.moment.subtitle ? <p>{model.moment.subtitle}</p> : null}
-        {model.moment.date ? <time dateTime={model.moment.date}>{model.moment.date}</time> : null}
-      </header>
-      <div className="special-moment-content-stack">
-        {model.moment.sections.map((section) => (
-          <SpecialMomentSection key={section.id} section={section} />
-        ))}
-      </div>
-      <SpecialMomentNavigation />
-    </article>
+  function updateSection(index, key, value) {
+    setForm((current) => ({
+      ...current,
+      sections: current.sections.map((section, sectionIndex) => (sectionIndex === index ? { ...section, [key]: value } : section)),
+    }))
+  }
+
+  async function handleSubmit(event) {
+    event.preventDefault()
+    await onSave(momentKey, form)
+  }
+
+  return createPortal(
+    <dialog aria-labelledby="special-edit-title" className="modal-overlay active faithful-modal-open" onCancel={onClose} open>
+      <form className="modal-container faithful-edit-form" onSubmit={handleSubmit}>
+        <div className="modal-header">
+          <h3 className="modal-title" id="special-edit-title">Edit {copy.title}</h3>
+          <button aria-label="Close special page form" className="modal-close" onClick={onClose} type="button">×</button>
+        </div>
+        <div className="modal-body">
+          <label className="form-group">
+            <span className="form-label">Title</span>
+            <input className="form-input" onChange={(event) => updateField('title', event.target.value)} ref={firstFieldRef} required type="text" value={form.title} />
+          </label>
+          <label className="form-group">
+            <span className="form-label">Subtitle</span>
+            <input className="form-input" onChange={(event) => updateField('subtitle', event.target.value)} type="text" value={form.subtitle} />
+          </label>
+          <label className="form-group">
+            <span className="form-label">Date</span>
+            <input className="form-input" onChange={(event) => updateField('date', event.target.value)} type="date" value={form.date || ''} />
+          </label>
+          {form.sections.map((section, index) => (
+            <div className="form-group" key={section.id}>
+              <label className="form-label" htmlFor={`special-section-${index}`}>Section {index + 1}</label>
+              <select aria-label={`Section ${index + 1} type`} className="form-select" onChange={(event) => updateSection(index, 'kind', event.target.value)} value={section.kind}>
+                <option value="paragraph">Paragraph</option>
+                <option value="note">Note</option>
+                <option value="quote">Quote</option>
+                <option value="list">List</option>
+              </select>
+              <textarea className="form-textarea" id={`special-section-${index}`} onChange={(event) => updateSection(index, 'content', event.target.value)} required rows={4} value={section.content} />
+            </div>
+          ))}
+          {status?.message ? <p className={`workflow-feedback ${status.kind === 'error' ? 'workflow-feedback-error' : 'workflow-feedback-success'}`} role="status">{status.message}</p> : null}
+        </div>
+        <div className="modal-footer">
+          <button className="btn btn-secondary" onClick={onClose} type="button">Cancel</button>
+          <button className="btn btn-primary" disabled={status?.saving} type="submit">{status?.saving ? 'Saving...' : 'Save'}</button>
+        </div>
+      </form>
+    </dialog>,
+    document.body,
   )
 }
 
 export function SpecialMomentFrame({ momentKey }) {
   const config = getSpecialMomentConfig(momentKey)
   const { model, refreshCompatibility } = useSpecialMomentContent(momentKey)
+  const writer = useOwnerWrite(refreshCompatibility)
+  const [editing, setEditing] = useState(false)
+  const [status, setStatus] = useState({ kind: '', message: '', saving: false })
+  const copy = COPY[momentKey] || COPY.confession
+  const title = model.moment?.title || config?.title || copy.title
+  const subtitle = model.moment?.subtitle || model.config?.summary || 'A private page kept inside Couple Book.'
 
-  if (!config) {
-    return (
-      <EditorialEmptyState
-        description="This protected special-moment route is not configured for the migrated shell."
-        title="Special moment unavailable."
-      />
-    )
+  async function saveMoment(type, payload) {
+    setStatus({ kind: '', message: '', saving: true })
+    try {
+      await writer.saveSpecialMoment(type, payload)
+      setStatus({ kind: 'success', message: 'Page text saved.', saving: false })
+      setEditing(false)
+    } catch (error) {
+      setStatus({ kind: 'error', message: error?.message || 'Editing is temporarily unavailable.', saving: false })
+    }
   }
 
   return (
-    <section className={`special-moment-page special-moment-page-${config.accent}`}>
-      <SharedSpaceHeader
-        actions={[
-          { href: '/timeline', label: 'Open timeline' },
-          { href: '/gallery', label: 'Open gallery', tone: 'secondary' },
-        ]}
-        aside={<SpecialMomentStatus config={config} model={model} />}
-        className="special-moment-hero"
-        description={config.summary}
-        eyebrow="Protected special moment"
-        folio={config.migrationState}
-        title={config.title}
-      />
-
-      <WriteWorkflowPanel kind="special" momentKey={momentKey} onRefresh={refreshCompatibility} />
-      <EditorialSection
-        className="special-moment-section"
-        description="Private text renders only when a runtime source returns normalized safe sections. Otherwise this page stays honest about what is unavailable."
-        eyebrow={config.label}
-        title="Private content now uses a runtime-only boundary."
-      >
-        <SpecialMomentRuntimeContent model={model} />
-        <div className="special-moment-support-grid">
-          <SpecialMomentMediaStatus media={model.media} />
-          <SpecialMomentSourceStatus model={model} />
+    <section className={`special-page-standalone ${copy.className}`}>
+      <main className="card glass-card special-page-layout" aria-live="polite">
+        <aside className="special-page-aside" aria-hidden="true">
+          <div className="badge">{copy.badge}</div>
+          <p className="dashboard-section-kicker">{copy.kicker}</p>
+          <h2>{copy.sideTitle}</h2>
+          <p>{copy.sideCopy}</p>
+        </aside>
+        <div className="special-page-letter">
+          <h1>{title}</h1>
+          <p className="faithful-special-subtitle">{subtitle}</p>
+          {model.moment?.date ? <p className="faithful-empty-copy">{new Date(model.moment.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p> : null}
+          <SpecialMomentSections model={model} fallback={copy.fallback} />
         </div>
-      </EditorialSection>
+        <div className="actions special-page-actions">
+          <button className="btn btn-secondary" onClick={() => setEditing(true)} type="button">Edit</button>
+          <Link className="btn btn-primary" to="/dashboard">{copy.returnLabel}</Link>
+          <Link className="btn btn-secondary" to="/gallery">Open Gallery</Link>
+        </div>
+        {status.message && !editing ? <p className={`workflow-feedback ${status.kind === 'error' ? 'workflow-feedback-error' : 'workflow-feedback-success'}`} role="status">{status.message}</p> : null}
+      </main>
+      {editing ? <SpecialMomentEditDialog copy={copy} model={model} momentKey={momentKey} onClose={() => setEditing(false)} onSave={saveMoment} status={status} /> : null}
     </section>
   )
 }

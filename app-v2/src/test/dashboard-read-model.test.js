@@ -132,3 +132,136 @@ test('dashboard read model keeps unavailable memory states honest instead of pre
   assert.equal(model.sourceState.totals.unavailable, 1)
   assert.equal(model.sourceState.warnings.length, 1)
 })
+
+test('dashboard read model reuses the active timeline ordering so archived smoke entries stay out of recent cards', () => {
+  const model = buildDashboardReadModel({
+    approvedUser: {
+      username: 'Jaylan',
+      profileName: 'Jaylan',
+    },
+    compatibilitySnapshot: {
+      status: 'ready',
+      warnings: [],
+      sources: {
+        profile: { status: 'ready', source: 'firestore', data: { participantOrder: [], profilesByUsername: {} }, warnings: [] },
+        settings: { status: 'ready', source: 'firestore', data: { settings: { privacyToggles: {}, unknownFields: {} } }, warnings: [] },
+        favorites: { status: 'ready', source: 'firestore', data: {}, warnings: [] },
+        contract: { status: 'ready', source: 'firestore', data: {}, warnings: [] },
+        memories: {
+          status: 'ready',
+          source: 'firestore',
+          data: {
+            memories: [
+              {
+                id: 'archived-smoke-note',
+                title: 'Temporary launch smoke test',
+                description: 'Archived synthetic memory that should never reopen on the dashboard.',
+                date: '2026-07-22',
+                status: 'archived',
+                mediaState: 'none',
+                schemaVersion: 1,
+              },
+              {
+                id: 'older-active',
+                title: 'Library afternoon',
+                description: 'A real active memory.',
+                date: '2026-07-20',
+                status: 'active',
+                mediaState: 'none',
+                schemaVersion: 1,
+              },
+              {
+                id: 'newest-active',
+                title: 'Golden hour walk',
+                description: 'The newest active memory should appear first.',
+                date: '2026-07-23',
+                status: 'active',
+                mediaState: 'private-legacy-reference',
+                isVideo: false,
+                schemaVersion: 1,
+              },
+            ],
+          },
+          warnings: [],
+        },
+      },
+    },
+    now: new Date('2026-07-23T12:34:56.000Z'),
+    routeMeta: protectedRouteMeta,
+  })
+
+  assert.equal(model.recentMemories.totalCount, 2)
+  assert.deepEqual(
+    model.recentMemories.items.map((item) => item.title),
+    ['Golden hour walk', 'Library afternoon'],
+  )
+  assert.doesNotMatch(JSON.stringify(model.recentMemories), /Temporary launch smoke test/)
+})
+
+test('dashboard read model prefers authored copy before date-only fallback titles', () => {
+  const model = buildDashboardReadModel({
+    approvedUser: {
+      username: 'Jaylan',
+      profileName: 'Jaylan',
+    },
+    compatibilitySnapshot: {
+      status: 'ready',
+      warnings: [],
+      sources: {
+        profile: { status: 'ready', source: 'firestore', data: { participantOrder: [], profilesByUsername: {} }, warnings: [] },
+        settings: { status: 'ready', source: 'firestore', data: { settings: { privacyToggles: {}, unknownFields: {} } }, warnings: [] },
+        favorites: { status: 'ready', source: 'firestore', data: {}, warnings: [] },
+        contract: { status: 'ready', source: 'firestore', data: {}, warnings: [] },
+        memories: {
+          status: 'ready',
+          source: 'firestore',
+          data: {
+            memories: [
+              {
+                id: 'description-first',
+                title: 'Photo from 2026-07-20',
+                description: 'Slow dancing under the kitchen light.',
+                date: '2026-07-20',
+                status: 'active',
+                mediaState: 'private-legacy-reference',
+                isVideo: false,
+                schemaVersion: 1,
+              },
+              {
+                id: 'special-fallback',
+                title: 'Photo from 2026-07-19',
+                description: 'A beautiful shared moment captured on July 19, 2026.',
+                date: '2026-07-19',
+                status: 'active',
+                isSpecialPage: true,
+                pageUrl: 'valentine/index.html',
+                mediaState: 'none',
+                schemaVersion: 1,
+              },
+              {
+                id: 'date-fallback',
+                title: 'Photo from 2026-07-18',
+                description: 'Auto-imported from your photos folder.',
+                date: '2026-07-18',
+                status: 'active',
+                mediaState: 'private-legacy-reference',
+                schemaVersion: 1,
+              },
+            ],
+          },
+          warnings: [],
+        },
+      },
+    },
+    now: new Date('2026-07-23T12:34:56.000Z'),
+    routeMeta: protectedRouteMeta,
+  })
+
+  assert.equal(model.recentMemories.items[0].title, 'Slow dancing under the kitchen light')
+  assert.equal(model.recentMemories.items[0].description, 'Saved on July 20, 2026.')
+  assert.equal(model.recentMemories.items[1].title, 'Valentine chapter')
+  assert.equal(model.recentMemories.items[1].description, 'Saved on July 19, 2026.')
+  assert.equal(model.recentMemories.items[2].title, 'Memory from July 18, 2026')
+  assert.equal(model.recentMemories.items[2].description, 'Original media stays outside this shell.')
+  assert.doesNotMatch(JSON.stringify(model.recentMemories.items), /A photo from July/)
+})

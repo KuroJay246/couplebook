@@ -2,7 +2,7 @@ import { freezeClone } from '../../data/adapterUtils.js'
 import { selectTimelineDisplayMemories } from '../timeline/memorySelectors.js'
 
 function sortByNewest(items = []) {
-  return [...items].sort((left, right) => {
+  return items.toSorted((left, right) => {
     if (left.sort.timestamp !== null && right.sort.timestamp !== null && left.sort.timestamp !== right.sort.timestamp) {
       return right.sort.timestamp - left.sort.timestamp
     }
@@ -25,6 +25,7 @@ function createMonthLabel(date) {
 }
 
 export function classifyGalleryMediaStatus(media) {
+  if (media?.status === 'storage-verified') return 'storage-verified'
   if (media?.isAvailableInApp === true) return 'available-local-reference'
   if (media?.status === 'private-legacy-reference') return 'private-legacy-reference'
   if (media?.status === 'special-route-only') return 'special-route-only'
@@ -55,6 +56,10 @@ function buildGalleryItem(memory, index) {
       status: mediaStatus,
       hasReference: memory.media.hasReference,
       isAvailableInApp: memory.media.isAvailableInApp === true,
+      storagePath: memory.media.storagePath || '',
+      thumbnailPath: memory.media.thumbnailPath || '',
+      posterPath: memory.media.posterPath || '',
+      contentType: memory.media.contentType || '',
     },
     specialMoment: {
       isSpecial: memory.specialMoment.isSpecial,

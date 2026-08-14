@@ -27,7 +27,13 @@ export function normalizeFirestoreSettings(id, data, warnings) {
     id,
     theme: safeString(data.theme, 40),
     anniversaryView: safeString(data.anniversaryView, 40),
-    privacy: data.privacy && typeof data.privacy === 'object' ? { localOnlyMode: data.privacy.localOnlyMode === true } : {},
+    privacy: data.privacy && typeof data.privacy === 'object'
+      ? {
+          localOnlyMode: data.privacy.localOnlyMode === true,
+          reducedMotion: data.privacy.reducedMotion === true,
+        }
+      : {},
+    revision: Number.isInteger(data.revision) && data.revision > 0 ? data.revision : 0,
     schemaVersion: data.schemaVersion,
   }
 }

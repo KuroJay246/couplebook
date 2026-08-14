@@ -1,289 +1,245 @@
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
-import { EditorialEmptyState, EditorialSection, SharedSpaceHeader } from '../../components/PageLayout'
-import { WriteWorkflowPanel } from '../../components/WriteWorkflowPanel'
+import { useOwnerWrite } from '../editing/useOwnerWrite.js'
 
-function renderProfileStatusLabel(status) {
-  if (status === 'ready') return 'Read-only profile'
-  if (status === 'partial') return 'Partial bridge'
-  if (status === 'unavailable') return 'Source unavailable'
-  return 'Waiting on profile data'
+function personTone(index) {
+  return index === 0 ? 'jaylan' : 'omia'
 }
 
-function renderCompatibilityStateLabel(compatibilityState) {
-  if (compatibilityState === 'loading') return 'Refreshing'
-  if (compatibilityState === 'error') return 'Needs review'
-  if (compatibilityState === 'ready') return 'Ready'
-  return 'Waiting'
+function normalizeName(value) {
+  return String(value || '').trim().toLowerCase()
 }
 
-function describeProfileState(model) {
-  if (model.status === 'ready') {
-    return 'The paired profiles, milestones, and shared favorites now sit together in one quieter relationship spread.'
-  }
-
-  if (model.status === 'partial') {
-    return 'Some relationship details are available, but the full paired spread still depends on the read-only compatibility bridge.'
-  }
-
-  if (model.status === 'unavailable') {
-    return 'This shared spread is ready, but profile details are still unavailable on this routed origin. The page stays honest instead of inventing names or dates.'
-  }
-
-  return 'The shared relationship frame is ready, but the paired profile details have not surfaced in this routed shell yet.'
+function relationshipDisplayName(value, index = 0) {
+  const normalized = normalizeName(value)
+  if (normalized === 'approved reader') return 'Jaylan'
+  if (normalized === 'partner record') return 'Omia'
+  return value || (index === 0 ? 'Jaylan' : 'Omia')
 }
 
-function OpeningNote({ model }) {
-  const peopleCount = model.people.length
-  const warningCount = model.warnings.length
+function relationshipTitle(title, people) {
+  const cleaned = String(title || '').replaceAll('Approved Reader', relationshipDisplayName('Approved Reader', 0)).replaceAll('Partner Record', relationshipDisplayName('Partner Record', 1))
+  if (cleaned.trim()) return cleaned
+  if (people.length >= 2) return `${relationshipDisplayName(people[0].displayName, 0)} and ${relationshipDisplayName(people[1].displayName, 1)}`
+  return 'About us'
+}
 
+function isOwnerProfile(person, approvedUser) {
+  const currentNames = [approvedUser?.username, approvedUser?.displayName, approvedUser?.profileName].map(normalizeName).filter(Boolean)
+  return currentNames.includes(normalizeName(person.id)) || currentNames.includes(normalizeName(person.displayName))
+}
+
+function daysTogether(value) {
+  if (!value) return null
+  const start = new Date(value)
+  if (Number.isNaN(start.getTime())) return null
+  const now = new Date()
+  return Math.max(0, Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)))
+}
+
+function ProfileEditDialog({ onClose, onSave, person, status }) {
+  const firstFieldRef = useRef(null)
+  const [form, setForm] = useState(() => ({
+    name: person?.displayName || '',
+    bio: person?.bio || '',
+    anniversaryView: person?.anniversaryView || 'dual',
+    joinedDate: person?.joinedDate || '',
+    birthday: person?.birthday || '',
+    revision: person?.revision || 0,
+  }))
+
+  useEffect(() => {
+    firstFieldRef.current?.focus()
+  }, [])
+
+  function updateField(key, value) {
+    setForm((current) => ({ ...current, [key]: value }))
+  }
+
+  async function handleSubmit(event) {
+    event.preventDefault()
+    await onSave(form)
+  }
+
+  return createPortal(
+    <dialog aria-labelledby="profile-edit-title" className="modal-overlay active faithful-modal-open" onCancel={onClose} open>
+      <form className="modal-container faithful-edit-form" onSubmit={handleSubmit}>
+        <div className="modal-header">
+          <h3 className="modal-title" id="profile-edit-title">Edit profile</h3>
+          <button aria-label="Close profile form" className="modal-close" onClick={onClose} type="button">×</button>
+        </div>
+        <div className="modal-body">
+          <label className="form-group">
+            <span className="form-label">Display name</span>
+            <input className="form-input" onChange={(event) => updateField('name', event.target.value)} ref={firstFieldRef} required type="text" value={form.name} />
+          </label>
+          <label className="form-group">
+            <span className="form-label">Bio</span>
+            <textarea className="form-textarea" onChange={(event) => updateField('bio', event.target.value)} rows={5} value={form.bio} />
+          </label>
+          <label className="form-group">
+            <span className="form-label">Anniversary view</span>
+            <select className="form-select" onChange={(event) => updateField('anniversaryView', event.target.value)} value={form.anniversaryView}>
+              <option value="dual">Both perspectives</option>
+              <option value="jaylan">Jaylan perspective</option>
+              <option value="omia">Omia perspective</option>
+            </select>
+          </label>
+          <label className="form-group">
+            <span className="form-label">Joined date</span>
+            <input className="form-input" onChange={(event) => updateField('joinedDate', event.target.value)} type="date" value={form.joinedDate || ''} />
+          </label>
+          <label className="form-group">
+            <span className="form-label">Birthday</span>
+            <input className="form-input" onChange={(event) => updateField('birthday', event.target.value)} type="date" value={form.birthday || ''} />
+          </label>
+          {status?.message ? <p className={`workflow-feedback ${status.kind === 'error' ? 'workflow-feedback-error' : 'workflow-feedback-success'}`} role="status">{status.message}</p> : null}
+        </div>
+        <div className="modal-footer">
+          <button className="btn btn-secondary" onClick={onClose} type="button">Cancel</button>
+          <button className="btn btn-primary" disabled={status?.saving} type="submit">{status?.saving ? 'Saving...' : 'Save'}</button>
+        </div>
+      </form>
+    </dialog>,
+    document.body,
+  )
+}
+
+function ProfileCard({ canEdit, onEdit, person, index }) {
+  const tone = personTone(index)
+  const togetherDays = daysTogether(person.joinedDate)
+  const displayName = relationshipDisplayName(person.displayName, index)
   return (
-    <div className="profile-opening-note">
-      <span className="source-status-pill">{renderProfileStatusLabel(model.status)}</span>
-      <ul className="profile-opening-list">
-        <li>{peopleCount >= 2 ? `${peopleCount} voices preserved` : 'Paired profiles still pending'}</li>
-        <li>{model.sharedHighlights.length > 0 ? `${model.sharedHighlights.length} shared highlights visible` : 'Shared highlights still quiet'}</li>
-        <li>{warningCount > 0 ? `${warningCount} warnings remain explicit` : 'No hidden write-back paths'}</li>
-      </ul>
+    <div className={`glass-card card-story profile-card ${tone}-side`}>
+      <div className="profile-avatar-container">
+        <div className="profile-avatar" aria-hidden="true" />
+      </div>
+      <h2 className="profile-name">{displayName}</h2>
+      <span className="badge" style={{ background: tone === 'jaylan' ? 'rgba(255, 74, 107, 0.15)' : 'rgba(139, 92, 246, 0.15)', color: tone === 'jaylan' ? 'var(--color-jaylan)' : 'var(--color-omia)', marginBottom: '1rem' }}>One half of us</span>
+      <p className="profile-bio">{person.bio || 'A personal note is waiting to be written.'}</p>
+      <div className="profile-meta-list">
+        {(person.details || []).slice(0, 3).map((detail) => (
+          <div className="profile-meta-item" key={detail.key}>
+            <span className="profile-meta-label">{detail.label}:</span>
+            <span className="profile-meta-val">{detail.value || 'Still to be added'}</span>
+          </div>
+        ))}
+        {togetherDays !== null ? (
+          <div className="profile-meta-item">
+            <span className="profile-meta-label">Days together:</span>
+            <span className="profile-meta-val">{togetherDays}</span>
+          </div>
+        ) : null}
+      </div>
+      <div style={{ display: 'flex', gap: '0.5rem' }}>
+        {canEdit ? <button className="btn btn-secondary" onClick={() => onEdit(person)} style={{ flex: 1 }} type="button">Edit My Page</button> : null}
+        <Link className="btn btn-primary" style={{ flex: 1 }} to="/favorites">View Favorites</Link>
+      </div>
     </div>
   )
 }
 
-function ProfilePersonPanel({ person }) {
-  return (
-    <article className="profile-person-panel">
-      <div className="profile-person-meta">
-        <span className="folio-mark">{person.avatarStatus === 'provided' ? 'Portrait saved' : 'Portrait pending'}</span>
-        <span className="profile-person-status">{person.bioStatus === 'ready' ? 'Personal note' : 'Bio pending'}</span>
-      </div>
-      <div className="profile-person-copy">
-        <h3>{person.displayName}</h3>
-        <p>{person.bio || 'A personal note has not been carried into this routed shell yet.'}</p>
-      </div>
-      <dl className="profile-detail-list">
-        {person.details.map((detail) => (
-          <div className="profile-detail-row" key={detail.key}>
-            <dt>{detail.label}</dt>
-            <dd className={detail.status === 'ready' ? '' : 'profile-detail-empty'}>{detail.value || 'Not available yet'}</dd>
-          </div>
-        ))}
-      </dl>
-    </article>
-  )
-}
+export function ProfileView({ model, onRefresh }) {
+  const writer = useOwnerWrite(onRefresh)
+  const [editingPerson, setEditingPerson] = useState(null)
+  const [status, setStatus] = useState({ kind: '', message: '', saving: false })
+  const people = useMemo(() => {
+    const basePeople = model.people || []
+    if (!writer.approvedUser || basePeople.some((person) => isOwnerProfile(person, writer.approvedUser))) return basePeople
+    const displayName = writer.approvedUser.displayName || writer.approvedUser.username || 'Jaylan'
+    return [{
+      id: writer.approvedUser.username || displayName,
+      displayName,
+      bio: '',
+      anniversaryView: 'dual',
+      joinedDate: '',
+      birthday: '',
+      revision: 0,
+      details: [],
+    }, ...basePeople]
+  }, [model.people, writer.approvedUser])
+  const displayRelationshipTitle = relationshipTitle(model.relationship?.title, people)
 
-function PeopleSection({ model }) {
-  return (
-    <EditorialSection
-      className="profile-section"
-      description="One shared relationship spread comes first; account-style controls and editing stay deferred."
-      eyebrow="Shared spread"
-      title="We are the subject of this book."
-    >
-      {model.people.length > 0 ? (
-        <div className="profile-spread-grid">
-          {model.people.map((person) => (
-            <ProfilePersonPanel key={person.id} person={person} />
-          ))}
-        </div>
-      ) : (
-        <EditorialEmptyState
-          description="This route is ready for the paired spread, but it will not invent names, birthdays, or bios on its own."
-          title="Profile details are still waiting on a safe read-only source."
-          titleAs="h3"
-        />
-      )}
-    </EditorialSection>
-  )
-}
+  async function saveProfile(payload) {
+    setStatus({ kind: '', message: '', saving: true })
+    try {
+      await writer.saveProfile(payload)
+      setStatus({ kind: 'success', message: 'Profile saved.', saving: false })
+      setEditingPerson(null)
+    } catch (error) {
+      setStatus({ kind: 'error', message: error?.message || 'Editing is temporarily unavailable.', saving: false })
+    }
+  }
 
-function MilestonesSection({ relationship }) {
-  const hasContent = relationship.anniversaries.length > 0 || relationship.milestones.length > 0
-
-  return (
-    <EditorialSection
-      className="profile-section"
-      description="Joined dates, birthdays, and contract milestones stay nearby without overwhelming the shared opening."
-      eyebrow="Milestones"
-      title="Anniversaries and milestones stay close."
-    >
-      {hasContent ? (
-        <div className="profile-milestone-grid">
-          <article className="profile-note-card">
-            <span className="folio-mark">Anniversaries</span>
-            {relationship.anniversaries.length > 0 ? (
-              <ul className="profile-note-list">
-                {relationship.anniversaries.map((item) => (
-                  <li key={item.id}>
-                    <strong>{item.label}</strong>
-                    <p>{item.dateLabel || 'Date pending'}</p>
-                    <span>{item.summary}</span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="profile-note-empty">Joined-date views have not reached this shell yet.</p>
-            )}
-          </article>
-
-          <article className="profile-note-card">
-            <span className="folio-mark">Milestones</span>
-            {relationship.milestones.length > 0 ? (
-              <ul className="profile-note-list">
-                {relationship.milestones.map((item) => (
-                  <li key={item.id}>
-                    <strong>{item.label}</strong>
-                    <p>{item.value || 'Not available yet'}</p>
-                    <span>{item.kind}</span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="profile-note-empty">Milestone details are still waiting on the compatibility bridge.</p>
-            )}
-          </article>
-        </div>
-      ) : (
-        <EditorialEmptyState
-          description="Joined dates, birthdays, and contract milestones will appear here once the read-only profile bridge has more to work with."
-          title="Milestones are still pending."
-          titleAs="h3"
-        />
-      )}
-    </EditorialSection>
-  )
-}
-
-function HighlightsSection({ model }) {
-  return (
-    <EditorialSection
-      className="profile-section"
-      description="Favorites should feel like quiet marginal notes from the relationship, not another settings list."
-      eyebrow="Shared highlights"
-      title="Shared favorites surface as gentle highlights."
-    >
-      {model.sharedHighlights.length > 0 ? (
-        <ul className="profile-highlight-list">
-          {model.sharedHighlights.map((highlight) => (
-            <li className="profile-highlight-chip" key={highlight.id}>
-              <strong>{highlight.label}</strong>
-              <span>
-                {highlight.owner} {highlight.category} {highlight.count > 1 ? `(${highlight.count})` : ''}
-              </span>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <EditorialEmptyState
-          description="The page keeps the space ready for shared favorites, but it will not fabricate highlights when the preserved list is empty."
-          title="No favorite highlights are available yet."
-          titleAs="h3"
-        />
-      )}
-    </EditorialSection>
-  )
-}
-
-function RelatedEntriesSection({ entries }) {
-  return (
-    <EditorialSection
-      className="profile-section"
-      description="Contract and favorites remain reachable from here without taking over the shared relationship spread."
-      eyebrow="Related entries"
-      title="Contract and favorites stay one step down."
-    >
-      <div className="profile-entry-grid">
-        {Object.values(entries).map((entry) => (
-          <Link className="profile-entry-card" key={entry.href} to={entry.href}>
-            <span className="profile-entry-status">{entry.status}</span>
-            <strong>{entry.title}</strong>
-            <p>{entry.description}</p>
-          </Link>
-        ))}
-      </div>
-    </EditorialSection>
-  )
-}
-
-function SourceStateSection({ compatibilityError, compatibilityState, model, onRefresh }) {
-  return (
-    <EditorialSection
-      action={{ label: 'Refresh reads', onClick: onRefresh, tone: 'secondary' }}
-      className="profile-section"
-      description="Profile is still using only the read-only compatibility inputs while editing remains deferred."
-      eyebrow="Source status"
-      title="Source status remains explicit."
-    >
-      <div className="source-status-toolbar">
-        <div className="source-status-copy">
-          <span className="source-status-pill">{renderCompatibilityStateLabel(compatibilityState)}</span>
-          <p>The migrated route will distinguish unavailable, empty, and partial profile data instead of pretending the relationship spread is complete.</p>
-        </div>
-      </div>
-
-      {compatibilityError ? (
-        <div className="dashboard-inline-alert">
-          <strong>Compatibility refresh issue</strong>
-          <p>{compatibilityError}</p>
-        </div>
-      ) : null}
-
-      <div className="source-status-grid">
-        {model.sourceStatus.items.map((item) => (
-          <article className="source-card" key={item.key}>
-            <div className="source-card-header">
-              <strong>{item.label}</strong>
-              <span className={`source-card-status source-card-status-${item.status}`}>{item.status}</span>
-            </div>
-            <p>{item.summary}</p>
-            <div className="source-card-meta">
-              <span>{item.sourceLabel}</span>
-              <span>{item.warningCount} warnings</span>
-            </div>
-          </article>
-        ))}
-      </div>
-
-      {model.warnings.length > 0 ? (
-        <div className="warning-ledger">
-          <h3>Current warnings</h3>
-          <ul>
-            {model.warnings.map((warning) => (
-              <li key={warning}>{warning}</li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
-    </EditorialSection>
-  )
-}
-
-export function ProfileView({ compatibilityError, compatibilityState, model, onRefresh }) {
   return (
     <section className="profile-page">
-      <SharedSpaceHeader
-        actions={[
-          { href: model.entries.favorites.href, label: 'Open favorites' },
-          { href: model.entries.contract.href, label: 'Open contract', tone: 'secondary' },
-        ]}
-        aside={<OpeningNote model={model} />}
-        className="profile-hero"
-        description={describeProfileState(model)}
-        eyebrow="Shared space"
-        folio={renderProfileStatusLabel(model.status)}
-        title={model.relationship.title}
-      />
+      <header className="page-header">
+        <div className="page-heading">
+          <p className="page-eyebrow">About Us</p>
+          <h1 className="page-title">👥 Us</h1>
+          <p className="page-subtitle">Both of you, the dates that matter, and the promises that give the story its shape.</p>
+        </div>
+      </header>
 
-      <WriteWorkflowPanel kind="profile" onRefresh={onRefresh} />
-      <PeopleSection model={model} />
-      <MilestonesSection relationship={model.relationship} />
-      <HighlightsSection model={model} />
-      <RelatedEntriesSection entries={model.entries} />
-      <SourceStateSection
-        compatibilityError={compatibilityError}
-        compatibilityState={compatibilityState}
-        model={model}
-        onRefresh={onRefresh}
-      />
+      <section className="glass-card card-utility faithful-summary-card">
+        <div className="dashboard-section-heading">
+          <div>
+            <p className="dashboard-section-kicker">Our Story</p>
+            <h2 className="dashboard-subtitle">{displayRelationshipTitle}</h2>
+            <p className="dashboard-section-copy">{model.relationship?.summary}</p>
+          </div>
+        </div>
+        <div className="faithful-stat-grid">
+          <div className="faithful-stat-tile">
+            <span className="faithful-stat-value">{people.length}</span>
+            <span className="faithful-stat-label">people in us</span>
+          </div>
+          <div className="faithful-stat-tile">
+            <span className="faithful-stat-value">{(model.relationship?.anniversaries || []).length}</span>
+            <span className="faithful-stat-label">shared dates</span>
+          </div>
+          <div className="faithful-stat-tile">
+            <span className="faithful-stat-value">{(model.relationship?.milestones || []).length}</span>
+            <span className="faithful-stat-label">milestones</span>
+          </div>
+        </div>
+      </section>
+
+      <div className="profiles-layout">
+        {people.map((person, index) => (
+          <ProfileCard
+            canEdit={isOwnerProfile(person, writer.approvedUser)}
+            index={index}
+            key={person.id}
+            onEdit={(nextPerson) => {
+              setStatus({ kind: '', message: '', saving: false })
+              setEditingPerson(nextPerson)
+            }}
+            person={person}
+          />
+        ))}
+        <div className="glass-card card-utility contract-card-profile">
+          <h2 style={{ fontFamily: 'var(--font-accent)', fontWeight: 700, textAlign: 'center', marginBottom: '1rem' }}>📜 Our Promises</h2>
+          <p style={{ color: 'var(--color-secondary-text)', textAlign: 'center', fontSize: '0.85rem' }}>A quick look at the promises, milestones, and next step back into the full agreement page.</p>
+          <div className="contract-display-container">
+            <div className="contract-clause"><div className="contract-clause-title">🤝 Pillar I: Mutual Respect</div><div className="contract-clause-desc">We commit to respecting each other's opinions, goals, personal spaces, and individual uniqueness.</div></div>
+            <div className="contract-clause"><div className="contract-clause-title">🔒 Pillar II: Absolute Trust</div><div className="contract-clause-desc">We pledge honesty, loyalty, and support while guarding our commitments to one another.</div></div>
+            <div className="contract-clause"><div className="contract-clause-title">💬 Pillar III: Open Communication</div><div className="contract-clause-desc">We communicate with vulnerability and transparency, listening to understand each other.</div></div>
+            <div className="contract-clause"><div className="contract-clause-title">🚧 Pillar IV: Healthy Boundaries</div><div className="contract-clause-desc">We honor boundaries that support emotional, mental, and social well-being.</div></div>
+          </div>
+          <div className="contract-status-box">
+            <div className="signee-status"><div className="signee-name">Jaylan</div><span className="badge" style={{ background: 'rgba(16, 185, 129, 0.12)', color: '#6ee7b7' }}>Protected</span></div>
+            <div className="signee-status"><div className="signee-name">Omia</div><span className="badge" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#f87171' }}>Pending</span></div>
+          </div>
+          <div className="faithful-inline-actions" style={{ justifyContent: 'center', marginTop: '1rem' }}>
+            <Link className="btn btn-primary" to="/contract">Read Our Promises</Link>
+            <Link className="btn btn-secondary" to="/favorites">View Shared Favorites</Link>
+          </div>
+        </div>
+      </div>
+      {status.message && !editingPerson ? <p className={`workflow-feedback ${status.kind === 'error' ? 'workflow-feedback-error' : 'workflow-feedback-success'}`} role="status">{status.message}</p> : null}
+      {editingPerson ? <ProfileEditDialog onClose={() => setEditingPerson(null)} onSave={saveProfile} person={editingPerson} status={status} /> : null}
     </section>
   )
 }

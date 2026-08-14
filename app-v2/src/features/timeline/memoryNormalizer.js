@@ -174,7 +174,57 @@ function normalizeSpecialMoment(record, warnings) {
   }
 }
 
+function inferReferencedMediaKind(record) {
+  const explicitKind = toTrimmedString(record?.mediaKind)
+  if (explicitKind === 'image' || explicitKind === 'video') {
+    return explicitKind
+  }
+
+  if (record?.isVideo === true) {
+    return 'video'
+  }
+
+  const title = toTrimmedString(record?.title)
+  if (GENERATED_VIDEO_TITLE.test(title)) {
+    return 'video'
+  }
+
+  return 'image'
+}
+
 function normalizeMediaReference(record, specialMoment) {
+  if (record?.media && typeof record.media === 'object') {
+    const kind = toTrimmedString(record.media.kind)
+    const storagePath = toTrimmedString(record.media.storagePath)
+    const thumbnailPath = toTrimmedString(record.media.thumbnailPath)
+    const posterPath = toTrimmedString(record.media.posterPath)
+    if ((kind === 'image' || kind === 'video') && /^couples\/[A-Za-z0-9_-]{1,120}\/media\/[A-Za-z0-9_-]{1,120}\/(original|thumbnail|poster)$/.test(storagePath)) {
+      return {
+        status: 'storage-verified',
+        kind,
+        hasReference: true,
+        isAvailableInApp: true,
+        displayUrl: null,
+        storagePath,
+        thumbnailPath,
+        posterPath,
+        contentType: toTrimmedString(record.media.contentType),
+        sizeBytes: Number.isSafeInteger(record.media.sizeBytes) ? record.media.sizeBytes : 0,
+      }
+    }
+  }
+
+  const firestoreMediaState = toTrimmedString(record?.mediaState)
+  if (firestoreMediaState === 'private-legacy-reference') {
+    return {
+      status: 'private-legacy-reference',
+      kind: inferReferencedMediaKind(record),
+      hasReference: true,
+      isAvailableInApp: false,
+      displayUrl: null,
+    }
+  }
+
   const mediaPath = toTrimmedString(record?.mediaPath)
   const mediaKind = toTrimmedString(record?.mediaKind) || 'unknown'
 
@@ -233,14 +283,18 @@ export function normalizeTimelineMemory(record, options = {}) {
   const id = toTrimmedString(record?.id) || `timeline-memory-${index + 1}`
   const title = toTrimmedString(record?.title)
   const description = toTrimmedString(record?.description)
+  const status = toTrimmedString(record?.status) === 'archived' ? 'archived' : 'active'
   const specialMoment = normalizeSpecialMoment(record, warnings)
+  const normalizedDate = normalizeDateValue(record?.date || record?.dateLabel)
   const normalized = {
     id,
+    status,
+    revision: Number.isInteger(record?.revision) && record.revision > 0 ? record.revision : 0,
     title,
     description,
     titleKind: classifyTitleKind(title),
     descriptionKind: classifyDescriptionKind(description),
-    date: normalizeDateValue(record?.dateLabel),
+    date: normalizedDate,
     tags: normalizeTagEntries(record?.tags),
     media: normalizeMediaReference(record, specialMoment),
     specialMoment,
@@ -258,7 +312,7 @@ export function normalizeTimelineMemory(record, options = {}) {
     warnings,
     sort: {
       ordinal: Number.isInteger(record?.sortOrdinal) ? record.sortOrdinal : index,
-      timestamp: normalizeDateValue(record?.dateLabel).timestamp,
+      timestamp: normalizedDate.timestamp,
     },
   }
 

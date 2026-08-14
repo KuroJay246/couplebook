@@ -2,7 +2,7 @@ import { FIRESTORE_SOURCE, createCompatibilityResult } from '../data/adapterUtil
 import { readLegacyFavorites } from '../data/legacyFavoritesAdapter.js'
 import { db } from '../lib/firebaseClient.js'
 import { couplePath, favoritesPath, pathToString } from './firestorePaths.js'
-import { readCollection, readDocument, requireSchemaVersion, safeStringArray } from './firestoreReaders.js'
+import { readCollection, requireSchemaVersion, safeStringArray } from './firestoreReaders.js'
 
 export function buildFavoritesDocumentPath(coupleId, uid) {
   return pathToString(favoritesPath(coupleId, uid))
@@ -29,16 +29,12 @@ export function normalizeFirestoreFavorites(uid, data, warnings) {
   for (const category of FAVORITE_CATEGORIES) {
     favorites[category] = safeStringArray(data[category], 50, 120)
   }
-  return { uid, favorites, schemaVersion: data.schemaVersion }
-}
-
-export async function getFirestoreFavorites(coupleId, uid, options = {}) {
-  return readDocument({
-    firestore: options.firestore || db,
-    path: favoritesPath(coupleId, uid),
-    getDocument: options.getDocument,
-    normalize: normalizeFirestoreFavorites,
-  })
+  return {
+    uid,
+    favorites,
+    revision: Number.isInteger(data.revision) && data.revision > 0 ? data.revision : 0,
+    schemaVersion: data.schemaVersion,
+  }
 }
 
 export async function getFirestoreFavoritesForCouple(coupleId, options = {}) {

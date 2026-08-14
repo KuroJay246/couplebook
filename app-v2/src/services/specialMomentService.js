@@ -24,8 +24,13 @@ export function normalizeFirestoreSpecialMoment(momentKey, data, warnings) {
   })
   warnings.push(...normalized.warnings)
   if (normalized.status === 'invalid') return null
+  const revision = Number.isInteger(data.revision) && data.revision > 0 ? data.revision : 0
   return {
     ...normalized.data,
+    content: {
+      ...(normalized.data?.content || {}),
+      revision,
+    },
     sourceStatus: {
       ...(normalized.data?.sourceStatus || {}),
       source: FIRESTORE_SOURCE,

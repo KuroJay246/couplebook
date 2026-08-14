@@ -150,6 +150,56 @@ test('timeline normalization keeps title, description, tags, dates, media, and s
   assert.equal(invalidDate.date.status, 'invalid')
 })
 
+test('timeline normalization accepts Firestore memory records that provide date instead of dateLabel', () => {
+  const [firestoreMemory] = normalizeTimelineMemories([
+    createLegacyMemoryRecord({
+      id: 'firestore-shaped-memory',
+      dateLabel: '',
+      date: '2026-07-23',
+      mediaPath: '',
+      tags: ['Acceptance'],
+    }),
+  ])
+
+  assert.equal(firestoreMemory.date.status, 'valid')
+  assert.equal(firestoreMemory.date.year, 2026)
+  assert.equal(formatTimelineDate(firestoreMemory.date), 'July 23, 2026')
+})
+
+test('timeline normalization preserves Firestore private media references for gallery and timeline counts', () => {
+  const normalized = normalizeTimelineMemories([
+    createLegacyMemoryRecord({
+      id: 'firestore-photo',
+      title: 'Photo from 2026-07-21',
+      dateLabel: '',
+      date: '2026-07-21',
+      mediaPath: '',
+      mediaKind: '',
+      mediaState: 'private-legacy-reference',
+      isVideo: false,
+    }),
+    createLegacyMemoryRecord({
+      id: 'firestore-video',
+      title: 'Video Clip 0722',
+      dateLabel: '',
+      date: '2026-07-22',
+      mediaPath: '',
+      mediaKind: '',
+      mediaState: 'private-legacy-reference',
+    }),
+  ])
+
+  const summary = buildTimelineSummary(normalized)
+
+  assert.equal(normalized[0].media.status, 'private-legacy-reference')
+  assert.equal(normalized[0].media.kind, 'image')
+  assert.equal(normalized[1].media.status, 'private-legacy-reference')
+  assert.equal(normalized[1].media.kind, 'video')
+  assert.equal(summary.photoMemories, 1)
+  assert.equal(summary.videoMemories, 1)
+  assert.equal(summary.unavailableMedia, 2)
+})
+
 test('timeline selectors build stable summary, filter metadata, and year/special chapter structure without emotional labels', () => {
   const normalized = normalizeTimelineMemories([
     createLegacyMemoryRecord({
@@ -217,4 +267,34 @@ test('timeline selectors build stable summary, filter metadata, and year/special
   assert.equal(chapters[1].label, '2025')
   assert.equal(chapters[2].label, 'Undated memories')
   assert.doesNotMatch(JSON.stringify(chapters), /happiest|deeper|changed/i)
+})
+
+test('timeline selectors exclude archived memories from active story views', () => {
+  const normalized = normalizeTimelineMemories([
+    createLegacyMemoryRecord({
+      id: 'active-memory',
+      title: 'Fictional active chapter',
+      dateLabel: '2026-05-10',
+      tags: ['Story'],
+      status: 'active',
+    }),
+    createLegacyMemoryRecord({
+      id: 'archived-memory',
+      title: 'Fictional archived chapter',
+      dateLabel: '2026-05-11',
+      tags: ['Hidden'],
+      status: 'archived',
+    }),
+  ])
+
+  const summary = buildTimelineSummary(normalized)
+  const filters = buildTimelineFilters(normalized)
+  const chapters = buildTimelineChapters(normalized)
+  const displayMemories = selectTimelineDisplayMemories(normalized)
+
+  assert.equal(normalized[1].status, 'archived')
+  assert.equal(summary.totalMemories, 1)
+  assert.deepEqual(displayMemories.map((memory) => memory.id), ['active-memory'])
+  assert.deepEqual(filters.availableTags.map((tag) => tag.key), ['story'])
+  assert.doesNotMatch(JSON.stringify(chapters), /archived-memory|Fictional archived chapter|Hidden/)
 })

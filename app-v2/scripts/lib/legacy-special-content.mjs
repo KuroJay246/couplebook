@@ -38,7 +38,10 @@ function extractTextByClass(html, className) {
 
 function extractTagText(html, tagName) {
   const pattern = new RegExp(`<${tagName}\\b[^>]*>([\\s\\S]*?)<\\/${tagName}>`, 'gi')
-  return [...html.matchAll(pattern)].map((match) => decodeHtmlEntities(stripTags(match[1]))).filter(Boolean)
+  return [...html.matchAll(pattern)].flatMap((match) => {
+    const text = decodeHtmlEntities(stripTags(match[1]))
+    return text ? [text] : []
+  })
 }
 
 function section(id, kind, heading, content, items = []) {

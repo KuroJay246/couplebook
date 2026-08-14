@@ -1,7 +1,7 @@
-import { validateFirebaseProject, REQUIRED_PROJECT_ID, PROHIBITED_PROJECT_ID } from '../../../scripts/assert-firebase-project.mjs'
+import { validateFirebaseProject, REQUIRED_PROJECT_ID } from '../../../scripts/assert-firebase-project.mjs'
 import process from 'node:process'
 
-export { REQUIRED_PROJECT_ID, PROHIBITED_PROJECT_ID }
+export { REQUIRED_PROJECT_ID }
 
 export function getArgValue(args, name) {
   const prefix = `${name}=`

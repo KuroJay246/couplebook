@@ -21,6 +21,12 @@ const COMPATIBILITY_ITEM_LABELS = Object.freeze({
   memories: 'Local memory bridge',
 })
 
+const DATE_LABEL_FORMATTER = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  day: 'numeric',
+  year: 'numeric',
+})
+
 function toTitleCaseWords(value) {
   const normalized = toTrimmedString(value)
   if (!normalized) return ''
@@ -51,11 +57,7 @@ function formatDateLabel(value) {
   const parsedDate = new Date(normalizedValue)
   if (Number.isNaN(parsedDate.getTime())) return 'Not available yet'
 
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  }).format(parsedDate)
+  return DATE_LABEL_FORMATTER.format(parsedDate)
 }
 
 function getAccountName(approvedUser, authUser) {
@@ -114,6 +116,7 @@ export function selectSettingsAppearance(settingsSource) {
   const settingsData = settingsSource?.data
   const savedTheme = toTrimmedString(settingsData?.theme)
   const anniversaryView = toTrimmedString(settingsData?.settings?.anniversaryConfig)
+  const privacyToggles = settingsData?.settings?.privacyToggles || {}
 
   let preservedThemeOrigin = 'No saved value'
   if (savedTheme) {
@@ -128,6 +131,7 @@ export function selectSettingsAppearance(settingsSource) {
     },
     preservedTheme: {
       label: formatThemeLabel(savedTheme),
+      value: savedTheme || 'paper',
       description: savedTheme
         ? 'A preserved legacy preference is still visible here for reference, but it does not take over the routed shell.'
         : 'No preserved theme preference is stored here yet.',
@@ -135,28 +139,34 @@ export function selectSettingsAppearance(settingsSource) {
     },
     anniversaryView: {
       label: formatAnniversaryViewLabel(anniversaryView),
+      value: anniversaryView || 'dual',
       description: anniversaryView
         ? 'The old dashboard anniversary preference is preserved for reference until editing returns in a later phase.'
         : 'No anniversary preference is stored here yet.',
       meta: anniversaryView ? 'Preserved setting' : 'Not set',
     },
+    privacy: {
+      localOnlyMode: privacyToggles.localOnlyMode === true,
+      reducedMotion: privacyToggles.reducedMotion === true,
+    },
+    revision: Number.isInteger(settingsData?.revision) && settingsData.revision > 0 ? settingsData.revision : 0,
     items: [
       {
         label: 'Current routed theme',
-        description: 'This React shell stays on the locked editorial reading direction for now.',
+        description: 'This React shell keeps the approved Couple Book look while saving your preference.',
         meta: 'Fixed',
       },
       {
         label: 'Preserved appearance preference',
         description: savedTheme
-          ? 'Legacy appearance data remains visible as a note only, with no working theme switcher exposed here.'
+          ? 'Your saved appearance preference is available here.'
           : 'The page can stay calm and complete even when no legacy appearance preference exists.',
         meta: preservedThemeOrigin,
       },
       {
-        label: 'Editing boundary',
-        description: 'Theme switching, spacing controls, and anniversary-view changes remain intentionally deferred.',
-        meta: 'Read-only',
+        label: 'Saving preference',
+        description: 'Display preferences save to your approved account.',
+        meta: 'Owner only',
       },
     ],
   }
@@ -262,7 +272,7 @@ export function selectSettingsCompatibility(snapshot) {
   return {
     items,
     notes: [
-      'Read-only compatibility stays explicit here while editing and write-back remain deferred.',
+      'Settings stay tied to the approved signed-in account.',
       'No browser storage value can sign you in or override the approved account check.',
     ],
   }
@@ -307,8 +317,8 @@ export function selectSettingsAdvanced({ runtimeMode, compatibilitySnapshot }) {
       },
       {
         label: 'Sync boundary',
-        description: 'No live sync replacement, automatic write-back, or device/session management flow is enabled in app-v2.',
-        meta: 'Read-only',
+        description: 'Device and session management stay separate from these display preferences.',
+        meta: 'Protected',
       },
     ],
   }
@@ -328,9 +338,9 @@ export function selectSettingsDangerZone() {
         meta: 'Deferred',
       },
       {
-        label: 'No write path in this batch',
-        description: 'The Settings migration stays informational only and does not save, sync, or mutate preserved data.',
-        meta: 'Protected',
+        label: 'Safe preferences only',
+        description: 'This page saves display preferences and keeps destructive account actions unavailable.',
+        meta: 'Owner only',
       },
     ],
   }

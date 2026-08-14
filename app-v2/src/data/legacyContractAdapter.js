@@ -33,20 +33,6 @@ const SIGNATURES_KEY = 'memorybook_contract_signatures'
  * @property {Record<string, NormalizedContractSignature>} signaturesByUsername
  */
 
-export const legacyContractAdapterBoundary = Object.freeze({
-  adapter: 'legacyContractAdapter',
-  currentSources: [
-    'localStorage: memorybook_contract_accepted_{username}',
-    'localStorage: memorybook_contract_signatures',
-    'Firestore: users/{uid}.contractAccepted',
-    'Firestore: users/{uid}.signature',
-  ],
-  expectedNormalizedOutput:
-    'CompatibilityResult<NormalizedContractState> for the approved active user without treating localStorage as auth proof.',
-  mode: 'read-only',
-  futureOwner: 'R3 compatibility mapping before contract domain service extraction',
-})
-
 const REDACTED_VALUE = Symbol('contract-signature-redacted')
 const SENSITIVE_SIGNATURE_KEY_PATTERN = /(signature|dataurl|base64|stroke|canvas|image|binary|payload|svg|png|jpe?g|webp|gif|points|path)/i
 
@@ -74,9 +60,10 @@ function isSensitiveSignatureValue(keyPath, value) {
 
 function sanitizeSignatureUnknownValue(value, keyPath, redactedFields) {
   if (Array.isArray(value)) {
-    const sanitizedItems = value
-      .map((entry, index) => sanitizeSignatureUnknownValue(entry, `${keyPath}[${index}]`, redactedFields))
-      .filter((entry) => entry !== REDACTED_VALUE)
+    const sanitizedItems = value.flatMap((entry, index) => {
+      const sanitizedEntry = sanitizeSignatureUnknownValue(entry, `${keyPath}[${index}]`, redactedFields)
+      return sanitizedEntry === REDACTED_VALUE ? [] : [sanitizedEntry]
+    })
 
     if (sanitizedItems.length === 0 && SENSITIVE_SIGNATURE_KEY_PATTERN.test(keyPath)) {
       return REDACTED_VALUE
@@ -109,9 +96,10 @@ function sanitizeSignatureUnknownValue(value, keyPath, redactedFields) {
 function sanitizeSignatureUnknownFields(rawSource, excludedKeys = []) {
   const unknownFields = {}
   const redactedFields = []
+  const excluded = new Set(excludedKeys)
 
   for (const [key, value] of Object.entries(rawSource || {})) {
-    if (excludedKeys.includes(key)) continue
+    if (excluded.has(key)) continue
 
     const sanitizedValue = sanitizeSignatureUnknownValue(value, key, redactedFields)
     if (sanitizedValue !== REDACTED_VALUE) {
@@ -152,9 +140,7 @@ function normalizeSignatureRecord(rawSignature) {
   }
 
   const history = Array.isArray(rawSignature.history)
-    ? rawSignature.history
-        .filter((entry) => isPlainObject(entry))
-        .map((entry) => normalizeSignatureHistoryEntry(entry))
+    ? rawSignature.history.flatMap((entry) => (isPlainObject(entry) ? [normalizeSignatureHistoryEntry(entry)] : []))
     : []
   const { unknownFields, redactedFields } = sanitizeSignatureUnknownFields(rawSignature, ['accepted', 'timestamp', 'version', 'history'])
   const historyRedactions = history.flatMap((entry) => entry.redactedFields || [])

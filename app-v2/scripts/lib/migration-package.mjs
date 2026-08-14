@@ -12,7 +12,7 @@ export const SCHEMA_VERSION = 1
 const repoRoot = path.resolve(process.cwd(), '..')
 const memoryPath = path.join(repoRoot, 'core', 'memories.json')
 const statePath = path.join(repoRoot, 'core', 'state.js')
-const legacyRulesPath = path.join(repoRoot, 'firestore.rules')
+const rulesPath = path.join(repoRoot, 'firestore.rules')
 const packageRoot = path.join(process.cwd(), 'local-migration-packages', REQUIRED_PROJECT_ID)
 
 function readText(filePath) {
@@ -42,7 +42,7 @@ function cleanText(value, maxLength) {
 }
 
 function extractLegacyApprovedUids() {
-  const source = readText(legacyRulesPath)
+  const source = readText(rulesPath)
   const uids = [...source.matchAll(/'([A-Za-z0-9]{20,40})'/g)].map((match) => match[1])
   return [...new Set(uids)].slice(0, 2)
 }
@@ -79,7 +79,12 @@ function normalizeMemory(memory, ownerUid) {
     title: cleanText(memory.title, 180),
     description: cleanText(memory.description, 2000),
     date: cleanText(memory.date, 10),
-    tags: Array.isArray(memory.tags) ? memory.tags.map((tag) => cleanText(tag, 60)).filter(Boolean).slice(0, 30) : [],
+    tags: Array.isArray(memory.tags)
+      ? memory.tags.flatMap((tag) => {
+          const text = cleanText(tag, 60)
+          return text ? [text] : []
+        }).slice(0, 30)
+      : [],
     mediaState: memory.media ? 'private-legacy-reference' : 'none',
     createdBy: ownerUid,
     updatedBy: ownerUid,
@@ -97,10 +102,13 @@ function normalizeSpecialMomentDocument(momentKey, source) {
     title: cleanText(content.title, 120) || `${momentKey} moment`,
     subtitle: cleanText(content.subtitle, 180),
     date: /^\d{4}-\d{2}-\d{2}$/.test(content.date || '') ? content.date : '',
-    sections: (content.sections || []).slice(0, 8).map((section) => ({
-      kind: ['paragraph', 'note', 'quote', 'list'].includes(section.kind) ? section.kind : 'paragraph',
-      content: cleanText(section.content || section.heading || (section.items || []).join(', '), 1200),
-    })).filter((section) => section.content),
+    sections: (content.sections || []).slice(0, 8).flatMap((section) => {
+      const normalizedSection = {
+        kind: ['paragraph', 'note', 'quote', 'list'].includes(section.kind) ? section.kind : 'paragraph',
+        content: cleanText(section.content || section.heading || (section.items || []).join(', '), 1200),
+      }
+      return normalizedSection.content ? [normalizedSection] : []
+    }),
   }
 }
 
@@ -126,12 +134,12 @@ function packageChecksumFor(migrationPackage) {
   return sha256(withoutPackageChecksums(migrationPackage))
 }
 
-export function createMigrationPackage({ generatedAt = new Date().toISOString() } = {}) {
+export function createMigrationPackage({ approvedUids = null, generatedAt = new Date().toISOString() } = {}) {
   const memories = readJson(memoryPath, [])
   const plan = createMigrationPlan({ memories: Array.isArray(memories) ? memories : [], specialPayloads: readNormalizedSpecialMoments() })
   if (Object.keys(plan.blockers).length > 0) throw new Error('Migration plan has blockers.')
 
-  const uids = extractLegacyApprovedUids()
+  const uids = Array.isArray(approvedUids) ? approvedUids.map((uid) => safeId(uid, 'approved uid')) : extractLegacyApprovedUids()
   if (uids.length !== 2) throw new Error('Expected exactly two legacy approved UIDs.')
 
   const [ownerUid, partnerUid] = uids

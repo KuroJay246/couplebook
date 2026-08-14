@@ -65,6 +65,7 @@ test('gallery read model classifies photos, videos, special moments, and unavail
   assert.equal(model.summary.unavailableMedia, 2)
   assert.equal(model.summary.invalidMedia, 1)
   assert.equal(model.summary.noMedia, 2)
+  assert.equal(model.items.length, 5)
   assert.equal(model.photos.length, 2)
   assert.equal(model.videos.length, 1)
   assert.equal(model.unavailableMedia.length, 3)
@@ -98,6 +99,59 @@ test('gallery read model exposes no raw private paths and keeps deterministic gr
   assert.ok(model.filters.availableTypes.some((type) => type.key === 'photos'))
   assert.ok(model.filters.availableTypes.some((type) => type.key === 'videos'))
   assert.doesNotMatch(serialized, /\/assets\/photos|\/assets\/videos|C:\\\\|mediaPath|pageUrl|older"|newer"/)
+})
+
+test('gallery read model exposes verified storage media without raw local references', () => {
+  const model = buildGalleryReadModel({
+    compatibilitySnapshot: createSnapshot({
+      status: 'ready',
+      source: 'firestore',
+      data: {
+        hasBaseDataset: true,
+        memories: [
+          createMemoryRecord({
+            id: 'verified-video',
+            mediaPath: '',
+            mediaKind: 'video',
+            media: {
+              kind: 'video',
+              storagePath: 'couples/couple_alpha/media/media_001/original',
+              posterPath: 'couples/couple_alpha/media/media_001/poster',
+              contentType: 'video/mp4',
+              sizeBytes: 100,
+            },
+          }),
+        ],
+      },
+      warnings: [],
+    }),
+  })
+
+  assert.equal(model.verifiedMedia.length, 1)
+  assert.equal(model.videos[0].media.status, 'storage-verified')
+  assert.equal(model.videos[0].media.storagePath, 'couples/couple_alpha/media/media_001/original')
+  assert.doesNotMatch(JSON.stringify(model), /C:\\\\|OUR MEMORIES|\/assets\/videos/)
+})
+
+test('gallery read model excludes archived memories from active collections', () => {
+  const model = buildGalleryReadModel({
+    compatibilitySnapshot: createSnapshot({
+      status: 'ready',
+      source: 'firestore',
+      data: {
+        hasBaseDataset: true,
+        memories: [
+          createMemoryRecord({ id: 'active-gallery-memory', title: 'Fictional active gallery', status: 'active' }),
+          createMemoryRecord({ id: 'archived-gallery-memory', title: 'Fictional archived gallery', status: 'archived' }),
+        ],
+      },
+      warnings: [],
+    }),
+  })
+
+  assert.equal(model.summary.totalMemories, 1)
+  assert.equal(model.photos.length, 1)
+  assert.doesNotMatch(JSON.stringify(model), /archived-gallery-memory|Fictional archived gallery/)
 })
 
 test('gallery read model distinguishes unavailable from empty and partial states', () => {
@@ -143,13 +197,54 @@ test('gallery read model distinguishes unavailable from empty and partial states
   assert.equal(partialModel.status, 'partial')
 })
 
-test('gallery architecture stays read-only and avoids fetch, writes, broad queries, and Storage', async () => {
+test('gallery read model counts Firestore private media references with the same media semantics as timeline', () => {
+  const model = buildGalleryReadModel({
+    compatibilitySnapshot: createSnapshot({
+      status: 'ready',
+      source: 'firestore',
+      data: {
+        hasBaseDataset: true,
+        memories: [
+          createMemoryRecord({
+            id: 'firestore-photo',
+            dateLabel: '',
+            date: '2026-07-21',
+            mediaKind: '',
+            mediaPath: '',
+            mediaState: 'private-legacy-reference',
+            isVideo: false,
+          }),
+          createMemoryRecord({
+            id: 'firestore-video',
+            title: 'Video Clip 0722',
+            dateLabel: '',
+            date: '2026-07-22',
+            mediaKind: '',
+            mediaPath: '',
+            mediaState: 'private-legacy-reference',
+          }),
+        ],
+      },
+      warnings: [],
+    }),
+  })
+
+  assert.equal(model.summary.totalMemories, 2)
+  assert.equal(model.summary.photos, 1)
+  assert.equal(model.summary.videos, 1)
+  assert.equal(model.summary.unavailableMedia, 2)
+  assert.equal(model.items.length, 2)
+  assert.equal(model.photos[0].media.status, 'private-legacy-reference')
+  assert.equal(model.videos[0].media.status, 'private-legacy-reference')
+})
+
+test('gallery architecture stays read-only and routes Storage through the media service only', async () => {
   const selectorsSource = await readFile(new URL('../features/gallery/gallerySelectors.js', import.meta.url), 'utf8')
   const readModelSource = await readFile(new URL('../features/gallery/galleryReadModel.js', import.meta.url), 'utf8')
   const hookSource = await readFile(new URL('../features/gallery/useGalleryData.js', import.meta.url), 'utf8')
   const combined = `${selectorsSource}\n${readModelSource}\n${hookSource}`
 
-  assert.doesNotMatch(combined, /fetch\(|XMLHttpRequest|new Image|<img|<video|createObjectURL|getDownloadURL|firebase\/storage/)
+  assert.doesNotMatch(combined, /fetch\(|XMLHttpRequest|new Image|createObjectURL|getDownloadURL|firebase\/storage/)
   assert.doesNotMatch(combined, /\bsetItem\s*\(|\bupdateDoc\s*\(|\baddDoc\s*\(|\bdeleteDoc\s*\(|\bsetDoc\s*\(/)
   assert.doesNotMatch(combined, /collection\([^)]*users|documents\/users(?:[/?#]|\b)/)
   assert.doesNotMatch(combined, /jaylanspencer99|C:\\Users|OUR MEMORIES|\/assets\/photos|\/assets\/videos/)

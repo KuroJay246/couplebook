@@ -11,7 +11,18 @@
     "lint": "eslint .",
     "test": "node --test",
     "test:browser": "node scripts/check-browser-regression.mjs",
+    "test:performance": "node scripts/check-performance-regression.mjs",
+    "test:product": "node scripts/check-product-interactions.mjs",
+    "test:visual": "node scripts/check-visual-regression.mjs",
     "test:rules": "node scripts/run-firestore-rules-tests.mjs",
+    "test:storage-rules": "node scripts/run-storage-rules-tests.mjs",
+    "test:media-mapping": "node src/test/media-mapping.test.js",
+    "docs:check": "node ../scripts/qa/check-docs.js",
+    "product:qa": "node ../scripts/product-qa.mjs",
+    "product:audit": "node ../scripts/product-audit.mjs",
+    "media:posters": "node scripts/media-generate-posters.mjs",
+    "media:dry-run": "node scripts/media-dry-run.mjs",
+    "media:apply": "node scripts/media-apply.mjs",
     "migration:plan": "node scripts/plan-firestore-migration.mjs",
     "migration:rehearse": "node scripts/rehearse-firestore-migration.mjs",
     "production:backup": "node scripts/backup-firestore.mjs",
@@ -21,10 +32,10 @@
     "migration:rollback": "node scripts/rollback-firestore-migration.mjs"
   },
   "dependencies": {
-    "firebase": "^12.6.0",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "react-router-dom": "^7.9.6"
+    "firebase": "^12.17.1",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-router-dom": "^7.18.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
