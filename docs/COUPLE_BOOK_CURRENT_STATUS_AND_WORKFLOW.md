@@ -11,13 +11,13 @@ This file is the single chat-updatable catch-up reference for Couple Book. It co
 - Active Firebase project: `couplebook-97830`
 - Production Hosting: `https://couplebook-97830.web.app`
 - V1.1 candidate preview: `https://couplebook-97830--v1-1-candidate-yy9to5g5.web.app`
-- Current release branch: `release/couplebook-v1.1-candidate`
-- Latest local release commits:
-  - `125eae2 Keep empty favorites owner records editable`
-  - `a334db1 Fix favorites stale owner edits`
-  - `c4aa8cc Fix owner write release blockers`
+- Closed release branch: `release/couplebook-v1.1-candidate`
+- Active work branch: `feature/couplebook-v1.2-app-experience`
+- V1.1 release tag: `couplebook-v1.1-refined-memory-book`
+- V1.1 main merge commit: `f02efa6 Merge Couple Book v1.1 refined memory book`
+- Tagged V1.1 release head: `37145f1 Document release status and stabilize browser audit`
 
-Production Hosting has been deployed with the V1.1 candidate bundle. Firestore rules were deployed earlier in the release flow after the legacy-revision fix. The release branch is ahead of remote and still needs final clean audit, push, tag, and merge closeout.
+Production Hosting has been deployed with the V1.1 candidate bundle. Firestore rules were deployed earlier in the release flow after the legacy-revision fix. The V1.1 release branch was audited, tagged, merged to `main`, and pushed.
 
 ## Product Model
 
@@ -100,19 +100,31 @@ These are operational patterns copied from the Gather & Savor workflow, adapted 
 - Keep backend, frontend, rules, and docs aligned before release closeout.
 - Passing automation alone does not authorize a merge or tag if owner acceptance/live smoke gates are incomplete.
 - Keep release evidence honest: implemented, deployed, blocked, held, or deferred.
+- Current Gather workflow reference commit for V1.2 alignment: `18af96a8d5b714d44cb04ab924fbbedc2bb94f9b`.
+- Couple Book alignment gate: `npm run alignment:check`.
 
 ## Verified Release Evidence
 
 Automated checks that passed after the release fixes:
 
+- `npm ci`
+- `npm --prefix app-v2 ci`
+- `npm --prefix app-v2 audit --omit=dev`
+- `npm run docs:check`
 - `npm run product:qa`
+- `npm run product:audit`
 - `npm --prefix app-v2 run test`
 - `npm --prefix app-v2 run lint`
 - `npm --prefix app-v2 run test:rules`
 - `npm --prefix app-v2 run test:storage-rules`
 - `npm --prefix app-v2 run test:media-mapping`
 - `npm --prefix app-v2 run test:browser`
+- `npm --prefix app-v2 run test:product`
+- `npm --prefix app-v2 run test:visual`
+- `npm --prefix app-v2 run test:performance`
+- `npm --prefix app-v2 run health:react` with advisory-only findings
 - `npm run release:preflight`
+- `npm run check:all`
 - Production-write Vite build with `VITE_WRITE_MODE=firestore-production-write`
 
 Production browser evidence:
@@ -126,39 +138,39 @@ Production browser evidence:
 - Live production Favorites add succeeded with `CODEX_TEST V1.1 Production Write`.
 - The temporary production favorite persisted after refresh.
 - Cleanup was verified through Firestore: no `CODEX_TEST` marker remained, favorites owner revision advanced to `4`, and expected fields remained.
+- Final closeout scan found `CODEX_TEST_HIT_COUNT=0` across the expected Couple Book production collections.
+- Final signed-out production `/dashboard` smoke redirected to `/login`, exposed no protected route labels, and produced no console or network failures.
 
-## Current Hold
+## V1.1 Closeout Status
 
-The final `npm run product:audit` closeout is held by local machine resource pressure, not a product assertion:
+V1.1 is closed:
 
-- The run reached `test:product`.
-- It failed with `page.goto: net::ERR_NO_BUFFER_SPACE`.
-- A separate Gather process was running `npm run e2e:full` with Firebase emulators and Playwright at the same time.
-- Because that process belongs to `C:\Users\Jaylan\Documents\gathetr`, it was not stopped from this Couple Book release task.
+- Release branch pushed: `release/couplebook-v1.1-candidate`.
+- Release tag pushed: `couplebook-v1.1-refined-memory-book`.
+- Release branch merged to `main`.
+- `main` pushed to origin at merge commit `f02efa6`.
+- No production redeploy was performed during closeout because the deployed Hosting runtime was already the V1.1 candidate bundle.
+- No Firestore rules deployment was performed during closeout.
 
-Until the final audit runs cleanly without the unrelated Gather load, tag and merge should remain held.
+## V1.2 Current Focus
 
-## Remaining Closeout Steps
+V1.2 is the app-experience upgrade branch:
 
-Do these in order:
-
-1. Wait for the unrelated Gather Playwright/emulator run to finish, or explicitly stop it if Jaylan approves.
-2. Rerun `npm run product:audit`.
-3. Confirm `git status --short --branch` is clean except expected branch ahead state.
-4. Push `release/couplebook-v1.1-candidate`.
-5. Tag the release commit after final audit: `couplebook-v1.1-refined-memory-book`.
-6. Merge release branch to `main`.
-7. Push `main` and the tag.
-8. Do one final production signed-out check.
+- Branch: `feature/couplebook-v1.2-app-experience`.
+- Start point: updated `main` after V1.1 merge.
+- Deployment target during V1.2: Firebase Hosting preview channel only.
+- Firestore rules: do not deploy production rules during V1.2 unless separately approved.
+- Product goal: make the protected app feel like a complete private couple memory book, not a maintenance shell.
+- Reference process: Gather-style operational rigor through `docs/EVENT_HUB_ALIGNMENT_STANDARD.md`, not Gather product copying.
 
 ## September 16 Readiness Focus
 
 Priority work before September 16, 2026:
 
-- Finish the held release closeout once local socket pressure is gone.
-- Confirm whether the current MemoryBook visual shell is the intended V1.1 product direction or whether the earlier preview visual style should replace it.
+- Complete V1.2 visual/product upgrade on the active feature branch.
+- Confirm whether the current MemoryBook visual shell is the intended V1.2 base or whether the earlier preview visual style should be restored into the protected app.
 - Continue organizer-style product QA on real user flows: login, dashboard, story, gallery, favorites, profile, settings, contract, and special pages.
 - Keep adding focused regression tests for every production bug found through real use.
-- Maintain strict cleanup discipline for any production smoke write.
+- Maintain strict cleanup discipline for any approved production smoke write.
 - Keep this file updated as the single source for chat handoff context.
 

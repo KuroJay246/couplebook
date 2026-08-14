@@ -1,0 +1,30 @@
+{
+  "referenceName": "Gather & Savor Event Hub",
+  "referenceRepo": "C:\\Users\\Jaylan\\Documents\\gathetr",
+  "lastInspectedCommit": "18af96a8d5b714d44cb04ab924fbbedc2bb94f9b",
+  "lastInspectedDate": "2026-08-14",
+  "referenceMode": "read-only workflow reference",
+  "coupleBookFirebaseProject": "couplebook-97830",
+  "prohibitedFirebaseProjects": ["gathervibeshub"],
+  "allowedBorrowedPatterns": [
+    "startup state verification",
+    "single current handoff document",
+    "explicit Firebase project boundary",
+    "synthetic QA marker discipline",
+    "read-only production inspection before writes",
+    "append-only evidence mindset",
+    "emulator ownership for QA runs",
+    "hosting-only preview deployment for app experience work",
+    "honest final status language"
+  ],
+  "doNotCopy": [
+    "event operations product model",
+    "event routes or navigation labels",
+    "Gather Firestore schema",
+    "Gather Firebase project",
+    "Gather access-control records",
+    "Gather QR ticket payloads",
+    "Gather private event data",
+    "Gather UI or copy as product content"
+  ]
+}

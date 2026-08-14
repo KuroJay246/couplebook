@@ -21,9 +21,12 @@ This file is the required operating brief for Couple Book agents.
 4. Run the narrowest meaningful tests, then broaden when rules, auth, routing, or shared data contracts change.
 5. Report unrun checks honestly.
 
+When using Gather & Savor Event Hub as a workflow reference, also read `docs/EVENT_HUB_ALIGNMENT_STANDARD.md` and run `npm run alignment:check`. Use Gather as a process model only; do not copy its event product model, data schema, Firebase project, private records, route map, QR payloads, or UI copy.
+
 ## Active QA Commands
 
 - `npm run docs:check`
+- `npm run alignment:check`
 - `npm --prefix app-v2 run lint`
 - `npm --prefix app-v2 test`
 - `npm --prefix app-v2 run test:rules`
