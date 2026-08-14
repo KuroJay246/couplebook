@@ -29,15 +29,17 @@ function buildFormState(model) {
 export function SettingsView({ model, onRefresh }) {
   const [active, setActive] = useState('appearance')
   const writer = useOwnerWrite(onRefresh)
-  const [form, setForm] = useState(() => buildFormState(model))
+  const loadedForm = buildFormState(model)
+  const [draft, setDraft] = useState({})
   const [status, setStatus] = useState({ kind: '', message: '', saving: false })
+  const form = { ...loadedForm, ...draft, revision: loadedForm.revision }
 
   function updateField(key, value) {
-    setForm((current) => ({ ...current, [key]: value }))
+    setDraft((current) => ({ ...current, [key]: value }))
   }
 
   function resetCurrentPanel() {
-    setForm(buildFormState(model))
+    setDraft({})
     setStatus({ kind: 'success', message: 'Settings restored to the current saved view.', saving: false })
   }
 
@@ -46,6 +48,7 @@ export function SettingsView({ model, onRefresh }) {
     setStatus({ kind: '', message: '', saving: true })
     try {
       await writer.saveSettings(form)
+      setDraft({})
       setStatus({ kind: 'success', message: 'Settings saved.', saving: false })
     } catch (error) {
       setStatus({ kind: 'error', message: error?.message || 'Editing is temporarily unavailable.', saving: false })

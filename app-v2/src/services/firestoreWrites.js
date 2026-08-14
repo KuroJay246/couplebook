@@ -119,7 +119,7 @@ export async function saveOwnProfile(payload, context) {
     joinedDate: payload.joinedDate ? cleanDate(payload.joinedDate) : '',
     birthday: payload.birthday ? cleanDate(payload.birthday) : '',
   }
-  await writeDocument(reference, next, { merge: true })
+  await writeDocument(reference, next)
   return next
 }
 
@@ -132,7 +132,7 @@ export async function saveOwnFavorites(payload, context) {
   for (const category of FAVORITE_WRITE_CATEGORIES) {
     next[category] = cleanStringList(payload[category], { label: category, maxItems: 50, maxLength: 120 })
   }
-  await writeDocument(reference, next, { merge: true })
+  await writeDocument(reference, next)
   return next
 }
 
@@ -153,7 +153,7 @@ export async function saveOwnSettings(payload, context) {
       reducedMotion: payload.reducedMotion === true,
     },
   }
-  await writeDocument(reference, next, { merge: true })
+  await writeDocument(reference, next)
   return next
 }
 
@@ -177,7 +177,7 @@ export async function saveMemory(memoryId, payload, context) {
     status: payload.status === 'archived' ? 'archived' : 'active',
   }
   if (type !== 'ordinary') next.specialMomentType = type
-  await writeDocument(reference, next, { merge: true })
+  await writeDocument(reference, next)
   return next
 }
 
@@ -218,7 +218,7 @@ export async function saveSpecialMomentText(momentType, payload, context) {
       }
     }),
   }
-  await writeDocument(reference, next, { merge: true })
+  await writeDocument(reference, next)
   return next
 }
 

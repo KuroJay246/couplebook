@@ -26,6 +26,7 @@ function createFirestoreStub({ active = true } = {}) {
   seed('couples/couple_alpha/specialMoments/birthday', { revision: 0 })
 
   return {
+    seed,
     writes,
     createDoc: (_firestore, ...pathParts) => ({ path: pathParts.join('/') }),
     getDocument: async (reference) => ({
@@ -40,7 +41,7 @@ function createFirestoreStub({ active = true } = {}) {
     }),
     setDocument: async (reference, data, options) => {
       writes.push({ kind: 'set', path: reference.path, data, options })
-      docs.set(reference.path, { ...(docs.get(reference.path) || {}), ...data })
+      docs.set(reference.path, options?.merge ? { ...(docs.get(reference.path) || {}), ...data } : { ...data })
     },
     updateDocument: async (reference, data) => {
       writes.push({ kind: 'update', path: reference.path, data })
@@ -103,6 +104,34 @@ test('write services validate text, categories, settings, memories, contract, an
   assert.equal(firestore.writes[4].data.revision, 2)
   assert.equal(firestore.writes[5].data.signatureStatus, 'status-only')
   assert.equal(firestore.writes[6].data.revision, 1)
+})
+
+test('full-document v1 writes replace legacy extra fields instead of merging them forward', async () => {
+  const firestore = createFirestoreStub()
+  firestore.seed('couples/couple_alpha/favorites/member_one', {
+    food: ['old cake'],
+    hobbies: ['legacy field that rules reject'],
+    revision: 1,
+    schemaVersion: 1,
+  })
+
+  await saveOwnFavorites(
+    { food: ['new cake'], songs: [], movies: [], places: [], memories: [], notes: [], revision: 1 },
+    { ...context, firestore, ...firestore },
+  )
+
+  assert.equal(firestore.writes[0].options, undefined)
+  assert.deepEqual(Object.keys(firestore.writes[0].data).sort(), [
+    'food',
+    'memories',
+    'movies',
+    'notes',
+    'places',
+    'revision',
+    'schemaVersion',
+    'songs',
+  ])
+  assert.equal(firestore.writes[0].data.hobbies, undefined)
 })
 
 test('write services reject unsupported and unsafe payloads', async () => {

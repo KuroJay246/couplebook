@@ -124,7 +124,7 @@ service cloud.firestore {
     }
 
     function currentRevision() {
-      return resource == null || !(resource.data.revision is int) ? 0 : resource.data.revision;
+      return resource == null || !(resource.data.get('revision', 0) is int) ? 0 : resource.data.get('revision', 0);
     }
 
     function hasNextRevision() {

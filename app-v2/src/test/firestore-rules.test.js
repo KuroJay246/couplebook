@@ -269,6 +269,32 @@ test('active members can perform valid emulator writes', { skip: !hasEmulator },
   }))
 })
 
+test('active members can replace legacy v1 documents that do not yet have revisions', { skip: !hasEmulator }, async () => {
+  const db = authed(ids.memberOne)
+  await env.withSecurityRulesDisabled(async (context) => {
+    await setDoc(doc(context.firestore(), 'couples', ids.couple, 'favorites', ids.memberOne), {
+      schemaVersion: 1,
+      food: [],
+      songs: [],
+      movies: [],
+      places: [],
+      memories: [],
+      notes: [],
+    })
+  })
+
+  await assertSucceeds(setDoc(doc(db, 'couples', ids.couple, 'favorites', ids.memberOne), {
+    schemaVersion: 1,
+    revision: 1,
+    food: ['fictional cake'],
+    songs: [],
+    movies: [],
+    places: [],
+    memories: [],
+    notes: [],
+  }))
+})
+
 test('write rules reject unauthorized, cross-couple, partner-private, and malformed writes', { skip: !hasEmulator }, async () => {
   const db = authed(ids.memberOne)
   await assertFails(getDoc(doc(db, 'couples', ids.couple, 'unknown', 'doc')))
