@@ -252,6 +252,16 @@ async function createGuardedPage(browser, name, options = {}) {
     injectedBrowserTestMode: options.browserTestMode,
     injectedSpoofedSession: options.spoofedSession,
   })
+  await context.route('https://fonts.googleapis.com/**', (route) => route.fulfill({
+    body: '',
+    contentType: 'text/css',
+    status: 200,
+  }))
+  await context.route('https://fonts.gstatic.com/**', (route) => route.fulfill({
+    body: '',
+    contentType: 'font/woff2',
+    status: 200,
+  }))
 
   const page = await context.newPage()
   attachPageGuards(page, observed)
