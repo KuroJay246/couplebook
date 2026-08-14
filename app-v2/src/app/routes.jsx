@@ -10,6 +10,7 @@ import { FavoritesPage } from '../pages/FavoritesPage'
 import { GalleryPage } from '../pages/GalleryPage'
 import { LoginPage } from '../pages/LoginPage'
 import { NotFoundPage } from '../pages/NotFoundPage'
+import { PlansPage } from '../pages/PlansPage'
 import { ProfilePage } from '../pages/ProfilePage'
 import { SettingsPage } from '../pages/SettingsPage'
 import { TimelinePage } from '../pages/TimelinePage'
@@ -34,6 +35,7 @@ export function AppRoutes() {
           <Route path="/gallery" element={<GalleryPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/favorites" element={<FavoritesPage />} />
+          <Route path="/plans" element={<PlansPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/contract" element={<ContractPage />} />
           <Route path="/birthday" element={<BirthdayPage />} />

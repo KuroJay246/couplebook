@@ -1,21 +1,7 @@
 import { Link } from 'react-router-dom'
 
-function parseDateLabel(value) {
-  const parsed = Date.parse(value || '')
-  return Number.isNaN(parsed) ? null : new Date(parsed)
-}
-
-function buildOnThisDay(items = []) {
-  const now = new Date()
-  return items.find((item) => {
-    const date = parseDateLabel(item.dateLabel)
-    return date && date.getMonth() === now.getMonth() && date.getDate() === now.getDate()
-  }) || null
-}
-
 function RecentMemories({ section }) {
   const items = section.items || []
-  const onThisDay = buildOnThisDay(items)
   return (
     <section className="glass-card card-story recent-memories-card dashboard-feature-card">
       <div className="recent-header">
@@ -26,13 +12,6 @@ function RecentMemories({ section }) {
         </div>
         <Link className="btn btn-secondary recent-link-button" to="/timeline">View All</Link>
       </div>
-      {onThisDay ? (
-        <div className="glass-card card-utility faithful-summary-card" style={{ marginBottom: '1rem' }}>
-          <p className="dashboard-section-kicker">On This Day</p>
-          <h3 className="dashboard-subtitle" style={{ marginBottom: '0.35rem' }}>{onThisDay.title}</h3>
-          <p className="dashboard-section-copy" style={{ marginBottom: 0 }}>{onThisDay.description}</p>
-        </div>
-      ) : null}
       <div className="recent-list">
         {items.length > 0 ? items.map((item) => (
           <article className="recent-memory-item" key={item.id}>
@@ -46,6 +25,65 @@ function RecentMemories({ section }) {
           </p>
         )}
       </div>
+    </section>
+  )
+}
+
+function TodayInUs({ section }) {
+  return (
+    <section className="glass-card card-hero dashboard-today-card">
+      <div>
+        <p className="dashboard-section-kicker">{section.eyebrow}</p>
+        <h2 className="dashboard-story-title">{section.daysTogether ? `${section.daysTogether} days together` : 'Your day starts here'}</h2>
+        <p className="dashboard-story-text">{section.currentMilestone}</p>
+      </div>
+      {section.featured ? (
+        <article className="dashboard-featured-memory">
+          <span className="utility-chip">Featured memory</span>
+          <h3>{section.featured.title}</h3>
+          <p>{section.featured.description}</p>
+          <Link className="btn btn-secondary" to="/timeline">Open memory</Link>
+        </article>
+      ) : (
+        <div className="editorial-empty-state">
+          <h3>No featured memory yet.</h3>
+          <p>Add a memory or connect the archive to make Home feel more alive.</p>
+        </div>
+      )}
+    </section>
+  )
+}
+
+function OnThisDay({ section }) {
+  return (
+    <section className="glass-card card-story dashboard-on-this-day">
+      <p className="dashboard-section-kicker">{section.eyebrow}</p>
+      {section.memory ? (
+        <>
+          <h3 className="dashboard-subtitle">{section.memory.title}</h3>
+          <p className="dashboard-section-copy">{section.memory.description}</p>
+          <div className="faithful-inline-actions">
+            <span className="utility-chip">{section.memory.dateLabel}</span>
+            <Link className="btn btn-secondary" to="/timeline">Open Memory</Link>
+          </div>
+        </>
+      ) : (
+        <div className="editorial-empty-state">
+          <h3>{section.emptyState.title}</h3>
+          <p>{section.emptyState.description}</p>
+        </div>
+      )}
+    </section>
+  )
+}
+
+function DailyPrompt({ section }) {
+  return (
+    <section className="glass-card card-story dashboard-prompt-card" aria-labelledby="daily-prompt-title">
+      <p className="dashboard-section-kicker">{section.eyebrow}</p>
+      <h3 className="dashboard-subtitle" id="daily-prompt-title">{section.title}</h3>
+      <p className="dashboard-section-copy">{section.description}</p>
+      <span className="utility-chip">Answer saving planned for V1.3</span>
     </section>
   )
 }
@@ -205,6 +243,9 @@ export function DashboardView({ model }) {
           </div>
         </section>
 
+        <TodayInUs section={model.todayInUs} />
+        <OnThisDay section={model.onThisDay} />
+        <DailyPrompt section={model.prompt} />
         <RecentMemories section={model.recentMemories} />
         <div className="dashboard-column dashboard-column--support">
           <div className="glass-card card-utility clock-card">

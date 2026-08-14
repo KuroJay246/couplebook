@@ -338,7 +338,7 @@ async function runAuthenticatedDesktopCoverage(browser) {
     const desktopPrimaryPaths = await page.locator('nav[aria-label="Main navigation"] a').evaluateAll((elements) => {
       return elements.map((element) => new URL(element.href).pathname)
     })
-    assert.deepEqual(desktopPrimaryPaths, ['/dashboard', '/timeline', '/gallery', '/profile', '/favorites', '/settings'])
+    assert.deepEqual(desktopPrimaryPaths, ['/dashboard', '/timeline', '/gallery', '/profile', '/favorites', '/plans', '/settings'])
 
     await page.reload({ waitUntil: 'domcontentloaded' })
     await waitForRouteContent(page, '/settings', 'Application Settings')

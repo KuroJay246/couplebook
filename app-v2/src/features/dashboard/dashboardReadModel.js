@@ -1,5 +1,6 @@
 import { normalizeTimelineMemories } from '../timeline/memoryNormalizer.js'
 import { selectTimelineDisplayMemories } from '../timeline/memorySelectors.js'
+import { selectOnThisDayMemory } from '../timeline/onThisDay.js'
 
 const SPECIAL_MOMENT_PATHS = ['/birthday', '/valentine', '/confession']
 const SUPPORTING_ROUTE_PATHS = ['/timeline', '/gallery', '/profile', '/favorites', '/settings', '/contract']
@@ -353,6 +354,51 @@ function buildRecentMemoriesSection(memorySource) {
   }
 }
 
+const DAILY_PROMPTS = Object.freeze([
+  'What small thing from today would you want us to remember later?',
+  'What is one place we should go back to together?',
+  'What did one of us do recently that felt quietly loving?',
+  'What is a tiny tradition we should keep building?',
+  'What should our next ordinary-but-special date feel like?',
+  'What is one detail from the beginning of us that still matters?',
+  'What would make this week feel more like us?',
+])
+
+function buildPromptSection(now) {
+  const start = Date.UTC(2026, 0, 1)
+  const dayIndex = Math.max(0, Math.floor((Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) - start) / 86400000))
+  const prompt = DAILY_PROMPTS[dayIndex % DAILY_PROMPTS.length]
+  return {
+    eyebrow: 'For us today',
+    title: prompt,
+    promptId: `v1.2-${dayIndex % DAILY_PROMPTS.length}`,
+    answeredState: 'not-connected',
+    description: 'Prompt answers are designed for a future private couple-scoped write path. V1.2 shows the daily prompt without storing answers yet.',
+  }
+}
+
+function buildOnThisDaySection(memorySource, now) {
+  const normalizedMemories = normalizeTimelineMemories(memorySource?.data?.memories || [])
+  const displayMemories = selectTimelineDisplayMemories(normalizedMemories)
+  const memory = selectOnThisDayMemory(displayMemories, now)
+  return {
+    eyebrow: 'On this day',
+    memory: memory
+      ? {
+          id: memory.id,
+          title: memory.displayTitle,
+          description: memory.displayDescription,
+          dateLabel: memory.displayDate,
+          typeLabel: memory.typeLabel,
+        }
+      : null,
+    emptyState: {
+      title: 'No memory matches this date yet.',
+      description: 'On This Day only shows active memories from a prior year with the same month and day.',
+    },
+  }
+}
+
 function filterAnniversaryParticipants(participants, settingsSource) {
   const preference = toTrimmedString(settingsSource?.data?.settings?.anniversaryConfig).toLowerCase()
   if (preference === 'jaylan' || preference === 'omia') {
@@ -500,6 +546,19 @@ function buildSupportingNavigation(routeMeta) {
   }
 }
 
+function buildTodayInUsSection({ milestones, recentMemories }) {
+  const anniversary = milestones.anniversaryCards[0] || null
+  const featured = recentMemories.items[0] || null
+  return {
+    eyebrow: 'Today in us',
+    daysTogether: anniversary?.duration?.totalDays || 0,
+    currentMilestone: anniversary
+      ? `${anniversary.label}: ${anniversary.totalDaysLabel}`
+      : 'Milestone dates are waiting on profile details.',
+    featured,
+  }
+}
+
 export function buildDashboardReadModel({ approvedUser = null, compatibilitySnapshot = null, now = new Date(), routeMeta = [] } = {}) {
   const snapshot = compatibilitySnapshot || {
     status: 'empty',
@@ -509,6 +568,11 @@ export function buildDashboardReadModel({ approvedUser = null, compatibilitySnap
   const participants = normalizeParticipants(snapshot.sources?.profile, approvedUser)
   const recentMemories = buildRecentMemoriesSection(snapshot.sources?.memories)
   const sourceState = buildSourceStateSection(snapshot)
+  const milestones = buildMilestonesSection({
+    participants,
+    settingsSource: snapshot.sources?.settings,
+    now,
+  })
 
   return {
     hero: buildHeroSection({
@@ -518,12 +582,11 @@ export function buildDashboardReadModel({ approvedUser = null, compatibilitySnap
       sourceState,
       now,
     }),
+    todayInUs: buildTodayInUsSection({ milestones, recentMemories }),
+    onThisDay: buildOnThisDaySection(snapshot.sources?.memories, now),
+    prompt: buildPromptSection(now),
     recentMemories,
-    milestones: buildMilestonesSection({
-      participants,
-      settingsSource: snapshot.sources?.settings,
-      now,
-    }),
+    milestones,
     specialMoments: buildSpecialMomentsSection(routeMeta),
     sourceState,
     supportingNavigation: buildSupportingNavigation(routeMeta),

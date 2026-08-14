@@ -239,6 +239,7 @@ export function TimelineView({ model, onRefresh }) {
   const [status, setStatus] = useState({ kind: '', message: '', saving: false })
   const writer = useOwnerWrite(onRefresh)
   const memories = useMemo(() => allMemories(model), [model])
+  const archivedMemories = model.archivedMemories || []
   const tags = model.filters.availableTags || []
   const years = model.filters.availableYears || []
   const types = model.filters.availableTypes || []
@@ -299,6 +300,17 @@ export function TimelineView({ model, onRefresh }) {
       setStatus({ kind: 'success', message: 'Memory archived.', saving: false })
     } catch (error) {
       setStatus({ kind: 'error', message: error?.message || 'Editing is temporarily unavailable.', saving: false })
+    }
+  }
+
+  async function restoreArchived(memory) {
+    if (!window.confirm(`Restore "${memory.displayTitle}" to the active story?`)) return
+    setStatus({ kind: '', message: '', saving: true })
+    try {
+      await writer.restoreMemory(memory.id, memory.revision || 0)
+      setStatus({ kind: 'success', message: 'Memory restored to Story.', saving: false })
+    } catch (error) {
+      setStatus({ kind: 'error', message: error?.message || 'Memory could not be restored.', saving: false })
     }
   }
 
@@ -410,6 +422,20 @@ export function TimelineView({ model, onRefresh }) {
         </div>
       </details>
 
+      {years.length ? (
+        <nav className="glass-card card-utility timeline-year-jump" aria-label="Jump to story year">
+          <span className="dashboard-section-kicker">Story chapters</span>
+          <div className="faithful-inline-actions">
+            {years.map((year) => (
+              <button className={`tab-btn ${selectedYear === year.key ? 'active' : ''}`} key={year.key} onClick={() => setSelectedYear(year.key)} type="button">
+                {year.label} ({year.count})
+              </button>
+            ))}
+            <button className="tab-btn" onClick={() => setSelectedYear('all')} type="button">All years</button>
+          </div>
+        </nav>
+      ) : null}
+
       <div className="timeline-container">
         <div className="timeline-line" />
         <div>
@@ -439,6 +465,29 @@ export function TimelineView({ model, onRefresh }) {
           )}
         </div>
       </div>
+      {archivedMemories.length ? (
+        <section className="glass-card card-utility archived-memory-panel">
+          <div className="dashboard-section-heading">
+            <div>
+              <p className="dashboard-section-kicker">Archived memories</p>
+              <h3 className="dashboard-subtitle">Hidden from the active story</h3>
+              <p className="dashboard-section-copy">Only archived memories can be restored. Restored memories return to Story and Album grouping.</p>
+            </div>
+            <span className="utility-chip">{archivedMemories.length}</span>
+          </div>
+          <div className="archived-memory-list">
+            {archivedMemories.map((memory) => (
+              <article className="archived-memory-row" key={memory.id}>
+                <div>
+                  <strong>{memory.displayTitle}</strong>
+                  <span>{memory.displayDate || 'Date review'} · {memory.typeLabel}</span>
+                </div>
+                <button className="btn btn-secondary" disabled={status.saving} onClick={() => restoreArchived(memory)} type="button">Restore Memory</button>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
       <DetailModal memory={selectedMemory} onArchive={archiveSelected} onClose={() => setSelectedMemory(null)} onEdit={openEditForm} status={status} />
       {formMode ? (
         <MemoryFormDialog

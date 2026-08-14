@@ -33,3 +33,11 @@ When using Gather & Savor Event Hub as a workflow reference, also read `docs/EVE
 - `npm --prefix app-v2 run build`
 - `npm run product:qa`
 - `npm run product:audit`
+
+## V1.2 Scope Notes
+
+- V1.2 adds active Home, global Quick Add Memory, canonical On This Day, Story chapter navigation, archived-memory restore, Gallery Album grouping, Us organization, Our Plans, plan-to-memory, and a deterministic prompt foundation.
+- New persistent Couple Book plans live at `couples/{coupleId}/plans/{planId}`.
+- Memory writes may include safe `kindLabel` and `mediaNote` fields.
+- Prompt answer persistence is not enabled in V1.2 unless a later task explicitly adds that workflow.
+- Do not deploy V1.2 Hosting live or V1.2 Firestore rules to production without explicit current approval.

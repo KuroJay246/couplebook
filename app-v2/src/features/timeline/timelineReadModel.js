@@ -1,6 +1,14 @@
 import { freezeClone } from '../../data/adapterUtils.js'
 import { normalizeTimelineMemories } from './memoryNormalizer.js'
-import { buildTimelineChapters, buildTimelineFilters, buildTimelineSummary } from './memorySelectors.js'
+import {
+  buildTimelineChapters,
+  buildTimelineFilters,
+  buildTimelineSummary,
+  formatTimelineDate,
+  selectTimelineDisplayDescription,
+  selectTimelineDisplayTitle,
+  selectTimelineTypeLabel,
+} from './memorySelectors.js'
 
 function createEmptySnapshot() {
   return {
@@ -94,12 +102,29 @@ export function buildTimelineReadModel({ compatibilitySnapshot = null } = {}) {
     warnings: [],
   }
   const normalizedMemories = normalizeTimelineMemories(memorySource?.data?.memories || [])
+  const archivedMemories = normalizedMemories
+    .filter((memory) => memory.status === 'archived')
+    .map((memory) => ({
+      id: memory.id,
+      status: memory.status,
+      revision: memory.revision,
+      displayTitle: selectTimelineDisplayTitle(memory),
+      displayDescription: selectTimelineDisplayDescription(memory),
+      displayDate: formatTimelineDate(memory.date),
+      typeLabel: selectTimelineTypeLabel(memory),
+      media: memory.media,
+      specialMoment: memory.specialMoment,
+      tags: memory.tags,
+      date: memory.date,
+      sort: memory.sort,
+    }))
 
   return freezeClone({
     status: deriveTimelineStatus(memorySource, normalizedMemories),
     summary: buildTimelineSummary(normalizedMemories),
     featured: null,
     chapters: buildTimelineChapters(normalizedMemories),
+    archivedMemories,
     filters: buildTimelineFilters(normalizedMemories),
     sourceStatus: buildSourceStatus(memorySource),
     warnings: Array.isArray(memorySource?.warnings) ? [...memorySource.warnings] : [],

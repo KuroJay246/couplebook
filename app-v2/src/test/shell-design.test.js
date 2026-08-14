@@ -14,7 +14,7 @@ test('route registry keeps the final primary and secondary hierarchy explicit', 
   )
   assert.deepEqual(
     getRoutesByGroup(ROUTE_GROUPS.shared).map((route) => route.path),
-    ['/favorites', '/contract'],
+    ['/favorites', '/plans', '/contract'],
   )
   assert.deepEqual(
     getRoutesByGroup(ROUTE_GROUPS.special).map((route) => route.path),

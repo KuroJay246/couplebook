@@ -173,7 +173,7 @@ service cloud.firestore {
     }
 
     function isValidMemory() {
-      return hasOnly(['schemaVersion', 'revision', 'title', 'description', 'date', 'tags', 'mediaState', 'media', 'specialMomentType', 'createdBy', 'updatedBy', 'status'])
+      return hasOnly(['schemaVersion', 'revision', 'title', 'description', 'date', 'tags', 'kindLabel', 'mediaNote', 'mediaState', 'media', 'specialMomentType', 'createdBy', 'updatedBy', 'status'])
         && hasAll(['schemaVersion', 'revision', 'title', 'date', 'mediaState', 'createdBy', 'updatedBy', 'status'])
         && request.resource.data.schemaVersion == 1
         && hasNextRevision()
@@ -181,6 +181,8 @@ service cloud.firestore {
         && (!('description' in request.resource.data) || isSafeString(request.resource.data.description, 2000))
         && request.resource.data.date.matches('^\\d{4}-\\d{2}-\\d{2}$')
         && (!('tags' in request.resource.data) || isStringList(request.resource.data.tags, 30))
+        && (!('kindLabel' in request.resource.data) || request.resource.data.kindLabel in ['Everyday Moment', 'Date', 'First', 'Trip', 'Milestone', 'Celebration', 'Funny Moment', 'Note', 'Photo Memory', 'Video Memory'])
+        && (!('mediaNote' in request.resource.data) || isSafeString(request.resource.data.mediaNote, 300))
         && request.resource.data.mediaState in ['none', 'private-legacy-reference', 'storage-verified']
         && (
           request.resource.data.mediaState == 'storage-verified'
@@ -191,6 +193,23 @@ service cloud.firestore {
         && request.resource.data.createdBy == request.auth.uid
         && request.resource.data.updatedBy == request.auth.uid
         && request.resource.data.status in ['active', 'archived'];
+    }
+
+    function isValidPlan() {
+      return hasOnly(['schemaVersion', 'revision', 'title', 'category', 'status', 'targetDate', 'notes', 'createdBy', 'createdAt', 'updatedBy', 'updatedAt', 'convertedMemoryId'])
+        && hasAll(['schemaVersion', 'revision', 'title', 'category', 'status', 'createdBy', 'createdAt', 'updatedBy', 'updatedAt'])
+        && request.resource.data.schemaVersion == 1
+        && hasNextRevision()
+        && isRequiredSafeString(request.resource.data.title, 160)
+        && request.resource.data.category in ['Date Idea', 'Place to Visit', 'Restaurant', 'Movie or Show', 'Goal', 'Gift or Surprise', 'Bucket List', 'Other']
+        && request.resource.data.status in ['idea', 'planned', 'completed', 'archived']
+        && (!('targetDate' in request.resource.data) || request.resource.data.targetDate == '' || request.resource.data.targetDate.matches('^\\d{4}-\\d{2}-\\d{2}$'))
+        && (!('notes' in request.resource.data) || isSafeString(request.resource.data.notes, 1200))
+        && (!('convertedMemoryId' in request.resource.data) || isSafeString(request.resource.data.convertedMemoryId, 120))
+        && request.resource.data.createdBy == (resource == null ? request.auth.uid : resource.data.createdBy)
+        && request.resource.data.updatedBy == request.auth.uid
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.updatedAt is timestamp;
     }
 
     function isSafeStoragePath(value) {
@@ -333,6 +352,12 @@ service cloud.firestore {
       match /memories/{memoryId} {
         allow get, list: if isActiveCoupleMember(coupleId);
         allow create, update: if isActiveCoupleMember(coupleId) && isValidMemory();
+        allow delete: if false;
+      }
+
+      match /plans/{planId} {
+        allow get, list: if isActiveCoupleMember(coupleId);
+        allow create, update: if isActiveCoupleMember(coupleId) && isValidPlan();
         allow delete: if false;
       }
 

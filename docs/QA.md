@@ -3,6 +3,7 @@
 ## Primary Commands
 
 - `npm run docs:check`
+- `npm run alignment:check`
 - `npm --prefix app-v2 run lint`
 - `npm --prefix app-v2 test`
 - `npm --prefix app-v2 run test:rules`
@@ -21,6 +22,8 @@ Storage rules tests run against `storage.app-v2.rules`.
 
 Rules coverage includes signed-out denial, active-member access, pending and inactive denial, cross-couple denial, private settings boundaries, schema validation, revision conflicts, contract acceptance preservation, and blocked raw/private media paths.
 
+V1.2 rules coverage also includes plan schemas, allowed plan statuses/categories, protected fields, and memory archive/restore revision behavior.
+
 ## Browser Coverage
 
 Browser checks are local app-v2 checks. Authenticated production browser checks require explicit authorization and a signed-in session.
@@ -28,6 +31,8 @@ Browser checks are local app-v2 checks. Authenticated production browser checks 
 Automated browser checks use fixture-based auth through `window.__COUPLEBOOK_BROWSER_TEST__`. They must not commit Playwright auth-state files, passwords, browser profiles, traces, videos, or private screenshots. Manual real-owner acceptance is separate from fixture-based automation and must be reported as manual, read-only or write-authorized, and production or local.
 
 The current local browser scripts use Chromium through Playwright. Cross-browser support is available through Playwright dependencies, but Firefox and WebKit are not part of the default fast QA command.
+
+V1.2 browser/product checks cover primary navigation, Plans navigation, Quick Add entry points, Gallery accessible link names, mobile touch targets, and protected signed-out redirects.
 
 ## Reporting Standard
 

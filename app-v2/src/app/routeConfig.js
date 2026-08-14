@@ -54,6 +54,14 @@ export const protectedRouteMeta = [
     summary: 'Read-only shared favorites now stay here, with exact overlap shown only when it is honestly preserved.',
   },
   {
+    path: '/plans',
+    label: 'Plans',
+    navLabel: 'Plans',
+    title: 'Plans',
+    group: ROUTE_GROUPS.shared,
+    summary: 'Couple-scoped ideas, planned dates, and completed plans can safely become memories.',
+  },
+  {
     path: '/contract',
     label: 'Contract',
     navLabel: 'Contract',

@@ -3,10 +3,13 @@ import test from 'node:test'
 import {
   acceptContract,
   archiveMemory,
+  convertPlanToMemory,
+  restoreMemory,
   saveMemory,
   saveOwnFavorites,
   saveOwnProfile,
   saveOwnSettings,
+  savePlan,
   saveSpecialMomentText,
 } from '../services/firestoreWrites.js'
 
@@ -21,7 +24,8 @@ function createFirestoreStub({ active = true } = {}) {
   seed('couples/couple_alpha/profiles/member_one', { revision: 0 })
   seed('couples/couple_alpha/favorites/member_one', { revision: 0 })
   seed('couples/couple_alpha/settings/member_one', { revision: 0 })
-  seed('couples/couple_alpha/memories/memory_one', { revision: 0 })
+  seed('couples/couple_alpha/memories/memory_one', { revision: 0, status: 'active' })
+  seed('couples/couple_alpha/plans/plan_one', { revision: 0 })
   seed('couples/couple_alpha/contracts/current', { acceptedBy: [], schemaVersion: 1 })
   seed('couples/couple_alpha/specialMoments/birthday', { revision: 0 })
 
@@ -90,10 +94,12 @@ test('write services validate text, categories, settings, memories, contract, an
   await saveOwnSettings({ theme: 'plum', localOnlyMode: true, reducedMotion: true }, { ...context, firestore, ...firestore })
   await saveMemory('memory_one', { title: 'A day', date: '2026-02-14', tags: ['walk'], specialMomentType: 'ordinary' }, { ...context, firestore, ...firestore })
   await archiveMemory('memory_one', 1, { ...context, firestore, ...firestore })
+  await restoreMemory('memory_one', 2, { ...context, firestore, ...firestore })
+  await savePlan('plan_one', { title: 'Try a new restaurant', category: 'Restaurant', status: 'idea', targetDate: '2026-08-20' }, { ...context, firestore, ...firestore })
   await acceptContract({ ...context, firestore, ...firestore })
   await saveSpecialMomentText('birthday', { title: 'Birthday', sections: [{ kind: 'paragraph', content: 'Safe text' }] }, { ...context, firestore, ...firestore })
 
-  assert.equal(firestore.writes.length, 7)
+  assert.equal(firestore.writes.length, 9)
   assert.equal(firestore.writes[0].data.revision, 1)
   assert.deepEqual(firestore.writes[1].data.food, ['cake'])
   assert.equal(firestore.writes[1].data.revision, 1)
@@ -102,8 +108,11 @@ test('write services validate text, categories, settings, memories, contract, an
   assert.equal(firestore.writes[3].data.revision, 1)
   assert.equal(firestore.writes[4].data.status, 'archived')
   assert.equal(firestore.writes[4].data.revision, 2)
-  assert.equal(firestore.writes[5].data.signatureStatus, 'status-only')
-  assert.equal(firestore.writes[6].data.revision, 1)
+  assert.equal(firestore.writes[5].data.status, 'active')
+  assert.equal(firestore.writes[5].data.revision, 3)
+  assert.equal(firestore.writes[6].data.category, 'Restaurant')
+  assert.equal(firestore.writes[7].data.signatureStatus, 'status-only')
+  assert.equal(firestore.writes[8].data.revision, 1)
 })
 
 test('full-document v1 writes replace legacy extra fields instead of merging them forward', async () => {
@@ -139,7 +148,32 @@ test('write services reject unsupported and unsafe payloads', async () => {
   await assert.rejects(saveOwnFavorites({ food: ['<script>bad</script>'] }, { ...context, firestore, ...firestore }), /unsafe/)
   await assert.rejects(saveOwnSettings({ theme: 'neon' }, { ...context, firestore, ...firestore }), /Theme/)
   await assert.rejects(saveMemory('memory_one', { title: 'A day', date: '2026-02-31' }, { ...context, firestore, ...firestore }), /calendar/)
+  await assert.rejects(restoreMemory('memory_one', 0, { ...context, firestore, ...firestore }), /archived/)
+  await assert.rejects(savePlan('plan_one', { title: 'Bad', category: 'Finance', status: 'idea' }, { ...context, firestore, ...firestore }), /category/)
   await assert.rejects(saveSpecialMomentText('birthday', { title: 'Birthday', sections: [{ kind: 'paragraph', content: '<img src=x>' }] }, { ...context, firestore, ...firestore }), /unsafe/)
+})
+
+test('plan-to-memory creates one deterministic memory and blocks duplicate conversion', async () => {
+  const firestore = createFirestoreStub()
+  const plan = {
+    title: 'Picnic at the beach',
+    category: 'Date Idea',
+    status: 'completed',
+    targetDate: '2026-08-21',
+    notes: 'Bring snacks.',
+    revision: 0,
+    convertedMemoryId: '',
+  }
+  const memoryId = await convertPlanToMemory('plan_one', plan, { ...context, firestore, ...firestore })
+  assert.equal(memoryId, 'memory_from_plan_plan_one')
+  assert.equal(firestore.writes[0].path, 'couples/couple_alpha/memories/memory_from_plan_plan_one')
+  assert.equal(firestore.writes[1].path, 'couples/couple_alpha/plans/plan_one')
+  assert.equal(firestore.writes[1].data.convertedMemoryId, memoryId)
+
+  await assert.rejects(
+    convertPlanToMemory('plan_one', { ...plan, convertedMemoryId: memoryId }, { ...context, firestore, ...firestore }),
+    /already has a memory/,
+  )
 })
 
 test('write services reject stale revisions before overwriting newer data', async () => {

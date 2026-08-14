@@ -25,3 +25,12 @@
 ## Data Access
 
 Read models convert Firestore/compatibility data into page-specific UI state. Writes go through `app-v2/src/services/firestoreWrites.js`; components should not bypass this service for mutable app-v2 Firestore writes.
+
+## V1.2 Feature Architecture
+
+- `app-v2/src/features/memories/QuickAddMemory.jsx`: global protected-shell Add Memory flow.
+- `app-v2/src/features/timeline/onThisDay.js`: canonical active-memory On This Day selector.
+- `app-v2/src/features/plans`: Our Plans read model and route UI.
+- `app-v2/src/services/planService.js`: couple-scoped plan reads.
+- `app-v2/src/services/firestoreWrites.js`: memory create/update/archive/restore, plan create/update, and plan-to-memory writes.
+- `firestore.rules`: validates memory metadata, restore-compatible revisions, and `couples/{coupleId}/plans/{planId}`.

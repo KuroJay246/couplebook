@@ -59,6 +59,14 @@ export function memoryPath(coupleId, memoryId) {
   return [...memoriesPath(coupleId), assertSafeId(memoryId, 'memoryId')]
 }
 
+export function plansPath(coupleId) {
+  return [...couplePath(coupleId), 'plans']
+}
+
+export function planPath(coupleId, planId) {
+  return [...plansPath(coupleId), assertSafeId(planId, 'planId')]
+}
+
 export function specialMomentPath(coupleId, momentType) {
   return [...couplePath(coupleId), 'specialMoments', assertApprovedMomentType(momentType)]
 }

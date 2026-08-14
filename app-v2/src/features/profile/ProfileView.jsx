@@ -206,20 +206,39 @@ export function ProfileView({ model, onRefresh }) {
         </div>
       </section>
 
-      <div className="profiles-layout">
+      <section className="glass-card card-utility us-directory">
+        <div className="dashboard-section-heading">
+          <div>
+            <p className="dashboard-section-kicker">Us at a glance</p>
+            <h2 className="dashboard-subtitle">The pieces that make this ours</h2>
+          </div>
+        </div>
+        <div className="us-directory-grid">
+          <a href="#about-jaylan">About Jaylan</a>
+          <a href="#about-omia">About Omia</a>
+          <a href="#our-story">Our Story</a>
+          <a href="#our-dates">Our Dates</a>
+          <Link to="/favorites">Things We Both Love</Link>
+          <Link to="/plans">Things We Want to Try</Link>
+        </div>
+      </section>
+
+      <div className="profiles-layout" id="our-story">
         {people.map((person, index) => (
-          <ProfileCard
-            canEdit={isOwnerProfile(person, writer.approvedUser)}
-            index={index}
-            key={person.id}
-            onEdit={(nextPerson) => {
-              setStatus({ kind: '', message: '', saving: false })
-              setEditingPerson(nextPerson)
-            }}
-            person={person}
-          />
+          <section id={index === 0 ? 'about-jaylan' : 'about-omia'} key={person.id}>
+            <h2 className="sr-only">{index === 0 ? 'About Jaylan' : 'About Omia'}</h2>
+            <ProfileCard
+              canEdit={isOwnerProfile(person, writer.approvedUser)}
+              index={index}
+              onEdit={(nextPerson) => {
+                setStatus({ kind: '', message: '', saving: false })
+                setEditingPerson(nextPerson)
+              }}
+              person={person}
+            />
+          </section>
         ))}
-        <div className="glass-card card-utility contract-card-profile">
+        <div className="glass-card card-utility contract-card-profile" id="our-dates">
           <h2 style={{ fontFamily: 'var(--font-accent)', fontWeight: 700, textAlign: 'center', marginBottom: '1rem' }}>📜 Our Promises</h2>
           <p style={{ color: 'var(--color-secondary-text)', textAlign: 'center', fontSize: '0.85rem' }}>A quick look at the promises, milestones, and next step back into the full agreement page.</p>
           <div className="contract-display-container">

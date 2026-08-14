@@ -55,7 +55,11 @@ function GalleryTile({ item, onSelect }) {
         </div>
         <h3 className="gallery-item-title">{item.title}</h3>
         <p className="gallery-card-support">{item.description}</p>
-        {item.specialMoment.route ? <Link className="btn btn-secondary timeline-action-link" to={item.specialMoment.route}>Open Page</Link> : null}
+        {item.specialMoment.route ? (
+          <Link aria-label={`Open related page for ${item.title}`} className="btn btn-secondary timeline-action-link" to={item.specialMoment.route}>
+            Open Related Memory
+          </Link>
+        ) : null}
       </div>
     </article>
   )
@@ -75,6 +79,27 @@ function LiveAlbumTile() {
       </div>
     </a>
   )
+}
+
+function groupByYear(items) {
+  const map = new Map()
+  for (const item of items) {
+    const key = item.date?.year ? String(item.date.year) : 'Date review'
+    if (!map.has(key)) map.set(key, [])
+    map.get(key).push(item)
+  }
+  return [...map.entries()]
+    .sort(([left], [right]) => {
+      if (left === 'Date review') return 1
+      if (right === 'Date review') return -1
+      return Number(right) - Number(left)
+    })
+    .map(([yearLabel, yearItems]) => ({
+      id: `album-${yearLabel}`,
+      yearLabel,
+      featured: yearItems[0],
+      items: yearItems,
+    }))
 }
 
 function GalleryLightbox({ item, items, onClose, onNext, onPrevious }) {
@@ -178,6 +203,7 @@ export function GalleryView({ model }) {
         .includes(normalizedSearch)
     })
   }, [filter, items, search, year])
+  const grouped = useMemo(() => groupByYear(filtered), [filtered])
 
   function showNeighbor(direction) {
     if (!selectedItem || filtered.length <= 1) return
@@ -238,10 +264,26 @@ export function GalleryView({ model }) {
         </div>
       </section>
 
-      <div className="gallery-grid">
+      <div className="gallery-grid gallery-grid--live">
         <LiveAlbumTile />
-        {filtered.length > 0 ? filtered.map((item) => (
-          <GalleryTile item={item} key={item.key || item.id} onSelect={setSelectedItem} />
+      </div>
+      <div className="gallery-album-stack">
+        {grouped.length > 0 ? grouped.map((group) => (
+          <section className="gallery-album-group" key={group.id}>
+            <div className="gallery-album-heading">
+              <div>
+                <p className="dashboard-section-kicker">Album chapter</p>
+                <h2>{group.yearLabel}</h2>
+                <p>{group.items.length} {group.items.length === 1 ? 'memory' : 'memories'} in this chapter.</p>
+              </div>
+              {group.featured ? <span className="utility-chip">Featured: {group.featured.title}</span> : null}
+            </div>
+            <div className="gallery-grid">
+              {group.items.map((item) => (
+                <GalleryTile item={item} key={item.key || item.id} onSelect={setSelectedItem} />
+              ))}
+            </div>
+          </section>
         )) : (
           <div className="gallery-empty-state glass-card">
             <h3 className="gallery-empty-state-title">No gallery entries match this view.</h3>

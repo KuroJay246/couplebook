@@ -15,6 +15,7 @@ import {
   getDoc,
   getDocs,
   runTransaction,
+  serverTimestamp,
   setDoc,
   updateDoc,
   writeBatch,
@@ -242,6 +243,20 @@ test('active members can perform valid emulator writes', { skip: !hasEmulator },
     updatedBy: ids.memberOne,
     status: 'active',
   }))
+  await assertSucceeds(setDoc(doc(db, 'couples', ids.couple, 'plans', 'plan_one'), {
+    schemaVersion: 1,
+    revision: 1,
+    title: 'Fictional date idea',
+    category: 'Date Idea',
+    status: 'idea',
+    targetDate: '2026-08-20',
+    notes: 'Safe fictional plan.',
+    createdBy: ids.memberOne,
+    createdAt: serverTimestamp(),
+    updatedBy: ids.memberOne,
+    updatedAt: serverTimestamp(),
+    convertedMemoryId: '',
+  }))
   await assertSucceeds(setDoc(doc(db, 'couples', ids.couple, 'specialMoments', 'birthday'), {
     schemaVersion: 1,
     revision: 2,
@@ -388,6 +403,29 @@ test('write rules reject unauthorized, cross-couple, partner-private, and malfor
     title: 'Unsupported',
     sections: [],
   }))
+  await assertFails(setDoc(doc(db, 'couples', ids.couple, 'plans', 'bad_plan'), {
+    schemaVersion: 1,
+    revision: 1,
+    title: 'Bad plan',
+    category: 'Finance',
+    status: 'idea',
+    createdBy: ids.memberOne,
+    createdAt: serverTimestamp(),
+    updatedBy: ids.memberOne,
+    updatedAt: serverTimestamp(),
+  }))
+  await assertFails(setDoc(doc(db, 'couples', ids.couple, 'plans', 'extra_plan'), {
+    schemaVersion: 1,
+    revision: 1,
+    title: 'Extra plan',
+    category: 'Date Idea',
+    status: 'idea',
+    createdBy: ids.memberOne,
+    createdAt: serverTimestamp(),
+    updatedBy: ids.memberOne,
+    updatedAt: serverTimestamp(),
+    role: 'admin',
+  }))
 
   const batch = writeBatch(db)
   batch.set(doc(db, 'couples', ids.couple, 'profiles', 'new_profile'), { name: 'New' })
@@ -435,6 +473,31 @@ test('revision rules reject stale and conflicting same-document writes', { skip:
     description: 'Stale overwrite.',
     date: '2026-01-01',
     tags: ['stale'],
+    mediaState: 'none',
+    createdBy: ids.memberOne,
+    updatedBy: ids.memberOne,
+    status: 'active',
+  }))
+
+  await assertSucceeds(updateDoc(doc(memberOneDb, 'couples', ids.couple, 'memories', 'memory_one'), {
+    schemaVersion: 1,
+    revision: 3,
+    title: 'Fictional memory',
+    description: 'Archived first.',
+    date: '2026-01-01',
+    tags: ['updated'],
+    mediaState: 'none',
+    createdBy: ids.memberOne,
+    updatedBy: ids.memberOne,
+    status: 'archived',
+  }))
+  await assertSucceeds(updateDoc(doc(memberOneDb, 'couples', ids.couple, 'memories', 'memory_one'), {
+    schemaVersion: 1,
+    revision: 4,
+    title: 'Fictional memory',
+    description: 'Restored.',
+    date: '2026-01-01',
+    tags: ['updated'],
     mediaState: 'none',
     createdBy: ids.memberOne,
     updatedBy: ids.memberOne,

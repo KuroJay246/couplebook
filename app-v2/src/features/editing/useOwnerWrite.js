@@ -3,10 +3,13 @@ import { useAuth } from '../../auth/useAuth.js'
 import {
   acceptContract,
   archiveMemory,
+  convertPlanToMemory,
+  restoreMemory,
   saveMemory,
   saveOwnFavorites,
   saveOwnProfile,
   saveOwnSettings,
+  savePlan,
   saveSpecialMomentText,
 } from '../../services/firestoreWrites.js'
 
@@ -16,6 +19,14 @@ function createMemoryId() {
   }
 
   return `memory_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`
+}
+
+function createPlanId() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return `plan_${crypto.randomUUID().replaceAll('-', '_')}`
+  }
+
+  return `plan_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`
 }
 
 export function useOwnerWrite(onRefresh) {
@@ -52,6 +63,16 @@ export function useOwnerWrite(onRefresh) {
     },
     updateMemory: (memoryId, payload) => runWrite((context) => saveMemory(memoryId, payload, context)),
     archiveMemory: (memoryId, revision = 0) => runWrite((context) => archiveMemory(memoryId, revision, context)),
+    restoreMemory: (memoryId, revision = 0) => runWrite((context) => restoreMemory(memoryId, revision, context)),
+    createPlan: (payload) => {
+      const planId = createPlanId()
+      return runWrite(async (context) => {
+        await savePlan(planId, payload, context)
+        return planId
+      })
+    },
+    updatePlan: (planId, payload) => runWrite((context) => savePlan(planId, payload, context)),
+    convertPlanToMemory: (planId, plan) => runWrite((context) => convertPlanToMemory(planId, plan, context)),
     saveProfile: (payload) => runWrite((context) => saveOwnProfile(payload, context)),
     saveFavorites: (payload) => runWrite((context) => saveOwnFavorites(payload, context)),
     saveSettings: (payload) => runWrite((context) => saveOwnSettings(payload, context)),

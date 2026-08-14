@@ -18,6 +18,7 @@ npm --prefix app-v2 run dev
 
 ```powershell
 npm run docs:check
+npm run alignment:check
 npm --prefix app-v2 run lint
 npm --prefix app-v2 test
 npm --prefix app-v2 run test:rules
@@ -57,3 +58,13 @@ firebase deploy --only firestore:rules --project couplebook-97830
 ```
 
 Do not use generic `firebase deploy` for normal Couple Book releases. Roll back Hosting from the Firebase Hosting release history for `couplebook-97830` to the last verified good version.
+
+## V1.2 Preview Workflow
+
+V1.2 app-experience work may deploy Hosting preview channels only:
+
+```powershell
+npx -y firebase-tools@latest hosting:channel:deploy v1-2-app-experience --project couplebook-97830 --expires 14d
+```
+
+Do not deploy V1.2 Hosting live or Firestore rules live until owner review explicitly approves that release step.

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { protectedRouteMeta } from '../app/routeConfig'
 import { useAuth } from '../auth/useAuth'
+import { QuickAddMemory } from '../features/memories/QuickAddMemory.jsx'
 
 const NAV_ICON_BY_PATH = {
   '/dashboard': '⌂',
@@ -9,6 +10,7 @@ const NAV_ICON_BY_PATH = {
   '/gallery': '□',
   '/profile': '◐',
   '/favorites': '☆',
+  '/plans': '+',
   '/settings': '⚙',
   '/contract': '§',
   '/birthday': '✦',
@@ -16,7 +18,7 @@ const NAV_ICON_BY_PATH = {
   '/confession': '✎',
 }
 
-const PRIMARY_PATHS = new Set(['/dashboard', '/timeline', '/gallery', '/profile', '/favorites', '/settings'])
+const PRIMARY_PATHS = new Set(['/dashboard', '/timeline', '/gallery', '/profile', '/favorites', '/plans', '/settings'])
 const SHELF_PATHS = new Set(['/contract', '/birthday', '/valentine', '/confession'])
 
 const NAV_ITEMS = protectedRouteMeta.map((route) => ({
@@ -124,6 +126,7 @@ function Sidebar({ items, onClose, onNavigate, open, signOut }) {
 
 export function AppShell() {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [quickAddOpen, setQuickAddOpen] = useState(false)
   const { approvedUser, signOut, user } = useAuth()
   const displayName = surfaceDisplayName(approvedUser?.displayName || approvedUser?.username || user?.email) || 'Guest'
   const mainItems = visibleNavItems.filter((item) => item.main)
@@ -157,6 +160,9 @@ export function AppShell() {
             <span className="avatar-small" aria-hidden="true" />
             <span className="badge-name">{displayName}</span>
           </NavLink>
+          <button className="btn btn-primary shell-quick-add" onClick={() => setQuickAddOpen(true)} type="button">
+            Add Memory
+          </button>
         </header>
         <MobileNav items={mainItems} />
         <Sidebar
@@ -170,6 +176,7 @@ export function AppShell() {
       <main className="main-content animate-fade-in">
         <Outlet />
       </main>
+      <QuickAddMemory onClose={() => setQuickAddOpen(false)} open={quickAddOpen} />
     </div>
   )
 }

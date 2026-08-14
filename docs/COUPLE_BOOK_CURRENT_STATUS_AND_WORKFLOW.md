@@ -100,7 +100,7 @@ These are operational patterns copied from the Gather & Savor workflow, adapted 
 - Keep backend, frontend, rules, and docs aligned before release closeout.
 - Passing automation alone does not authorize a merge or tag if owner acceptance/live smoke gates are incomplete.
 - Keep release evidence honest: implemented, deployed, blocked, held, or deferred.
-- Current Gather workflow reference commit for V1.2 alignment: `18af96a8d5b714d44cb04ab924fbbedc2bb94f9b`.
+- Current Gather workflow reference commit for V1.2 alignment: `a840e903ce6efd0e6f70140e1c939f1c36d688f2`.
 - Couple Book alignment gate: `npm run alignment:check`.
 
 ## Verified Release Evidence
@@ -162,13 +162,23 @@ V1.2 is the app-experience upgrade branch:
 - Firestore rules: do not deploy production rules during V1.2 unless separately approved.
 - Product goal: make the protected app feel like a complete private couple memory book, not a maintenance shell.
 - Reference process: Gather-style operational rigor through `docs/EVENT_HUB_ALIGNMENT_STANDARD.md`, not Gather product copying.
+- Implemented V1.2 feature set on this branch:
+  - Active Home sections: Today in Us, On This Day, For Us Today prompt, Coming Up, Recently, Keep Exploring.
+  - Global Quick Add Memory action in the protected shell.
+  - Story year jump controls and archived-memory restore panel.
+  - Gallery Album grouping by year and Open Related Memory actions.
+  - Us destination sections: About Jaylan, About Omia, Our Story, Our Dates, Things We Both Love, Things We Want to Try.
+  - Our Plans route at `/plans`, backed by `couples/{coupleId}/plans/{planId}`.
+  - Plan-to-memory conversion with deterministic memory IDs and duplicate prevention.
+  - V1.2 daily prompt display; answer persistence remains deferred to a later version.
+- Firestore rules were updated locally for plans and memory metadata, but V1.2 rules are not deployed to production.
 
 ## September 16 Readiness Focus
 
 Priority work before September 16, 2026:
 
 - Complete V1.2 visual/product upgrade on the active feature branch.
-- Confirm whether the current MemoryBook visual shell is the intended V1.2 base or whether the earlier preview visual style should be restored into the protected app.
+- Owner-review the V1.2 preview before any production deployment.
 - Continue organizer-style product QA on real user flows: login, dashboard, story, gallery, favorites, profile, settings, contract, and special pages.
 - Keep adding focused regression tests for every production bug found through real use.
 - Maintain strict cleanup discipline for any approved production smoke write.

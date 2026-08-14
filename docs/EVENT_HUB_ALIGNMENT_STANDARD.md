@@ -7,7 +7,7 @@ This file records how Couple Book may use Gather & Savor Event Hub as an enginee
 ## Reference Snapshot
 
 - Reference repo: `C:\Users\Jaylan\Documents\gathetr`
-- Inspected commit: `18af96a8d5b714d44cb04ab924fbbedc2bb94f9b`
+- Inspected commit: `a840e903ce6efd0e6f70140e1c939f1c36d688f2`
 - Reference mode: read-only workflow reference
 - Couple Book repo: `C:\Users\Jaylan\Documents\couplebook`
 - Couple Book Firebase project: `couplebook-97830`
@@ -47,6 +47,8 @@ For V1.2, the alignment standard means Couple Book should behave like a complete
 - Empty, loading, error, and permission states should look intentional.
 - Browser QA must exercise real routes and responsive layouts, not just static build success.
 - V1.2 deploys to preview Hosting only unless the user separately approves production.
+
+For new persistent V1.2 workflows, adapt only these Event Hub engineering patterns: narrow services, allowed fields, integer revisions, protected immutable fields, emulator rules tests, and explicit deployment guards. Do not copy Gather collections, routes, roles, IDs, finance logic, QR logic, or Firebase targets.
 
 ## Drift Check
 

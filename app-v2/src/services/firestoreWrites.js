@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore'
+import { doc, getDoc, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore'
 import { isFirestoreWriteMode } from '../data/writeMode.js'
 import { db } from '../lib/firebaseClient.js'
 import {
@@ -6,6 +6,7 @@ import {
   favoritesPath,
   memberPath,
   memoryPath,
+  planPath,
   privateSettingsPath,
   profilePath,
   specialMomentPath,
@@ -14,6 +15,29 @@ import {
 export const FAVORITE_WRITE_CATEGORIES = Object.freeze(['food', 'songs', 'movies', 'places', 'memories', 'notes'])
 export const APPEARANCE_THEMES = Object.freeze(['paper', 'rose', 'olive', 'plum'])
 export const MEMORY_TYPES = Object.freeze(['ordinary', 'birthday', 'valentine', 'confession'])
+export const MEMORY_KIND_LABELS = Object.freeze([
+  'Everyday Moment',
+  'Date',
+  'First',
+  'Trip',
+  'Milestone',
+  'Celebration',
+  'Funny Moment',
+  'Note',
+  'Photo Memory',
+  'Video Memory',
+])
+export const PLAN_STATUSES = Object.freeze(['idea', 'planned', 'completed', 'archived'])
+export const PLAN_CATEGORIES = Object.freeze([
+  'Date Idea',
+  'Place to Visit',
+  'Restaurant',
+  'Movie or Show',
+  'Goal',
+  'Gift or Surprise',
+  'Bucket List',
+  'Other',
+])
 export const SPECIAL_SECTION_KINDS = Object.freeze(['paragraph', 'note', 'quote', 'list'])
 
 const UNSAFE_TEXT_PATTERN = /<\s*\/?\s*(script|style|iframe|object|embed|img|video|audio)\b|on[a-z]+\s*=|javascript:|<[^>]+>/i
@@ -50,6 +74,11 @@ function cleanDate(value) {
     throw new Error('Date must be a real calendar date.')
   }
   return text
+}
+
+function cleanOptionalDate(value, label = 'Date') {
+  if (!value) return ''
+  return cleanDate(value, label)
 }
 
 function normalizeRevision(value) {
@@ -171,6 +200,8 @@ export async function saveMemory(memoryId, payload, context) {
     description: cleanText(payload.description, 2000, 'Description'),
     date: cleanDate(payload.date),
     tags: cleanStringList(payload.tags, { label: 'Tag', maxItems: 30, maxLength: 60 }),
+    kindLabel: MEMORY_KIND_LABELS.includes(payload.kindLabel) ? payload.kindLabel : 'Everyday Moment',
+    mediaNote: cleanText(payload.mediaNote, 300, 'Media note'),
     mediaState: 'none',
     createdBy: uid,
     updatedBy: uid,
@@ -179,6 +210,65 @@ export async function saveMemory(memoryId, payload, context) {
   if (type !== 'ordinary') next.specialMomentType = type
   await writeDocument(reference, next)
   return next
+}
+
+export async function restoreMemory(memoryId, revision, context) {
+  const { coupleId, createDoc, firestore, getDocument, uid } = await assertWriteContext(context)
+  const patchDocument = context.updateDocument || updateDoc
+  const reference = docRef(firestore, memoryPath(coupleId, memoryId), createDoc)
+  const snapshot = await getDocument(reference)
+  if (!snapshot.exists()) throw new Error('Memory could not be found.')
+  if (snapshot.data()?.status !== 'archived') throw new Error('Only archived memories can be restored.')
+  const nextRevision = await resolveNextRevision(reference, revision, getDocument, 'Memory')
+  const next = { status: 'active', updatedBy: uid, schemaVersion: 1, revision: nextRevision }
+  await patchDocument(reference, next)
+  return next
+}
+
+export async function savePlan(planId, payload, context) {
+  const { coupleId, createDoc, firestore, getDocument, uid } = await assertWriteContext(context)
+  const writeDocument = context.setDocument || setDoc
+  const reference = docRef(firestore, planPath(coupleId, planId), createDoc)
+  const snapshot = await getDocument(reference)
+  const existing = snapshot.exists() ? snapshot.data() : null
+  const nextRevision = await resolveNextRevision(reference, payload.revision, getDocument, 'Plan')
+  const status = cleanText(payload.status, 20, 'Plan status') || 'idea'
+  if (!PLAN_STATUSES.includes(status)) throw new Error('Plan status is not supported.')
+  const category = cleanText(payload.category, 40, 'Plan category') || 'Other'
+  if (!PLAN_CATEGORIES.includes(category)) throw new Error('Plan category is not supported.')
+  const convertedMemoryId = cleanText(existing?.convertedMemoryId || payload.convertedMemoryId, 120, 'Converted memory id')
+  const next = {
+    schemaVersion: 1,
+    revision: nextRevision,
+    title: cleanText(payload.title, 160, 'Plan title', { required: true }),
+    category,
+    status,
+    targetDate: cleanOptionalDate(payload.targetDate, 'Target date'),
+    notes: cleanText(payload.notes, 1200, 'Plan notes'),
+    createdBy: existing?.createdBy || uid,
+    createdAt: existing?.createdAt || serverTimestamp(),
+    updatedBy: uid,
+    updatedAt: serverTimestamp(),
+    convertedMemoryId,
+  }
+  await writeDocument(reference, next)
+  return next
+}
+
+export async function convertPlanToMemory(planId, plan, context) {
+  const memoryId = `memory_from_plan_${planId}`
+  const existingMemoryId = cleanText(plan.convertedMemoryId, 120, 'Converted memory id')
+  if (existingMemoryId) throw new Error('This plan already has a memory.')
+  await saveMemory(memoryId, {
+    title: plan.title,
+    description: plan.notes || '',
+    date: plan.completedDate || new Date().toISOString().slice(0, 10),
+    kindLabel: 'Date',
+    tags: [plan.category, 'Plan'],
+    revision: 0,
+  }, context)
+  await savePlan(planId, { ...plan, status: 'completed', convertedMemoryId: memoryId }, context)
+  return memoryId
 }
 
 export async function acceptContract(context) {
