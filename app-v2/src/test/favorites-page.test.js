@@ -32,3 +32,14 @@ test('favorites view keeps owner writes narrow and avoids static page dependenci
   assert.match(favoritesViewSource, /isOwnerFavorites/)
   assert.doesNotMatch(favoritesViewSource, /localStorage|setItem|updateDoc|addDoc|deleteDoc|pages\/favorites\.html/)
 })
+
+test('favorites editing waits for the loaded owner model instead of fallback placeholders', async () => {
+  const favoritesViewSource = await readSource('../features/favorites/FavoritesView.jsx')
+
+  assert.match(
+    favoritesViewSource,
+    /const ownerPerson = \(model\.people \|\| \[\]\)\.find\(\(person\) => isOwnerFavorites\(person, writer\.approvedUser\)\) \|\| null/,
+  )
+  assert.match(favoritesViewSource, /canEdit=\{person === ownerPerson\}/)
+  assert.doesNotMatch(favoritesViewSource, /const ownerPerson = people\.find/)
+})

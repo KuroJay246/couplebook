@@ -175,7 +175,7 @@ export function FavoritesView({ model, onRefresh }) {
     const displayName = writer.approvedUser.displayName || writer.approvedUser.username || 'Jaylan'
     return [{ id: writer.approvedUser.username || displayName, displayName, revision: 0, categories: [] }, ...basePeople]
   }, [model.people, writer.approvedUser])
-  const ownerPerson = people.find((person) => isOwnerFavorites(person, writer.approvedUser)) || null
+  const ownerPerson = (model.people || []).find((person) => isOwnerFavorites(person, writer.approvedUser)) || null
   const sharedMatches = useMemo(() => sharedMatchesForPeople(people), [people])
 
   async function saveFavoritePayload(payload, successMessage) {
@@ -255,7 +255,7 @@ export function FavoritesView({ model, onRefresh }) {
       <div className="favorites-layout">
         {people.map((person, index) => (
           <FavoritesCard
-            canEdit={isOwnerFavorites(person, writer.approvedUser)}
+            canEdit={person === ownerPerson}
             index={index}
             key={person.id}
             onAdd={(category) => {
