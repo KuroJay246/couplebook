@@ -3,18 +3,31 @@ import { NavLink, Outlet } from 'react-router-dom'
 import { protectedRouteMeta } from '../app/routeConfig'
 import { useAuth } from '../auth/useAuth'
 
-const NAV_ITEMS = [
-  { path: '/dashboard', label: 'Dashboard', icon: '✨', main: true },
-  { path: '/timeline', label: 'Memories', icon: '📖', main: true },
-  { path: '/gallery', label: 'Gallery', icon: '🖼️', main: true },
-  { path: '/profile', label: 'Profiles', icon: '👤', main: true },
-  { path: '/favorites', label: 'Favorites', icon: '🌟', main: true },
-  { path: '/settings', label: 'Settings', icon: '⚙️', main: true },
-  { path: '/contract', label: 'Contract', icon: '📜', main: false },
-  { path: '/birthday', label: 'Birthday', icon: '🎂', main: false },
-  { path: '/valentine', label: 'Valentine', icon: '💌', main: false },
-  { path: '/confession', label: 'Confession', icon: '💖', main: false },
-]
+const NAV_ICON_BY_PATH = {
+  '/dashboard': '⌂',
+  '/timeline': '◷',
+  '/gallery': '□',
+  '/profile': '◐',
+  '/favorites': '☆',
+  '/settings': '⚙',
+  '/contract': '§',
+  '/birthday': '✦',
+  '/valentine': '♡',
+  '/confession': '✎',
+}
+
+const PRIMARY_PATHS = new Set(['/dashboard', '/timeline', '/gallery', '/profile', '/favorites', '/settings'])
+const SHELF_PATHS = new Set(['/contract', '/birthday', '/valentine', '/confession'])
+
+const NAV_ITEMS = protectedRouteMeta.map((route) => ({
+  path: route.path,
+  label: route.navLabel || route.label,
+  mobileLabel: route.label,
+  icon: NAV_ICON_BY_PATH[route.path] || '•',
+  main: PRIMARY_PATHS.has(route.path),
+  shelf: SHELF_PATHS.has(route.path),
+  summary: route.summary,
+}))
 
 const routePaths = new Set(protectedRouteMeta.map((route) => route.path))
 const visibleNavItems = NAV_ITEMS.filter((item) => routePaths.has(item.path))
@@ -30,7 +43,7 @@ function NavList({ items, onNavigate }) {
       {items.map((item) => (
         <li className="nav-item" key={item.path}>
           <NavLink className="faithful-header-link" onClick={onNavigate} to={item.path}>
-            <span aria-hidden="true">{item.icon}</span>
+            <span className="nav-glyph" aria-hidden="true">{item.icon}</span>
             <span>{item.label}</span>
           </NavLink>
         </li>
@@ -47,7 +60,7 @@ function MobileNav({ items }) {
           <li className="mobile-nav-item" key={item.path}>
             <NavLink to={item.path}>
               <span className="mobile-nav-icon" aria-hidden="true">{item.icon}</span>
-              <span>{item.label}</span>
+              <span>{item.mobileLabel || item.label}</span>
             </NavLink>
           </li>
         ))}
@@ -57,6 +70,9 @@ function MobileNav({ items }) {
 }
 
 function Sidebar({ items, onClose, onNavigate, open, signOut }) {
+  const mainItems = items.filter((item) => item.main)
+  const shelfItems = items.filter((item) => item.shelf && !item.main)
+
   return (
     <>
       <button
@@ -67,7 +83,10 @@ function Sidebar({ items, onClose, onNavigate, open, signOut }) {
       />
       <div className={`sidebar-panel ${open ? 'active' : ''}`} id="sidebar-panel">
         <div className="sidebar-header">
-          <h2 style={{ fontFamily: 'var(--font-accent)' }}>🧭 Quick Nav</h2>
+          <div>
+            <span className="sidebar-kicker">Couple Book</span>
+            <h2 style={{ fontFamily: 'var(--font-accent)' }}>Private Shelf</h2>
+          </div>
           <button
             aria-label="Close navigation"
             className="faithful-icon-button"
@@ -79,15 +98,23 @@ function Sidebar({ items, onClose, onNavigate, open, signOut }) {
           </button>
         </div>
         <div className="sidebar-content">
-          {items.map((item) => (
+          <span className="sidebar-section-label">Main Pages</span>
+          {mainItems.map((item) => (
             <NavLink className="sidebar-item faithful-sidebar-link" key={item.path} onClick={onNavigate} to={item.path}>
               <span className="sidebar-icon" aria-hidden="true">{item.icon}</span>
-              {item.label}
+              <span>{item.label}</span>
+            </NavLink>
+          ))}
+          <span className="sidebar-section-label">Keepsakes</span>
+          {shelfItems.map((item) => (
+            <NavLink className="sidebar-item faithful-sidebar-link" key={item.path} onClick={onNavigate} to={item.path}>
+              <span className="sidebar-icon" aria-hidden="true">{item.icon}</span>
+              <span>{item.label}</span>
             </NavLink>
           ))}
           <hr style={{ borderColor: 'var(--border-glass)', margin: '1rem 0' }} />
-          <button className="btn btn-secondary faithful-signout" onClick={signOut} type="button">
-            🚪 Logout
+          <button aria-label="Logout" className="btn btn-secondary faithful-signout" onClick={signOut} type="button">
+            Sign out
           </button>
         </div>
       </div>
@@ -116,8 +143,11 @@ export function AppShell() {
               ☰
             </button>
             <NavLink className="faithful-header-link logo-container" to="/dashboard">
-              <span className="logo-icon">❤️</span>
-              <span className="logo-text">MemoryBook</span>
+              <span className="logo-icon">CB</span>
+              <span className="logo-copy">
+                <span className="logo-text">Couple Book</span>
+                <span className="logo-subtitle">Private memory archive</span>
+              </span>
             </NavLink>
           </div>
           <nav className="desktop-only-nav faithful-main-nav" aria-label="Main navigation">

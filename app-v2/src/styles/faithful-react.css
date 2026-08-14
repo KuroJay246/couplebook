@@ -36,6 +36,77 @@
   white-space: nowrap;
 }
 
+.faithful-mobile-nav .mobile-nav-links {
+  gap: 0.25rem;
+  justify-content: stretch;
+}
+
+.faithful-mobile-nav .mobile-nav-item {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.faithful-mobile-nav .mobile-nav-item a {
+  width: 100%;
+  min-width: 48px;
+  min-height: 56px;
+  justify-content: center;
+}
+
+.nav-glyph,
+.mobile-nav-icon,
+.sidebar-icon,
+.logo-icon {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+}
+
+.nav-glyph,
+.mobile-nav-icon {
+  width: 1.6rem;
+  height: 1.6rem;
+  border: 1px solid var(--border-glass);
+  border-radius: 999px;
+  font-size: 0.86rem;
+}
+
+.logo-icon {
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--border-glass-hover);
+  border-radius: 12px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.logo-copy {
+  display: grid;
+  gap: 0.08rem;
+}
+
+.logo-subtitle,
+.sidebar-kicker,
+.sidebar-section-label {
+  color: var(--color-secondary-text);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.logo-subtitle {
+  letter-spacing: 0.06em;
+  text-transform: none;
+}
+
+.sidebar-section-label {
+  display: block;
+  margin: 0.6rem 0 0.35rem;
+}
+
 .faithful-signout {
   width: 100%;
 }
