@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 import { approvedAccountMigrationGate, routeMigrationStatus, specialMomentContentConnectionStatus } from '../app/migrationStatus.js'
-import { ROUTE_GROUPS, getRoutesByGroup } from '../app/routeConfig.js'
+import { ROUTE_GROUPS, getRoutesByGroup, protectedRouteMeta } from '../app/routeConfig.js'
 
 async function readSource(relativePath) {
   return readFile(new URL(relativePath, import.meta.url), 'utf8')
@@ -15,19 +15,19 @@ test('settings route uses the read-only feature hook and utility view', async ()
   assert.match(settingsPageSource, /useSettingsData/)
   assert.match(settingsPageSource, /SettingsView/)
   assert.match(settingsViewSource, /Application Settings/)
-  assert.match(settingsViewSource, /settings-grid/)
-  assert.match(settingsViewSource, /theme-picker-grid/)
+  assert.match(settingsViewSource, /PageTabs/)
+  assert.match(settingsViewSource, /Editorial paper/)
   assert.match(settingsViewSource, /buildFormState/)
   assert.match(settingsViewSource, /draft/)
-  assert.match(settingsViewSource, /Reset Unsaved Changes/)
-  assert.match(settingsViewSource, /Data & Backup/)
+  assert.match(settingsViewSource, /Cancel changes/)
+  assert.match(settingsViewSource, /Data and backup/i)
   assert.doesNotMatch(settingsViewSource, /selectTheme|Remote sign-out|Delete account|Reset Local Device Data/)
 })
 
 test('settings migration progress and utility navigation stay explicit', () => {
   assert.deepEqual(
     routeMigrationStatus.completed.map((entry) => entry.label),
-    ['Dashboard', 'Timeline', 'Gallery', 'Profile', 'Favorites', 'Contract', 'Birthday', 'Valentine', 'Confession', 'Settings'],
+    ['Home', 'Story', 'Album', 'Us', 'Favorites', 'Plans', 'Contract', 'Birthday', 'Valentine', 'Confession', 'Settings'],
   )
   assert.deepEqual(routeMigrationStatus.pending.map((entry) => entry.label), [])
   assert.deepEqual(specialMomentContentConnectionStatus, {
@@ -46,6 +46,14 @@ test('settings migration progress and utility navigation stay explicit', () => {
     ['/dashboard', '/timeline', '/gallery', '/profile'],
   )
   assert.deepEqual(getRoutesByGroup(ROUTE_GROUPS.utility).map((route) => route.path), ['/settings'])
+})
+
+test('settings migration progress stays aligned with the protected router', () => {
+  const protectedPaths = protectedRouteMeta.map((route) => route.path).sort()
+  const migrationPaths = routeMigrationStatus.entries.map((entry) => entry.path).sort()
+
+  assert.deepEqual(migrationPaths, protectedPaths)
+  assert.equal(routeMigrationStatus.entries.length, 11)
 })
 
 test('settings view keeps raw technical details and old static dependencies out of the migrated route', async () => {

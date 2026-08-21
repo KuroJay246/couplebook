@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import path from 'node:path'
 import process from 'node:process'
 import test from 'node:test'
 import {
@@ -32,7 +31,7 @@ import { buildSpecialMomentContentModel } from '../features/specialMoments/speci
 import { buildTimelineReadModel } from '../features/timeline/timelineReadModel.js'
 
 const projectId = 'demo-couplebook-app-v2'
-const rules = readFileSync(path.resolve('../firestore.rules'), 'utf8')
+const rules = readFileSync(new URL('../../../firestore.rules', import.meta.url), 'utf8')
 const hasEmulator = Boolean(process.env.FIRESTORE_EMULATOR_HOST)
 
 const ids = Object.freeze({
@@ -519,6 +518,86 @@ test('revision rules reject stale and conflicting same-document writes', { skip:
     anniversaryView: '',
     joinedDate: '',
     birthday: '',
+  }))
+})
+
+test('authorized members can archive verified media memories, but invalid removal payloads fail closed', { skip: !hasEmulator }, async () => {
+  const memberOneDb = authed(ids.memberOne)
+  const pendingDb = authed(ids.pendingPartner)
+
+  await env.withSecurityRulesDisabled(async (context) => {
+    const db = context.firestore()
+    await setDoc(doc(db, 'couples', ids.couple, 'memories', 'verified_media_memory'), {
+      schemaVersion: 1,
+      revision: 1,
+      title: 'Fictional verified media memory',
+      description: 'Storage metadata only.',
+      date: '2026-02-15',
+      tags: ['fictional'],
+      kindLabel: 'Video Memory',
+      mediaNote: '',
+      mediaState: 'storage-verified',
+      media: {
+        id: 'media_001',
+        kind: 'video',
+        storagePath: 'couples/couple_alpha/media/media_001/original',
+        posterPath: '',
+        thumbnailPath: '',
+        contentType: 'video/mp4',
+        sizeBytes: 100,
+        checksum: 'a'.repeat(64),
+      },
+      createdBy: ids.memberOne,
+      updatedBy: ids.memberOne,
+      status: 'active',
+    })
+  })
+
+  await assertSucceeds(setDoc(doc(memberOneDb, 'couples', ids.couple, 'memories', 'verified_media_memory'), {
+    schemaVersion: 1,
+    revision: 2,
+    title: 'Fictional verified media memory',
+    description: 'Storage metadata removed after authorized archive.',
+    date: '2026-02-15',
+    tags: ['fictional'],
+    mediaState: 'none',
+    createdBy: ids.memberOne,
+    updatedBy: ids.memberOne,
+    status: 'archived',
+  }))
+
+  await assertFails(setDoc(doc(memberOneDb, 'couples', ids.couple, 'memories', 'verified_media_memory'), {
+    schemaVersion: 1,
+    revision: 3,
+    title: 'Fictional verified media memory',
+    description: 'Archived but still leaking media payload.',
+    date: '2026-02-15',
+    tags: ['fictional'],
+    mediaState: 'none',
+    media: {
+      id: 'media_001',
+      kind: 'video',
+      storagePath: 'couples/couple_alpha/media/media_001/original',
+      contentType: 'video/mp4',
+      sizeBytes: 100,
+      checksum: 'a'.repeat(64),
+    },
+    createdBy: ids.memberOne,
+    updatedBy: ids.memberOne,
+    status: 'archived',
+  }))
+
+  await assertFails(setDoc(doc(pendingDb, 'couples', ids.couple, 'memories', 'verified_media_memory'), {
+    schemaVersion: 1,
+    revision: 2,
+    title: 'Fictional verified media memory',
+    description: 'Pending partner should not archive media memories.',
+    date: '2026-02-15',
+    tags: ['fictional'],
+    mediaState: 'none',
+    createdBy: ids.memberOne,
+    updatedBy: ids.pendingPartner,
+    status: 'archived',
   }))
 })
 

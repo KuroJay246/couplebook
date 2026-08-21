@@ -15,12 +15,15 @@ test('timeline route uses the read-only feature hook and story view', async () =
   assert.doesNotMatch(timelinePageSource, /PlaceholderPage/)
   assert.match(timelineViewSource, /Our Story/)
   assert.match(timelineViewSource, /Search and reopen the memories that still shape your story\./)
-  assert.match(timelineViewSource, /timeline-line/)
-  assert.match(timelineViewSource, /timeline-card/)
+  assert.match(timelineViewSource, /PageHeader/)
+  assert.match(timelineViewSource, /SegmentedControl/)
+  assert.match(timelineViewSource, /ContextMenu/)
   assert.match(timelineViewSource, /View memory/)
   assert.match(timelineViewSource, /Browse by tag/)
   assert.match(timelineViewSource, /Search memories/)
   assert.match(timelineViewSource, /Clear filters/)
+  assert.match(timelineViewSource, /Archived memories/)
+  assert.match(timelineViewSource, /Restore memory/)
 })
 
 test('timeline view avoids static route dependencies and direct Storage calls', async () => {

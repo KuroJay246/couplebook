@@ -2,6 +2,7 @@ import { protectedRouteMeta } from './routeConfig.js'
 
 const ROUTE_STATUS_BY_PATH = Object.freeze({
   '/dashboard': 'complete',
+  '/plans': 'complete',
   '/profile': 'complete',
   '/favorites': 'complete',
   '/settings': 'complete',
@@ -15,6 +16,7 @@ const ROUTE_STATUS_BY_PATH = Object.freeze({
 
 const ROUTE_SUMMARY_BY_PATH = Object.freeze({
   '/dashboard': 'Read-only home surface is live inside the protected editorial shell.',
+  '/plans': 'Couple-scoped plans now load, save, convert to memories, and stay inside the rebuilt routed shell.',
   '/profile': 'Shared identity and relationship details now render as a read-only React page.',
   '/favorites': 'Shared preferences now live in one honest read-only collection.',
   '/settings': 'Read-only account, privacy, and migration notes now live inside the routed utility page.',
@@ -41,6 +43,7 @@ export const approvedAccountMigrationGate = Object.freeze({
 
 const SETTINGS_PROGRESS_PATHS = new Set([
   '/dashboard',
+  '/plans',
   '/profile',
   '/favorites',
   '/settings',

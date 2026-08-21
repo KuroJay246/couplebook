@@ -6,6 +6,7 @@ import {
   convertPlanToMemory,
   restoreMemory,
   saveMemory,
+  saveMemoryWithVerifiedMedia,
   saveOwnFavorites,
   saveOwnProfile,
   saveOwnSettings,
@@ -115,6 +116,31 @@ test('write services validate text, categories, settings, memories, contract, an
   assert.equal(firestore.writes[8].data.revision, 1)
 })
 
+test('verified media memory writes preserve private storage metadata without local paths', async () => {
+  const firestore = createFirestoreStub()
+
+  await saveMemoryWithVerifiedMedia(
+    'memory_one',
+    { title: 'Photo memory', date: '2026-02-14', kindLabel: 'Photo Memory', tags: ['album'] },
+    {
+      id: 'media_001',
+      kind: 'image',
+      storagePath: 'couples/couple_alpha/media/media_001/original',
+      thumbnailPath: '',
+      posterPath: '',
+      contentType: 'image/jpeg',
+      sizeBytes: 1024,
+      checksum: 'a'.repeat(64),
+    },
+    { ...context, firestore, ...firestore },
+  )
+
+  assert.equal(firestore.writes[0].data.mediaState, 'storage-verified')
+  assert.equal(firestore.writes[0].data.media.storagePath, 'couples/couple_alpha/media/media_001/original')
+  assert.equal(firestore.writes[0].data.media.checksum, 'a'.repeat(64))
+  assert.equal(JSON.stringify(firestore.writes[0].data).includes('C:\\Users'), false)
+})
+
 test('full-document v1 writes replace legacy extra fields instead of merging them forward', async () => {
   const firestore = createFirestoreStub()
   firestore.seed('couples/couple_alpha/favorites/member_one', {
@@ -148,6 +174,15 @@ test('write services reject unsupported and unsafe payloads', async () => {
   await assert.rejects(saveOwnFavorites({ food: ['<script>bad</script>'] }, { ...context, firestore, ...firestore }), /unsafe/)
   await assert.rejects(saveOwnSettings({ theme: 'neon' }, { ...context, firestore, ...firestore }), /Theme/)
   await assert.rejects(saveMemory('memory_one', { title: 'A day', date: '2026-02-31' }, { ...context, firestore, ...firestore }), /calendar/)
+  await assert.rejects(
+    saveMemoryWithVerifiedMedia(
+      'memory_one',
+      { title: 'A day', date: '2026-02-14' },
+      { id: 'media_bad', kind: 'image', storagePath: 'https://example.com/private.jpg', contentType: 'image/jpeg', sizeBytes: 4, checksum: 'a'.repeat(64) },
+      { ...context, firestore, ...firestore },
+    ),
+    /Storage path is invalid/,
+  )
   await assert.rejects(restoreMemory('memory_one', 0, { ...context, firestore, ...firestore }), /archived/)
   await assert.rejects(savePlan('plan_one', { title: 'Bad', category: 'Finance', status: 'idea' }, { ...context, firestore, ...firestore }), /category/)
   await assert.rejects(saveSpecialMomentText('birthday', { title: 'Birthday', sections: [{ kind: 'paragraph', content: '<img src=x>' }] }, { ...context, firestore, ...firestore }), /unsafe/)

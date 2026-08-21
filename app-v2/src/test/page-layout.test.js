@@ -22,14 +22,12 @@ test('settings page layout keeps the faithful utility information architecture e
   const settingsViewSource = await readSource('../features/settings/SettingsView.jsx')
 
   assert.match(settingsViewSource, /Application Settings/)
-  assert.match(settingsViewSource, /settings-grid/)
-  assert.match(settingsViewSource, /settings-menu/)
-  assert.match(settingsViewSource, /settings-panel-shell/)
+  assert.match(settingsViewSource, /PageTabs/)
   assert.match(settingsViewSource, /Appearance/)
   assert.match(settingsViewSource, /Privacy/)
-  assert.match(settingsViewSource, /Data/)
-  assert.match(settingsViewSource, /theme-picker-grid/)
-  assert.match(settingsViewSource, /toggle-item/)
+  assert.match(settingsViewSource, /Compatibility/)
+  assert.match(settingsViewSource, /Application/)
+  assert.match(settingsViewSource, /ToggleRow/)
   assert.doesNotMatch(settingsViewSource, /jaylanspencer99@gmail\.com/i)
 })
 

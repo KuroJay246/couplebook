@@ -4,7 +4,7 @@ Last updated: 2026-08-21
 
 Reference repository: `C:\Users\Jaylan\Documents\gathetr`
 
-Reference commit: `1baf2796f4c5be143bc1f8f242546ebc2c155e1d`
+Reference commit: `13a0f56655a507c1d0c5e73159466cba88890f8c`
 
 This file records the exact Event Hub source files currently being used as the reusable system reference for the Couple Book rebuild branch `rebuild/couplebook-eventhub-system-port`.
 
@@ -67,15 +67,19 @@ Couple Book preserves its own approval and couple-membership rules, but now foll
 
 ## QA and Runtime Validation
 
-- `scripts/check-browser-regression.mjs`
-  - safe browser-test mode injection
-  - route-level protected-shell coverage
-- `src/test-fixtures/browser-regression.fixture.js`
-  - authenticated local QA fixture shape
+- `scripts/product/routeInventory.mjs`
+  - explicit protected-route inventory
+  - navigation label inventory
+- `tests/phase25-foundation.test.js`
+  - mobile tab-bar desktop hide rule
+  - shell baseline coverage
+  - single Firebase entry and auth foundation checks
 
 Couple Book now mirrors this with:
 
 - `app-v2/scripts/validate-event-hub-shell-port.mjs`
+- `app-v2/scripts/check-browser-regression.mjs`
+- `app-v2/scripts/check-product-interactions.mjs`
 
 ## Current Couple Book Implementations Driven by This Inventory
 

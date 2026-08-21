@@ -39,6 +39,15 @@ export const PLAN_CATEGORIES = Object.freeze([
   'Other',
 ])
 export const SPECIAL_SECTION_KINDS = Object.freeze(['paragraph', 'note', 'quote', 'list'])
+const SAFE_STORAGE_PATH = /^couples\/[A-Za-z0-9_-]{1,120}\/media\/[A-Za-z0-9_-]{1,120}\/(original|thumbnail|poster)$/
+const MEDIA_CONTENT_TYPES = Object.freeze([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+  'video/mp4',
+  'video/webm',
+])
 
 const UNSAFE_TEXT_PATTERN = /<\s*\/?\s*(script|style|iframe|object|embed|img|video|audio)\b|on[a-z]+\s*=|javascript:|<[^>]+>/i
 
@@ -87,6 +96,47 @@ function normalizeRevision(value) {
   return Number.isInteger(numeric) && numeric >= 0 ? numeric : null
 }
 
+function cleanMediaMetadata(media) {
+  if (!media || typeof media !== 'object') {
+    throw new Error('Verified media metadata is required.')
+  }
+
+  const id = cleanText(media.id, 120, 'Media id', { required: true })
+  const kind = cleanText(media.kind, 20, 'Media kind', { required: true })
+  if (!['image', 'video'].includes(kind)) throw new Error('Media kind is not supported.')
+
+  const storagePath = cleanText(media.storagePath, 260, 'Storage path', { required: true })
+  if (!SAFE_STORAGE_PATH.test(storagePath)) throw new Error('Storage path is invalid.')
+
+  const thumbnailPath = cleanText(media.thumbnailPath, 260, 'Thumbnail path')
+  if (thumbnailPath && !SAFE_STORAGE_PATH.test(thumbnailPath)) throw new Error('Thumbnail path is invalid.')
+
+  const posterPath = cleanText(media.posterPath, 260, 'Poster path')
+  if (posterPath && !SAFE_STORAGE_PATH.test(posterPath)) throw new Error('Poster path is invalid.')
+
+  const contentType = cleanText(media.contentType, 80, 'Media content type', { required: true })
+  if (!MEDIA_CONTENT_TYPES.includes(contentType)) throw new Error('Media content type is not supported.')
+
+  const sizeBytes = Number(media.sizeBytes)
+  if (!Number.isInteger(sizeBytes) || sizeBytes < 0 || sizeBytes > 250 * 1024 * 1024) {
+    throw new Error('Media size is invalid.')
+  }
+
+  const checksum = cleanText(media.checksum, 64, 'Media checksum', { required: true })
+  if (!/^[A-Fa-f0-9]{64}$/.test(checksum)) throw new Error('Media checksum is invalid.')
+
+  return {
+    id,
+    kind,
+    storagePath,
+    thumbnailPath,
+    posterPath,
+    contentType,
+    sizeBytes,
+    checksum: checksum.toLowerCase(),
+  }
+}
+
 function currentRevisionFromSnapshot(snapshot) {
   if (!snapshot?.exists()) return 0
   const data = snapshot.data()
@@ -132,6 +182,32 @@ async function resolveNextRevision(reference, expectedRevision, getDocument, con
   }
 
   return currentRevision + 1
+}
+
+function buildMemoryDocument(payload, nextRevision, uid, verifiedMedia = null) {
+  const type = cleanText(payload.specialMomentType, 40, 'Memory type') || 'ordinary'
+  if (!MEMORY_TYPES.includes(type)) throw new Error('Memory type is not supported.')
+
+  const next = {
+    schemaVersion: 1,
+    revision: nextRevision,
+    title: cleanText(payload.title, 180, 'Title', { required: true }),
+    description: cleanText(payload.description, 2000, 'Description'),
+    date: cleanDate(payload.date),
+    tags: cleanStringList(payload.tags, { label: 'Tag', maxItems: 30, maxLength: 60 }),
+    kindLabel: MEMORY_KIND_LABELS.includes(payload.kindLabel) ? payload.kindLabel : 'Everyday Moment',
+    mediaNote: cleanText(payload.mediaNote, 300, 'Media note'),
+    mediaState: verifiedMedia ? 'storage-verified' : 'none',
+    createdBy: uid,
+    updatedBy: uid,
+    status: payload.status === 'archived' ? 'archived' : 'active',
+  }
+
+  if (verifiedMedia) {
+    next.media = cleanMediaMetadata(verifiedMedia)
+  }
+  if (type !== 'ordinary') next.specialMomentType = type
+  return next
 }
 
 export async function saveOwnProfile(payload, context) {
@@ -191,23 +267,52 @@ export async function saveMemory(memoryId, payload, context) {
   const writeDocument = context.setDocument || setDoc
   const reference = docRef(firestore, memoryPath(coupleId, memoryId), createDoc)
   const nextRevision = await resolveNextRevision(reference, payload.revision, getDocument, 'Memory')
-  const type = cleanText(payload.specialMomentType, 40, 'Memory type') || 'ordinary'
-  if (!MEMORY_TYPES.includes(type)) throw new Error('Memory type is not supported.')
-  const next = {
-    schemaVersion: 1,
-    revision: nextRevision,
-    title: cleanText(payload.title, 180, 'Title', { required: true }),
-    description: cleanText(payload.description, 2000, 'Description'),
-    date: cleanDate(payload.date),
-    tags: cleanStringList(payload.tags, { label: 'Tag', maxItems: 30, maxLength: 60 }),
-    kindLabel: MEMORY_KIND_LABELS.includes(payload.kindLabel) ? payload.kindLabel : 'Everyday Moment',
-    mediaNote: cleanText(payload.mediaNote, 300, 'Media note'),
-    mediaState: 'none',
-    createdBy: uid,
-    updatedBy: uid,
-    status: payload.status === 'archived' ? 'archived' : 'active',
+  const next = buildMemoryDocument(payload, nextRevision, uid)
+  await writeDocument(reference, next)
+  return next
+}
+
+export async function saveMemoryWithVerifiedMedia(memoryId, payload, verifiedMedia, context) {
+  const { coupleId, createDoc, firestore, getDocument, uid } = await assertWriteContext(context)
+  const writeDocument = context.setDocument || setDoc
+  const reference = docRef(firestore, memoryPath(coupleId, memoryId), createDoc)
+  const nextRevision = await resolveNextRevision(reference, payload.revision, getDocument, 'Memory')
+  const next = buildMemoryDocument(payload, nextRevision, uid, verifiedMedia)
+  await writeDocument(reference, next)
+  return next
+}
+
+export async function removeVerifiedMediaFromMemory(memoryId, revision, context) {
+  const { coupleId, createDoc, firestore, getDocument, uid } = await assertWriteContext(context)
+  const writeDocument = context.setDocument || setDoc
+  const reference = docRef(firestore, memoryPath(coupleId, memoryId), createDoc)
+  const snapshot = await getDocument(reference)
+  if (!snapshot.exists()) throw new Error('Memory could not be found.')
+
+  const current = snapshot.data() || {}
+  if (current.status === 'archived') {
+    throw new Error('This memory is already archived.')
   }
-  if (type !== 'ordinary') next.specialMomentType = type
+  if (current.mediaState !== 'storage-verified') {
+    throw new Error('Only verified private media memories can be removed from Album.')
+  }
+
+  const nextRevision = await resolveNextRevision(reference, revision, getDocument, 'Memory')
+  const next = buildMemoryDocument({
+    ...current,
+    description: current.description || '',
+    kindLabel: current.kindLabel || '',
+    mediaNote: current.mediaNote || '',
+    specialMomentType: current.specialMomentType || 'ordinary',
+    status: 'archived',
+    tags: Array.isArray(current.tags) ? current.tags : [],
+    title: current.title,
+  }, nextRevision, current.createdBy || uid)
+  next.updatedBy = uid
+  next.status = 'archived'
+  next.mediaState = 'none'
+  delete next.media
+
   await writeDocument(reference, next)
   return next
 }

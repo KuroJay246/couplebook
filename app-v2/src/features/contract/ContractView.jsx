@@ -1,10 +1,20 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { PrimaryButton, SecondaryButton } from '../../components/ui/Button.jsx'
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx'
+import { EmptyState } from '../../components/ui/EmptyState.jsx'
+import { ErrorState } from '../../components/ui/ErrorState.jsx'
+import { InlineAlert } from '../../components/ui/InlineAlert.jsx'
+import { LoadingState } from '../../components/ui/LoadingState.jsx'
+import { PageHeader } from '../../components/ui/PageHeader.jsx'
+import { StatusBadge } from '../../components/ui/StatusBadge.jsx'
+import { ContentCard, Surface } from '../../components/ui/Surface.jsx'
 import { useOwnerWrite } from '../editing/useOwnerWrite.js'
 
-export function ContractView({ model, onRefresh }) {
+export function ContractView({ compatibilityError, compatibilityState, model, onRefresh }) {
   const writer = useOwnerWrite(onRefresh)
   const [status, setStatus] = useState({ kind: '', message: '', saving: false })
+  const [confirmOpen, setConfirmOpen] = useState(false)
   const currentAcceptance = model.acceptance?.currentUser
   const accepted = currentAcceptance?.status === 'accepted'
   const agreementSections = model.agreement?.sections || []
@@ -12,93 +22,143 @@ export function ContractView({ model, onRefresh }) {
   const acceptanceCards = [model.acceptance?.currentUser, model.acceptance?.partner].filter(Boolean)
 
   async function handleAccept() {
-    if (accepted) return
-    if (!window.confirm('Record your acceptance of the relationship contract?')) return
     setStatus({ kind: '', message: '', saving: true })
     try {
       await writer.acceptContract()
       setStatus({ kind: 'success', message: 'Contract acceptance recorded.', saving: false })
+      setConfirmOpen(false)
     } catch (error) {
-      setStatus({ kind: 'error', message: error?.message || 'Editing is temporarily unavailable.', saving: false })
+      setStatus({ kind: 'error', message: error?.message || 'Acceptance could not be recorded.', saving: false })
     }
   }
 
+  if (compatibilityState === 'loading') {
+    return <LoadingState message="Loading Contract..." />
+  }
+
+  if (compatibilityError || model.status === 'invalid') {
+    return <ErrorState title="Contract could not be loaded" message={compatibilityError || 'The Contract view is not available right now.'} onRetry={onRefresh} />
+  }
+
   return (
-    <section className="contract-page">
-      <header className="page-header">
-        <div className="page-heading">
-          <p className="page-eyebrow">Relationship Contract</p>
-          <h1 className="page-title">📜 Shared Relationship Contract</h1>
-          <p className="page-subtitle">The promises you are keeping and the deliberate acceptance that makes this page matter.</p>
-        </div>
-      </header>
-      <div className="glass-card card-utility contract-card-profile">
-        {model.agreement?.version ? (
-          <div className="faithful-chip-list contract-quiet-meta" style={{ marginBottom: '1rem' }}>
-            <span className="utility-chip">Version {model.agreement.version}</span>
-            <span className="utility-chip">{accepted ? 'Your acceptance is recorded' : 'Waiting on your acceptance'}</span>
+    <section className="space-y-5" data-route="contract">
+      <PageHeader
+        eyebrow="Relationship Contract"
+        title="Shared Relationship Contract"
+        description="The promises you are keeping and the deliberate acceptance that makes this page matter."
+        actions={(
+          <>
+            {model.agreement?.version ? <StatusBadge tone="info">Version {model.agreement.version}</StatusBadge> : null}
+            <PrimaryButton disabled={accepted} loading={status.saving} onClick={() => setConfirmOpen(true)}>
+              {accepted ? 'Accepted' : 'Accept contract'}
+            </PrimaryButton>
+          </>
+        )}
+      />
+
+      {status.message ? <InlineAlert description={status.message} tone={status.kind === 'error' ? 'error' : 'success'} /> : null}
+      {model.sourceStatus?.warnings?.length ? (
+        <InlineAlert
+          tone="info"
+          title="Contract source notes"
+          description={`The current Contract view loaded with ${model.sourceStatus.warnings.length} review note${model.sourceStatus.warnings.length === 1 ? '' : 's'}.`}
+        />
+      ) : null}
+
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(20rem,0.8fr)]">
+        <Surface>
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Agreement</p>
+          <h3 className="mt-2 font-serif text-3xl text-[#24131d]">{model.agreement?.title || 'Our agreement'}</h3>
+          <p className="mt-3 text-sm leading-6 text-[#6B564C]">{model.agreement?.introduction}</p>
+          <div className="mt-5 grid gap-4">
+            {agreementSections.length > 0 ? agreementSections.map((section) => (
+              <ContentCard key={section.id}>
+                <h4 className="text-lg font-bold text-[#24131d]">{section.heading}</h4>
+                {section.paragraphs?.map((paragraph) => <p className="mt-3 text-sm leading-6 text-[#6B564C]" key={paragraph}>{paragraph}</p>)}
+                {section.clauses?.length > 0 ? (
+                  <ul className="mt-3 grid gap-2 pl-5 text-sm leading-6 text-[#6B564C]">
+                    {section.clauses.map((clause) => <li key={clause}>{clause}</li>)}
+                  </ul>
+                ) : null}
+              </ContentCard>
+            )) : (
+              <EmptyState title="Agreement wording is unavailable here." description="This page keeps the protected contract status in place while agreement text waits for an authorized runtime source." />
+            )}
           </div>
-        ) : null}
-        <div className="contract-display-container contract-promises">
-          {agreementSections.length > 0 ? agreementSections.map((section) => (
-            <div className="contract-clause" key={section.id}>
-              <div className="contract-clause-title">{section.heading}</div>
-              {section.paragraphs?.map((paragraph) => <div className="contract-clause-desc" key={paragraph}>{paragraph}</div>)}
-              {section.clauses?.length > 0 ? (
-                <ul className="special-page-list">
-                  {section.clauses.map((clause) => <li key={clause}>{clause}</li>)}
-                </ul>
-              ) : null}
-            </div>
-          )) : (
-            <>
-              <div className="contract-clause"><div className="contract-clause-title">🤝 Pillar I: Mutual Respect</div><div className="contract-clause-desc">We commit to respecting each other's opinions, career goals, personal spaces, and individual uniqueness.</div></div>
-              <div className="contract-clause"><div className="contract-clause-title">🔒 Pillar II: Absolute Trust</div><div className="contract-clause-desc">We pledge complete honesty, loyalty, and support.</div></div>
-              <div className="contract-clause"><div className="contract-clause-title">💬 Pillar III: Open Communication</div><div className="contract-clause-desc">We communicate with vulnerability and transparency.</div></div>
-              <div className="contract-clause"><div className="contract-clause-title">🚧 Pillar IV: Healthy Boundaries</div><div className="contract-clause-desc">We honor boundaries that support our well-being and individual growth.</div></div>
-            </>
-          )}
-        </div>
-        <div className="contract-status-box">
-          {acceptanceCards.length > 0 ? acceptanceCards.map((record) => (
-            <div className="signee-status" key={record.displayName}>
-              <div className="signee-name">{record.displayName}</div>
-              <span className="badge" style={{ background: record.status === 'accepted' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.1)', color: record.status === 'accepted' ? '#6ee7b7' : '#f87171' }}>{record.label}</span>
-              <div style={{ fontSize: '0.75rem', color: 'var(--color-muted)', marginTop: '0.25rem' }}>{record.acceptedAtLabel}</div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--color-secondary-text)', marginTop: '0.35rem' }}>{record.note}</div>
-            </div>
-          )) : null}
-        </div>
-        {history.length > 0 ? (
-          <details className="glass-card card-utility faithful-summary-card contract-history-details" style={{ marginTop: '1rem' }}>
-            <summary className="timeline-filter-summary-control">
-              <span>Agreement details</span>
-              <span className="faithful-filter-summary">{history.length} saved entries</span>
-            </summary>
-            <div className="faithful-list">
-              {history.slice(0, 4).map((entry) => (
-                <div className="faithful-list-row" key={entry.id}>
-                  <div>
-                    <strong>{entry.actorDisplayName}</strong>
-                    <div className="faithful-empty-copy">{entry.title}</div>
+        </Surface>
+
+        <div className="grid gap-5">
+          <Surface tone="soft">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Acceptance</p>
+            <h3 className="mt-2 font-serif text-2xl text-[#24131d]">Current status</h3>
+            <div className="mt-5 grid gap-3">
+              {acceptanceCards.map((record) => (
+                <ContentCard key={record.displayName}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-bold text-[#24131d]">{record.displayName}</p>
+                      <p className="mt-2 text-sm text-[#6B564C]">{record.acceptedAtLabel}</p>
+                      <p className="mt-2 text-sm leading-6 text-[#6B564C]">{record.note}</p>
+                    </div>
+                    <StatusBadge tone={record.status === 'accepted' ? 'success' : record.status === 'unavailable' ? 'error' : 'warning'}>
+                      {record.label}
+                    </StatusBadge>
                   </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div>{entry.dateLabel}</div>
-                    <div className="faithful-empty-copy">{entry.note}</div>
-                  </div>
-                </div>
+                </ContentCard>
               ))}
             </div>
-          </details>
-        ) : null}
-        <div className="actions" style={{ marginTop: '1rem' }}>
-          <button className="btn btn-primary" disabled={accepted || status.saving} onClick={handleAccept} type="button">
-            {accepted ? 'Accepted' : status.saving ? 'Saving...' : 'Accept Contract'}
-          </button>
-          <Link className="btn btn-secondary" to="/profile">Back to Profiles</Link>
+          </Surface>
+
+          <Surface tone="soft">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Protected boundaries</p>
+            <div className="mt-5 grid gap-3">
+              {(model.privacy?.items || []).map((item) => (
+                <ContentCard key={item.label}>
+                  <p className="text-sm font-bold text-[#24131d]">{item.label}</p>
+                  <p className="mt-2 text-sm leading-6 text-[#6B564C]">{item.description}</p>
+                </ContentCard>
+              ))}
+            </div>
+          </Surface>
         </div>
-        {status.message ? <p className={`workflow-feedback ${status.kind === 'error' ? 'workflow-feedback-error' : 'workflow-feedback-success'}`} role="status">{status.message}</p> : null}
       </div>
+
+      {history.length > 0 ? (
+        <Surface>
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">History</p>
+          <h3 className="mt-2 font-serif text-2xl text-[#24131d]">Acceptance history</h3>
+          <div className="mt-5 grid gap-3">
+            {history.slice(0, 6).map((entry) => (
+              <ContentCard className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between" key={entry.id}>
+                <div>
+                  <p className="text-sm font-bold text-[#24131d]">{entry.actorDisplayName}</p>
+                  <p className="mt-2 text-sm text-[#6B564C]">{entry.title}</p>
+                </div>
+                <div className="text-sm text-[#806572] sm:text-right">
+                  <p>{entry.dateLabel}</p>
+                  <p className="mt-1">{entry.note}</p>
+                </div>
+              </ContentCard>
+            ))}
+          </div>
+        </Surface>
+      ) : null}
+
+      <div className="flex flex-wrap gap-2">
+        <SecondaryButton as={Link} to="/profile">Back to Us</SecondaryButton>
+        <SecondaryButton as={Link} to="/favorites">Open Favorites</SecondaryButton>
+      </div>
+
+      <ConfirmDialog
+        confirmLabel="Record acceptance"
+        message="This records your acceptance status. Do not continue during QA unless this is a deliberate write test."
+        onCancel={() => setConfirmOpen(false)}
+        onConfirm={handleAccept}
+        open={confirmOpen && !accepted}
+        pending={status.saving}
+        recordName={currentAcceptance?.displayName}
+        title="Record your acceptance?"
+      />
     </section>
   )
 }

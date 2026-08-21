@@ -1,9 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
+import { PrimaryButton, SecondaryButton, TextButton } from '../../components/ui/Button.jsx'
+import { FormField, SelectField, TextAreaField, TextField } from '../../components/ui/FormField.jsx'
+import { InlineAlert } from '../../components/ui/InlineAlert.jsx'
+import { PageTabs } from '../../components/ui/PageTabs.jsx'
 import { useOwnerWrite } from '../editing/useOwnerWrite.js'
 
 const MEMORY_TYPES = ['Everyday Moment', 'Date', 'First', 'Trip', 'Milestone', 'Celebration', 'Funny Moment', 'Note', 'Photo Memory', 'Video Memory']
+const STEPS = [
+  { id: 'what', label: 'What' },
+  { id: 'when', label: 'When' },
+  { id: 'kind', label: 'Kind' },
+  { id: 'details', label: 'Details' },
+]
 
 function today() {
   return new Date().toISOString().slice(0, 10)
@@ -96,75 +106,70 @@ export function QuickAddMemory({ onClose, open }) {
   }
 
   return createPortal(
-    <dialog aria-labelledby="quick-add-title" className="modal-overlay active faithful-modal-open quick-add-dialog" onCancel={requestClose} open>
-      <form className="modal-container quick-add-panel" onSubmit={submit}>
-        <div className="modal-header">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <button type="button" className="absolute inset-0 bg-[#24131d]/40 backdrop-blur-sm" onClick={requestClose} aria-label="Close Quick Add" />
+      <form className="relative w-full max-w-2xl rounded-[28px] border border-[#ead7df] bg-white p-6 shadow-[0_24px_80px_rgba(36,19,29,0.18)] sm:p-8" onSubmit={submit}>
+        <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="dashboard-section-kicker">Quick Add</p>
-            <h3 className="modal-title" id="quick-add-title">Save a memory</h3>
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Quick Add</p>
+            <h3 className="mt-2 font-serif text-3xl text-[#24131d]">Save a memory</h3>
           </div>
-          <button aria-label="Close Quick Add" className="modal-close" onClick={requestClose} type="button">×</button>
+          <TextButton onClick={requestClose}>Close</TextButton>
         </div>
-        <div className="quick-add-steps" aria-label="Memory steps">
-          {['What', 'When', 'Kind', 'Details'].map((label, index) => (
-            <button className={`quick-add-step ${step === index ? 'active' : ''}`} key={label} onClick={() => setStep(index)} type="button">
-              <span>{index + 1}</span>
-              {label}
-            </button>
-          ))}
+
+        <div className="mt-5">
+          <PageTabs active={STEPS[step].id} controlsPanels={false} label="Quick add steps" onChange={(id) => setStep(STEPS.findIndex((stepEntry) => stepEntry.id === id))} tabs={STEPS} />
         </div>
-        <div className="modal-body quick-add-body">
+
+        <div className="mt-6 grid gap-4">
           {step === 0 ? (
-            <label className="form-group">
-              <span className="form-label">What happened?</span>
-              <input aria-describedby={errors.title ? 'quick-add-title-error' : undefined} className="form-input" maxLength={180} onChange={(event) => update('title', event.target.value)} ref={firstFieldRef} required value={form.title} />
-              {errors.title ? <span className="form-error" id="quick-add-title-error">{errors.title}</span> : null}
-            </label>
+            <FormField label="What happened?">
+              <TextField aria-describedby={errors.title ? 'quick-add-title-error' : undefined} maxLength={180} onChange={(event) => update('title', event.target.value)} ref={firstFieldRef} required value={form.title} />
+            </FormField>
           ) : null}
           {step === 1 ? (
-            <label className="form-group">
-              <span className="form-label">When did it happen?</span>
-              <input className="form-input" onChange={(event) => update('date', event.target.value)} required type="date" value={form.date} />
-              {errors.date ? <span className="form-error">{errors.date}</span> : null}
-            </label>
+            <FormField label="When did it happen?">
+              <TextField onChange={(event) => update('date', event.target.value)} required type="date" value={form.date} />
+            </FormField>
           ) : null}
           {step === 2 ? (
-            <label className="form-group">
-              <span className="form-label">What kind of moment was it?</span>
-              <select className="form-select" onChange={(event) => update('kindLabel', event.target.value)} value={form.kindLabel}>
+            <FormField label="What kind of moment was it?">
+              <SelectField onChange={(event) => update('kindLabel', event.target.value)} value={form.kindLabel}>
                 {MEMORY_TYPES.map((type) => <option key={type} value={type}>{type}</option>)}
-              </select>
-            </label>
+              </SelectField>
+            </FormField>
           ) : null}
           {step === 3 ? (
-            <div className="quick-add-detail-grid">
-              <label className="form-group">
-                <span className="form-label">Optional details</span>
-                <textarea className="form-textarea" maxLength={2000} onChange={(event) => update('description', event.target.value)} rows={5} value={form.description} />
-              </label>
-              <label className="form-group">
-                <span className="form-label">Tags</span>
-                <input className="form-input" onChange={(event) => update('tags', event.target.value)} placeholder="date night, trip, first" value={form.tags} />
-              </label>
-              <label className="form-group">
-                <span className="form-label">Related media note</span>
-                <input className="form-input" onChange={(event) => update('mediaNote', event.target.value)} placeholder="Photo is in iCloud album..." value={form.mediaNote} />
-              </label>
-            </div>
+            <>
+              <FormField label="Optional details">
+                <TextAreaField maxLength={2000} onChange={(event) => update('description', event.target.value)} rows={5} value={form.description} />
+              </FormField>
+              <FormField label="Tags">
+                <TextField onChange={(event) => update('tags', event.target.value)} placeholder="date night, trip, first" value={form.tags} />
+              </FormField>
+              <FormField label="Related media note">
+                <TextField onChange={(event) => update('mediaNote', event.target.value)} placeholder="Photo is in iCloud album..." value={form.mediaNote} />
+              </FormField>
+            </>
           ) : null}
-          {status.message ? <p className={`workflow-feedback ${status.kind === 'error' ? 'workflow-feedback-error' : 'workflow-feedback-success'}`} role="status">{status.message}</p> : null}
         </div>
-        <div className="modal-footer quick-add-footer">
-          <button className="btn btn-secondary" disabled={step === 0 || status.saving} onClick={() => setStep((value) => Math.max(0, value - 1))} type="button">Back</button>
-          {step < 3 ? (
-            <button className="btn btn-primary" disabled={status.saving} onClick={() => setStep((value) => Math.min(3, value + 1))} type="button">More Details</button>
-          ) : (
-            <button className="btn btn-primary" disabled={status.saving || Object.keys(errors).length > 0} type="submit">{status.saving ? 'Saving...' : 'Save memory'}</button>
-          )}
-          <button className="btn btn-secondary" disabled={status.saving || Object.keys(errors).length > 0} type="submit">Fast Save</button>
+
+        {errors.title ? <p className="mt-3 text-sm text-[#a3264c]" id="quick-add-title-error">{errors.title}</p> : null}
+        {errors.date && step === 1 ? <p className="mt-3 text-sm text-[#a3264c]">{errors.date}</p> : null}
+        {status.message ? <div className="mt-5"><InlineAlert description={status.message} tone={status.kind === 'error' ? 'error' : 'success'} /></div> : null}
+
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-between">
+          <div className="flex gap-2">
+            <SecondaryButton disabled={step === 0 || status.saving} onClick={() => setStep((value) => Math.max(0, value - 1))}>Back</SecondaryButton>
+            {step < 3 ? <SecondaryButton disabled={status.saving} onClick={() => setStep((value) => Math.min(3, value + 1))}>More details</SecondaryButton> : null}
+          </div>
+          <div className="flex gap-2">
+            <SecondaryButton disabled={status.saving || Object.keys(errors).length > 0} type="submit">Fast save</SecondaryButton>
+            <PrimaryButton disabled={step < 3 || Object.keys(errors).length > 0} loading={status.saving} type="submit">{status.saving ? 'Saving...' : 'Save memory'}</PrimaryButton>
+          </div>
         </div>
       </form>
-    </dialog>,
+    </div>,
     document.body,
   )
 }

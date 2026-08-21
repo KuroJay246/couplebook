@@ -29,7 +29,7 @@ const VIEWPORTS = Object.freeze([
 
 const ROUTES = Object.freeze([
   { path: '/login', heading: 'Open the book kept between the two of you.', mode: 'signed-out' },
-  { path: '/dashboard', heading: 'A place for the moments that still feel alive.', mode: 'authorized' },
+  { path: '/dashboard', heading: 'Pick up where your story left off.', mode: 'authorized' },
   { path: '/timeline', heading: /Our Story/, mode: 'authorized' },
   { path: '/gallery', heading: /Our Shared Gallery/, mode: 'authorized' },
   { path: '/profile', heading: /Us/, mode: 'authorized' },
@@ -64,8 +64,8 @@ async function launchBrowser() {
 
 async function measurePage(page) {
   return page.evaluate(() => {
-    const mobileNav = document.querySelector('.mobile-nav-bar')
-    const shellContent = document.querySelector('.main-content')
+    const mobileNav = document.querySelector('.mobile-tab-bar')
+    const shellContent = document.querySelector('main .cb-page-container') || document.querySelector('.cb-page-container') || document.querySelector('.main-content')
     const heading = document.querySelector('main h1, main h2')
     const galleryCards = [...document.querySelectorAll('.gallery-item')]
     const timelineCards = [...document.querySelectorAll('.timeline-card')]
@@ -149,17 +149,17 @@ async function assertDetailInteraction(page, route, viewport) {
     await dialog.waitFor({ state: 'visible', timeout: 5000 })
     assert.equal(await dialog.locator('img, video, audio, iframe').count(), 0, `${viewport.name} ${route.path} detail should not render private media elements.`)
     assert.equal(await dialog.getByRole('button', { name: /close/i }).count() > 0, true, `${viewport.name} ${route.path} detail should expose a close control.`)
-    await dialog.getByRole('button', { name: /close/i }).first().click()
+    await dialog.getByRole('button', { name: /close/i }).first().click({ force: true })
     await dialog.waitFor({ state: 'hidden', timeout: 5000 })
   }
 
   if (route.path === '/gallery') {
     await page.locator('button.gallery-media-frame').first().click()
-    const overlay = page.locator('.lightbox-overlay.active, .modal-overlay.active').first()
-    await overlay.waitFor({ state: 'visible', timeout: 5000 })
-    assert.equal(await overlay.locator('img, video, audio, iframe').count(), 0, `${viewport.name} ${route.path} detail should not render private media elements.`)
-    await page.locator('.lightbox-close, .modal-close, .modal-footer button').first().click()
-    await overlay.waitFor({ state: 'hidden', timeout: 5000 })
+    const dialog = page.getByRole('dialog')
+    await dialog.waitFor({ state: 'visible', timeout: 5000 })
+    assert.equal(await dialog.locator('img, video, audio, iframe').count(), 0, `${viewport.name} ${route.path} detail should not render private media elements.`)
+    await dialog.getByRole('button', { name: /close/i }).first().click({ force: true })
+    await dialog.waitFor({ state: 'hidden', timeout: 5000 })
   }
 }
 

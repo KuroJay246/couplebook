@@ -4,8 +4,10 @@ import {
   acceptContract,
   archiveMemory,
   convertPlanToMemory,
+  removeVerifiedMediaFromMemory,
   restoreMemory,
   saveMemory,
+  saveMemoryWithVerifiedMedia,
   saveOwnFavorites,
   saveOwnProfile,
   saveOwnSettings,
@@ -61,8 +63,33 @@ export function useOwnerWrite(onRefresh) {
         return memoryId
       })
     },
+    createMemoryWithMedia: (payload, verifiedMedia) => {
+      const memoryId = createMemoryId()
+      return (async () => {
+        const context = createContext()
+        await saveMemoryWithVerifiedMedia(memoryId, payload, verifiedMedia, context)
+        let refreshError = null
+        try {
+          await refresh()
+        } catch (error) {
+          refreshError = error
+        }
+        return { memoryId, refreshError, revision: 1, verifiedMedia }
+      })()
+    },
     updateMemory: (memoryId, payload) => runWrite((context) => saveMemory(memoryId, payload, context)),
     archiveMemory: (memoryId, revision = 0) => runWrite((context) => archiveMemory(memoryId, revision, context)),
+    removeMemoryMedia: (memoryId, revision = 0) => (async () => {
+      const context = createContext()
+      const result = await removeVerifiedMediaFromMemory(memoryId, revision, context)
+      let refreshError = null
+      try {
+        await refresh()
+      } catch (error) {
+        refreshError = error
+      }
+      return { ...result, refreshError }
+    })(),
     restoreMemory: (memoryId, revision = 0) => runWrite((context) => restoreMemory(memoryId, revision, context)),
     createPlan: (payload) => {
       const planId = createPlanId()

@@ -98,7 +98,7 @@ test('gallery read model exposes no raw private paths and keeps deterministic gr
   assert.deepEqual(model.filters.availableYears.map((year) => year.key), ['2026', '2025'])
   assert.ok(model.filters.availableTypes.some((type) => type.key === 'photos'))
   assert.ok(model.filters.availableTypes.some((type) => type.key === 'videos'))
-  assert.doesNotMatch(serialized, /\/assets\/photos|\/assets\/videos|C:\\\\|mediaPath|pageUrl|older"|newer"/)
+  assert.doesNotMatch(serialized, /\/assets\/photos|\/assets\/videos|C:\\\\|mediaPath|pageUrl/)
 })
 
 test('gallery read model exposes verified storage media without raw local references', () => {
@@ -111,6 +111,7 @@ test('gallery read model exposes verified storage media without raw local refere
         memories: [
           createMemoryRecord({
             id: 'verified-video',
+            revision: 3,
             mediaPath: '',
             mediaKind: 'video',
             media: {
@@ -128,6 +129,7 @@ test('gallery read model exposes verified storage media without raw local refere
   })
 
   assert.equal(model.verifiedMedia.length, 1)
+  assert.equal(model.videos[0].memoryRevision, 3)
   assert.equal(model.videos[0].media.status, 'storage-verified')
   assert.equal(model.videos[0].media.storagePath, 'couples/couple_alpha/media/media_001/original')
   assert.doesNotMatch(JSON.stringify(model), /C:\\\\|OUR MEMORIES|\/assets\/videos/)

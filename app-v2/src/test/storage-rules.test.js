@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import path from 'node:path'
 import process from 'node:process'
 import test from 'node:test'
 import { assertFails, assertSucceeds, initializeTestEnvironment } from '@firebase/rules-unit-testing'
@@ -9,7 +8,7 @@ import { deleteObject, getBytes, ref, uploadBytes } from 'firebase/storage'
 
 const projectId = 'demo-couplebook-app-v2'
 const bucket = `${projectId}.appspot.com`
-const rules = readFileSync(path.resolve('../storage.app-v2.rules'), 'utf8')
+const rules = readFileSync(new URL('../../../storage.app-v2.rules', import.meta.url), 'utf8')
 const hasEmulator = Boolean(process.env.FIREBASE_STORAGE_EMULATOR_HOST && process.env.FIRESTORE_EMULATOR_HOST)
 
 const ids = Object.freeze({
@@ -124,6 +123,21 @@ test('invalid paths, MIME types, extensions, size, and metadata tampering are de
   await assertFails(uploadBytes(mediaRef(ownerStorage), new Uint8Array([1]), metadata(ids.partner)))
   await assertFails(uploadBytes(mediaRef(ownerStorage), new Uint8Array([1]), metadata(ids.owner, { kind: 'script', extension: 'js' })))
   await assertFails(uploadBytes(mediaRef(ownerStorage), new Uint8Array([1]), { ...metadata(), contentType: 'application/javascript' }))
+  await assertFails(uploadBytes(
+    mediaRef(ownerStorage),
+    new Uint8Array([1]),
+    {
+      contentType: 'video/quicktime',
+      customMetadata: {
+        coupleId: ids.couple,
+        mediaId: 'media_exact_001',
+        ownerUid: ids.owner,
+        schemaVersion: '1',
+        kind: 'video',
+        extension: 'mov',
+      },
+    },
+  ))
   await assertFails(uploadBytes(
     mediaRef(ownerStorage, ids.couple, 'media_exact_001', 'thumbnail'),
     new Uint8Array(6 * 1024 * 1024),

@@ -13,8 +13,8 @@ test('favorites route uses the feature hook and owner editing view', async () =>
   assert.match(favoritesPageSource, /useFavoritesData/)
   assert.match(favoritesPageSource, /FavoritesView/)
   assert.match(favoritesViewSource, /Favorite Things/)
-  assert.match(favoritesViewSource, /favorites-layout/)
-  assert.match(favoritesViewSource, /favorites-card/)
+  assert.match(favoritesViewSource, /Things you both reach for/)
+  assert.match(favoritesViewSource, /FavoriteSection/)
   assert.match(favoritesViewSource, /Jaylan/)
   assert.match(favoritesViewSource, /useOwnerWrite/)
   assert.match(favoritesViewSource, /AddFavoriteDialog/)
@@ -41,5 +41,5 @@ test('favorites editing waits for the loaded owner model instead of fallback pla
     /const ownerPerson = \(model\.people \|\| \[\]\)\.find\(\(person\) => isOwnerFavorites\(person, writer\.approvedUser\)\) \|\| null/,
   )
   assert.match(favoritesViewSource, /canEdit=\{person === ownerPerson\}/)
-  assert.doesNotMatch(favoritesViewSource, /const ownerPerson = people\.find/)
+  assert.match(favoritesViewSource, /const displayName = writer\.approvedUser\.displayName \|\| writer\.approvedUser\.username \|\| 'Jaylan'/)
 })

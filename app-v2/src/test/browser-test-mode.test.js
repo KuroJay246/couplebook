@@ -14,6 +14,23 @@ function createWindowLike(hostname, browserTestMode) {
   return {
     location: { hostname },
     __COUPLEBOOK_BROWSER_TEST__: browserTestMode,
+    sessionStorage: {
+      getItem() {
+        return null
+      },
+    },
+  }
+}
+
+function createWindowLikeWithStoredFixture(hostname, browserTestMode) {
+  return {
+    location: { hostname },
+    sessionStorage: {
+      getItem(key) {
+        if (key !== '__COUPLEBOOK_BROWSER_TEST__') return null
+        return JSON.stringify(browserTestMode)
+      },
+    },
   }
 }
 
@@ -50,4 +67,45 @@ test('browser regression compatibility fixture remains local-only and frozen', (
   assert.equal(compatibilityState.snapshot.sources.contract.status, 'ready')
   assert.equal(compatibilityState.snapshot.sources.contract.data.activeSignature.hasLegacyPayload, true)
   assert.equal(Object.isFrozen(compatibilityState.snapshot), true)
+})
+
+test('browser regression fixture can also come from localhost session storage', () => {
+  const authState = getBrowserTestAuthState(createWindowLikeWithStoredFixture('localhost', browserRegressionAuthorizedFixture))
+  const compatibilityState = getBrowserTestCompatibilityState(createWindowLikeWithStoredFixture('localhost', browserRegressionAuthorizedFixture))
+
+  assert.equal(authState.mode, 'authorized')
+  assert.equal(compatibilityState.state, 'ready')
+})
+
+test('browser regression auth-only fixture does not force a compatibility snapshot', () => {
+  const compatibilityState = getBrowserTestCompatibilityState(createWindowLike('127.0.0.1', {
+    enabled: true,
+    auth: browserRegressionAuthorizedFixture.auth,
+  }))
+
+  assert.equal(compatibilityState, null)
+})
+
+test('browser regression auth fixture preserves optional approved-user write fields', () => {
+  const authState = getBrowserTestAuthState(createWindowLike('127.0.0.1', {
+    enabled: true,
+    auth: {
+      status: 'authorized',
+      user: {
+        uid: 'member_one',
+        email: 'member-one@example.com',
+        displayName: 'Member One',
+      },
+      approvedUser: {
+        uid: 'member_one',
+        coupleId: 'couple_alpha',
+        username: 'Member One',
+        displayName: 'Member One',
+      },
+    },
+  }))
+
+  assert.equal(authState.approvedUser.uid, 'member_one')
+  assert.equal(authState.approvedUser.coupleId, 'couple_alpha')
+  assert.equal(authState.approvedUser.raw.coupleId, 'couple_alpha')
 })

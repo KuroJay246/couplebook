@@ -13,8 +13,8 @@ test('profile route uses the feature hook and owner editing view', async () => {
   assert.match(profilePageSource, /useProfileData/)
   assert.match(profilePageSource, /ProfileView/)
   assert.match(profileViewSource, /About Us/)
-  assert.match(profileViewSource, /profiles-layout/)
-  assert.match(profileViewSource, /profile-card/)
+  assert.match(profileViewSource, /PageTabs/)
+  assert.match(profileViewSource, /Shared matches/)
   assert.match(profileViewSource, /Our Promises/)
   assert.match(profileViewSource, /useOwnerWrite/)
   assert.match(profileViewSource, /ProfileEditDialog/)
@@ -28,4 +28,5 @@ test('profile view keeps unavailable states calm and does not invent private det
 
   assert.match(profileViewSource, /A personal note is waiting to be written\./)
   assert.match(profileViewSource, /Protected/)
+  assert.match(profileViewSource, /UIDs, membership status, Firestore paths/)
 })

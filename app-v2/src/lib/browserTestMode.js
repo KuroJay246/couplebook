@@ -1,9 +1,21 @@
 import { freezeClone, isLocalOrigin, isPlainObject, toTrimmedString } from '../data/adapterUtils.js'
 
+const BROWSER_TEST_STORAGE_KEY = '__COUPLEBOOK_BROWSER_TEST__'
+
 function getWindowLike(windowLike) {
   if (windowLike) return windowLike
   if (typeof window !== 'undefined') return window
   return null
+}
+
+function readStoredBrowserTestMode(windowLike) {
+  try {
+    const rawValue = windowLike?.sessionStorage?.getItem?.(BROWSER_TEST_STORAGE_KEY)
+    if (!rawValue) return null
+    return JSON.parse(rawValue)
+  } catch {
+    return null
+  }
 }
 
 function readRawBrowserTestMode(windowLike = getWindowLike()) {
@@ -11,7 +23,7 @@ function readRawBrowserTestMode(windowLike = getWindowLike()) {
     return null
   }
 
-  const rawMode = windowLike.__COUPLEBOOK_BROWSER_TEST__
+  const rawMode = windowLike.__COUPLEBOOK_BROWSER_TEST__ || readStoredBrowserTestMode(windowLike)
   if (!isPlainObject(rawMode) || rawMode.enabled !== true) {
     return null
   }
@@ -49,16 +61,26 @@ function normalizeApprovedUser(rawApprovedUser) {
   const username = toTrimmedString(rawApprovedUser.username)
   const displayName = toTrimmedString(rawApprovedUser.displayName)
   const profileName = toTrimmedString(rawApprovedUser.profileName)
+  const uid = toTrimmedString(rawApprovedUser.uid)
+  const coupleId = toTrimmedString(rawApprovedUser.coupleId)
 
   if (!username && !displayName && !profileName) {
     return null
   }
 
-  return {
+  const approvedUser = {
     username: username || displayName || profileName,
     displayName: displayName || username || profileName,
     profileName: profileName || displayName || username,
   }
+
+  if (uid) approvedUser.uid = uid
+  if (coupleId) {
+    approvedUser.coupleId = coupleId
+    approvedUser.raw = { coupleId }
+  }
+
+  return approvedUser
 }
 
 function normalizeBrowserTestAuth(rawAuth) {
@@ -138,5 +160,10 @@ export function getBrowserTestAuthState(windowLike = getWindowLike()) {
 }
 
 export function getBrowserTestCompatibilityState(windowLike = getWindowLike()) {
+  const rawMode = readRawBrowserTestMode(windowLike)
+  if (!rawMode || !isPlainObject(rawMode.compatibility)) {
+    return null
+  }
+
   return getBrowserTestMode(windowLike)?.compatibility || null
 }

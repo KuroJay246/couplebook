@@ -62,6 +62,7 @@ export function selectTimelineDisplayMemories(memories = []) {
     if (memory.status === 'archived') continue
     displayMemories.push({
       id: memory.id,
+      revision: memory.revision,
       status: memory.status,
       title: memory.title,
       description: memory.description,

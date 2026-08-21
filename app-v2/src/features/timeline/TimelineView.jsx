@@ -1,6 +1,22 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { Archive, BookHeart, Images, Pencil, RotateCcw, Sparkles } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { PrimaryButton, SecondaryButton, TextButton } from '../../components/ui/Button.jsx'
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx'
+import { ContextMenu } from '../../components/ui/ContextMenu.jsx'
+import { EmptyState } from '../../components/ui/EmptyState.jsx'
+import { ErrorState } from '../../components/ui/ErrorState.jsx'
+import { FilterChip } from '../../components/ui/FilterChip.jsx'
+import { FormField, SelectField, TextAreaField, TextField } from '../../components/ui/FormField.jsx'
+import { InlineAlert } from '../../components/ui/InlineAlert.jsx'
+import { LoadingSkeleton } from '../../components/ui/LoadingSkeleton.jsx'
+import { LoadingState } from '../../components/ui/LoadingState.jsx'
+import { PageHeader } from '../../components/ui/PageHeader.jsx'
+import { SearchField } from '../../components/ui/SearchField.jsx'
+import { SegmentedControl } from '../../components/ui/SegmentedControl.jsx'
+import { StatusBadge } from '../../components/ui/StatusBadge.jsx'
+import { ContentCard, Surface } from '../../components/ui/Surface.jsx'
 import { useOwnerWrite } from '../editing/useOwnerWrite.js'
 
 function allMemories(model) {
@@ -15,44 +31,17 @@ function mediaLabel(memory) {
 }
 
 function memoryStyle(memory) {
-  if (memory.specialMoment.isSpecial) return 'milestone'
+  if (memory.specialMoment.isSpecial) return 'special'
   if (memory.media.kind === 'video') return 'video'
   if (memory.media.kind === 'image') return 'photo'
   return 'written'
 }
 
-function TimelineCard({ memory, onSelect }) {
-  const style = memoryStyle(memory)
-  return (
-    <article className={`timeline-card timeline-card--${style} glass-card card-story ${memory.media.status !== 'storage-verified' ? 'timeline-card--media-unavailable' : ''}`}>
-      <div className="timeline-dot" aria-hidden="true" />
-      <div className="timeline-card-header">
-        <div>
-          <p className="timeline-card-kind">{mediaLabel(memory)}</p>
-          <h3 className="timeline-card-title">{memory.displayTitle}</h3>
-        </div>
-        <time className="timeline-card-date">{memory.displayDate || 'Date review'}</time>
-      </div>
-      <div className="timeline-card-meta">
-        <div className="timeline-card-status">
-          <span className="timeline-card-chip">{mediaLabel(memory)}</span>
-          {memory.tags.slice(0, 2).map((tag) => <span className="timeline-card-chip timeline-card-chip--muted" key={tag.key}>{tag.label}</span>)}
-        </div>
-      </div>
-      <p className="timeline-card-desc">{memory.displayDescription}</p>
-      {memory.media.hasReference ? (
-        <button className="timeline-media-preview" onClick={() => onSelect(memory)} type="button">
-          <div className="timeline-media" />
-          <span className="timeline-media-status">{memory.media.status === 'storage-verified' ? 'Private media' : 'Private media stays protected'}</span>
-          <span className="timeline-media-preview-icon" aria-hidden="true">{memory.media.kind === 'video' ? '▶' : '🖼️'}</span>
-        </button>
-      ) : null}
-      <div className="timeline-card-actions">
-        {memory.specialMoment.route ? <Link className="btn btn-secondary timeline-action-link" to={memory.specialMoment.route}>Open Page</Link> : null}
-        <button className="btn btn-secondary timeline-action-link" onClick={() => onSelect(memory)} type="button">View memory</button>
-      </div>
-    </article>
-  )
+function accentStripeClass(memory) {
+  if (memoryStyle(memory) === 'video') return 'bg-[#d7c8ec]'
+  if (memoryStyle(memory) === 'photo') return 'bg-[#cbe7d3]'
+  if (memoryStyle(memory) === 'special') return 'bg-[#f0ddb6]'
+  return 'bg-[#e8d6de]'
 }
 
 function chapterLabel(memory) {
@@ -75,6 +64,8 @@ function memoryPayloadFromForm(form, fallback = {}) {
     date: form.date,
     revision: fallback.revision || 0,
     tags,
+    kindLabel: form.kindLabel,
+    mediaNote: form.mediaNote,
     specialMomentType: fallback.specialMoment?.isSpecial ? fallback.specialMoment.type || 'ordinary' : 'ordinary',
     status: fallback.status || 'active',
   }
@@ -122,11 +113,14 @@ function buildMonthOptions(memories) {
 
 function MemoryFormDialog({ memory = null, mode, onClose, onSave, status }) {
   const firstFieldRef = useRef(null)
+  const titleId = useId()
   const [form, setForm] = useState(() => ({
     title: memory?.title || memory?.displayTitle || '',
     date: memoryDateValue(memory),
     description: memory?.description || memory?.displayDescription || '',
     tags: (memory?.tags || []).map((tag) => tag.label || tag.key).join(', '),
+    kindLabel: memory?.kindLabel || memory?.typeLabel || 'Everyday Moment',
+    mediaNote: memory?.mediaNote || '',
   }))
 
   useEffect(() => {
@@ -143,90 +137,204 @@ function MemoryFormDialog({ memory = null, mode, onClose, onSave, status }) {
   }
 
   return createPortal(
-    <dialog aria-labelledby="memory-form-title" className="modal-overlay active faithful-modal-open" onCancel={onClose} open>
-      <form className="modal-container faithful-edit-form" onSubmit={handleSubmit}>
-        <div className="modal-header">
-          <h3 className="modal-title" id="memory-form-title">{mode === 'edit' ? 'Edit memory' : 'Add memory'}</h3>
-          <button aria-label="Close memory form" className="modal-close" onClick={onClose} type="button">×</button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <button type="button" className="absolute inset-0 bg-[#24131d]/40 backdrop-blur-sm" onClick={onClose} aria-label="Close memory form" />
+      <form
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="relative w-full max-w-2xl rounded-[28px] border border-[#ead7df] bg-white p-6 shadow-[0_24px_80px_rgba(36,19,29,0.18)] sm:p-8"
+        onSubmit={handleSubmit}
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#8f5168]">{mode === 'edit' ? 'Edit memory' : 'New memory'}</p>
+            <h3 id={titleId} className="mt-2 font-serif text-3xl text-[#24131d]">{mode === 'edit' ? 'Update this part of the story' : 'Add the next memory'}</h3>
+          </div>
+          <TextButton aria-label="Close" onClick={onClose}>Close</TextButton>
         </div>
-        <div className="modal-body">
-          <label className="form-group">
-            <span className="form-label">Title</span>
-            <input className="form-input" onChange={(event) => updateField('title', event.target.value)} ref={firstFieldRef} required type="text" value={form.title} />
-          </label>
-          <label className="form-group">
-            <span className="form-label">Date</span>
-            <input className="form-input" onChange={(event) => updateField('date', event.target.value)} required type="date" value={form.date} />
-          </label>
-          <label className="form-group">
-            <span className="form-label">Description</span>
-            <textarea className="form-textarea" onChange={(event) => updateField('description', event.target.value)} rows={5} value={form.description} />
-          </label>
-          <label className="form-group">
-            <span className="form-label">Tags</span>
-            <input className="form-input" onChange={(event) => updateField('tags', event.target.value)} placeholder="date night, favorite, travel" type="text" value={form.tags} />
-          </label>
-          {status?.message ? <p className={`workflow-feedback ${status.kind === 'error' ? 'workflow-feedback-error' : 'workflow-feedback-success'}`} role="status">{status.message}</p> : null}
+
+        <div className="mt-6 grid gap-4 sm:grid-cols-2">
+          <FormField label="Title" className="sm:col-span-2">
+            <TextField onChange={(event) => updateField('title', event.target.value)} ref={firstFieldRef} required value={form.title} />
+          </FormField>
+          <FormField label="Date">
+            <TextField onChange={(event) => updateField('date', event.target.value)} required type="date" value={form.date} />
+          </FormField>
+          <FormField label="Memory type">
+            <SelectField onChange={(event) => updateField('kindLabel', event.target.value)} value={form.kindLabel}>
+              {['Everyday Moment', 'Date', 'First', 'Trip', 'Milestone', 'Celebration', 'Funny Moment', 'Note', 'Photo Memory', 'Video Memory'].map((option) => (
+                <option key={option} value={option}>{option}</option>
+              ))}
+            </SelectField>
+          </FormField>
+          <FormField label="Description" className="sm:col-span-2">
+            <TextAreaField onChange={(event) => updateField('description', event.target.value)} rows={6} value={form.description} />
+          </FormField>
+          <FormField label="Tags" className="sm:col-span-2">
+            <TextField onChange={(event) => updateField('tags', event.target.value)} placeholder="date night, favorite, travel" value={form.tags} />
+          </FormField>
+          <FormField label="Media note" className="sm:col-span-2">
+            <TextField onChange={(event) => updateField('mediaNote', event.target.value)} placeholder="Optional note about the photo or video for Album" value={form.mediaNote} />
+          </FormField>
         </div>
-        <div className="modal-footer">
-          <button className="btn btn-secondary" onClick={onClose} type="button">Cancel</button>
-          <button className="btn btn-primary" disabled={status?.saving} type="submit">{status?.saving ? 'Saving...' : 'Save'}</button>
+
+        {status?.message ? <div className="mt-5"><InlineAlert description={status.message} tone={status.kind === 'error' ? 'error' : 'success'} /></div> : null}
+
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
+          <SecondaryButton onClick={onClose}>Cancel</SecondaryButton>
+          <PrimaryButton loading={status?.saving} type="submit">{status?.saving ? 'Saving memory' : 'Save memory'}</PrimaryButton>
         </div>
       </form>
-    </dialog>,
+    </div>,
     document.body,
   )
 }
 
 function DetailModal({ memory, onArchive, onClose, onEdit, status }) {
-  const closeRef = useRef(null)
+  const closeButtonRef = useRef(null)
+  const titleId = useId()
+
   useEffect(() => {
-    if (!memory) return
-    const dialog = closeRef.current?.closest('dialog')
-    if (dialog && !dialog.open) dialog.showModal()
-    closeRef.current?.focus()
+    if (!memory) return undefined
+    const timer = window.setTimeout(() => closeButtonRef.current?.focus(), 0)
+    return () => window.clearTimeout(timer)
   }, [memory])
 
   if (!memory) return null
+
   return createPortal(
-    <dialog aria-labelledby="detail-title" className="modal-overlay active" onCancel={onClose}>
-      <div className="modal-container" style={{ maxWidth: '600px' }}>
-        <div className="modal-header" style={{ borderBottom: 'none' }}>
-          <h3 className="modal-title" id="detail-title" style={{ fontSize: '1.4rem' }}>{memory.displayTitle}</h3>
-          <button aria-label="Close memory details" className="modal-close" onClick={onClose} ref={closeRef} type="button">×</button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <button type="button" className="absolute inset-0 bg-[#24131d]/40 backdrop-blur-sm" onClick={onClose} aria-label="Close memory details" />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="relative max-h-[calc(100vh-2rem)] w-full max-w-3xl overflow-auto rounded-[28px] border border-[#ead7df] bg-white p-6 shadow-[0_24px_80px_rgba(36,19,29,0.18)] sm:p-8"
+      >
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <StatusBadge tone={memory.media.kind === 'video' ? 'info' : memory.media.kind === 'image' ? 'success' : memory.specialMoment.isSpecial ? 'warning' : 'default'}>
+              {mediaLabel(memory)}
+            </StatusBadge>
+            <h3 id={titleId} className="mt-3 font-serif text-3xl text-[#24131d]">{memory.displayTitle}</h3>
+            <p className="mt-2 text-sm text-[#6B564C]">{memory.displayDate || 'Date review'}</p>
+          </div>
+          <TextButton aria-label="Close" autoFocus onClick={onClose} ref={closeButtonRef}>Close</TextButton>
         </div>
-        <div className="modal-body" style={{ paddingTop: 0 }}>
-          <div style={{ borderRadius: '12px', overflow: 'hidden', marginBottom: '1rem', border: '1px solid var(--border-glass)' }}>
-            <div className="gallery-video-unavailable">
-              <div className="gallery-video-unavailable-copy">
-                <p className="gallery-video-unavailable-label">Private media protected</p>
-                <h4 className="gallery-video-unavailable-title">{mediaLabel(memory)}</h4>
-                <p className="gallery-video-unavailable-text">The story is visible here without copying the original private file into the app bundle.</p>
+
+        <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(18rem,0.9fr)]">
+          <ContentCard className="min-h-72 bg-[linear-gradient(180deg,#fff9fb_0%,#fdf4f8_100%)]">
+            <div className="flex h-full flex-col justify-between gap-6">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#8f5168]">Story preview</p>
+                <h4 className="mt-2 text-lg font-bold text-[#24131d]">{memory.displayTitle}</h4>
+                <p className="mt-3 text-sm leading-6 text-[#6B564C]">{memory.displayDescription}</p>
               </div>
+              <InlineAlert
+                tone={memory.media.status === 'storage-verified' ? 'success' : 'info'}
+                title={memory.media.status === 'storage-verified' ? 'Private media verified' : 'Private media stays protected'}
+                description={
+                  memory.media.status === 'storage-verified'
+                    ? 'Album can safely reference the private Storage object without exposing the original file in public assets.'
+                    : 'This entry preserves the story and metadata even when the original private file is not available in the current device view.'
+                }
+              />
             </div>
+          </ContentCard>
+
+          <div className="grid gap-4">
+            <Surface tone="soft">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Tags</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {memory.tags.length > 0 ? memory.tags.map((tag) => <StatusBadge key={tag.key}>{tag.label}</StatusBadge>) : <span className="text-sm text-[#806572]">No tags saved.</span>}
+              </div>
+            </Surface>
+            {memory.specialMoment.route ? (
+              <Surface tone="soft">
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Related page</p>
+                <p className="mt-2 text-sm leading-6 text-[#6B564C]">This memory also connects to a protected special page inside Couple Book.</p>
+                <div className="mt-4">
+                  <SecondaryButton as={Link} to={memory.specialMoment.route}>Open related page</SecondaryButton>
+                </div>
+              </Surface>
+            ) : null}
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-muted)' }}>{memory.displayDate || 'Date review'}</span>
-            <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-              {memory.tags.slice(0, 4).map((tag) => <span className="badge badge-tag" key={tag.key}>{tag.label}</span>)}
-            </div>
-          </div>
-          <p style={{ color: 'var(--color-secondary-text)', fontSize: '0.95rem', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{memory.displayDescription}</p>
         </div>
-        <div className="modal-footer" style={{ justifyContent: 'space-between', width: '100%' }}>
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-            <button className="btn btn-secondary" onClick={() => onEdit(memory)} type="button">Edit</button>
-            <button className="btn btn-danger" disabled={status?.saving} onClick={() => onArchive(memory)} type="button">Archive</button>
+
+        {status?.message ? <div className="mt-5"><InlineAlert description={status.message} tone={status.kind === 'error' ? 'error' : 'success'} /></div> : null}
+
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-between">
+          <div className="flex flex-wrap gap-2">
+            <SecondaryButton onClick={() => onEdit(memory)}><Pencil className="size-4" />Edit</SecondaryButton>
+            <SecondaryButton as={Link} to="/gallery"><Images className="size-4" />Open Album</SecondaryButton>
           </div>
-          <button className="btn btn-secondary" onClick={onClose} type="button">Close</button>
+          <SecondaryButton onClick={() => onArchive(memory)}><Archive className="size-4" />Archive memory</SecondaryButton>
         </div>
       </div>
-    </dialog>,
+    </div>,
     document.body,
   )
 }
 
-export function TimelineView({ model, onRefresh }) {
+function TimelineCard({ memory, onArchive, onEdit, onSelect }) {
+  return (
+    <ContentCard className="timeline-card relative max-w-[58rem] overflow-hidden">
+      <div className={`absolute inset-y-4 left-0 w-1 rounded-full ${accentStripeClass(memory)}`} aria-hidden="true" />
+      <div className="flex flex-col gap-4 pl-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <StatusBadge tone={memory.media.kind === 'video' ? 'info' : memory.media.kind === 'image' ? 'success' : memory.specialMoment.isSpecial ? 'warning' : 'default'}>
+                {mediaLabel(memory)}
+              </StatusBadge>
+              {memory.tags.slice(0, 2).map((tag) => <StatusBadge key={tag.key}>{tag.label}</StatusBadge>)}
+            </div>
+            <h3 className="mt-3 text-xl font-bold text-[#24131d]">{memory.displayTitle}</h3>
+            <p className="mt-2 text-sm leading-6 text-[#6B564C]">{memory.displayDescription}</p>
+          </div>
+          <ContextMenu
+            label={`Actions for ${memory.displayTitle}`}
+            items={[
+              { label: 'View memory', onSelect: () => onSelect(memory) },
+              { label: 'Edit memory', onSelect: () => onEdit(memory) },
+              { label: 'Archive memory', onSelect: () => onArchive(memory) },
+            ]}
+          />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 text-sm text-[#806572]">
+          <span>{memory.displayDate || 'Date review'}</span>
+          <span aria-hidden="true">•</span>
+          <span>{memory.typeLabel || memory.kindLabel || 'Saved memory'}</span>
+          {memory.media.hasReference ? (
+            <>
+              <span aria-hidden="true">•</span>
+              <span>{memory.media.kind === 'video' ? 'Video reference saved' : 'Photo reference saved'}</span>
+            </>
+          ) : null}
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <PrimaryButton onClick={() => onSelect(memory)}>View memory</PrimaryButton>
+          {memory.specialMoment.route ? <SecondaryButton as={Link} to={memory.specialMoment.route}>Open page</SecondaryButton> : null}
+        </div>
+      </div>
+    </ContentCard>
+  )
+}
+
+function TimelineSkeleton() {
+  return (
+    <div className="grid gap-4">
+      <LoadingSkeleton className="h-28" />
+      <LoadingSkeleton className="h-40" />
+      <LoadingSkeleton className="h-40" />
+    </div>
+  )
+}
+
+export function TimelineView({ compatibilityError, compatibilityState, model, onRefresh }) {
   const [selectedTag, setSelectedTag] = useState('all')
   const [selectedYear, setSelectedYear] = useState('all')
   const [selectedType, setSelectedType] = useState('all')
@@ -237,6 +345,7 @@ export function TimelineView({ model, onRefresh }) {
   const [editingMemory, setEditingMemory] = useState(null)
   const [formMode, setFormMode] = useState('')
   const [status, setStatus] = useState({ kind: '', message: '', saving: false })
+  const [confirmState, setConfirmState] = useState({ mode: '', memory: null })
   const writer = useOwnerWrite(onRefresh)
   const memories = useMemo(() => allMemories(model), [model])
   const archivedMemories = model.archivedMemories || []
@@ -244,6 +353,7 @@ export function TimelineView({ model, onRefresh }) {
   const years = model.filters.availableYears || []
   const types = model.filters.availableTypes || []
   const monthOptions = useMemo(() => buildMonthOptions(memories), [memories])
+
   const filtered = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase()
     return sortMemories(
@@ -291,26 +401,24 @@ export function TimelineView({ model, onRefresh }) {
     }
   }
 
-  async function archiveSelected(memory) {
-    if (!window.confirm(`Archive "${memory.displayTitle}"?`)) return
-    setStatus({ kind: '', message: '', saving: true })
-    try {
-      await writer.archiveMemory(memory.id, memory.revision || 0)
-      setSelectedMemory(null)
-      setStatus({ kind: 'success', message: 'Memory archived.', saving: false })
-    } catch (error) {
-      setStatus({ kind: 'error', message: error?.message || 'Editing is temporarily unavailable.', saving: false })
-    }
-  }
+  async function confirmArchiveOrRestore() {
+    const { mode, memory } = confirmState
+    if (!memory) return
 
-  async function restoreArchived(memory) {
-    if (!window.confirm(`Restore "${memory.displayTitle}" to the active story?`)) return
     setStatus({ kind: '', message: '', saving: true })
     try {
-      await writer.restoreMemory(memory.id, memory.revision || 0)
-      setStatus({ kind: 'success', message: 'Memory restored to Story.', saving: false })
+      if (mode === 'archive') {
+        await writer.archiveMemory(memory.id, memory.revision || 0)
+        setSelectedMemory(null)
+        setStatus({ kind: 'success', message: 'Memory archived.', saving: false })
+      }
+      if (mode === 'restore') {
+        await writer.restoreMemory(memory.id, memory.revision || 0)
+        setStatus({ kind: 'success', message: 'Memory restored to Story.', saving: false })
+      }
+      setConfirmState({ mode: '', memory: null })
     } catch (error) {
-      setStatus({ kind: 'error', message: error?.message || 'Memory could not be restored.', saving: false })
+      setStatus({ kind: 'error', message: error?.message || 'This change could not be completed.', saving: false })
     }
   }
 
@@ -336,159 +444,176 @@ export function TimelineView({ model, onRefresh }) {
     setSortOrder('newest')
   }
 
-  return (
-    <section className="timeline-page">
-      <header className="page-header page-header--split">
-        <div className="page-heading">
-          <p className="page-eyebrow">Story Lane</p>
-          <h1 className="page-title">📖 Our Story</h1>
-          <p className="page-subtitle">Search and reopen the memories that still shape your story.</p>
-        </div>
-        <div className="page-actions">
-          <span className="utility-chip">{filtered.length} {filtered.length === 1 ? 'memory' : 'memories'}</span>
-          <button className="btn btn-primary" onClick={openAddForm} type="button">+ Add Memory</button>
-        </div>
-      </header>
-      {status.message && !formMode ? <p className={`workflow-feedback ${status.kind === 'error' ? 'workflow-feedback-error' : 'workflow-feedback-success'}`} role="status">{status.message}</p> : null}
+  if (compatibilityState === 'loading') {
+    return (
+      <div className="space-y-4">
+        <LoadingState message="Loading Story..." />
+        <TimelineSkeleton />
+      </div>
+    )
+  }
 
-      <details className="glass-card card-utility filter-toolbar timeline-filter-toolbar">
-        <summary className="timeline-filter-summary-control">
-          <span>Find a memory</span>
-          <span className="faithful-filter-summary">
-            {filtered.length === memories.length
-              ? 'Full story'
-              : `${filtered.length} of ${memories.length}`}
-          </span>
-        </summary>
-        <div className="faithful-filter-grid timeline-filter-grid">
-          <label className="form-group">
-            <span className="filter-toolbar-label">Search memories</span>
-            <input
-              aria-label="Search memories"
-              className="form-input"
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search titles, details, and tags"
-              type="search"
-              value={search}
-            />
-          </label>
-          <label className="form-group">
-            <span className="filter-toolbar-label">Year</span>
-            <select aria-label="Filter by year" className="form-select" onChange={(event) => setSelectedYear(event.target.value)} value={selectedYear}>
+  if (compatibilityError || model.status === 'invalid') {
+    return <ErrorState title="Story could not be loaded" message={compatibilityError || 'The Story view is not available right now.'} onRetry={onRefresh} />
+  }
+
+  return (
+    <section className="space-y-5" data-route="timeline">
+      <PageHeader
+        eyebrow="Story Lane"
+        title="Our Story"
+        description="Search and reopen the memories that still shape your story."
+        actions={(
+          <>
+            <StatusBadge tone="info">{filtered.length} {filtered.length === 1 ? 'memory' : 'memories'}</StatusBadge>
+            <PrimaryButton onClick={openAddForm}><Sparkles className="size-4" />Add memory</PrimaryButton>
+          </>
+        )}
+      />
+
+      {status.message && !formMode ? <InlineAlert description={status.message} tone={status.kind === 'error' ? 'error' : 'success'} /> : null}
+      {model.warnings?.length ? (
+        <InlineAlert
+          tone="info"
+          title="Story bridge notes"
+          description={`The current Story view loaded with ${model.warnings.length} compatibility note${model.warnings.length === 1 ? '' : 's'}.`}
+        />
+      ) : null}
+
+      <Surface>
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_repeat(3,minmax(0,0.6fr))]">
+          <SearchField
+            label="Search memories"
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search titles, details, and tags"
+            value={search}
+          />
+          <FormField label="Year">
+            <SelectField onChange={(event) => setSelectedYear(event.target.value)} value={selectedYear}>
               <option value="all">All years</option>
               {years.map((year) => <option key={year.key} value={year.key}>{year.label}</option>)}
-            </select>
-          </label>
-          <label className="form-group">
-            <span className="filter-toolbar-label">Month</span>
-            <select aria-label="Filter by month" className="form-select" onChange={(event) => setSelectedMonth(event.target.value)} value={selectedMonth}>
+            </SelectField>
+          </FormField>
+          <FormField label="Month">
+            <SelectField onChange={(event) => setSelectedMonth(event.target.value)} value={selectedMonth}>
               <option value="all">Any month</option>
               {monthOptions.map((month) => <option key={month.key} value={month.key}>{month.label}</option>)}
-            </select>
-          </label>
-          <label className="form-group">
-            <span className="filter-toolbar-label">Type</span>
-            <select aria-label="Filter by memory type" className="form-select" onChange={(event) => setSelectedType(event.target.value)} value={selectedType}>
-              <option value="all">All types</option>
-              {types.map((type) => <option key={type.key} value={type.key}>{type.label}</option>)}
-            </select>
-          </label>
-          <label className="form-group">
-            <span className="filter-toolbar-label">Sort</span>
-            <select aria-label="Sort memories" className="form-select" onChange={(event) => setSortOrder(event.target.value)} value={sortOrder}>
+            </SelectField>
+          </FormField>
+          <FormField label="Sort">
+            <SelectField onChange={(event) => setSortOrder(event.target.value)} value={sortOrder}>
               <option value="newest">Newest first</option>
               <option value="oldest">Oldest first</option>
-            </select>
-          </label>
-          <div className="form-group">
-            <span className="filter-toolbar-label">Browse by tag</span>
-            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <button aria-label="Show all tags" className={`tab-btn ${selectedTag === 'all' ? 'active' : ''}`} onClick={() => setSelectedTag('all')} type="button">All</button>
+            </SelectField>
+          </FormField>
+        </div>
+
+        <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          <SegmentedControl
+            label="Memory type"
+            onChange={setSelectedType}
+            options={[{ value: 'all', label: 'All types' }, ...types.map((type) => ({ value: type.key, label: type.label }))]}
+            value={selectedType}
+          />
+          <div className="grid gap-2">
+            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#806572]">Browse by tag</span>
+            <div className="flex flex-wrap gap-2">
+              <FilterChip active={selectedTag === 'all'} onClick={() => setSelectedTag('all')}>All</FilterChip>
               {tags.map((tag) => (
-                <button aria-label={`Filter by ${tag.label}`} className={`tab-btn ${selectedTag === tag.key ? 'active' : ''}`} key={tag.key} onClick={() => setSelectedTag(tag.key)} type="button">
+                <FilterChip active={selectedTag === tag.key} key={tag.key} onClick={() => setSelectedTag(tag.key)}>
                   {tag.label}
-                </button>
+                </FilterChip>
               ))}
             </div>
           </div>
-          <div className="faithful-filter-actions">
-            <button aria-label="Clear timeline filters" className="btn btn-secondary" onClick={clearFilters} type="button">Clear filters</button>
-            <p className="faithful-filter-summary">
-              {filtered.length === memories.length
-                ? 'Showing the full story.'
-                : `Showing ${filtered.length} of ${memories.length} memories.`}
-            </p>
-          </div>
         </div>
-      </details>
+
+        <div className="mt-4 flex flex-col gap-3 rounded-2xl border border-[#EFE2DA] bg-[#FBF8F5] p-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-[#6B564C]">
+            {filtered.length === memories.length ? 'Showing the full story.' : `Showing ${filtered.length} of ${memories.length} memories.`}
+          </p>
+          <SecondaryButton onClick={clearFilters}>Clear filters</SecondaryButton>
+        </div>
+      </Surface>
 
       {years.length ? (
-        <nav className="glass-card card-utility timeline-year-jump" aria-label="Jump to story year">
-          <span className="dashboard-section-kicker">Story chapters</span>
-          <div className="faithful-inline-actions">
+        <Surface tone="soft">
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Jump to year</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <FilterChip active={selectedYear === 'all'} onClick={() => setSelectedYear('all')}>All years</FilterChip>
             {years.map((year) => (
-              <button className={`tab-btn ${selectedYear === year.key ? 'active' : ''}`} key={year.key} onClick={() => setSelectedYear(year.key)} type="button">
+              <FilterChip active={selectedYear === year.key} key={year.key} onClick={() => setSelectedYear(year.key)}>
                 {year.label} ({year.count})
-              </button>
+              </FilterChip>
             ))}
-            <button className="tab-btn" onClick={() => setSelectedYear('all')} type="button">All years</button>
           </div>
-        </nav>
+        </Surface>
       ) : null}
 
-      <div className="timeline-container">
-        <div className="timeline-line" />
-        <div>
-          {filtered.length > 0 ? filtered.map((memory, index) => {
+      {filtered.length > 0 ? (
+        <div className="space-y-6">
+          {filtered.map((memory, index) => {
             const previous = filtered[index - 1]
             const currentChapter = chapterLabel(memory)
             const previousChapter = previous ? chapterLabel(previous) : null
             return (
-              <div className="timeline-entry" key={memory.id}>
+              <section key={memory.id} className="space-y-3">
                 {currentChapter !== previousChapter ? (
-                  <div className="timeline-chapter-marker">
-                    <span>{currentChapter}</span>
+                  <div className="sticky top-[5.5rem] z-10">
+                    <div className="inline-flex rounded-full border border-[#ead7df] bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-[#8f5168] shadow-[0_8px_24px_rgba(84,53,67,0.06)]">
+                      {currentChapter}
+                    </div>
                   </div>
                 ) : null}
-                <TimelineCard memory={memory} onSelect={setSelectedMemory} />
-              </div>
+                <TimelineCard
+                  memory={memory}
+                  onArchive={(candidate) => setConfirmState({ mode: 'archive', memory: candidate })}
+                  onEdit={openEditForm}
+                  onSelect={setSelectedMemory}
+                />
+              </section>
             )
-          }) : (
-            <div className="glass-card card-utility timeline-empty-state">
-              <h3>No memories match this view yet.</h3>
-              <p>Try a different year, month, tag, or search phrase. Your saved memories will still be here when you clear the filters.</p>
-              <div className="faithful-inline-actions">
-                <button className="btn btn-secondary" onClick={clearFilters} type="button">Show everything</button>
-                <button className="btn btn-primary" onClick={openAddForm} type="button">Add a new memory</button>
-              </div>
+          })}
+        </div>
+      ) : (
+        <EmptyState
+          icon={BookHeart}
+          title="No memories match this view yet."
+          description="Try a different year, month, tag, or search phrase. Your saved memories will still be here when you clear the filters."
+          action={(
+            <div className="mt-6 flex flex-wrap justify-center gap-2">
+              <SecondaryButton onClick={clearFilters}>Show everything</SecondaryButton>
+              <PrimaryButton onClick={openAddForm}>Add a new memory</PrimaryButton>
             </div>
           )}
-        </div>
-      </div>
+        />
+      )}
+
       {archivedMemories.length ? (
-        <section className="glass-card card-utility archived-memory-panel">
-          <div className="dashboard-section-heading">
+        <Surface>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="dashboard-section-kicker">Archived memories</p>
-              <h3 className="dashboard-subtitle">Hidden from the active story</h3>
-              <p className="dashboard-section-copy">Only archived memories can be restored. Restored memories return to Story and Album grouping.</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Archived memories</p>
+              <h3 className="mt-2 font-serif text-2xl text-[#24131d]">Hidden from the active story</h3>
+              <p className="mt-2 text-sm leading-6 text-[#6B564C]">Restored memories return to Story and Album grouping.</p>
             </div>
-            <span className="utility-chip">{archivedMemories.length}</span>
+            <StatusBadge tone="warning">{archivedMemories.length}</StatusBadge>
           </div>
-          <div className="archived-memory-list">
+          <div className="mt-5 grid gap-3">
             {archivedMemories.map((memory) => (
-              <article className="archived-memory-row" key={memory.id}>
-                <div>
-                  <strong>{memory.displayTitle}</strong>
-                  <span>{memory.displayDate || 'Date review'} · {memory.typeLabel}</span>
+              <ContentCard key={memory.id} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-[#24131d]">{memory.displayTitle}</p>
+                  <p className="mt-1 text-sm text-[#6B564C]">{memory.displayDate || 'Date review'} • {memory.typeLabel}</p>
                 </div>
-                <button className="btn btn-secondary" disabled={status.saving} onClick={() => restoreArchived(memory)} type="button">Restore Memory</button>
-              </article>
+                <SecondaryButton onClick={() => setConfirmState({ mode: 'restore', memory })}><RotateCcw className="size-4" />Restore memory</SecondaryButton>
+              </ContentCard>
             ))}
           </div>
-        </section>
+        </Surface>
       ) : null}
-      <DetailModal memory={selectedMemory} onArchive={archiveSelected} onClose={() => setSelectedMemory(null)} onEdit={openEditForm} status={status} />
+
+      <DetailModal memory={selectedMemory} onArchive={(candidate) => setConfirmState({ mode: 'archive', memory: candidate })} onClose={() => setSelectedMemory(null)} onEdit={openEditForm} status={status} />
       {formMode ? (
         <MemoryFormDialog
           memory={editingMemory}
@@ -501,6 +626,16 @@ export function TimelineView({ model, onRefresh }) {
           status={status}
         />
       ) : null}
+      <ConfirmDialog
+        confirmLabel={confirmState.mode === 'restore' ? 'Restore memory' : 'Archive memory'}
+        message={confirmState.mode === 'restore' ? 'This memory will return to the active Story and Album views.' : 'This memory will leave the active Story view until it is restored.'}
+        onCancel={() => setConfirmState({ mode: '', memory: null })}
+        onConfirm={confirmArchiveOrRestore}
+        open={Boolean(confirmState.memory)}
+        pending={status.saving}
+        recordName={confirmState.memory?.displayTitle}
+        title={confirmState.mode === 'restore' ? 'Restore this memory?' : 'Archive this memory?'}
+      />
     </section>
   )
 }

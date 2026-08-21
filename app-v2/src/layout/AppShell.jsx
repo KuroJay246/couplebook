@@ -199,6 +199,7 @@ export function AppShell() {
   useEffect(() => {
     if (!menuOpen) return undefined
     const previous = document.activeElement
+    const menuButton = menuButtonRef.current
     const focusableSelector =
       'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
@@ -234,8 +235,8 @@ export function AppShell() {
     document.addEventListener('keydown', handleKeyDown)
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
-      if (previous === menuButtonRef.current || previous?.isConnected) {
-        menuButtonRef.current?.focus()
+      if (previous === menuButton || previous?.isConnected) {
+        menuButton?.focus()
       }
     }
   }, [menuOpen])
@@ -282,7 +283,7 @@ export function AppShell() {
       ) : null}
 
       <div
-        className="min-w-0 transition-[padding] duration-200 lg:pl-[var(--shell-sidebar-width)]"
+        className="main-content min-w-0 transition-[padding] duration-200 lg:pl-[var(--shell-sidebar-width)]"
         style={{ '--shell-sidebar-width': sidebarCollapsed ? '84px' : '258px' }}
       >
         <header className="app-safe-top sticky top-0 z-20 border-b border-[#ead7df] bg-[#fff9fb]/90 px-4 py-3.5 backdrop-blur-xl sm:px-7 sm:py-4 lg:px-10">

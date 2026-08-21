@@ -332,24 +332,37 @@ async function runAuthenticatedDesktopCoverage(browser) {
     await page.goto(`${getBaseUrl()}/settings`, { waitUntil: 'domcontentloaded' })
     await waitForRouteContent(page, '/settings', 'Application Settings')
 
-    assert.equal(await page.locator('.app-shell').count(), 1, 'Authorized Settings should render inside AppShell.')
-    assert.equal(await page.getByText('Approved Reader').count() > 0, true, 'Authorized fixture identity should render.')
+    assert.equal(await page.locator('.cb-app-shell').count(), 1, 'Authorized Settings should render inside AppShell.')
+    assert.equal(await page.getByText('Jaylan').count() > 0, true, 'Authorized fixture identity should render.')
 
     const desktopPrimaryPaths = await page.locator('nav[aria-label="Main navigation"] a').evaluateAll((elements) => {
       return elements.map((element) => new URL(element.href).pathname)
     })
-    assert.deepEqual(desktopPrimaryPaths, ['/dashboard', '/timeline', '/gallery', '/profile', '/favorites', '/plans', '/settings'])
+    assert.deepEqual(desktopPrimaryPaths, [
+      '/dashboard',
+      '/timeline',
+      '/gallery',
+      '/profile',
+      '/plans',
+      '/favorites',
+      '/contract',
+      '/birthday',
+      '/valentine',
+      '/confession',
+      '/settings',
+    ])
 
     await page.reload({ waitUntil: 'domcontentloaded' })
     await waitForRouteContent(page, '/settings', 'Application Settings')
 
     await page.goto(`${getBaseUrl()}/dashboard`, { waitUntil: 'domcontentloaded' })
-    await waitForRouteContent(page, '/dashboard', 'A place for the moments that still feel alive.')
+    await waitForRouteContent(page, '/dashboard', 'Pick up where your story left off.')
 
     await page.goto(`${getBaseUrl()}/contract`, { waitUntil: 'domcontentloaded' })
     await waitForRouteContent(page, '/contract', 'Shared Relationship Contract')
-    assert.equal(await page.getByText('Pillar I: Mutual Respect').count() > 0, true)
-    assert.equal(await page.getByText('Pillar II: Absolute Trust').count() > 0, true)
+    assert.equal(await page.getByText('Agreement wording is unavailable here.').count() > 0, true)
+    assert.equal(await page.getByText('Agreement content unavailable in this migrated view.').count() > 0, true)
+    assert.equal(await page.getByText('Approved Reader').count() > 0, true)
     assert.equal(await page.locator('main').getByRole('button', { name: /delete|export|upload|draw|sign contract|sign & open vault/i }).count(), 0)
     assert.equal(await page.locator('main').getByRole('button', { name: /accept contract|accepted/i }).count(), 1)
 
@@ -359,8 +372,8 @@ async function runAuthenticatedDesktopCoverage(browser) {
     await page.goto(`${getBaseUrl()}/timeline`, { waitUntil: 'domcontentloaded' })
     await waitForRouteContent(page, '/timeline', 'Our Story')
     await page.getByRole('heading', { name: 'Our Story' }).waitFor({ state: 'visible', timeout: 5000 })
-    assert.equal(await page.locator('.timeline-line').count(), 1, 'Timeline should keep the original vertical line.')
-    assert.equal(await page.locator('.timeline-card').count() > 0, true, 'Timeline should render old-style cards.')
+    assert.equal(await page.getByLabel('Search memories').count(), 1, 'Timeline should keep search controls available.')
+    assert.equal(await page.getByText('Jump to year').count() > 0, true, 'Timeline should keep year navigation available.')
     assert.equal(await page.getByRole('button', { name: 'View memory' }).count() > 0, true, 'Timeline should keep detail interaction.')
 
     await page.goto(`${getBaseUrl()}/timeline`, { waitUntil: 'domcontentloaded' })
@@ -370,10 +383,10 @@ async function runAuthenticatedDesktopCoverage(browser) {
     await page.goto(`${getBaseUrl()}/gallery`, { waitUntil: 'domcontentloaded' })
     await waitForRouteContent(page, '/gallery', 'Our Shared Gallery')
     await page.getByRole('heading', { name: 'Moments we kept close' }).waitFor({ state: 'visible', timeout: 5000 })
-    assert.equal(await page.locator('.gallery-grid .gallery-item').count() > 0, true, 'Gallery should render old-style grid tiles.')
+    assert.equal(await page.getByRole('button', { name: 'Open item' }).count() > 0, true, 'Gallery should render item actions.')
     await page.getByRole('button', { name: /Videos/ }).click()
     assert.equal(await page.getByText('Video memory').count() > 0, true, 'Gallery video filter should keep video entries visible.')
-    await page.getByRole('button', { name: /All Media/ }).click()
+    await page.getByRole('button', { name: /All media/i }).click()
     assert.equal(await page.getByRole('link', { name: /Our Live Album/ }).count(), 1, 'Gallery should include the integrated live album tile.')
 
     for (const [route, heading] of [
@@ -387,17 +400,15 @@ async function runAuthenticatedDesktopCoverage(browser) {
       assert.equal(await page.getByText('Sanitized item one').count() > 0, true, `${route} should render sanitized runtime lists.`)
       assert.equal(await page.getByRole('heading', { name: heading }).count(), 1)
       assert.equal(await page.locator('main img, main video, main audio, main iframe').count(), 0, `${route} should not render private media elements.`)
-      assert.equal(await page.getByRole('link', { name: 'Return to Dashboard' }).count() > 0, true, `${route} should keep return navigation.`)
-      assert.equal(await page.getByRole('link', { name: 'Open Gallery' }).count() > 0, true, `${route} should keep gallery navigation.`)
+      assert.equal(await page.getByRole('link', { name: 'Return to Home' }).count() > 0, true, `${route} should keep return navigation.`)
+      assert.equal(await page.getByRole('link', { name: 'Open Album' }).count() > 0, true, `${route} should keep gallery navigation.`)
     }
 
     await page.goto(`${getBaseUrl()}/gallery`, { waitUntil: 'domcontentloaded' })
     await page.reload({ waitUntil: 'domcontentloaded' })
     await waitForRouteContent(page, '/gallery', 'Our Shared Gallery')
 
-    await page.getByRole('button', { name: 'Open navigation' }).click()
-    await page.locator('.sidebar-panel.active').waitFor({ state: 'visible', timeout: 5000 })
-    await page.getByRole('button', { name: /Logout/ }).first().click()
+    await page.getByRole('button', { name: /Sign out/i }).first().click()
     await expectRedirectToLogin(page, '/gallery')
   } finally {
     ensureObservedIsClean(observed)
@@ -431,18 +442,18 @@ async function runAuthenticatedMobileCoverage(browser) {
     await page.goto(`${getBaseUrl()}/settings`, { waitUntil: 'domcontentloaded' })
     await waitForRouteContent(page, '/settings', 'Application Settings')
 
-    const primaryLabels = await page.locator('.mobile-nav-bar .mobile-nav-item a').allInnerTexts()
-    assert.equal(primaryLabels.some((label) => label.includes('Dashboard')), true)
-    assert.equal(primaryLabels.some((label) => label.includes('Gallery')), true)
+    const primaryLabels = await page.locator('.mobile-tab-bar .mobile-tab-item').allInnerTexts()
+    assert.equal(primaryLabels.some((label) => label.includes('Home')), true)
+    assert.equal(primaryLabels.some((label) => label.includes('Album')), true)
 
-    await page.getByRole('button', { name: 'Open navigation' }).click()
-    await page.locator('.sidebar-panel.active').waitFor({ state: 'visible', timeout: 5000 })
+    await page.getByRole('button', { name: 'Open all navigation' }).click()
+    await page.getByRole('dialog', { name: 'Navigation menu' }).waitFor({ state: 'visible', timeout: 5000 })
     await page.getByRole('link', { name: /Contract/i }).first().click()
     await waitForRouteContent(page, '/contract', 'Shared Relationship Contract')
 
     await page.goto(`${getBaseUrl()}/timeline`, { waitUntil: 'domcontentloaded' })
     await waitForRouteContent(page, '/timeline', 'Our Story')
-    assert.equal(await page.locator('.timeline-card').count() > 0, true, 'Timeline mobile should retain compact cards.')
+    assert.equal(await page.getByRole('button', { name: 'View memory' }).count() > 0, true, 'Timeline mobile should retain detail actions.')
 
     await page.goto(`${getBaseUrl()}/gallery`, { waitUntil: 'domcontentloaded' })
     await waitForRouteContent(page, '/gallery', 'Our Shared Gallery')

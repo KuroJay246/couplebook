@@ -1,5 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { Heart, Star } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { PrimaryButton, SecondaryButton, TextButton } from '../../components/ui/Button.jsx'
+import { EmptyState } from '../../components/ui/EmptyState.jsx'
+import { ErrorState } from '../../components/ui/ErrorState.jsx'
+import { FormField, TextField } from '../../components/ui/FormField.jsx'
+import { InlineAlert } from '../../components/ui/InlineAlert.jsx'
+import { LoadingState } from '../../components/ui/LoadingState.jsx'
+import { PageHeader } from '../../components/ui/PageHeader.jsx'
+import { SearchField } from '../../components/ui/SearchField.jsx'
+import { StatusBadge } from '../../components/ui/StatusBadge.jsx'
+import { ContentCard, Surface } from '../../components/ui/Surface.jsx'
 import { useOwnerWrite } from '../editing/useOwnerWrite.js'
 
 const EDITABLE_CATEGORIES = [
@@ -93,25 +105,28 @@ function AddFavoriteDialog({ category, onClose, onSave, status }) {
   }
 
   return createPortal(
-    <dialog aria-labelledby="favorite-add-title" className="modal-overlay active faithful-modal-open" onCancel={onClose} open>
-      <form className="modal-container faithful-edit-form" onSubmit={handleSubmit}>
-        <div className="modal-header">
-          <h3 className="modal-title" id="favorite-add-title">Add {category.label.toLowerCase()}</h3>
-          <button aria-label="Close favorite form" className="modal-close" onClick={onClose} type="button">×</button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <button type="button" className="absolute inset-0 bg-[#24131d]/40 backdrop-blur-sm" onClick={onClose} aria-label="Close favorite form" />
+      <form className="relative w-full max-w-xl rounded-[28px] border border-[#ead7df] bg-white p-6 shadow-[0_24px_80px_rgba(36,19,29,0.18)] sm:p-8" onSubmit={handleSubmit}>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#8f5168]">Add favorite</p>
+            <h3 className="mt-2 font-serif text-3xl text-[#24131d]">Add {category.label.toLowerCase()}</h3>
+          </div>
+          <TextButton onClick={onClose}>Close</TextButton>
         </div>
-        <div className="modal-body">
-          <label className="form-group">
-            <span className="form-label">Favorite</span>
-            <input className="form-input" onChange={(event) => setValue(event.target.value)} ref={firstFieldRef} required type="text" value={value} />
-          </label>
-          {status?.message ? <p className={`workflow-feedback ${status.kind === 'error' ? 'workflow-feedback-error' : 'workflow-feedback-success'}`} role="status">{status.message}</p> : null}
+        <div className="mt-6">
+          <FormField label="Favorite">
+            <TextField onChange={(event) => setValue(event.target.value)} ref={firstFieldRef} required value={value} />
+          </FormField>
         </div>
-        <div className="modal-footer">
-          <button className="btn btn-secondary" onClick={onClose} type="button">Cancel</button>
-          <button className="btn btn-primary" disabled={status?.saving} type="submit">{status?.saving ? 'Saving...' : 'Save'}</button>
+        {status?.message ? <div className="mt-5"><InlineAlert description={status.message} tone={status.kind === 'error' ? 'error' : 'success'} /></div> : null}
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
+          <SecondaryButton onClick={onClose}>Cancel</SecondaryButton>
+          <PrimaryButton loading={status?.saving} type="submit">{status?.saving ? 'Saving' : 'Save favorite'}</PrimaryButton>
         </div>
       </form>
-    </dialog>,
+    </div>,
     document.body,
   )
 }
@@ -122,44 +137,50 @@ function FavoriteSection({ canEdit, category, onAdd, onRemove, ownerId, search }
     if (search && !comparableItem(item).includes(search)) continue
     filteredItems.push(item)
   }
+
   return (
-    <div className="favorites-section">
-      <div className="favorites-section-title">
-        <span className="favorites-section-heading"><span aria-hidden="true">{category.icon || CATEGORY_ICONS[category.key] || '♡'}</span>{category.label}</span>
-        {canEdit ? <button className="add-btn" onClick={() => onAdd(category)} type="button">+ Add</button> : null}
+    <ContentCard>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-bold text-[#24131d]">{category.icon || CATEGORY_ICONS[category.key] || '♡'} {category.label}</p>
+          <p className="mt-1 text-sm text-[#806572]">{filteredItems.length} saved</p>
+        </div>
+        {canEdit ? <SecondaryButton onClick={() => onAdd(category)}>Add</SecondaryButton> : null}
       </div>
-      <ul className="favorites-list">
+      <div className="mt-4 flex flex-wrap gap-2">
         {filteredItems.map((item) => (
-          <li key={`${ownerId}-${category.key}-${item}`}>
+          <button className="inline-flex items-center gap-2 rounded-full border border-[#E7D6CC] bg-white px-3 py-2 text-sm text-[#5A443B]" key={`${ownerId}-${category.key}-${item}`} onClick={canEdit ? () => onRemove(category, item) : undefined} type="button">
             <span>{item}</span>
-            {canEdit ? <button aria-label={`Remove ${item}`} className="btn-icon" onClick={() => onRemove(category, item)} type="button">×</button> : null}
-          </li>
+            {canEdit ? <span aria-hidden="true">×</span> : null}
+          </button>
         ))}
-      </ul>
-      {filteredItems.length === 0 ? <p className="faithful-empty-copy">{search ? 'No favorites in this category match your search.' : 'Nothing saved in this category yet.'}</p> : null}
-    </div>
+      </div>
+      {filteredItems.length === 0 ? <p className="mt-4 text-sm text-[#806572]">{search ? 'No favorites in this category match your search.' : 'Nothing saved in this category yet.'}</p> : null}
+    </ContentCard>
   )
 }
 
-function FavoritesCard({ canEdit, onAdd, onRemove, person, index, search }) {
-  const color = index === 0 ? 'var(--color-jaylan)' : 'var(--color-omia)'
+function FavoritesCard({ canEdit, onAdd, onRemove, person, search }) {
   const editableCategoryMap = new Map((person.categories || []).map((category) => [category.key, category]))
   const categories = canEdit
     ? EDITABLE_CATEGORIES.map((category) => ({ ...category, items: editableCategoryMap.get(category.key)?.items || [] }))
     : person.categories.length > 0
       ? person.categories
       : EDITABLE_CATEGORIES.slice(0, 4).map((category) => ({ ...category, items: [] }))
+
   return (
-    <div className="glass-card card-story favorites-card">
-      <h2 style={{ fontFamily: 'var(--font-accent)', textAlign: 'center', color, marginBottom: '1.5rem' }}>{person.displayName}</h2>
-      {categories.map((category) => (
-        <FavoriteSection canEdit={canEdit} category={category} key={category.key} onAdd={onAdd} onRemove={onRemove} ownerId={person.id} search={search} />
-      ))}
-    </div>
+    <Surface className="h-full">
+      <h3 className="font-serif text-3xl text-[#24131d]">{person.displayName}</h3>
+      <div className="mt-5 grid gap-4">
+        {categories.map((category) => (
+          <FavoriteSection canEdit={canEdit} category={category} key={category.key} onAdd={onAdd} onRemove={onRemove} ownerId={person.id} search={search} />
+        ))}
+      </div>
+    </Surface>
   )
 }
 
-export function FavoritesView({ model, onRefresh }) {
+export function FavoritesView({ compatibilityError, compatibilityState, model, onRefresh }) {
   const writer = useOwnerWrite(onRefresh)
   const [activeCategory, setActiveCategory] = useState(null)
   const [search, setSearch] = useState('')
@@ -208,7 +229,7 @@ export function FavoritesView({ model, onRefresh }) {
   }
 
   async function removeFavorite(category, item) {
-    if (!ownerPerson || !window.confirm(`Remove "${item}"?`)) return
+    if (!ownerPerson) return
     const currentItems = ownerPerson.categories.find((entry) => entry.key === category.key)?.items || []
     await saveFavoritePayload(
       buildFavoritesPayload(ownerPerson, { [category.key]: currentItems.filter((entry) => entry !== item) }),
@@ -216,47 +237,54 @@ export function FavoritesView({ model, onRefresh }) {
     )
   }
 
+  if (compatibilityState === 'loading') {
+    return <LoadingState message="Loading Favorites..." />
+  }
+
+  if (compatibilityError || model.status === 'invalid') {
+    return <ErrorState title="Favorites could not be loaded" message={compatibilityError || 'The Favorites view is not available right now.'} onRetry={onRefresh} />
+  }
+
   return (
-    <section className="favorites-page">
-      <header className="page-header">
-        <div className="page-heading">
-          <p className="page-eyebrow">Saved Details</p>
-          <h1 className="page-title">🌟 Favorite Things</h1>
-          <p className="page-subtitle">A side-by-side look at what each of you loves, plus the things you already have in common.</p>
-        </div>
-      </header>
-      {status.message && !activeCategory ? <p className={`workflow-feedback ${status.kind === 'error' ? 'workflow-feedback-error' : 'workflow-feedback-success'}`} role="status">{status.message}</p> : null}
-      <section className="glass-card card-utility faithful-summary-card">
-        <div className="dashboard-section-heading">
+    <section className="space-y-5" data-route="favorites">
+      <PageHeader
+        eyebrow="Saved Details"
+        title="Favorite Things"
+        description="A side-by-side look at what each of you loves, plus the things you already have in common."
+        actions={(
+          <>
+            <SecondaryButton as={Link} to="/profile"><Heart className="size-4" />Back to Us</SecondaryButton>
+            <PrimaryButton as={Link} to="/plans"><Star className="size-4" />Things to try</PrimaryButton>
+          </>
+        )}
+      />
+
+      {status.message && !activeCategory ? <InlineAlert description={status.message} tone={status.kind === 'error' ? 'error' : 'success'} /> : null}
+
+      <Surface>
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <div>
-            <p className="dashboard-section-kicker">Shared Matches</p>
-            <h2 className="dashboard-subtitle">Things you both reach for</h2>
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Shared matches</p>
+            <h3 className="mt-2 font-serif text-3xl text-[#24131d]">Things you both reach for</h3>
+            <p className="mt-3 text-sm leading-6 text-[#6B564C]">
+              {sharedMatches.length > 0
+                ? `${sharedMatches.length} shared ${sharedMatches.length === 1 ? 'match' : 'matches'} already stand out.`
+                : 'No exact shared matches yet, but everything still lives in one collection.'}
+            </p>
           </div>
+          <SearchField label="Search favorites" onChange={(event) => setSearch(comparableItem(event.target.value))} placeholder="Search foods, songs, places, and more" value={search} />
         </div>
-        <div className="faithful-filter-grid">
-          <label className="form-group">
-            <span className="filter-toolbar-label">Search favorites</span>
-            <input className="form-input" onChange={(event) => setSearch(comparableItem(event.target.value))} placeholder="Search foods, songs, places, and more" type="search" value={search} />
-          </label>
-          <div className="faithful-filter-summary">
-            {sharedMatches.length > 0
-              ? `${sharedMatches.length} shared ${sharedMatches.length === 1 ? 'match' : 'matches'} already stand out.`
-              : 'No exact shared matches yet, but everything still lives in one collection.'}
-          </div>
+        <div className="mt-5 flex flex-wrap gap-2">
+          {sharedMatches.length > 0
+            ? sharedMatches.slice(0, 10).map((match) => <StatusBadge key={match.id}>{CATEGORY_ICONS[match.categoryKey] || '♡'} {match.label}</StatusBadge>)
+            : <StatusBadge tone="warning">No shared matches yet</StatusBadge>}
         </div>
-        {sharedMatches.length > 0 ? (
-          <div className="faithful-chip-list favorites-shared-match-list">
-            {sharedMatches.slice(0, 6).map((match) => (
-              <span className="utility-chip favorites-shared-match" key={match.id}>{CATEGORY_ICONS[match.categoryKey] || '♡'} {match.label}</span>
-            ))}
-          </div>
-        ) : null}
-      </section>
-      <div className="favorites-layout">
-        {people.map((person, index) => (
+      </Surface>
+
+      <div className="grid gap-5 xl:grid-cols-2">
+        {people.map((person) => (
           <FavoritesCard
             canEdit={person === ownerPerson}
-            index={index}
             key={person.id}
             onAdd={(category) => {
               setStatus({ kind: '', message: '', saving: false })
@@ -268,6 +296,7 @@ export function FavoritesView({ model, onRefresh }) {
           />
         ))}
       </div>
+
       {activeCategory ? <AddFavoriteDialog category={activeCategory} onClose={() => setActiveCategory(null)} onSave={addFavorite} status={status} /> : null}
     </section>
   )

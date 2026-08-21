@@ -21,6 +21,13 @@ const COMPATIBILITY_ITEM_LABELS = Object.freeze({
   memories: 'Local memory bridge',
 })
 
+const MIGRATION_PROGRESS_LABELS = Object.freeze({
+  '/dashboard': 'Dashboard',
+  '/timeline': 'Timeline',
+  '/gallery': 'Gallery',
+  '/profile': 'Profile',
+})
+
 const DATE_LABEL_FORMATTER = new Intl.DateTimeFormat('en-US', {
   month: 'short',
   day: 'numeric',
@@ -279,15 +286,17 @@ export function selectSettingsCompatibility(snapshot) {
 }
 
 export function selectSettingsMigrationProgress(migrationStatus, smokeGate) {
+  function toMigrationEntry(entry, meta) {
+    return {
+      ...entry,
+      label: MIGRATION_PROGRESS_LABELS[entry.path] || entry.label,
+      meta,
+    }
+  }
+
   return {
-    completed: migrationStatus.completed.map((entry) => ({
-      ...entry,
-      meta: 'Complete',
-    })),
-    pending: migrationStatus.pending.map((entry) => ({
-      ...entry,
-      meta: 'Pending',
-    })),
+    completed: migrationStatus.completed.map((entry) => toMigrationEntry(entry, 'Complete')),
+    pending: migrationStatus.pending.map((entry) => toMigrationEntry(entry, 'Pending')),
     smokeGate: {
       jaylan: smokeGate.jaylan,
       partner: smokeGate.partner,

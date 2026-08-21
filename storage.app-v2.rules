@@ -13,7 +13,7 @@ service firebase.storage {
     //   metadata.ownerUid: active approved member uid
     //   metadata.schemaVersion: "1"
     //   metadata.kind: image|video
-    //   metadata.extension: jpg|jpeg|png|webp|gif|mp4|mov|m4v|webm
+    //   metadata.extension: jpg|jpeg|png|webp|gif|mp4|webm
     //
     // Storage is private by default. Reads require an active approved couple
     // member. Client writes are limited to active members and validated object
@@ -61,7 +61,7 @@ service firebase.storage {
         && request.resource.metadata.ownerUid == request.auth.uid
         && request.resource.metadata.schemaVersion == '1'
         && request.resource.metadata.kind in ['image', 'video']
-        && request.resource.metadata.extension in ['jpg', 'jpeg', 'png', 'webp', 'gif', 'mp4', 'mov', 'm4v', 'webm'];
+        && request.resource.metadata.extension in ['jpg', 'jpeg', 'png', 'webp', 'gif', 'mp4', 'webm'];
     }
 
     function validOriginalContent() {
@@ -72,7 +72,7 @@ service firebase.storage {
         )
         || (
           request.resource.metadata.kind == 'video'
-          && request.resource.contentType in ['video/mp4', 'video/quicktime', 'video/webm']
+          && request.resource.contentType in ['video/mp4', 'video/webm']
           && request.resource.size <= 250 * 1024 * 1024
         );
     }

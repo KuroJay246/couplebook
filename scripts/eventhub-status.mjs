@@ -1,0 +1,81 @@
+import { execFileSync } from 'node:child_process'
+import { existsSync, readFileSync } from 'node:fs'
+import path from 'node:path'
+
+const repoRoot = process.cwd()
+const configPath = path.join(repoRoot, 'config', 'event-hub-reference.json')
+const routeConfigPath = path.join(repoRoot, 'app-v2', 'src', 'app', 'routeConfig.js')
+const packagePath = path.join(repoRoot, 'package.json')
+
+if (!existsSync(configPath)) {
+  console.error(`Missing Event Hub reference config: ${configPath}`)
+  process.exit(1)
+}
+
+const config = JSON.parse(readFileSync(configPath, 'utf8'))
+const pkg = JSON.parse(readFileSync(packagePath, 'utf8'))
+const routeConfigSource = readFileSync(routeConfigPath, 'utf8')
+
+const currentBranch = execFileSync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { encoding: 'utf8' }).trim()
+const currentHead = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim()
+const referenceHead = execFileSync('git', ['-C', config.referenceRepo, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim()
+
+const checks = [
+  {
+    label: 'Couple Book branch',
+    ok: currentBranch === 'rebuild/couplebook-eventhub-system-port',
+    detail: currentBranch,
+  },
+  {
+    label: 'Reference repo exists',
+    ok: existsSync(config.referenceRepo),
+    detail: config.referenceRepo,
+  },
+  {
+    label: 'Reference snapshot current',
+    ok: config.lastInspectedCommit === referenceHead,
+    detail: `${config.lastInspectedCommit} -> ${referenceHead}`,
+  },
+  {
+    label: 'Couple Book Firebase project locked',
+    ok: config.coupleBookFirebaseProject === 'couplebook-97830',
+    detail: config.coupleBookFirebaseProject,
+  },
+  {
+    label: 'Gather Firebase project prohibited',
+    ok: Array.isArray(config.prohibitedFirebaseProjects) && config.prohibitedFirebaseProjects.includes('gathervibeshub'),
+    detail: (config.prohibitedFirebaseProjects || []).join(', '),
+  },
+  {
+    label: 'Protected route inventory includes /plans',
+    ok: /path:\s*'\/plans'/.test(routeConfigSource),
+    detail: '/plans',
+  },
+  {
+    label: 'eventhub:status script registered',
+    ok: pkg.scripts?.['eventhub:status'] === 'node scripts/eventhub-status.mjs',
+    detail: pkg.scripts?.['eventhub:status'] || '(missing)',
+  },
+  {
+    label: 'eventhub:compare script registered',
+    ok: pkg.scripts?.['eventhub:compare'] === 'node scripts/eventhub-compare.mjs',
+    detail: pkg.scripts?.['eventhub:compare'] || '(missing)',
+  },
+]
+
+const failed = checks.filter((entry) => !entry.ok)
+
+console.log('Couple Book Event Hub status')
+console.log(`- branch: ${currentBranch}`)
+console.log(`- local HEAD: ${currentHead}`)
+console.log(`- reference repo: ${config.referenceRepo}`)
+console.log(`- reference HEAD: ${referenceHead}`)
+console.log(`- inspected commit: ${config.lastInspectedCommit}`)
+console.log(`- firebase project: ${config.coupleBookFirebaseProject}`)
+for (const entry of checks) {
+  console.log(`- ${entry.ok ? 'OK' : 'FAIL'} ${entry.label}: ${entry.detail}`)
+}
+
+if (failed.length > 0) {
+  process.exit(1)
+}

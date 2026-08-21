@@ -16,7 +16,7 @@ const REPO_ROOT = path.resolve(APP_ROOT, '..')
 const OUTPUT_ROOT = path.join(REPO_ROOT, '.visual-audit', 'performance-current')
 
 const ROUTES = Object.freeze([
-  { path: '/dashboard', heading: 'A place for the moments that still feel alive.' },
+  { path: '/dashboard', heading: 'Pick up where your story left off.' },
   { path: '/timeline', heading: /Our Story/ },
   { path: '/gallery', heading: /Our Shared Gallery/ },
   { path: '/profile', heading: /Us/ },
@@ -205,7 +205,7 @@ async function measureDetailDialog(page, baseUrl, routePath, triggerTarget) {
   assert.equal(result.ms <= THRESHOLDS.modalOpenMs, true, `${route.path} detail dialog should open below ${THRESHOLDS.modalOpenMs}ms.`)
   const dialog = page.locator('[role="dialog"], .lightbox-overlay.active, .modal-overlay.active').first()
   assert.equal(await dialog.locator('img, video, audio, iframe').count(), 0, `${route.path} dialog should not render private media elements.`)
-  await page.locator('.lightbox-close, .modal-close, .modal-footer button, [role="dialog"] button[aria-label*="Close"]').first().click()
+  await dialog.getByRole('button', { name: /close/i }).first().click({ force: true })
   await dialog.waitFor({ state: 'hidden', timeout: 5000 })
   return result
 }

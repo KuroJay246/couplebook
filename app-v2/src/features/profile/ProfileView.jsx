@@ -1,6 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { CalendarDays, HeartHandshake, ScrollText, Sparkles, Star } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { PrimaryButton, SecondaryButton, TextButton } from '../../components/ui/Button.jsx'
+import { EmptyState } from '../../components/ui/EmptyState.jsx'
+import { ErrorState } from '../../components/ui/ErrorState.jsx'
+import { FormField, SelectField, TextAreaField, TextField } from '../../components/ui/FormField.jsx'
+import { InlineAlert } from '../../components/ui/InlineAlert.jsx'
+import { LoadingSkeleton } from '../../components/ui/LoadingSkeleton.jsx'
+import { LoadingState } from '../../components/ui/LoadingState.jsx'
+import { PageHeader } from '../../components/ui/PageHeader.jsx'
+import { PageTabs } from '../../components/ui/PageTabs.jsx'
+import { StatusBadge } from '../../components/ui/StatusBadge.jsx'
+import { ContentCard, Surface } from '../../components/ui/Surface.jsx'
 import { useOwnerWrite } from '../editing/useOwnerWrite.js'
 
 function personTone(index) {
@@ -63,45 +75,44 @@ function ProfileEditDialog({ onClose, onSave, person, status }) {
   }
 
   return createPortal(
-    <dialog aria-labelledby="profile-edit-title" className="modal-overlay active faithful-modal-open" onCancel={onClose} open>
-      <form className="modal-container faithful-edit-form" onSubmit={handleSubmit}>
-        <div className="modal-header">
-          <h3 className="modal-title" id="profile-edit-title">Edit profile</h3>
-          <button aria-label="Close profile form" className="modal-close" onClick={onClose} type="button">×</button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <button type="button" className="absolute inset-0 bg-[#24131d]/40 backdrop-blur-sm" onClick={onClose} aria-label="Close profile form" />
+      <form className="relative w-full max-w-2xl rounded-[28px] border border-[#ead7df] bg-white p-6 shadow-[0_24px_80px_rgba(36,19,29,0.18)] sm:p-8" onSubmit={handleSubmit}>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#8f5168]">Edit profile</p>
+            <h3 className="mt-2 font-serif text-3xl text-[#24131d]">Update your section of Us</h3>
+          </div>
+          <TextButton onClick={onClose}>Close</TextButton>
         </div>
-        <div className="modal-body">
-          <label className="form-group">
-            <span className="form-label">Display name</span>
-            <input className="form-input" onChange={(event) => updateField('name', event.target.value)} ref={firstFieldRef} required type="text" value={form.name} />
-          </label>
-          <label className="form-group">
-            <span className="form-label">Bio</span>
-            <textarea className="form-textarea" onChange={(event) => updateField('bio', event.target.value)} rows={5} value={form.bio} />
-          </label>
-          <label className="form-group">
-            <span className="form-label">Anniversary view</span>
-            <select className="form-select" onChange={(event) => updateField('anniversaryView', event.target.value)} value={form.anniversaryView}>
+        <div className="mt-6 grid gap-4 sm:grid-cols-2">
+          <FormField label="Display name" className="sm:col-span-2">
+            <TextField onChange={(event) => updateField('name', event.target.value)} ref={firstFieldRef} required value={form.name} />
+          </FormField>
+          <FormField label="Bio" className="sm:col-span-2">
+            <TextAreaField onChange={(event) => updateField('bio', event.target.value)} rows={6} value={form.bio} />
+          </FormField>
+          <FormField label="Anniversary view">
+            <SelectField onChange={(event) => updateField('anniversaryView', event.target.value)} value={form.anniversaryView}>
               <option value="dual">Both perspectives</option>
               <option value="jaylan">Jaylan perspective</option>
               <option value="omia">Omia perspective</option>
-            </select>
-          </label>
-          <label className="form-group">
-            <span className="form-label">Joined date</span>
-            <input className="form-input" onChange={(event) => updateField('joinedDate', event.target.value)} type="date" value={form.joinedDate || ''} />
-          </label>
-          <label className="form-group">
-            <span className="form-label">Birthday</span>
-            <input className="form-input" onChange={(event) => updateField('birthday', event.target.value)} type="date" value={form.birthday || ''} />
-          </label>
-          {status?.message ? <p className={`workflow-feedback ${status.kind === 'error' ? 'workflow-feedback-error' : 'workflow-feedback-success'}`} role="status">{status.message}</p> : null}
+            </SelectField>
+          </FormField>
+          <FormField label="Joined date">
+            <TextField onChange={(event) => updateField('joinedDate', event.target.value)} type="date" value={form.joinedDate || ''} />
+          </FormField>
+          <FormField label="Birthday">
+            <TextField onChange={(event) => updateField('birthday', event.target.value)} type="date" value={form.birthday || ''} />
+          </FormField>
         </div>
-        <div className="modal-footer">
-          <button className="btn btn-secondary" onClick={onClose} type="button">Cancel</button>
-          <button className="btn btn-primary" disabled={status?.saving} type="submit">{status?.saving ? 'Saving...' : 'Save'}</button>
+        {status?.message ? <div className="mt-5"><InlineAlert description={status.message} tone={status.kind === 'error' ? 'error' : 'success'} /></div> : null}
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
+          <SecondaryButton onClick={onClose}>Cancel</SecondaryButton>
+          <PrimaryButton loading={status?.saving} type="submit">{status?.saving ? 'Saving profile' : 'Save profile'}</PrimaryButton>
         </div>
       </form>
-    </dialog>,
+    </div>,
     document.body,
   )
 }
@@ -110,40 +121,57 @@ function ProfileCard({ canEdit, onEdit, person, index }) {
   const tone = personTone(index)
   const togetherDays = daysTogether(person.joinedDate)
   const displayName = relationshipDisplayName(person.displayName, index)
+  const accentClass = tone === 'jaylan' ? 'bg-[#fceef3] text-[#8f5168]' : 'bg-[#f7f0ff] text-[#5c4677]'
+
   return (
-    <div className={`glass-card card-story profile-card ${tone}-side`}>
-      <div className="profile-avatar-container">
-        <div className="profile-avatar" aria-hidden="true" />
-      </div>
-      <h2 className="profile-name">{displayName}</h2>
-      <span className="badge" style={{ background: tone === 'jaylan' ? 'rgba(255, 74, 107, 0.15)' : 'rgba(139, 92, 246, 0.15)', color: tone === 'jaylan' ? 'var(--color-jaylan)' : 'var(--color-omia)', marginBottom: '1rem' }}>One half of us</span>
-      <p className="profile-bio">{person.bio || 'A personal note is waiting to be written.'}</p>
-      <div className="profile-meta-list">
-        {(person.details || []).slice(0, 3).map((detail) => (
-          <div className="profile-meta-item" key={detail.key}>
-            <span className="profile-meta-label">{detail.label}:</span>
-            <span className="profile-meta-val">{detail.value || 'Still to be added'}</span>
+    <Surface className="h-full">
+      <div className="flex h-full flex-col gap-5">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <span className={`inline-flex rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] ${accentClass}`}>
+              {tone === 'jaylan' ? 'Jaylan' : 'Omia'}
+            </span>
+            <h3 className="mt-3 font-serif text-3xl text-[#24131d]">{displayName}</h3>
           </div>
-        ))}
-        {togetherDays !== null ? (
-          <div className="profile-meta-item">
-            <span className="profile-meta-label">Days together:</span>
-            <span className="profile-meta-val">{togetherDays}</span>
-          </div>
-        ) : null}
+          {canEdit ? <SecondaryButton onClick={() => onEdit(person)}>Edit</SecondaryButton> : null}
+        </div>
+
+        <p className="text-sm leading-6 text-[#6B564C]">{person.bio || 'A personal note is waiting to be written.'}</p>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          {(person.details || []).map((detail) => (
+            <ContentCard key={detail.key}>
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#806572]">{detail.label}</p>
+              <p className="mt-2 text-sm font-semibold text-[#24131d]">{detail.value || 'Still to be added'}</p>
+            </ContentCard>
+          ))}
+          {togetherDays !== null ? (
+            <ContentCard>
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#806572]">Days together</p>
+              <p className="mt-2 text-sm font-semibold text-[#24131d]">{togetherDays}</p>
+            </ContentCard>
+          ) : null}
+        </div>
       </div>
-      <div style={{ display: 'flex', gap: '0.5rem' }}>
-        {canEdit ? <button className="btn btn-secondary" onClick={() => onEdit(person)} style={{ flex: 1 }} type="button">Edit My Page</button> : null}
-        <Link className="btn btn-primary" style={{ flex: 1 }} to="/favorites">View Favorites</Link>
-      </div>
+    </Surface>
+  )
+}
+
+function ProfileSkeleton() {
+  return (
+    <div className="grid gap-4 lg:grid-cols-2">
+      <LoadingSkeleton className="h-64" />
+      <LoadingSkeleton className="h-64" />
     </div>
   )
 }
 
-export function ProfileView({ model, onRefresh }) {
+export function ProfileView({ compatibilityError, compatibilityState, model, onRefresh }) {
   const writer = useOwnerWrite(onRefresh)
   const [editingPerson, setEditingPerson] = useState(null)
   const [status, setStatus] = useState({ kind: '', message: '', saving: false })
+  const [activeTab, setActiveTab] = useState('overview')
+
   const people = useMemo(() => {
     const basePeople = model.people || []
     if (!writer.approvedUser || basePeople.some((person) => isOwnerProfile(person, writer.approvedUser))) return basePeople
@@ -159,7 +187,15 @@ export function ProfileView({ model, onRefresh }) {
       details: [],
     }, ...basePeople]
   }, [model.people, writer.approvedUser])
+
   const displayRelationshipTitle = relationshipTitle(model.relationship?.title, people)
+  const tabs = [
+    { id: 'overview', label: 'About Us' },
+    ...people.map((person, index) => ({ id: `person-${index}`, label: relationshipDisplayName(person.displayName, index) })),
+    { id: 'dates', label: 'Dates' },
+    { id: 'shared', label: 'Shared matches' },
+    { id: 'promises', label: 'Promises' },
+  ]
 
   async function saveProfile(payload) {
     setStatus({ kind: '', message: '', saving: true })
@@ -172,92 +208,208 @@ export function ProfileView({ model, onRefresh }) {
     }
   }
 
-  return (
-    <section className="profile-page">
-      <header className="page-header">
-        <div className="page-heading">
-          <p className="page-eyebrow">About Us</p>
-          <h1 className="page-title">👥 Us</h1>
-          <p className="page-subtitle">Both of you, the dates that matter, and the promises that give the story its shape.</p>
-        </div>
-      </header>
-
-      <section className="glass-card card-utility faithful-summary-card">
-        <div className="dashboard-section-heading">
-          <div>
-            <p className="dashboard-section-kicker">Our Story</p>
-            <h2 className="dashboard-subtitle">{displayRelationshipTitle}</h2>
-            <p className="dashboard-section-copy">{model.relationship?.summary}</p>
-          </div>
-        </div>
-        <div className="faithful-stat-grid">
-          <div className="faithful-stat-tile">
-            <span className="faithful-stat-value">{people.length}</span>
-            <span className="faithful-stat-label">people in us</span>
-          </div>
-          <div className="faithful-stat-tile">
-            <span className="faithful-stat-value">{(model.relationship?.anniversaries || []).length}</span>
-            <span className="faithful-stat-label">shared dates</span>
-          </div>
-          <div className="faithful-stat-tile">
-            <span className="faithful-stat-value">{(model.relationship?.milestones || []).length}</span>
-            <span className="faithful-stat-label">milestones</span>
-          </div>
-        </div>
-      </section>
-
-      <section className="glass-card card-utility us-directory">
-        <div className="dashboard-section-heading">
-          <div>
-            <p className="dashboard-section-kicker">Us at a glance</p>
-            <h2 className="dashboard-subtitle">The pieces that make this ours</h2>
-          </div>
-        </div>
-        <div className="us-directory-grid">
-          <a href="#about-jaylan">About Jaylan</a>
-          <a href="#about-omia">About Omia</a>
-          <a href="#our-story">Our Story</a>
-          <a href="#our-dates">Our Dates</a>
-          <Link to="/favorites">Things We Both Love</Link>
-          <Link to="/plans">Things We Want to Try</Link>
-        </div>
-      </section>
-
-      <div className="profiles-layout" id="our-story">
-        {people.map((person, index) => (
-          <section id={index === 0 ? 'about-jaylan' : 'about-omia'} key={person.id}>
-            <h2 className="sr-only">{index === 0 ? 'About Jaylan' : 'About Omia'}</h2>
-            <ProfileCard
-              canEdit={isOwnerProfile(person, writer.approvedUser)}
-              index={index}
-              onEdit={(nextPerson) => {
-                setStatus({ kind: '', message: '', saving: false })
-                setEditingPerson(nextPerson)
-              }}
-              person={person}
-            />
-          </section>
-        ))}
-        <div className="glass-card card-utility contract-card-profile" id="our-dates">
-          <h2 style={{ fontFamily: 'var(--font-accent)', fontWeight: 700, textAlign: 'center', marginBottom: '1rem' }}>📜 Our Promises</h2>
-          <p style={{ color: 'var(--color-secondary-text)', textAlign: 'center', fontSize: '0.85rem' }}>A quick look at the promises, milestones, and next step back into the full agreement page.</p>
-          <div className="contract-display-container">
-            <div className="contract-clause"><div className="contract-clause-title">🤝 Pillar I: Mutual Respect</div><div className="contract-clause-desc">We commit to respecting each other's opinions, goals, personal spaces, and individual uniqueness.</div></div>
-            <div className="contract-clause"><div className="contract-clause-title">🔒 Pillar II: Absolute Trust</div><div className="contract-clause-desc">We pledge honesty, loyalty, and support while guarding our commitments to one another.</div></div>
-            <div className="contract-clause"><div className="contract-clause-title">💬 Pillar III: Open Communication</div><div className="contract-clause-desc">We communicate with vulnerability and transparency, listening to understand each other.</div></div>
-            <div className="contract-clause"><div className="contract-clause-title">🚧 Pillar IV: Healthy Boundaries</div><div className="contract-clause-desc">We honor boundaries that support emotional, mental, and social well-being.</div></div>
-          </div>
-          <div className="contract-status-box">
-            <div className="signee-status"><div className="signee-name">Jaylan</div><span className="badge" style={{ background: 'rgba(16, 185, 129, 0.12)', color: '#6ee7b7' }}>Protected</span></div>
-            <div className="signee-status"><div className="signee-name">Omia</div><span className="badge" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#f87171' }}>Pending</span></div>
-          </div>
-          <div className="faithful-inline-actions" style={{ justifyContent: 'center', marginTop: '1rem' }}>
-            <Link className="btn btn-primary" to="/contract">Read Our Promises</Link>
-            <Link className="btn btn-secondary" to="/favorites">View Shared Favorites</Link>
-          </div>
-        </div>
+  if (compatibilityState === 'loading') {
+    return (
+      <div className="space-y-4">
+        <LoadingState message="Loading Us..." />
+        <ProfileSkeleton />
       </div>
-      {status.message && !editingPerson ? <p className={`workflow-feedback ${status.kind === 'error' ? 'workflow-feedback-error' : 'workflow-feedback-success'}`} role="status">{status.message}</p> : null}
+    )
+  }
+
+  if (compatibilityError || model.status === 'invalid') {
+    return <ErrorState title="Us could not be loaded" message={compatibilityError || 'The Us view is not available right now.'} onRetry={onRefresh} />
+  }
+
+  return (
+    <section className="space-y-5" data-route="profile">
+      <PageHeader
+        eyebrow="About Us"
+        title="Us"
+        description="Both of you, the dates that matter, and the promises that give the story its shape."
+        actions={(
+          <>
+            <SecondaryButton as={Link} to="/favorites"><Star className="size-4" />Favorites</SecondaryButton>
+            <PrimaryButton as={Link} to="/plans"><Sparkles className="size-4" />Things to try</PrimaryButton>
+          </>
+        )}
+      />
+
+      {status.message && !editingPerson ? <InlineAlert description={status.message} tone={status.kind === 'error' ? 'error' : 'success'} /> : null}
+      {model.warnings?.length ? (
+        <InlineAlert
+          tone="info"
+          title="Us bridge notes"
+          description={`The current Us view loaded with ${model.warnings.length} compatibility note${model.warnings.length === 1 ? '' : 's'}.`}
+        />
+      ) : null}
+
+      <Surface className="grid gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(18rem,0.9fr)]">
+        <div>
+          <StatusBadge tone="info">Shared profile</StatusBadge>
+          <h3 className="mt-3 font-serif text-4xl text-[#24131d]">{displayRelationshipTitle}</h3>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-[#6B564C]">{model.relationship?.summary}</p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+          <ContentCard>
+            <p className="text-3xl font-bold text-[#24131d]">{people.length}</p>
+            <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[#806572]">People in us</p>
+          </ContentCard>
+          <ContentCard>
+            <p className="text-3xl font-bold text-[#24131d]">{(model.relationship?.anniversaries || []).length}</p>
+            <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[#806572]">Shared dates</p>
+          </ContentCard>
+          <ContentCard>
+            <p className="text-3xl font-bold text-[#24131d]">{(model.relationship?.milestones || []).length}</p>
+            <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[#806572]">Milestones</p>
+          </ContentCard>
+        </div>
+      </Surface>
+
+      <PageTabs active={activeTab} controlsPanels={false} idPrefix="profile" label="Us sections" onChange={setActiveTab} tabs={tabs} />
+
+      {activeTab === 'overview' ? (
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(22rem,0.9fr)]">
+          <Surface>
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Our Story</p>
+            <h3 className="mt-2 font-serif text-3xl text-[#24131d]">The pieces that make this ours</h3>
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
+              {people.map((person, index) => (
+                <ContentCard key={person.id}>
+                  <p className="text-sm font-bold text-[#24131d]">{relationshipDisplayName(person.displayName, index)}</p>
+                  <p className="mt-2 text-sm leading-6 text-[#6B564C]">{person.bio || 'A personal note is waiting to be written.'}</p>
+                </ContentCard>
+              ))}
+            </div>
+          </Surface>
+          <div className="grid gap-5">
+            <Surface tone="soft">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Shared matches</p>
+              <h3 className="mt-2 font-serif text-2xl text-[#24131d]">Things you already have in common</h3>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {model.sharedHighlights?.length > 0
+                  ? model.sharedHighlights.map((highlight) => <StatusBadge key={highlight.id}>{highlight.label}</StatusBadge>)
+                  : <p className="text-sm text-[#6B564C]">Shared favorites will surface here as the preserved collection fills out.</p>}
+              </div>
+            </Surface>
+            <Surface tone="soft">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Things to try</p>
+              <p className="mt-2 text-sm leading-6 text-[#6B564C]">Ideas and future memories stay in Plans so the shared profile can stay calm and readable.</p>
+              <div className="mt-4">
+                <SecondaryButton as={Link} to="/plans">Open Plans</SecondaryButton>
+              </div>
+            </Surface>
+          </div>
+        </div>
+      ) : null}
+
+      {people.map((person, index) => activeTab === `person-${index}` ? (
+        <ProfileCard
+          canEdit={isOwnerProfile(person, writer.approvedUser)}
+          index={index}
+          key={person.id}
+          onEdit={(nextPerson) => {
+            setStatus({ kind: '', message: '', saving: false })
+            setEditingPerson(nextPerson)
+          }}
+          person={person}
+        />
+      ) : null)}
+
+      {activeTab === 'dates' ? (
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          <Surface>
+            <div className="flex items-start gap-3">
+              <CalendarDays className="mt-1 size-5 text-[#8f5168]" aria-hidden="true" />
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Relationship dates</p>
+                <h3 className="mt-2 font-serif text-3xl text-[#24131d]">Dates worth holding close</h3>
+              </div>
+            </div>
+            <div className="mt-5 grid gap-3">
+              {(model.relationship?.anniversaries || []).map((item) => (
+                <ContentCard key={item.id}>
+                  <p className="text-sm font-bold text-[#24131d]">{item.label}</p>
+                  <p className="mt-2 text-sm text-[#6B564C]">{item.dateLabel || 'Still to be added'}</p>
+                  <p className="mt-1 text-sm text-[#806572]">{item.summary}</p>
+                </ContentCard>
+              ))}
+              {(model.relationship?.anniversaries || []).length === 0 ? <EmptyState title="No dates are saved yet." description="Joined dates and anniversaries will appear here when they are available." /> : null}
+            </div>
+          </Surface>
+          <Surface>
+            <div className="flex items-start gap-3">
+              <HeartHandshake className="mt-1 size-5 text-[#8f5168]" aria-hidden="true" />
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Milestones</p>
+                <h3 className="mt-2 font-serif text-3xl text-[#24131d]">Birthdays and contract progress</h3>
+              </div>
+            </div>
+            <div className="mt-5 grid gap-3">
+              {(model.relationship?.milestones || []).map((item) => (
+                <ContentCard key={item.id}>
+                  <p className="text-sm font-bold text-[#24131d]">{item.label}</p>
+                  <p className="mt-2 text-sm text-[#6B564C]">{item.value || 'Still to be added'}</p>
+                </ContentCard>
+              ))}
+              {(model.relationship?.milestones || []).length === 0 ? <EmptyState title="No milestones are saved yet." description="Birthday and contract milestones will appear here when they are available." /> : null}
+            </div>
+          </Surface>
+        </div>
+      ) : null}
+
+      {activeTab === 'shared' ? (
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          <Surface>
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Favorites</p>
+            <h3 className="mt-2 font-serif text-3xl text-[#24131d]">Shared matches</h3>
+            <div className="mt-5 grid gap-3">
+              {model.sharedHighlights?.length > 0 ? model.sharedHighlights.map((highlight) => (
+                <ContentCard key={highlight.id}>
+                  <p className="text-sm font-bold text-[#24131d]">{highlight.label}</p>
+                  <p className="mt-2 text-sm text-[#6B564C]">{highlight.owner} • {highlight.category}</p>
+                </ContentCard>
+              )) : <EmptyState title="No shared matches are visible yet." description="Favorites will begin surfacing here as the shared collection is filled out." />}
+            </div>
+          </Surface>
+          <Surface tone="soft">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Explore more</p>
+            <h3 className="mt-2 font-serif text-2xl text-[#24131d]">Open the full shared lists</h3>
+            <div className="mt-5 grid gap-3">
+              <ContentCard>
+                <p className="text-sm font-bold text-[#24131d]">{model.entries?.favorites?.title || 'Shared favorites'}</p>
+                <p className="mt-2 text-sm leading-6 text-[#6B564C]">{model.entries?.favorites?.description}</p>
+                <div className="mt-4">
+                  <SecondaryButton as={Link} to={model.entries?.favorites?.href || '/favorites'}>Open Favorites</SecondaryButton>
+                </div>
+              </ContentCard>
+            </div>
+          </Surface>
+        </div>
+      ) : null}
+
+      {activeTab === 'promises' ? (
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(22rem,0.9fr)]">
+          <Surface>
+            <div className="flex items-start gap-3">
+              <ScrollText className="mt-1 size-5 text-[#8f5168]" aria-hidden="true" />
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Our Promises</p>
+                <h3 className="mt-2 font-serif text-3xl text-[#24131d]">Relationship contract</h3>
+              </div>
+            </div>
+            <p className="mt-3 text-sm leading-6 text-[#6B564C]">{model.entries?.contract?.description}</p>
+            <div className="mt-5">
+              <PrimaryButton as={Link} to={model.entries?.contract?.href || '/contract'}>Open Contract</PrimaryButton>
+            </div>
+          </Surface>
+          <Surface tone="soft">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Protected</p>
+            <p className="mt-2 text-sm leading-6 text-[#6B564C]">UIDs, membership status, Firestore paths, and internal authorization language stay out of this view.</p>
+          </Surface>
+        </div>
+      ) : null}
+
       {editingPerson ? <ProfileEditDialog onClose={() => setEditingPerson(null)} onSave={saveProfile} person={editingPerson} status={status} /> : null}
     </section>
   )

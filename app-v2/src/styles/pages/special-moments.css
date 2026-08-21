@@ -1,0 +1,5 @@
+[data-route="birthday"],
+[data-route="valentine"],
+[data-route="confession"] {
+  scroll-margin-top: 6rem;
+}

@@ -1,4 +1,4 @@
-import { freezeClone } from '../../data/adapterUtils.js'
+import { deepFreeze, freezeClone } from '../../data/adapterUtils.js'
 import { selectTimelineDisplayMemories } from '../timeline/memorySelectors.js'
 
 function sortByNewest(items = []) {
@@ -39,7 +39,7 @@ function buildGalleryItem(memory, index) {
   const mediaStatus = classifyGalleryMediaStatus(memory.media)
   const mediaKind = memory.media.kind === 'image' || memory.media.kind === 'video' ? memory.media.kind : 'none'
 
-  return {
+  const galleryItem = {
     key: `gallery-item-${String(index + 1).padStart(4, '0')}`,
     title: memory.displayTitle,
     description: memory.displayDescription,
@@ -69,11 +69,26 @@ function buildGalleryItem(memory, index) {
     tags: memory.tags,
     sort: memory.sort,
   }
+
+  Object.defineProperties(galleryItem, {
+    memoryId: {
+      value: memory.id,
+      enumerable: true,
+      writable: false,
+    },
+    memoryRevision: {
+      value: memory.revision,
+      enumerable: true,
+      writable: false,
+    },
+  })
+
+  return galleryItem
 }
 
 export function selectGalleryItems(memories = []) {
   const displayMemories = selectTimelineDisplayMemories(memories)
-  return freezeClone(sortByNewest(displayMemories).map((memory, index) => buildGalleryItem(memory, index)))
+  return deepFreeze(sortByNewest(displayMemories).map((memory, index) => buildGalleryItem(memory, index)))
 }
 
 export function buildGallerySummary(items = []) {

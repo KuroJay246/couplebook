@@ -17,6 +17,7 @@
     "test:rules": "node scripts/run-firestore-rules-tests.mjs",
     "test:storage-rules": "node scripts/run-storage-rules-tests.mjs",
     "test:media-mapping": "node src/test/media-mapping.test.js",
+    "seed:emulators": "node scripts/seed-local-emulators.mjs",
     "docs:check": "node ../scripts/qa/check-docs.js",
     "product:qa": "node ../scripts/product-qa.mjs",
     "product:audit": "node ../scripts/product-audit.mjs",
