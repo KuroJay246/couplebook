@@ -1,6 +1,6 @@
 import { FIRESTORE_SOURCE, createCompatibilityResult } from '../data/adapterUtils.js'
 import { readLegacyContractState } from '../data/legacyContractAdapter.js'
-import { db } from '../lib/firebaseClient.js'
+import { db } from '../lib/firebase.js'
 import { currentContractPath, pathToString } from './firestorePaths.js'
 import { readDocument, requireSchemaVersion, safeString } from './firestoreReaders.js'
 

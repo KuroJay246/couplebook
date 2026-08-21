@@ -1,4 +1,4 @@
-import { db } from '../lib/firebaseClient.js'
+import { db } from '../lib/firebase.js'
 import { couplePath, memberPath, pathToString } from './firestorePaths.js'
 import { readDocument, requireSchemaVersion, safeString } from './firestoreReaders.js'
 

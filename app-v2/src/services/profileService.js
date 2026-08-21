@@ -1,6 +1,6 @@
 import { FIRESTORE_SOURCE, createCompatibilityResult } from '../data/adapterUtils.js'
 import { readLegacyProfiles } from '../data/legacyProfileAdapter.js'
-import { db } from '../lib/firebaseClient.js'
+import { db } from '../lib/firebase.js'
 import { pathToString, profilePath, couplePath } from './firestorePaths.js'
 import { readCollection, requireSchemaVersion, safeString } from './firestoreReaders.js'
 

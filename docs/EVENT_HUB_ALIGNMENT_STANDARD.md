@@ -1,17 +1,34 @@
 # Event Hub Alignment Standard
 
-Last updated: 2026-08-14
+Last updated: 2026-08-21
 
-This file records how Couple Book may use Gather & Savor Event Hub as an engineering workflow reference. It does not copy Gather product behavior, data, Firebase setup, routes, or UI.
+This file records how Couple Book may use Gather & Savor Event Hub as a direct reusable engineering and interface-system reference. It does not copy Gather product behavior, data, Firebase project identity, routes, or event-specific workflows.
 
 ## Reference Snapshot
 
 - Reference repo: `C:\Users\Jaylan\Documents\gathetr`
-- Inspected commit: `a840e903ce6efd0e6f70140e1c939f1c36d688f2`
+- Inspected commit: `1baf2796f4c5be143bc1f8f242546ebc2c155e1d`
 - Reference mode: read-only workflow reference
 - Couple Book repo: `C:\Users\Jaylan\Documents\couplebook`
 - Couple Book Firebase project: `couplebook-97830`
 - Prohibited project in Couple Book: `gathervibeshub`
+
+## Current Port Scope
+
+The active rebuild branch is `rebuild/couplebook-eventhub-system-port`.
+
+As of Friday, August 21, 2026, Couple Book is directly using Event Hub as the source application for:
+
+- app-shell structure
+- desktop navigation rail
+- mobile bottom navigation and More pattern
+- top app bar and route title treatment
+- token-driven global styling entry
+- shared loading, empty, error, dialog, tabs, and status UI patterns
+- Firebase initialization shape
+- runtime shell validation discipline
+
+These are adapted to Couple Book’s routes, private relationship scope, and `couplebook-97830` Firebase project.
 
 ## Borrowed Workflow Patterns
 
@@ -39,16 +56,16 @@ Do not copy these Gather-specific items into Couple Book:
 
 ## V1.2 Application Use
 
-For V1.2, the alignment standard means Couple Book should behave like a complete private memory-book application:
+For V1.2, the alignment standard means Couple Book should behave like a complete private memory-book application inside the same application family as Event Hub:
 
 - The first screen after login should make the private relationship archive clear.
-- Navigation should follow Couple Book tasks: home, story, gallery, favorites, profiles, settings, contract, and special moments.
+- Navigation should follow Couple Book tasks: Home, Story, Album, Us, Plans, and More.
 - Editing flows should be obvious, reversible, and protected by the existing write-mode guardrails.
 - Empty, loading, error, and permission states should look intentional.
 - Browser QA must exercise real routes and responsive layouts, not just static build success.
 - V1.2 deploys to preview Hosting only unless the user separately approves production.
 
-For new persistent V1.2 workflows, adapt only these Event Hub engineering patterns: narrow services, allowed fields, integer revisions, protected immutable fields, emulator rules tests, and explicit deployment guards. Do not copy Gather collections, routes, roles, IDs, finance logic, QR logic, or Firebase targets.
+For new persistent V1.2 workflows, adapt only these Event Hub engineering patterns: narrow services, allowed fields, integer revisions, protected immutable fields, emulator rules tests, explicit deployment guards, and runtime validation scripts. Do not copy Gather collections, routes, roles, IDs, finance logic, QR logic, or Firebase targets.
 
 ## Drift Check
 
@@ -58,4 +75,4 @@ Run this before using Gather as a reference:
 npm run alignment:check
 ```
 
-If the Gather commit changed, re-read the active Gather docs, update `config/event-hub-reference.json`, and rerun the check.
+If the Gather commit changed, re-read the active Gather shell, styling, auth, and QA files, update `config/event-hub-reference.json`, and rerun the check.

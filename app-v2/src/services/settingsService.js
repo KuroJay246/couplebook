@@ -1,6 +1,6 @@
 import { FIRESTORE_SOURCE, createCompatibilityResult } from '../data/adapterUtils.js'
 import { readLegacySettings } from '../data/legacySettingsAdapter.js'
-import { db } from '../lib/firebaseClient.js'
+import { db } from '../lib/firebase.js'
 import { pathToString, privateSettingsPath, sharedSettingsPath } from './firestorePaths.js'
 import { readDocument, requireSchemaVersion, safeString } from './firestoreReaders.js'
 

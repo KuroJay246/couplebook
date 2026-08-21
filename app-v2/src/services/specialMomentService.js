@@ -1,7 +1,7 @@
 import { readLegacySpecialMoment } from '../data/legacySpecialMomentAdapter.js'
 import { FIRESTORE_SOURCE } from '../data/adapterUtils.js'
 import { normalizeSpecialMomentPayload } from '../data/legacySpecialMomentAdapter.js'
-import { db } from '../lib/firebaseClient.js'
+import { db } from '../lib/firebase.js'
 import { specialMomentPath } from './firestorePaths.js'
 import { readDocument, requireSchemaVersion } from './firestoreReaders.js'
 

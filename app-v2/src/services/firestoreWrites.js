@@ -1,6 +1,6 @@
 import { doc, getDoc, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore'
 import { isFirestoreWriteMode } from '../data/writeMode.js'
-import { db } from '../lib/firebaseClient.js'
+import { db } from '../lib/firebase.js'
 import {
   currentContractPath,
   favoritesPath,

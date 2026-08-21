@@ -1,6 +1,6 @@
 import { FIRESTORE_SOURCE, createCompatibilityResult } from '../data/adapterUtils.js'
 import { readLegacyFavorites } from '../data/legacyFavoritesAdapter.js'
-import { db } from '../lib/firebaseClient.js'
+import { db } from '../lib/firebase.js'
 import { couplePath, favoritesPath, pathToString } from './firestorePaths.js'
 import { readCollection, requireSchemaVersion, safeStringArray } from './firestoreReaders.js'
 

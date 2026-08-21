@@ -1,7 +1,6 @@
 import { startTransition, useCallback, useEffect, useMemo, useReducer, useState } from 'react'
-import { auth } from '../lib/firebaseClient'
+import { auth, isFirebaseConfigured, missingFirebaseConfigMessage } from '../lib/firebase.js'
 import { getBrowserTestAuthState } from '../lib/browserTestMode'
-import { isFirebaseConfigured, missingFirebaseConfigMessage } from '../lib/firebaseConfig'
 import { ensureAuthPersistence, observeAuthState, signInWithEmail, signOutCurrentUser } from '../services/authService'
 import { resolveApprovedUser } from '../services/authorizationService'
 import { AuthContext } from './AuthContext'

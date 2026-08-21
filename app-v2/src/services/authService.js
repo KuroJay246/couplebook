@@ -5,8 +5,7 @@ import {
   signInWithEmailAndPassword,
   signOut,
 } from 'firebase/auth'
-import { auth } from '../lib/firebaseClient.js'
-import { isFirebaseConfigured, missingFirebaseConfigMessage } from '../lib/firebaseConfig.js'
+import { auth, isFirebaseConfigured, missingFirebaseConfigMessage } from '../lib/firebase.js'
 
 let persistencePromise = null
 

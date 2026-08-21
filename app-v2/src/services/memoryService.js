@@ -1,6 +1,6 @@
 import { FIRESTORE_SOURCE, createCompatibilityResult } from '../data/adapterUtils.js'
 import { readLegacyMemories } from '../data/legacyMemoryAdapter.js'
-import { db } from '../lib/firebaseClient.js'
+import { db } from '../lib/firebase.js'
 import { memoriesPath, pathToString } from './firestorePaths.js'
 import { readCollection, rejectUnsafeMediaReference, requireSchemaVersion, safeString, safeStringArray } from './firestoreReaders.js'
 
