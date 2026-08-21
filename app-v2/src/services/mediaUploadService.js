@@ -10,6 +10,28 @@ export const MAX_UPLOAD_RETRY_ATTEMPTS = 2
 const MAX_IMAGE_BYTES = 20 * 1024 * 1024
 const MAX_VIDEO_BYTES = 250 * 1024 * 1024
 const SAFE_STORAGE_PATH = /^couples\/[A-Za-z0-9_-]{1,120}\/media\/[A-Za-z0-9_-]{1,120}\/(original|thumbnail|poster)$/
+const env = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env : {}
+
+function isLocalUploadTestWindow() {
+  if (typeof window === 'undefined') return false
+  if (env.VITE_ENABLE_LOCAL_UPLOAD_TEST_HOOKS !== 'true') return false
+  const host = String(window.location?.hostname || '')
+  return host === '127.0.0.1' || host === 'localhost'
+}
+
+function readUploadTestConfig() {
+  if (!isLocalUploadTestWindow()) return null
+  const config = window.__COUPLEBOOK_UPLOAD_TEST__
+  return config && typeof config === 'object' ? config : null
+}
+
+function consumeForcedUploadFailure() {
+  const config = readUploadTestConfig()
+  const remaining = Number(config?.failUploadsRemaining || 0)
+  if (!Number.isFinite(remaining) || remaining <= 0) return false
+  config.failUploadsRemaining = remaining - 1
+  return true
+}
 
 function randomId(prefix) {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -219,6 +241,7 @@ export async function waitForPrivateMediaUpload(task, { onProgress, signal } = {
   }
 
   return new Promise((resolve, reject) => {
+    let settled = false
     const unsubscribeAbort = typeof signal?.addEventListener === 'function'
       ? () => signal.removeEventListener('abort', handleAbort)
       : () => {}
@@ -236,6 +259,20 @@ export async function waitForPrivateMediaUpload(task, { onProgress, signal } = {
       }
     }
 
+    function rejectOnce(error) {
+      if (settled) return
+      settled = true
+      cleanup()
+      reject(error)
+    }
+
+    function resolveOnce() {
+      if (settled) return
+      settled = true
+      cleanup()
+      resolve()
+    }
+
     if (signal?.aborted) {
       handleAbort()
     } else if (typeof signal?.addEventListener === 'function') {
@@ -245,6 +282,14 @@ export async function waitForPrivateMediaUpload(task, { onProgress, signal } = {
     const unsubscribe = task.on(
       'state_changed',
       (snapshot) => {
+        if (settled) return
+        if (consumeForcedUploadFailure()) {
+          handleAbort()
+          const error = new Error('Local upload test forced a retryable failure.')
+          error.code = 'storage/retry-limit-exceeded'
+          rejectOnce(error)
+          return
+        }
         if (!snapshot.totalBytes) return
         onProgress?.({
           bytesTransferred: snapshot.bytesTransferred,
@@ -253,12 +298,10 @@ export async function waitForPrivateMediaUpload(task, { onProgress, signal } = {
         })
       },
       (error) => {
-        cleanup()
-        reject(error)
+        rejectOnce(error)
       },
       () => {
-        cleanup()
-        resolve()
+        resolveOnce()
       },
     )
   })

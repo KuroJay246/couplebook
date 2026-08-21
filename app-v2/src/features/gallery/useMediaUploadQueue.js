@@ -19,6 +19,7 @@ export { QUEUE_STATUS, summarizeQueueItems, isRetryableFailurePhase } from './me
 
 const RETRYABLE_STATUSES = new Set([QUEUE_STATUS.failed, QUEUE_STATUS.cancelled])
 const FINISHED_STATUSES = new Set([QUEUE_STATUS.saved, QUEUE_STATUS.failed, QUEUE_STATUS.cancelled])
+const env = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env : {}
 
 const initialState = Object.freeze({
   items: [],
@@ -119,6 +120,27 @@ function waitForNextPaint() {
 
     setTimeout(resolve, 0)
   })
+}
+
+function isLocalUploadTestWindow() {
+  if (typeof window === 'undefined') return false
+  if (env.VITE_ENABLE_LOCAL_UPLOAD_TEST_HOOKS !== 'true') return false
+  const host = String(window.location?.hostname || '')
+  return host === '127.0.0.1' || host === 'localhost'
+}
+
+function readUploadTestDelay(phase) {
+  if (!isLocalUploadTestWindow()) return 0
+  const config = window.__COUPLEBOOK_UPLOAD_TEST__
+  if (!config || config.enabled !== true || typeof config.phaseDelayMs !== 'object') return 0
+  const delay = Number(config.phaseDelayMs[phase] || 0)
+  return Number.isFinite(delay) && delay > 0 ? delay : 0
+}
+
+function waitForUploadTestDelay(phase) {
+  const delay = readUploadTestDelay(phase)
+  if (!delay) return Promise.resolve()
+  return new Promise((resolve) => setTimeout(resolve, delay))
 }
 
 function canStartItem(item) {
@@ -267,6 +289,7 @@ export function useMediaUploadQueue(onRefresh) {
       totalBytes: item.sizeBytes || 0,
     }))
     await waitForNextPaint()
+    await waitForUploadTestDelay('validating')
 
     try {
       const current = findItem(itemId)
@@ -283,6 +306,7 @@ export function useMediaUploadQueue(onRefresh) {
         status: QUEUE_STATUS.hashing,
       })
       failurePhase = QUEUE_STATUS.hashing
+      await waitForUploadTestDelay('hashing')
 
       const checksum = await sha256ForFile(current.file)
 
@@ -350,6 +374,7 @@ export function useMediaUploadQueue(onRefresh) {
         status: QUEUE_STATUS.finalizing,
       })
       failurePhase = QUEUE_STATUS.finalizing
+      await waitForUploadTestDelay('finalizing')
 
       const finalizedItem = findItem(itemId)
       const result = await writer.createMemoryWithMedia(toMemoryPayload(finalizedItem), verifiedMedia)
