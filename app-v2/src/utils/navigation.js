@@ -15,3 +15,13 @@ export function getRequestedReturnPath(locationState) {
   if (!from?.pathname) return DEFAULT_AUTHENTICATED_PATH
   return sanitizeReturnPath(`${from.pathname}${from.search || ''}${from.hash || ''}`)
 }
+
+export function mobilePrimaryNavigation(routeMeta) {
+  const seen = new Set()
+  return routeMeta.filter((route) => {
+    if (!route.mobilePrimary) return false
+    if (seen.has(route.path)) return false
+    seen.add(route.path)
+    return true
+  })
+}
