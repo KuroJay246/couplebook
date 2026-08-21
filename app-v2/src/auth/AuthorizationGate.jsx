@@ -8,15 +8,15 @@ export function AuthorizationGate({
   const { authError, signOut, user } = useAuth()
 
   return (
-    <div className="shell-root">
-      <main className="shell-main shell-main-center">
+    <div className="px-4 py-8 sm:px-6 lg:px-10">
+      <main className="mx-auto max-w-3xl">
         <ErrorState
           actionLabel="Sign out"
           description={authError || description}
           onAction={() => signOut()}
           title={title}
         >
-          {user?.email && <p className="state-support">Signed in as {user.email}</p>}
+          {user?.email ? <p className="mt-3 text-center text-xs text-[#8a6f7c]">Signed in as {user.email}</p> : null}
         </ErrorState>
       </main>
     </div>

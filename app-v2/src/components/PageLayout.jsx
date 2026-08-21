@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { EmptyState } from './ui/EmptyState.jsx'
 
 function joinClasses(...values) {
   return values.filter(Boolean).join(' ')
@@ -33,12 +34,12 @@ function EditorialSection({
   tone = 'default',
 }) {
   return (
-    <Tag className={joinClasses('editorial-section', tone !== 'default' ? `editorial-section-${tone}` : '', className)}>
-      <div className="editorial-section-heading">
+    <Tag className={joinClasses('rounded-[24px] border border-[#ead7df] bg-white p-6 shadow-[0_8px_24px_rgba(84,53,67,0.04)]', tone !== 'default' ? `editorial-section-${tone}` : '', className)}>
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
-          {eyebrow ? <span className="eyebrow">{eyebrow}</span> : null}
-          <h2>{title}</h2>
-          {description ? <p>{description}</p> : null}
+          {eyebrow ? <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">{eyebrow}</span> : null}
+          <h2 className="mt-2 font-serif text-3xl text-[#24131d]">{title}</h2>
+          {description ? <p className="mt-2 max-w-3xl text-sm leading-6 text-[#7a6170]">{description}</p> : null}
         </div>
         <SectionAction action={action} />
       </div>
@@ -53,10 +54,10 @@ export function UtilitySection({ tone = 'utility', ...props }) {
 
 export function EditorialEmptyState({ description, support = null, title, titleAs: TitleTag = 'h2' }) {
   return (
-    <div className="editorial-empty-state">
-      <TitleTag>{title}</TitleTag>
-      <p>{description}</p>
-      {support ? <span className="state-support">{support}</span> : null}
+    <div>
+      <EmptyState title={title} description={description} />
+      {support ? <p className="mt-4 text-center text-xs text-[#8a6f7c]">{support}</p> : null}
+      <TitleTag className="sr-only">{title}</TitleTag>
     </div>
   )
 }

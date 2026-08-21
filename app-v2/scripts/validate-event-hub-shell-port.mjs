@@ -1,15 +1,17 @@
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
+import http from 'node:http'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { chromium } from 'playwright'
+import { createServer as createViteServer } from 'vite'
 import { browserRegressionAuthorizedFixture } from '../src/test-fixtures/browser-regression.fixture.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const APP_ROOT = path.resolve(__dirname, '..')
 const OUTPUT_ROOT = path.join(APP_ROOT, 'output', 'playwright', 'event-hub-shell-port')
-const BASE_URL = process.env.COUPLEBOOK_APP_V2_BROWSER_BASE_URL || 'http://127.0.0.1:4176'
+let baseUrl = process.env.COUPLEBOOK_APP_V2_BROWSER_BASE_URL || 'http://127.0.0.1:4176'
 
 function createInitScript() {
   return ({ fixture }) => {
@@ -35,8 +37,60 @@ async function openAuthorizedPage(browser, viewport, route) {
     }
   })
 
-  await page.goto(`${BASE_URL}${route}`, { waitUntil: 'domcontentloaded' })
+  await page.goto(`${baseUrl}${route}`, { waitUntil: 'domcontentloaded' })
   return { context, consoleErrors, page, responseErrors }
+}
+
+function httpGet(url) {
+  return new Promise((resolve, reject) => {
+    const request = http.get(url, (response) => {
+      let body = ''
+      response.setEncoding('utf8')
+      response.on('data', (chunk) => {
+        body += chunk
+      })
+      response.on('end', () => {
+        resolve({ body, statusCode: response.statusCode || 0 })
+      })
+    })
+
+    request.on('error', reject)
+    request.setTimeout(5000, () => {
+      request.destroy(new Error(`Timeout requesting ${url}`))
+    })
+  })
+}
+
+async function isExpectedServerReady() {
+  try {
+    const response = await httpGet(baseUrl)
+    return response.statusCode === 200 && /@vite\/client|src="\/src\/main\.jsx"/.test(response.body)
+  } catch {
+    return false
+  }
+}
+
+async function withAppServer(callback) {
+  if (await isExpectedServerReady()) {
+    return callback()
+  }
+
+  const server = await createViteServer({
+    root: APP_ROOT,
+    server: {
+      host: '127.0.0.1',
+      port: 0,
+    },
+  })
+  await server.listen()
+  const address = server.httpServer.address()
+  baseUrl = `http://127.0.0.1:${address.port}`
+
+  try {
+    return await callback()
+  } finally {
+    await server.close()
+  }
 }
 
 async function capture(page, fileName) {
@@ -124,14 +178,16 @@ async function validateMobile(browser) {
 
 async function run() {
   fs.rmSync(OUTPUT_ROOT, { recursive: true, force: true })
-  const browser = await chromium.launch({ headless: true })
+  await withAppServer(async () => {
+    const browser = await chromium.launch({ headless: true })
 
-  try {
-    await validateDesktop(browser)
-    await validateMobile(browser)
-  } finally {
-    await browser.close()
-  }
+    try {
+      await validateDesktop(browser)
+      await validateMobile(browser)
+    } finally {
+      await browser.close()
+    }
+  })
 
   process.stdout.write(`Shell port validation passed. Screenshots saved to ${OUTPUT_ROOT}\n`)
 }

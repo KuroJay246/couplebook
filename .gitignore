@@ -69,6 +69,7 @@ app-v2/local-migration-packages/
 .local-migration-packages/
 .visual-audit/
 .visual-product-review/
+app-v2/output/
 Couple Book Private Media/
 Couple Book Media Recovery.manifests/
 media-inventory*.json

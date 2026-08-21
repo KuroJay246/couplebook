@@ -1,28 +1,36 @@
+import { CalendarHeart, Clock3, HeartHandshake, Images, NotebookPen, Sparkles, Star } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { EmptyState } from '../../components/ui/EmptyState.jsx'
+import { StatusBadge } from '../../components/ui/StatusBadge.jsx'
 
 function RecentMemories({ section }) {
   const items = section.items || []
+
   return (
-    <section className="glass-card card-story recent-memories-card dashboard-feature-card">
-      <div className="recent-header">
+    <section className="rounded-[24px] border border-[#ead7df] bg-white p-6 shadow-[0_8px_24px_rgba(84,53,67,0.04)]">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="dashboard-section-kicker">Latest Chapter</p>
-          <h2 className="recent-title">Recent memories worth reopening</h2>
-          <p className="dashboard-section-copy">The newest moments stay close, with one quick path back to the wider story when you want it.</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Latest Chapter</p>
+          <h2 className="mt-2 font-serif text-3xl text-[#24131d]">Recent memories worth reopening</h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-[#7a6170]">
+            The newest moments stay close, with one quick path back to the wider story when you want it.
+          </p>
         </div>
-        <Link className="btn btn-secondary recent-link-button" to="/timeline">View All</Link>
+        <Link className="inline-flex min-h-10 items-center rounded-xl border border-[#dcc2cd] px-4 text-xs font-bold text-[#6f5462] hover:bg-[#fff5f8]" to="/timeline">
+          View All
+        </Link>
       </div>
-      <div className="recent-list">
+      <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {items.length > 0 ? items.map((item) => (
-          <article className="recent-memory-item" key={item.id}>
-            <span className="recent-memory-date">{item.dateLabel || 'Saved memory'}</span>
-            <h3>{item.title}</h3>
-            <p>{item.description}</p>
+          <article className="rounded-2xl border border-[#ead7df] bg-[#fffdfd] p-4" key={item.id}>
+            <span className="text-[11px] font-semibold text-[#8a6f7c]">{item.dateLabel || 'Saved memory'}</span>
+            <h3 className="mt-2 text-base font-bold text-[#24131d]">{item.title}</h3>
+            <p className="mt-2 text-sm leading-6 text-[#7a6170]">{item.description}</p>
           </article>
         )) : (
-          <p style={{ gridColumn: 'span 3', textAlign: 'center', color: 'var(--color-muted)', padding: '2rem 0' }}>
-            No recent memories are ready yet.
-          </p>
+          <div className="md:col-span-2 xl:col-span-3">
+            <EmptyState title="No recent memories are ready yet." description="Add the next memory and it will surface here for quick return visits." />
+          </div>
         )}
       </div>
     </section>
@@ -31,23 +39,26 @@ function RecentMemories({ section }) {
 
 function TodayInUs({ section }) {
   return (
-    <section className="glass-card card-hero dashboard-today-card">
+    <section className="rounded-[24px] border border-[#ead7df] bg-white p-6 shadow-[0_8px_24px_rgba(84,53,67,0.04)]">
       <div>
-        <p className="dashboard-section-kicker">{section.eyebrow}</p>
-        <h2 className="dashboard-story-title">{section.daysTogether ? `${section.daysTogether} days together` : 'Your day starts here'}</h2>
-        <p className="dashboard-story-text">{section.currentMilestone}</p>
+        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">{section.eyebrow}</p>
+        <h2 className="mt-2 font-serif text-3xl text-[#24131d]">
+          {section.daysTogether ? `${section.daysTogether} days together` : 'Your day starts here'}
+        </h2>
+        <p className="mt-2 text-sm leading-6 text-[#7a6170]">{section.currentMilestone}</p>
       </div>
       {section.featured ? (
-        <article className="dashboard-featured-memory">
-          <span className="utility-chip">Featured memory</span>
-          <h3>{section.featured.title}</h3>
-          <p>{section.featured.description}</p>
-          <Link className="btn btn-secondary" to="/timeline">Open memory</Link>
+        <article className="mt-5 rounded-2xl border border-[#ead7df] bg-[#fffdfd] p-4">
+          <StatusBadge tone="info">Featured memory</StatusBadge>
+          <h3 className="mt-3 text-lg font-bold text-[#24131d]">{section.featured.title}</h3>
+          <p className="mt-2 text-sm leading-6 text-[#7a6170]">{section.featured.description}</p>
+          <Link className="mt-4 inline-flex min-h-10 items-center rounded-xl border border-[#dcc2cd] px-4 text-xs font-bold text-[#6f5462] hover:bg-[#fff5f8]" to="/timeline">
+            Open memory
+          </Link>
         </article>
       ) : (
-        <div className="editorial-empty-state">
-          <h3>No featured memory yet.</h3>
-          <p>Add a memory or connect the archive to make Home feel more alive.</p>
+        <div className="mt-5">
+          <EmptyState title="No featured memory yet." description="Add a memory or connect the archive to make Home feel more alive." />
         </div>
       )}
     </section>
@@ -56,21 +67,22 @@ function TodayInUs({ section }) {
 
 function OnThisDay({ section }) {
   return (
-    <section className="glass-card card-story dashboard-on-this-day">
-      <p className="dashboard-section-kicker">{section.eyebrow}</p>
+    <section className="rounded-[24px] border border-[#ead7df] bg-white p-6 shadow-[0_8px_24px_rgba(84,53,67,0.04)]">
+      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">{section.eyebrow}</p>
       {section.memory ? (
         <>
-          <h3 className="dashboard-subtitle">{section.memory.title}</h3>
-          <p className="dashboard-section-copy">{section.memory.description}</p>
-          <div className="faithful-inline-actions">
-            <span className="utility-chip">{section.memory.dateLabel}</span>
-            <Link className="btn btn-secondary" to="/timeline">Open Memory</Link>
+          <h3 className="mt-2 font-serif text-2xl text-[#24131d]">{section.memory.title}</h3>
+          <p className="mt-2 text-sm leading-6 text-[#7a6170]">{section.memory.description}</p>
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <StatusBadge tone="default">{section.memory.dateLabel}</StatusBadge>
+            <Link className="inline-flex min-h-10 items-center rounded-xl border border-[#dcc2cd] px-4 text-xs font-bold text-[#6f5462] hover:bg-[#fff5f8]" to="/timeline">
+              Open Memory
+            </Link>
           </div>
         </>
       ) : (
-        <div className="editorial-empty-state">
-          <h3>{section.emptyState.title}</h3>
-          <p>{section.emptyState.description}</p>
+        <div className="mt-3">
+          <EmptyState title={section.emptyState.title} description={section.emptyState.description} />
         </div>
       )}
     </section>
@@ -79,29 +91,43 @@ function OnThisDay({ section }) {
 
 function DailyPrompt({ section }) {
   return (
-    <section className="glass-card card-story dashboard-prompt-card" aria-labelledby="daily-prompt-title">
-      <p className="dashboard-section-kicker">{section.eyebrow}</p>
-      <h3 className="dashboard-subtitle" id="daily-prompt-title">{section.title}</h3>
-      <p className="dashboard-section-copy">{section.description}</p>
-      <span className="utility-chip">Answer saving planned for V1.3</span>
+    <section className="rounded-[24px] border border-[#ead7df] bg-white p-6 shadow-[0_8px_24px_rgba(84,53,67,0.04)]" aria-labelledby="daily-prompt-title">
+      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">{section.eyebrow}</p>
+      <h3 className="mt-2 font-serif text-2xl text-[#24131d]" id="daily-prompt-title">{section.title}</h3>
+      <p className="mt-2 text-sm leading-6 text-[#7a6170]">{section.description}</p>
+      <div className="mt-4">
+        <StatusBadge tone="warning">Answer saving planned for V1.3</StatusBadge>
+      </div>
     </section>
   )
 }
 
-function AnniversaryCard({ card, tone }) {
+function AnniversaryCard({ card }) {
   return (
-    <div className={`glass-card card-story anniversary-card ${tone}-side`}>
-      <div className="anniversary-title">
-        <span className="anniversary-owner">{tone === 'jaylan' ? '❤️' : '💜'} {card.label}</span>
-        <span className="anniversary-date">{card.dateLabel || 'Date pending'}</span>
+    <div className="rounded-2xl border border-[#ead7df] bg-[#fffdfd] p-4">
+      <div className="flex items-start justify-between gap-3">
+        <span className="text-sm font-bold text-[#24131d]">{card.label}</span>
+        <span className="text-xs text-[#8a6f7c]">{card.dateLabel || 'Date pending'}</span>
       </div>
-      <div className="counter-grid">
-        <div className="counter-box"><div className="counter-number">{String(card.duration.years).padStart(2, '0')}</div><div className="counter-unit">Yrs</div></div>
-        <div className="counter-box"><div className="counter-number">{String(card.duration.months).padStart(2, '0')}</div><div className="counter-unit">Mth</div></div>
-        <div className="counter-box"><div className="counter-number">{String(card.duration.days).padStart(2, '0')}</div><div className="counter-unit">Days</div></div>
-        <div className="counter-box"><div className="counter-number">{String(card.duration.seconds).padStart(2, '0')}</div><div className="counter-unit">Sec</div></div>
+      <div className="mt-4 grid grid-cols-4 gap-2">
+        <div className="rounded-xl bg-[#fff5f8] p-3 text-center">
+          <div className="text-lg font-bold text-[#24131d]">{String(card.duration.years).padStart(2, '0')}</div>
+          <div className="text-[10px] uppercase tracking-[0.12em] text-[#8a6f7c]">Yrs</div>
+        </div>
+        <div className="rounded-xl bg-[#fff5f8] p-3 text-center">
+          <div className="text-lg font-bold text-[#24131d]">{String(card.duration.months).padStart(2, '0')}</div>
+          <div className="text-[10px] uppercase tracking-[0.12em] text-[#8a6f7c]">Mth</div>
+        </div>
+        <div className="rounded-xl bg-[#fff5f8] p-3 text-center">
+          <div className="text-lg font-bold text-[#24131d]">{String(card.duration.days).padStart(2, '0')}</div>
+          <div className="text-[10px] uppercase tracking-[0.12em] text-[#8a6f7c]">Days</div>
+        </div>
+        <div className="rounded-xl bg-[#fff5f8] p-3 text-center">
+          <div className="text-lg font-bold text-[#24131d]">{String(card.duration.seconds).padStart(2, '0')}</div>
+          <div className="text-[10px] uppercase tracking-[0.12em] text-[#8a6f7c]">Sec</div>
+        </div>
       </div>
-      <div style={{ fontSize: '0.75rem', textAlign: 'center', marginTop: '0.5rem', color: 'var(--color-muted)' }}>{card.totalDaysLabel}</div>
+      <div className="mt-3 text-center text-xs text-[#8a6f7c]">{card.totalDaysLabel}</div>
     </div>
   )
 }
@@ -109,39 +135,32 @@ function AnniversaryCard({ card, tone }) {
 function Milestones({ section }) {
   const anniversaries = section.anniversaryCards || []
   const birthdays = section.birthdayCards || []
+
   return (
-    <div className="dashboard-column dashboard-column--milestones">
-      <div className="glass-card card-story">
-        <div className="dashboard-section-heading">
-          <div>
-          <p className="dashboard-section-kicker">Coming Up</p>
-            <h3 className="dashboard-subtitle">Dates worth holding close</h3>
-            <p className="dashboard-section-copy">Anniversaries and birthdays sit together as the next page markers.</p>
-          </div>
-        </div>
-        <div className="anniversaries-container">
-          {anniversaries.map((card, index) => (
-            <AnniversaryCard card={card} key={card.id} tone={index === 0 ? 'jaylan' : 'omia'} />
+    <div className="grid gap-6">
+      <div className="rounded-[24px] border border-[#ead7df] bg-white p-6 shadow-[0_8px_24px_rgba(84,53,67,0.04)]">
+        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Coming Up</p>
+        <h3 className="mt-2 font-serif text-2xl text-[#24131d]">Dates worth holding close</h3>
+        <p className="mt-2 text-sm leading-6 text-[#7a6170]">Anniversaries and birthdays sit together as the next page markers.</p>
+        <div className="mt-5 grid gap-3">
+          {anniversaries.map((card) => (
+            <AnniversaryCard card={card} key={card.id} />
           ))}
         </div>
       </div>
-      <div className="glass-card card-story birthdays-card">
-        <div className="dashboard-section-heading">
-          <div>
-            <p className="dashboard-section-kicker">Birthdays</p>
-            <h3 className="dashboard-subtitle">Upcoming birthdays</h3>
-          </div>
-        </div>
-        <div className="birthday-list">
-          {birthdays.map((card, index) => (
-            <div className={`birthday-row birthday-row--${index === 0 ? 'omia' : 'jaylan'}`} key={card.id}>
-              <div className="birthday-copy">
-                <div className={`birthday-title birthday-title--${index === 0 ? 'omia' : 'jaylan'}`}>{card.label}</div>
-                <div className="birthday-meta">{card.dateLabel || 'Date pending'}</div>
+      <div className="rounded-[24px] border border-[#ead7df] bg-white p-6 shadow-[0_8px_24px_rgba(84,53,67,0.04)]">
+        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Birthdays</p>
+        <h3 className="mt-2 font-serif text-2xl text-[#24131d]">Upcoming birthdays</h3>
+        <div className="mt-5 grid gap-3">
+          {birthdays.map((card) => (
+            <div className="flex items-center justify-between gap-3 rounded-2xl border border-[#ead7df] bg-[#fffdfd] p-4" key={card.id}>
+              <div>
+                <div className="text-sm font-bold text-[#24131d]">{card.label}</div>
+                <div className="text-xs text-[#8a6f7c]">{card.dateLabel || 'Date pending'}</div>
               </div>
-              <div className="birthday-countdown">
-                <div className={`birthday-count birthday-count--${index === 0 ? 'omia' : 'jaylan'}`}>{card.countdownLabel}</div>
-                <div className="birthday-age">{card.ageLabel}</div>
+              <div className="text-right">
+                <div className="text-sm font-bold text-[#8f5168]">{card.countdownLabel}</div>
+                <div className="text-xs text-[#8a6f7c]">{card.ageLabel}</div>
               </div>
             </div>
           ))}
@@ -153,20 +172,20 @@ function Milestones({ section }) {
 
 function SpecialMoments({ section }) {
   return (
-    <div className="glass-card card-story special-moments-card">
+    <div className="rounded-[24px] border border-[#ead7df] bg-white p-6 shadow-[0_8px_24px_rgba(84,53,67,0.04)]">
       <div>
-        <p className="dashboard-section-kicker">Keep Exploring</p>
-        <h3 className="dashboard-subtitle">Private pages with their own feeling</h3>
-        <p className="dashboard-section-copy">Jump back into the birthday, Valentine, and confession spaces without digging through the full archive.</p>
+        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Keep Exploring</p>
+        <h3 className="mt-2 font-serif text-2xl text-[#24131d]">Private pages with their own feeling</h3>
+        <p className="mt-2 text-sm leading-6 text-[#7a6170]">Jump back into the birthday, Valentine, and confession spaces without digging through the full archive.</p>
       </div>
-      <div className="special-moment-list">
+      <div className="mt-5 grid gap-3">
         {(section.items || []).map((item) => (
-          <Link className="special-moment-link" key={item.href} to={item.href}>
-            <div className="special-moment-copy">
-              <span className="special-moment-title">{item.title}</span>
-              <span className="special-moment-subtitle">{item.description}</span>
+          <Link className="flex items-start justify-between gap-3 rounded-2xl border border-[#ead7df] bg-[#fffdfd] p-4 hover:bg-[#fff5f8]" key={item.href} to={item.href}>
+            <div>
+              <span className="block text-sm font-bold text-[#24131d]">{item.title}</span>
+              <span className="mt-1 block text-sm leading-6 text-[#7a6170]">{item.description}</span>
             </div>
-            <span className="special-moment-arrow">↗</span>
+            <span className="text-[#8f5168]">↗</span>
           </Link>
         ))}
       </div>
@@ -182,25 +201,21 @@ function RelationshipSummary({ model }) {
   ]
 
   return (
-    <section className="glass-card card-utility faithful-summary-card">
-      <div className="dashboard-section-heading">
-        <div>
-          <p className="dashboard-section-kicker">Little Things</p>
-          <h3 className="dashboard-subtitle">The details that make it yours</h3>
-          <p className="dashboard-section-copy">A small count of what this book is already holding.</p>
-        </div>
-      </div>
-      <div className="faithful-stat-grid">
+    <section className="rounded-[24px] border border-[#ead7df] bg-white p-6 shadow-[0_8px_24px_rgba(84,53,67,0.04)]">
+      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Little Things</p>
+      <h3 className="mt-2 font-serif text-2xl text-[#24131d]">The details that make it yours</h3>
+      <p className="mt-2 text-sm leading-6 text-[#7a6170]">A small count of what this book is already holding.</p>
+      <div className="mt-5 grid gap-3 sm:grid-cols-3">
         {summary.map((item) => (
-          <div className="faithful-stat-tile" key={item.label}>
-            <span className="faithful-stat-value">{item.value}</span>
-            <span className="faithful-stat-label">{item.label}</span>
+          <div className="rounded-2xl border border-[#ead7df] bg-[#fffdfd] p-4" key={item.label}>
+            <span className="block text-2xl font-bold text-[#24131d]">{item.value}</span>
+            <span className="mt-1 block text-xs uppercase tracking-[0.12em] text-[#8a6f7c]">{item.label}</span>
           </div>
         ))}
       </div>
-      <div className="faithful-inline-actions">
-        <Link className="btn btn-primary" to="/favorites">Favorite Things</Link>
-        <Link className="btn btn-secondary" to="/contract">Our Promises</Link>
+      <div className="mt-5 flex flex-wrap gap-2">
+        <Link className="inline-flex min-h-10 items-center rounded-xl bg-[#8f5168] px-4 text-xs font-bold text-white" to="/favorites">Favorite Things</Link>
+        <Link className="inline-flex min-h-10 items-center rounded-xl border border-[#dcc2cd] px-4 text-xs font-bold text-[#6f5462] hover:bg-[#fff5f8]" to="/contract">Our Promises</Link>
       </div>
     </section>
   )
@@ -208,72 +223,92 @@ function RelationshipSummary({ model }) {
 
 export function DashboardView({ model }) {
   return (
-    <section className="dashboard-page">
-      <header className="page-header page-header--split">
-        <div className="page-heading">
-          <p className="page-eyebrow">Private Home</p>
-          <h1 className="page-title">A place for the moments that still feel alive.</h1>
-          <p className="page-subtitle">Your shared story, gallery, favorite things, and relationship milestones stay together here in one personal keepsake space.</p>
-        </div>
-        <div className="page-actions">
-          <span className="utility-chip">Shared home</span>
-          <Link className="btn btn-secondary" to="/timeline">Open Story</Link>
-        </div>
-      </header>
-
-      <div className="dashboard-grid">
-        <section className="glass-card card-hero dashboard-story-band">
-          <div className="dashboard-story-copy">
-            <p className="dashboard-section-kicker">Today In Us</p>
-            <h2 className="dashboard-story-title">Pick up where your story left off.</h2>
-            <p className="dashboard-story-text">This private home opens like the first page of your memory book: recent moments first, upcoming dates close behind, and the sentimental pages always within reach.</p>
-            <div className="dashboard-story-actions">
-              <Link className="btn btn-primary" to="/timeline">Continue The Story</Link>
-              <Link className="btn btn-secondary" to="/gallery">Open Gallery</Link>
-              <Link className="btn btn-secondary" to="/favorites">Favorite Things</Link>
+    <section className="grid gap-6">
+      <section className="rounded-[24px] border border-[#ead7df] bg-white p-6 shadow-[0_8px_24px_rgba(84,53,67,0.04)]">
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.25fr)_minmax(280px,0.75fr)]">
+          <div>
+            <StatusBadge tone="info">Shared home</StatusBadge>
+            <h2 className="mt-4 font-serif text-4xl text-[#24131d]">Pick up where your story left off.</h2>
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-[#7a6170]">
+              This private home opens like the first page of your memory book: recent moments first, upcoming dates close behind, and the sentimental pages always within reach.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <Link className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#8f5168] px-4 text-xs font-bold text-white" to="/timeline">
+                <NotebookPen className="size-4" />
+                Continue The Story
+              </Link>
+              <Link className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[#dcc2cd] px-4 text-xs font-bold text-[#6f5462] hover:bg-[#fff5f8]" to="/gallery">
+                <Images className="size-4" />
+                Open Album
+              </Link>
+              <Link className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[#dcc2cd] px-4 text-xs font-bold text-[#6f5462] hover:bg-[#fff5f8]" to="/favorites">
+                <Star className="size-4" />
+                Favorite Things
+              </Link>
             </div>
           </div>
-          <div className="dashboard-story-aside">
-            <span className="utility-chip">Warm, private, and personal</span>
-            <div className="dashboard-story-pill-list">
-              <span className="dashboard-story-pill">Recent memories first</span>
-              <span className="dashboard-story-pill">Upcoming dates stay visible</span>
-              <span className="dashboard-story-pill">Special pages stay close</span>
+          <div className="grid gap-3 rounded-[24px] bg-[#fff5f8] p-5">
+            <div className="flex items-center gap-3">
+              <Sparkles className="size-5 text-[#8f5168]" />
+              <span className="text-sm font-bold text-[#24131d]">Warm, private, and personal</span>
+            </div>
+            <div className="grid gap-2">
+              <StatusBadge tone="default">Recent memories first</StatusBadge>
+              <StatusBadge tone="default">Upcoming dates stay visible</StatusBadge>
+              <StatusBadge tone="default">Special pages stay close</StatusBadge>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
         <TodayInUs section={model.todayInUs} />
         <OnThisDay section={model.onThisDay} />
-        <DailyPrompt section={model.prompt} />
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
         <RecentMemories section={model.recentMemories} />
-        <div className="dashboard-column dashboard-column--support">
-          <div className="glass-card card-utility clock-card">
-            <p className="dashboard-section-kicker">Today</p>
-            <div className="live-time">{model.hero.timestampLabel}</div>
-            <div className="live-date">{model.hero.dateLabel}</div>
+        <div className="grid gap-6">
+          <div className="rounded-[24px] border border-[#ead7df] bg-white p-6 shadow-[0_8px_24px_rgba(84,53,67,0.04)]">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Today</p>
+            <div className="mt-3 flex items-center gap-3">
+              <Clock3 className="size-5 text-[#8f5168]" />
+              <div className="text-3xl font-bold text-[#24131d]">{model.hero.timestampLabel}</div>
+            </div>
+            <div className="mt-2 text-sm text-[#7a6170]">{model.hero.dateLabel}</div>
           </div>
           <RelationshipSummary model={model} />
           <SpecialMoments section={model.specialMoments} />
         </div>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <Milestones section={model.milestones} />
-        <section className="dashboard-nav-shell">
-          <div className="dashboard-section-heading">
-            <div>
-              <p className="dashboard-section-kicker">Keep Exploring</p>
-              <h3 className="dashboard-subtitle">The rest of the book stays one step away</h3>
+        <div className="grid gap-6">
+          <DailyPrompt section={model.prompt} />
+          <section className="rounded-[24px] border border-[#ead7df] bg-white p-6 shadow-[0_8px_24px_rgba(84,53,67,0.04)]">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Keep Exploring</p>
+            <h3 className="mt-2 font-serif text-2xl text-[#24131d]">The rest of the book stays one step away</h3>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              <Link className="flex items-center gap-3 rounded-2xl border border-[#ead7df] bg-[#fffdfd] p-4 hover:bg-[#fff5f8]" to="/timeline">
+                <NotebookPen className="size-5 text-[#8f5168]" />
+                <span className="text-sm font-bold text-[#24131d]">Memories Book</span>
+              </Link>
+              <Link className="flex items-center gap-3 rounded-2xl border border-[#ead7df] bg-[#fffdfd] p-4 hover:bg-[#fff5f8]" to="/gallery">
+                <Images className="size-5 text-[#8f5168]" />
+                <span className="text-sm font-bold text-[#24131d]">Media Album</span>
+              </Link>
+              <Link className="flex items-center gap-3 rounded-2xl border border-[#ead7df] bg-[#fffdfd] p-4 hover:bg-[#fff5f8]" to="/profile">
+                <HeartHandshake className="size-5 text-[#8f5168]" />
+                <span className="text-sm font-bold text-[#24131d]">Us</span>
+              </Link>
+              <Link className="flex items-center gap-3 rounded-2xl border border-[#ead7df] bg-[#fffdfd] p-4 hover:bg-[#fff5f8]" to="/plans">
+                <CalendarHeart className="size-5 text-[#8f5168]" />
+                <span className="text-sm font-bold text-[#24131d]">Plans</span>
+              </Link>
             </div>
-          </div>
-          <div className="quick-nav-container">
-            <Link className="glass-card card-utility nav-card" to="/timeline"><div className="nav-card-icon">📖</div><div className="nav-card-title">Memories Book</div></Link>
-            <Link className="glass-card card-utility nav-card" to="/gallery"><div className="nav-card-icon">🖼️</div><div className="nav-card-title">Media Gallery</div></Link>
-            <Link className="glass-card card-utility nav-card" to="/profile"><div className="nav-card-icon">👤</div><div className="nav-card-title">Profiles & Contract</div></Link>
-            <Link className="glass-card card-utility nav-card" to="/settings"><div className="nav-card-icon">⚙️</div><div className="nav-card-title">Settings & Theme</div></Link>
-            <Link className="glass-card card-utility nav-card" to="/birthday"><div className="nav-card-icon">🎂</div><div className="nav-card-title">Birthday Page</div></Link>
-            <Link className="glass-card card-utility nav-card" to="/valentine"><div className="nav-card-icon">💌</div><div className="nav-card-title">Valentine Page</div></Link>
-            <Link className="glass-card card-utility nav-card" to="/confession"><div className="nav-card-icon">💖</div><div className="nav-card-title">Confession Page</div></Link>
-          </div>
-        </section>
+          </section>
+        </div>
       </div>
     </section>
   )
