@@ -91,8 +91,8 @@ test.beforeEach(async () => {
     }
     await setDoc(doc(db, 'couples', ids.otherCouple, 'profiles', ids.otherMember), { name: 'Other', revision: 1, schemaVersion: 1 })
     await setDoc(doc(db, 'couples', ids.couple, 'settings', 'shared'), { theme: 'paper', schemaVersion: 1 })
-    await setDoc(doc(db, 'couples', ids.couple, 'settings', ids.memberOne), { theme: 'paper', privacy: { localOnlyMode: true, reducedMotion: false }, revision: 1, schemaVersion: 1 })
-    await setDoc(doc(db, 'couples', ids.couple, 'settings', ids.memberTwo), { theme: 'paper', privacy: { localOnlyMode: false, reducedMotion: false }, revision: 1, schemaVersion: 1 })
+    await setDoc(doc(db, 'couples', ids.couple, 'settings', ids.memberOne), { appearanceTheme: 'paper-hearts', privacy: { localOnlyMode: true, reducedMotion: false }, revision: 1, schemaVersion: 1 })
+    await setDoc(doc(db, 'couples', ids.couple, 'settings', ids.memberTwo), { appearanceTheme: 'midnight-rose', privacy: { localOnlyMode: false, reducedMotion: false }, revision: 1, schemaVersion: 1 })
     await setDoc(doc(db, 'couples', ids.couple, 'contracts', 'current'), { title: 'Fictional contract', acceptedBy: [ids.memberOne], signatureStatus: 'status-only', schemaVersion: 1 })
     await setDoc(doc(db, 'couples', ids.couple, 'memories', 'memory_one'), { title: 'Fictional memory', date: '2026-01-01', mediaState: 'none', createdBy: ids.memberOne, updatedBy: ids.memberOne, revision: 1, schemaVersion: 1, status: 'active' })
     await setDoc(doc(db, 'couples', ids.couple, 'specialMoments', 'birthday'), { title: 'Fictional birthday', sections: [{ kind: 'paragraph', content: 'Fictional text' }], revision: 1, schemaVersion: 1 })
@@ -203,7 +203,7 @@ test('active members can perform valid emulator writes', { skip: !hasEmulator },
   await assertSucceeds(setDoc(doc(db, 'couples', ids.couple, 'settings', ids.memberOne), {
     schemaVersion: 1,
     revision: 2,
-    theme: 'olive',
+    appearanceTheme: 'moonlit',
     anniversaryView: 'shared',
     privacy: { localOnlyMode: true, reducedMotion: true },
   }))
@@ -316,7 +316,7 @@ test('write rules reject unauthorized, cross-couple, partner-private, and malfor
   await assertFails(updateDoc(doc(db, 'couples', ids.couple, 'settings', ids.memberTwo), {
     schemaVersion: 1,
     revision: 2,
-    theme: 'paper',
+    appearanceTheme: 'paper-hearts',
     privacy: { localOnlyMode: false, reducedMotion: false },
   }))
   await assertFails(deleteDoc(doc(db, 'couples', ids.couple, 'profiles', ids.memberOne)))

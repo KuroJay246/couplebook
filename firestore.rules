@@ -30,7 +30,7 @@ service cloud.firestore {
     //
     // couples/{coupleId}/settings/{uid}
     //   schemaVersion: 1
-    //   theme: paper|rose|olive|plum
+    //   appearanceTheme: midnight-rose|paper-hearts|moonlit
     //   anniversaryView: string, <=40
     //   privacy.localOnlyMode: bool
     //   privacy.reducedMotion: bool
@@ -161,10 +161,13 @@ service cloud.firestore {
 
     function isValidPrivateSettings(uid) {
       return isOwnUser(uid)
-        && hasOnly(['schemaVersion', 'revision', 'theme', 'anniversaryView', 'privacy'])
+        && hasOnly(['schemaVersion', 'revision', 'appearanceTheme', 'theme', 'anniversaryView', 'privacy'])
         && request.resource.data.schemaVersion == 1
         && hasNextRevision()
-        && request.resource.data.theme in ['paper', 'rose', 'olive', 'plum']
+        && (
+          ('appearanceTheme' in request.resource.data && request.resource.data.appearanceTheme in ['midnight-rose', 'paper-hearts', 'moonlit'])
+          || ('theme' in request.resource.data && request.resource.data.theme in ['paper', 'rose', 'olive', 'plum'])
+        )
         && (!('anniversaryView' in request.resource.data) || isSafeString(request.resource.data.anniversaryView, 40))
         && request.resource.data.privacy is map
         && request.resource.data.privacy.keys().hasOnly(['localOnlyMode', 'reducedMotion'])

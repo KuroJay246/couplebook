@@ -168,7 +168,7 @@ async function seedFirestore(projectId, firestoreHost, firestorePort, ownerUid) 
         schemaVersion: 1,
       })
       await setDoc(doc(db, 'couples', coupleId, 'settings', ownerUid), {
-        theme: 'sunset',
+        appearanceTheme: 'midnight-rose',
         anniversaryView: 'dual',
         privacy: {
           localOnlyMode: true,
@@ -190,7 +190,6 @@ async function seedFirestore(projectId, firestoreHost, firestorePort, ownerUid) 
         date: '2026-05-10',
         tags: ['qa', 'album'],
         mediaState: 'none',
-        specialMomentType: '',
         createdBy: ownerUid,
         updatedBy: ownerUid,
         status: 'active',
@@ -203,7 +202,6 @@ async function seedFirestore(projectId, firestoreHost, firestorePort, ownerUid) 
         date: '2026-03-02',
         tags: ['qa', 'archived'],
         mediaState: 'none',
-        specialMomentType: '',
         createdBy: ownerUid,
         updatedBy: ownerUid,
         status: 'archived',

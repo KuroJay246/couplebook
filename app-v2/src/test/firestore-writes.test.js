@@ -92,7 +92,7 @@ test('write services validate text, categories, settings, memories, contract, an
 
   await saveOwnProfile({ name: 'Member One', bio: 'Safe bio', joinedDate: '2026-01-01' }, { ...context, firestore, ...firestore })
   await saveOwnFavorites({ food: ['cake', 'cake'] }, { ...context, firestore, ...firestore })
-  await saveOwnSettings({ theme: 'plum', localOnlyMode: true, reducedMotion: true }, { ...context, firestore, ...firestore })
+  await saveOwnSettings({ appearanceTheme: 'moonlit', localOnlyMode: true, reducedMotion: true }, { ...context, firestore, ...firestore })
   await saveMemory('memory_one', { title: 'A day', date: '2026-02-14', tags: ['walk'], specialMomentType: 'ordinary' }, { ...context, firestore, ...firestore })
   await archiveMemory('memory_one', 1, { ...context, firestore, ...firestore })
   await restoreMemory('memory_one', 2, { ...context, firestore, ...firestore })
@@ -105,6 +105,7 @@ test('write services validate text, categories, settings, memories, contract, an
   assert.deepEqual(firestore.writes[1].data.food, ['cake'])
   assert.equal(firestore.writes[1].data.revision, 1)
   assert.equal(firestore.writes[2].data.revision, 1)
+  assert.equal(firestore.writes[2].data.appearanceTheme, 'moonlit')
   assert.equal(firestore.writes[3].data.mediaState, 'none')
   assert.equal(firestore.writes[3].data.revision, 1)
   assert.equal(firestore.writes[4].data.status, 'archived')
@@ -172,7 +173,7 @@ test('full-document v1 writes replace legacy extra fields instead of merging the
 test('write services reject unsupported and unsafe payloads', async () => {
   const firestore = createFirestoreStub()
   await assert.rejects(saveOwnFavorites({ food: ['<script>bad</script>'] }, { ...context, firestore, ...firestore }), /unsafe/)
-  await assert.rejects(saveOwnSettings({ theme: 'neon' }, { ...context, firestore, ...firestore }), /Theme/)
+  await assert.rejects(saveOwnSettings({ appearanceTheme: 'neon' }, { ...context, firestore, ...firestore }), /Theme/)
   await assert.rejects(saveMemory('memory_one', { title: 'A day', date: '2026-02-31' }, { ...context, firestore, ...firestore }), /calendar/)
   await assert.rejects(
     saveMemoryWithVerifiedMedia(

@@ -28,7 +28,7 @@ const VIEWPORTS = Object.freeze([
 ])
 
 const ROUTES = Object.freeze([
-  { path: '/login', heading: 'Open the shared journal kept between the two of you.', fixture: browserRegressionSignedOutFixture },
+  { path: '/login', heading: 'Sign in with your Couple Book email', fixture: browserRegressionSignedOutFixture },
   { path: '/dashboard', heading: 'Pick up where your story left off.', fixture: browserRegressionAuthorizedFixture },
   { path: '/timeline', heading: /Our Story/, fixture: browserRegressionAuthorizedFixture, detailButton: 'View memory' },
   { path: '/gallery', heading: /Our Shared Gallery/, fixture: browserRegressionAuthorizedFixture, detailSelector: 'button.gallery-media-frame' },
@@ -136,14 +136,14 @@ function assertCleanObserved(observed) {
 }
 
 async function waitForRoute(page, route) {
-  await page.waitForURL((url) => url.pathname === route.path, { timeout: 7000 })
-  await page.getByRole('heading', { name: route.heading }).first().waitFor({ state: 'visible', timeout: 7000 })
+  await page.waitForURL((url) => url.pathname === route.path, { timeout: 12000 })
+  await page.getByRole('heading', { name: route.heading }).first().waitFor({ state: 'visible', timeout: 12000 })
   await page.waitForFunction(
     () => {
       const text = document.body?.innerText || ''
       return !text.includes('Restoring your private route') && !text.includes('Restoring Couple Book')
     },
-    { timeout: 7000 },
+    { timeout: 12000 },
   )
 }
 

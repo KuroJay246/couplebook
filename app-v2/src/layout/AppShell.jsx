@@ -23,6 +23,7 @@ import {
 import { protectedRouteMeta } from '../app/routeConfig'
 import { useAuth } from '../auth/useAuth'
 import { BrandMark } from '../components/BrandMark'
+import { ConfirmDialog } from '../components/ui/ConfirmDialog.jsx'
 import { QuickAddMemory } from '../features/memories/QuickAddMemory.jsx'
 import { useTheme } from '../theme/useTheme.js'
 import { mobilePrimaryNavigation } from '../utils/navigation.js'
@@ -66,8 +67,8 @@ function getRouteItems(paths) {
     }))
 }
 
-function SidebarContent({ collapsed = false, groups, onNavigate, onToggleCollapsed }) {
-  const { approvedUser, signOut, user } = useAuth()
+function SidebarContent({ collapsed = false, groups, onNavigate, onRequestSignOut, onToggleCollapsed }) {
+  const { approvedUser, user } = useAuth()
   const displayName = surfaceDisplayName(approvedUser?.displayName || approvedUser?.username || user?.email) || 'Private reader'
 
   return (
@@ -175,7 +176,7 @@ function SidebarContent({ collapsed = false, groups, onNavigate, onToggleCollaps
           </div>
           <button
             type="button"
-            onClick={signOut}
+            onClick={onRequestSignOut}
             className="cb-motion-standard inline-flex min-h-10 min-w-10 items-center justify-center rounded-xl p-2.5"
             style={{ color: 'var(--cb-text-secondary)' }}
             aria-label="Sign out"
@@ -191,11 +192,12 @@ function SidebarContent({ collapsed = false, groups, onNavigate, onToggleCollaps
 export function AppShell() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [quickAddOpen, setQuickAddOpen] = useState(false)
+  const [signOutState, setSignOutState] = useState({ open: false, pending: false })
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const menuButtonRef = useRef(null)
   const mobilePanelRef = useRef(null)
   const location = useLocation()
-  const { approvedUser, user } = useAuth()
+  const { approvedUser, signOut, user } = useAuth()
   const { activeThemeDefinition } = useTheme()
   const displayName = surfaceDisplayName(approvedUser?.displayName || approvedUser?.username || user?.email) || 'Private reader'
   const mobileItems = useMemo(
@@ -253,6 +255,15 @@ export function AppShell() {
     }
   }, [menuOpen])
 
+  async function handleSignOut() {
+    setSignOutState({ open: true, pending: true })
+    try {
+      await signOut()
+    } finally {
+      setSignOutState({ open: false, pending: false })
+    }
+  }
+
   return (
     <div className="cb-app-shell">
       <aside
@@ -262,6 +273,7 @@ export function AppShell() {
         <SidebarContent
           collapsed={sidebarCollapsed}
           groups={desktopNavGroups}
+          onRequestSignOut={() => setSignOutState({ open: true, pending: false })}
           onToggleCollapsed={() => setSidebarCollapsed((value) => !value)}
         />
       </aside>
@@ -292,7 +304,11 @@ export function AppShell() {
             >
               <X className="size-5" />
             </button>
-            <SidebarContent groups={mobileMoreGroups} onNavigate={() => setMenuOpen(false)} />
+            <SidebarContent
+              groups={mobileMoreGroups}
+              onNavigate={() => setMenuOpen(false)}
+              onRequestSignOut={() => setSignOutState({ open: true, pending: false })}
+            />
           </aside>
         </div>
       ) : null}
@@ -388,6 +404,16 @@ export function AppShell() {
       </div>
 
       <QuickAddMemory onClose={() => setQuickAddOpen(false)} open={quickAddOpen} />
+      <ConfirmDialog
+        confirmLabel="Sign out"
+        message="This closes the approved Couple Book session on this device and returns to the sign-in screen."
+        onCancel={() => setSignOutState({ open: false, pending: false })}
+        onConfirm={handleSignOut}
+        open={signOutState.open}
+        pending={signOutState.pending}
+        recordName={user?.email}
+        title="Sign out of Couple Book?"
+      />
     </div>
   )
 }

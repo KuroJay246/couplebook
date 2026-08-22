@@ -10,6 +10,7 @@ from reportlab.pdfgen import canvas
 
 PAGE_WIDTH, PAGE_HEIGHT = landscape(letter)
 MARGIN = 36
+MAX_IMAGES_PER_PAGE = 2
 
 
 def draw_wrapped_text(pdf, text, x, y, width, font_name="Helvetica", font_size=10, leading=14, color=colors.black):
@@ -49,6 +50,10 @@ def draw_image_fit(pdf, image_path, x, y, width, height):
 
 def draw_title_page(pdf, payload):
     summary = payload["summary"]
+    findings = summary["findings"]
+    viewport_summary = ", ".join(
+        [f"{item['viewport']}:{item['routeCount']}@{item['themeId']}" for item in findings["viewportResults"]]
+    )
     pdf.setFillColor(colors.HexColor("#151317"))
     pdf.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, fill=1, stroke=0)
 
@@ -63,13 +68,15 @@ def draw_title_page(pdf, payload):
     pdf.drawString(MARGIN, PAGE_HEIGHT - 152, f"Local review app: {summary['localBaseUrl']}")
 
     bullets = [
-        f"Preview smoke: {len(summary['previewSmoke'])} viewport captures",
-        f"Protected route matrix: {len(summary['defaultMatrix'])} captures",
-        f"Theme review: {len(summary['themeMatrix'])} captures",
-        f"Detail surfaces: {len(summary['detailShots'])} captures",
-        "Verified defect fixed before final rerun: /plans was restored to browser, visual, product, and performance coverage.",
-        "No additional rendered UI defect was verified during the final owner review pass.",
+        f"Defects found: {len(findings['defectsFound'])}",
+        f"Defects fixed: {len(findings['defectsFixed'])}",
+        f"Unresolved defects: {len(findings['unresolvedDefects'])}",
+        f"Buttons tested: {findings['buttonsTested']}",
+        f"Cards inspected: {findings['cardsInspected']}",
+        f"Themes proven: {', '.join(findings['themesProven'])}",
+        f"Viewport results: {viewport_summary}",
     ]
+
     cursor = PAGE_HEIGHT - 196
     for bullet in bullets:
         cursor = draw_wrapped_text(
@@ -86,7 +93,35 @@ def draw_title_page(pdf, payload):
 
     pdf.setFont("Helvetica-Oblique", 10)
     pdf.setFillColor(colors.HexColor("#BDAEB4"))
-    pdf.drawString(MARGIN, 28, f"PDF artifact: {summary['pdfPath']}")
+    pdf.drawString(MARGIN, 28, f"PDF artifact: {payload['pdfPath']}")
+    pdf.showPage()
+
+
+def draw_findings_page(pdf, summary):
+    findings = summary["findings"]
+    pdf.setFillColor(colors.white)
+    pdf.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, fill=1, stroke=0)
+
+    pdf.setFillColor(colors.HexColor("#221822"))
+    pdf.setFont("Helvetica-Bold", 18)
+    pdf.drawString(MARGIN, PAGE_HEIGHT - 42, "Explicit findings")
+
+    cursor = PAGE_HEIGHT - 74
+    sections = [
+        ("Defects found", findings["defectsFound"]),
+        ("Defects fixed", findings["defectsFixed"]),
+        ("Unresolved defects", findings["unresolvedDefects"]),
+    ]
+    for title, items in sections:
+        pdf.setFont("Helvetica-Bold", 13)
+        pdf.drawString(MARGIN, cursor, title)
+        cursor -= 20
+        if not items:
+            cursor = draw_wrapped_text(pdf, "- None", MARGIN + 10, cursor, PAGE_WIDTH - (MARGIN * 2) - 10, font_size=11, leading=15, color=colors.HexColor("#5A4A53")) - 4
+        else:
+            for item in items:
+                cursor = draw_wrapped_text(pdf, f"- {item}", MARGIN + 10, cursor, PAGE_WIDTH - (MARGIN * 2) - 10, font_size=11, leading=15, color=colors.HexColor("#5A4A53")) - 4
+        cursor -= 10
     pdf.showPage()
 
 
@@ -100,7 +135,7 @@ def draw_image_section(pdf, section):
     if not images:
         return
 
-    for group in chunked(images, 4):
+    for group in chunked(images, MAX_IMAGES_PER_PAGE):
         pdf.setFillColor(colors.white)
         pdf.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, fill=1, stroke=0)
         pdf.setFillColor(colors.HexColor("#221822"))
@@ -110,25 +145,31 @@ def draw_image_section(pdf, section):
         pdf.setFillColor(colors.HexColor("#5A4A53"))
         pdf.drawString(MARGIN, PAGE_HEIGHT - 60, section.get("subtitle", ""))
 
-        usable_top = PAGE_HEIGHT - 92
-        cell_width = (PAGE_WIDTH - (MARGIN * 2) - 16) / 2
-        cell_height = (usable_top - MARGIN - 30) / 2
+        usable_top = PAGE_HEIGHT - 90
+        usable_height = usable_top - MARGIN
+        image_block_height = (usable_height - 20) / len(group)
 
         for index, image in enumerate(group):
-            col = index % 2
-            row = index // 2
-            x = MARGIN + (col * (cell_width + 16))
-            y = usable_top - ((row + 1) * cell_height) - (row * 20)
+            x = MARGIN
+            y = usable_top - ((index + 1) * image_block_height) - (index * 20)
+            frame_height = image_block_height - 8
 
             pdf.setStrokeColor(colors.HexColor("#D0C1C7"))
-            pdf.roundRect(x, y, cell_width, cell_height, 6, stroke=1, fill=0)
+            pdf.roundRect(x, y, PAGE_WIDTH - (MARGIN * 2), frame_height, 6, stroke=1, fill=0)
 
-            image_height = cell_height - 28
-            draw_image_fit(pdf, Path(image["path"]), x + 6, y + 26, cell_width - 12, image_height - 10)
-
-            pdf.setFillColor(colors.HexColor("#221822"))
-            pdf.setFont("Helvetica", 10)
-            draw_wrapped_text(pdf, image["caption"], x + 8, y + 16, cell_width - 16, font_name="Helvetica", font_size=9, leading=11, color=colors.HexColor("#221822"))
+            caption_height = 38
+            draw_image_fit(pdf, Path(image["path"]), x + 8, y + caption_height, PAGE_WIDTH - (MARGIN * 2) - 16, frame_height - caption_height - 10)
+            draw_wrapped_text(
+                pdf,
+                image["caption"],
+                x + 10,
+                y + 24,
+                PAGE_WIDTH - (MARGIN * 2) - 20,
+                font_name="Helvetica",
+                font_size=9,
+                leading=11,
+                color=colors.HexColor("#221822"),
+            )
 
         pdf.showPage()
 
@@ -145,7 +186,8 @@ def main():
     pdf = canvas.Canvas(str(output_path), pagesize=landscape(letter))
     pdf.setTitle("Couple Book owner UI review")
     draw_title_page(pdf, payload)
-    for section in payload["summary"].get("pdfPages", []):
+    draw_findings_page(pdf, payload["summary"])
+    for section in payload["summary"].get("pdfSections", []):
         draw_image_section(pdf, section)
     pdf.save()
 

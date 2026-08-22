@@ -12,6 +12,7 @@ import {
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { PrimaryButton, SecondaryButton } from '../../components/ui/Button.jsx'
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx'
 import { ErrorState } from '../../components/ui/ErrorState.jsx'
 import { FormField, SelectField } from '../../components/ui/FormField.jsx'
 import { InlineAlert } from '../../components/ui/InlineAlert.jsx'
@@ -134,6 +135,7 @@ export function SettingsView({ compatibilityError, compatibilityState, model, on
   const { activeTheme, previewTheme, commitTheme, resetTheme } = useTheme()
   const loadedForm = useMemo(() => buildFormState(model), [model])
   const [draft, setDraft] = useState({})
+  const [signOutState, setSignOutState] = useState({ open: false, pending: false })
   const [status, setStatus] = useState({ kind: '', message: '', saving: false })
   const form = useMemo(() => ({ ...loadedForm, ...draft, revision: loadedForm.revision }), [draft, loadedForm])
   const dirty = hasChanges(loadedForm, form)
@@ -168,6 +170,19 @@ export function SettingsView({ compatibilityError, compatibilityState, model, on
           : message,
         saving: false,
       })
+    }
+  }
+
+  async function confirmSignOut() {
+    setSignOutState({ open: true, pending: false })
+  }
+
+  async function handleSignOut() {
+    setSignOutState({ open: true, pending: true })
+    try {
+      await signOut()
+    } finally {
+      setSignOutState({ open: false, pending: false })
     }
   }
 
@@ -382,11 +397,22 @@ export function SettingsView({ compatibilityError, compatibilityState, model, on
               </div>
             </div>
             <div className="mt-5">
-              <SecondaryButton onClick={signOut}><LogOut className="size-4" />Sign out</SecondaryButton>
+              <SecondaryButton onClick={confirmSignOut}><LogOut className="size-4" />Sign out</SecondaryButton>
             </div>
           </Surface>
         </div>
       </div>
+
+      <ConfirmDialog
+        confirmLabel="Sign out"
+        message="This closes the approved Couple Book session on this device and returns to the sign-in screen."
+        onCancel={() => setSignOutState({ open: false, pending: false })}
+        onConfirm={handleSignOut}
+        open={signOutState.open}
+        pending={signOutState.pending}
+        recordName={model.account?.email}
+        title="Sign out of Couple Book?"
+      />
     </section>
   )
 }

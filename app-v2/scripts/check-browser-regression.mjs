@@ -414,6 +414,9 @@ async function runAuthenticatedDesktopCoverage(browser) {
     await waitForRouteContent(page, '/gallery', 'Our Shared Gallery')
 
     await page.getByRole('button', { name: /Sign out/i }).first().click()
+    const dialog = page.getByRole('dialog', { name: 'Sign out of Couple Book?' })
+    await dialog.waitFor({ state: 'visible', timeout: 5000 })
+    await dialog.getByRole('button', { name: 'Sign out' }).click()
     await expectRedirectToLogin(page, '/gallery')
   } finally {
     ensureObservedIsClean(observed)
