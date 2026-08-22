@@ -27,6 +27,44 @@ if (!Array.isArray(config.doNotCopy) || config.doNotCopy.length < 5) {
   errors.push('doNotCopy must clearly list prohibited Gather copy targets.');
 }
 
+if (!Array.isArray(config.engineeringAlignmentRequired) || config.engineeringAlignmentRequired.length < 6) {
+  errors.push('engineeringAlignmentRequired must list the protected engineering layers.');
+}
+
+const intentionalVisualDivergence = config.intentionalVisualDivergence || {};
+const requiredVisualKeys = [
+  'brand',
+  'themes',
+  'shell',
+  'navigation',
+  'typography',
+  'pageComposition',
+  'story',
+  'album',
+  'us',
+  'plans',
+  'more',
+  'specialMoments',
+  'motion',
+];
+for (const key of requiredVisualKeys) {
+  if (intentionalVisualDivergence[key] !== true) {
+    errors.push(`intentionalVisualDivergence must mark ${key} as true.`);
+  }
+}
+
+if (config.activeImplementationBranch !== 'design/couplebook-distinct-product-identity') {
+  errors.push('activeImplementationBranch must remain design/couplebook-distinct-product-identity.');
+}
+
+if (config.referenceEngineeringBranch !== 'rebuild/couplebook-eventhub-system-port') {
+  errors.push('referenceEngineeringBranch must remain rebuild/couplebook-eventhub-system-port.');
+}
+
+if (!String(config.visualIdentityVersion || '').trim()) {
+  errors.push('visualIdentityVersion must be recorded.');
+}
+
 if (!errors.length) {
   const currentCommit = execFileSync('git', ['-C', config.referenceRepo, 'rev-parse', 'HEAD'], {
     encoding: 'utf8',
@@ -47,4 +85,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log(`Event Hub alignment check passed for ${config.lastInspectedCommit}.`);
+console.log(`Event Hub alignment check passed for ${config.lastInspectedCommit} with intentional Couple Book visual divergence recorded as ${config.visualIdentityVersion}.`);

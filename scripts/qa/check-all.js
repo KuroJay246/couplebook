@@ -2,6 +2,8 @@ const { spawnSync } = require('child_process');
 const path = require('path');
 
 const scripts = [
+  path.join(__dirname, '..', 'check-event-hub-alignment.mjs'),
+  path.join(__dirname, '..', 'check-couple-book-identity.mjs'),
   'check-safety.js',
   'check-public.js',
   'check-rules.js',
@@ -15,7 +17,8 @@ const scripts = [
 ];
 
 for (const script of scripts) {
-  const result = spawnSync(process.execPath, [path.join(__dirname, script)], {
+  const resolvedScript = path.isAbsolute(script) ? script : path.join(__dirname, script);
+  const result = spawnSync(process.execPath, [resolvedScript], {
     stdio: 'inherit'
   });
 

@@ -34,3 +34,11 @@ Read models convert Firestore/compatibility data into page-specific UI state. Wr
 - `app-v2/src/services/planService.js`: couple-scoped plan reads.
 - `app-v2/src/services/firestoreWrites.js`: memory create/update/archive/restore, plan create/update, and plan-to-memory writes.
 - `firestore.rules`: validates memory metadata, restore-compatible revisions, and `couples/{coupleId}/plans/{planId}`.
+
+## Distinct Identity Update
+
+The current app-v2 architecture also includes:
+
+- `app-v2/src/theme`: supported theme registry, provider, and theme context
+- semantic theme token files under `app-v2/src/styles/tokens/`
+- route-specific visual identity styles under `app-v2/src/styles/pages/`

@@ -23,7 +23,7 @@ const referenceHead = execFileSync('git', ['-C', config.referenceRepo, 'rev-pars
 const checks = [
   {
     label: 'Couple Book branch',
-    ok: currentBranch === 'rebuild/couplebook-eventhub-system-port',
+    ok: currentBranch === config.activeImplementationBranch,
     detail: currentBranch,
   },
   {
@@ -61,6 +61,26 @@ const checks = [
     ok: pkg.scripts?.['eventhub:compare'] === 'node scripts/eventhub-compare.mjs',
     detail: pkg.scripts?.['eventhub:compare'] || '(missing)',
   },
+  {
+    label: 'eventhub:review script registered',
+    ok: pkg.scripts?.['eventhub:review'] === 'node scripts/eventhub-review.mjs',
+    detail: pkg.scripts?.['eventhub:review'] || '(missing)',
+  },
+  {
+    label: 'identity:check script registered',
+    ok: pkg.scripts?.['identity:check'] === 'node scripts/check-couple-book-identity.mjs',
+    detail: pkg.scripts?.['identity:check'] || '(missing)',
+  },
+  {
+    label: 'Visual identity version recorded',
+    ok: Boolean(String(config.visualIdentityVersion || '').trim()),
+    detail: config.visualIdentityVersion || '(missing)',
+  },
+  {
+    label: 'Intentional visual divergence declared',
+    ok: Object.values(config.intentionalVisualDivergence || {}).every((value) => value === true),
+    detail: JSON.stringify(config.intentionalVisualDivergence || {}),
+  },
 ]
 
 const failed = checks.filter((entry) => !entry.ok)
@@ -68,10 +88,12 @@ const failed = checks.filter((entry) => !entry.ok)
 console.log('Couple Book Event Hub status')
 console.log(`- branch: ${currentBranch}`)
 console.log(`- local HEAD: ${currentHead}`)
+console.log(`- engineering branch baseline: ${config.referenceEngineeringBranch}`)
 console.log(`- reference repo: ${config.referenceRepo}`)
 console.log(`- reference HEAD: ${referenceHead}`)
 console.log(`- inspected commit: ${config.lastInspectedCommit}`)
 console.log(`- firebase project: ${config.coupleBookFirebaseProject}`)
+console.log(`- visual identity version: ${config.visualIdentityVersion}`)
 for (const entry of checks) {
   console.log(`- ${entry.ok ? 'OK' : 'FAIL'} ${entry.label}: ${entry.detail}`)
 }

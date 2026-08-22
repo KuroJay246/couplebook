@@ -48,3 +48,12 @@ Public route:
 - Gallery: Album chapters by year and Open Related Memory actions.
 - Us: profile/favorites/relationship sections organized around the couple rather than authorization terminology.
 - Our Plans: private couple-scoped plans with add/edit/status and plan-to-memory conversion.
+
+## Distinct Identity Update
+
+As of Saturday, August 22, 2026:
+
+- active identity branch: `design/couplebook-distinct-product-identity`
+- engineering baseline branch: `rebuild/couplebook-eventhub-system-port`
+- current shell and route compositions use the original Couple Book brand and three-theme runtime
+- preview-only deploy command for this branch: `firebase hosting:channel:deploy couplebook-distinct-identity --project couplebook-97830`

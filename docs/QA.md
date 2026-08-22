@@ -43,3 +43,11 @@ Always report:
 - relevant failure output
 - whether the check was local, emulator, or production
 - whether production was read-only or mutated
+
+## Distinct Identity Update
+
+The distinct-identity branch also requires:
+
+- `npm run eventhub:review`
+- `npm run identity:check`
+- verification that the three supported themes are present and route QA still passes after theme persistence changes

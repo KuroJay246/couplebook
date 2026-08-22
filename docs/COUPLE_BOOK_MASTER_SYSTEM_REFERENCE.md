@@ -61,3 +61,12 @@ V1.2 routes add an active consumer-app layer:
 - Prohibited Firebase project: `gathervibeshub`
 - Hosting publishes `app-v2/dist`
 - No production writes or deployments without explicit current authorization.
+
+## Distinct Identity Update
+
+The current identity layer adds:
+
+- original Couple Book `BrandMark`
+- root `data-theme` runtime
+- three supported themes: `midnight-rose`, `paper-hearts`, `moonlit`
+- personal `appearanceTheme` persistence on the private settings document only

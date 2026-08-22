@@ -60,6 +60,8 @@ let failures = 0
 console.log('Couple Book Event Hub comparison')
 console.log(`- reference repo: ${config.referenceRepo}`)
 console.log(`- inspected commit: ${config.lastInspectedCommit}`)
+console.log(`- engineering branch baseline: ${config.referenceEngineeringBranch}`)
+console.log(`- visual identity version: ${config.visualIdentityVersion}`)
 
 for (const comparison of comparisons) {
   const referencePath = path.join(config.referenceRepo, comparison.referenceFile)
@@ -86,6 +88,11 @@ for (const comparison of comparisons) {
   }
 
   console.log(`- OK ${comparison.area}: ${comparison.referenceFile} -> ${comparison.targetFiles.join(', ')}`)
+}
+
+console.log('- Intentional visual divergence:')
+for (const [area, enabled] of Object.entries(config.intentionalVisualDivergence || {})) {
+  console.log(`  - ${enabled ? 'OK' : 'FAIL'} ${area}`)
 }
 
 if (failures > 0) {

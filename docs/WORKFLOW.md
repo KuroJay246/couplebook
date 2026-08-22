@@ -68,3 +68,13 @@ npx -y firebase-tools@latest hosting:channel:deploy v1-2-app-experience --projec
 ```
 
 Do not deploy V1.2 Hosting live or Firestore rules live until owner review explicitly approves that release step.
+
+## Distinct Identity Update
+
+For `design/couplebook-distinct-product-identity`, add:
+
+```powershell
+npm run eventhub:review
+npm run identity:check
+firebase hosting:channel:deploy couplebook-distinct-identity --project couplebook-97830
+```

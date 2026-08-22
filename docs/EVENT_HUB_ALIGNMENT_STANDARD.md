@@ -76,3 +76,7 @@ npm run alignment:check
 ```
 
 If the Gather commit changed, re-read the active Gather shell, styling, auth, and QA files, update `config/event-hub-reference.json`, and rerun the check.
+
+## Distinct Identity Update
+
+As of Saturday, August 22, 2026, Couple Book intentionally diverges from Event Hub for brand, themes, shell styling, navigation styling, typography personality, page composition, Story, Album, Us, Plans, More, Contract presentation, special moments, and motion. Engineering alignment remains required for structure, auth, services, revisions, QA, and deployment safeguards.

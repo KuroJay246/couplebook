@@ -47,3 +47,12 @@ Deployment is target-specific and approval-gated.
 - V1.2 app-experience work deploys to Hosting preview channels only until owner review approves production.
 
 Start with `docs/PROJECT_HANDOFF.md` and `docs/COUPLE_BOOK_MASTER_SYSTEM_REFERENCE.md` before making product changes.
+
+## Distinct Identity Update
+
+As of Saturday, August 22, 2026, the active branch is `design/couplebook-distinct-product-identity`.
+
+- `app-v2` now carries the original Couple Book brand mark and three supported themes: `midnight-rose`, `paper-hearts`, and `moonlit`.
+- Theme selection uses root `data-theme` plus personal `appearanceTheme` restoration from private settings.
+- Current identity/release checks include `npm run eventhub:review`, `npm run alignment:check`, and `npm run identity:check`.
+- Preview deployment for this branch is `firebase hosting:channel:deploy couplebook-distinct-identity --project couplebook-97830`.

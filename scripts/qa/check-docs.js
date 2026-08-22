@@ -10,7 +10,12 @@ const requiredDocs = [
   'docs/WORKFLOW.md',
   'docs/QA.md',
   'docs/MEDIA.md',
+  'docs/STORAGE_AND_MEDIA.md',
   'docs/ARCHITECTURE.md',
+  'docs/SECURITY.md',
+  'docs/RELEASE_AND_DEPLOYMENT.md',
+  'docs/COUPLE_BOOK_VISUAL_IDENTITY_STANDARD.md',
+  'docs/COUPLE_BOOK_DISTINCT_UI_RESEARCH.md',
   'docs/HISTORICAL_ARCHIVE_INDEX.md'
 ];
 

@@ -22,10 +22,12 @@
     "app:v2:test": "npm --prefix app-v2 test",
     "eventhub:status": "node scripts/eventhub-status.mjs",
     "eventhub:compare": "node scripts/eventhub-compare.mjs",
+    "eventhub:review": "node scripts/eventhub-review.mjs",
     "product:qa": "node scripts/product-qa.mjs",
     "product:audit": "node scripts/product-audit.mjs",
     "alignment:check": "node scripts/check-event-hub-alignment.mjs",
-    "release:preflight": "set EXPECTED_FIREBASE_PROJECT_ID=couplebook-97830&& node scripts/assert-firebase-project.mjs --project couplebook-97830 && npm run docs:check"
+    "identity:check": "node scripts/check-couple-book-identity.mjs",
+    "release:preflight": "set EXPECTED_FIREBASE_PROJECT_ID=couplebook-97830&& node scripts/assert-firebase-project.mjs --project couplebook-97830 && npm run docs:check && npm run alignment:check && npm run identity:check"
   },
   "keywords": [
     "relationship",

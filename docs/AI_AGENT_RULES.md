@@ -41,3 +41,11 @@ When using Gather & Savor Event Hub as a workflow reference, also read `docs/EVE
 - Memory writes may include safe `kindLabel` and `mediaNote` fields.
 - Prompt answer persistence is not enabled in V1.2 unless a later task explicitly adds that workflow.
 - Do not deploy V1.2 Hosting live or V1.2 Firestore rules to production without explicit current approval.
+
+## Distinct Identity Update
+
+As of Saturday, August 22, 2026:
+
+- keep the Couple Book identity distinct from Event Hub across brand, themes, shell styling, navigation styling, route composition, and motion
+- keep engineering alignment with Event Hub for auth, authorization, services, repositories, revisions, validation, accessibility, QA, and deployment safeguards
+- run `npm run eventhub:review`, `npm run alignment:check`, and `npm run identity:check` for identity-branch closeout

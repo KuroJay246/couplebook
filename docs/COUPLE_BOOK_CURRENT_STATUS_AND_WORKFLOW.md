@@ -158,6 +158,10 @@ V1.2 is the app-experience upgrade branch:
 
 - Branch: `feature/couplebook-v1.2-app-experience`.
 - Start point: updated `main` after V1.1 merge.
+
+## Distinct Identity Update
+
+As of Saturday, August 22, 2026, the active branch is `design/couplebook-distinct-product-identity`. The current app-v2 surface carries the original Couple Book identity, supported theme runtime (`midnight-rose`, `paper-hearts`, `moonlit`), and distinct shell/route compositions on top of the protected Event Hub-derived engineering foundation. Release closeout for this branch adds `npm run eventhub:review`, `npm run identity:check`, preview-only deployment with `firebase hosting:channel:deploy couplebook-distinct-identity --project couplebook-97830`, and external evidence capture under `C:\Users\Jaylan\Documents\couplebook.visual-review\distinct-product-identity\`.
 - Deployment target during V1.2: Firebase Hosting preview channel only.
 - Firestore rules: do not deploy production rules during V1.2 unless separately approved.
 - Product goal: make the protected app feel like a complete private couple memory book, not a maintenance shell.
