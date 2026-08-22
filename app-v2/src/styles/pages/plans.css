@@ -1,3 +1,25 @@
 [data-route="plans"] {
   scroll-margin-top: 6rem;
 }
+
+[data-route="plans"] .cb-card,
+[data-route="plans"] .cb-surface {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--cb-surface) 94%, transparent), color-mix(in srgb, var(--cb-surface-raised) 98%, transparent));
+}
+
+[data-route="plans"] > .grid:first-of-type button {
+  transition:
+    transform var(--cb-motion-quick) ease,
+    background-color var(--cb-motion-standard) ease,
+    border-color var(--cb-motion-standard) ease;
+}
+
+[data-route="plans"] > .grid:first-of-type button:hover {
+  transform: translateY(-1px);
+}
+
+[data-route="plans"] .cb-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--cb-shadow-soft);
+}

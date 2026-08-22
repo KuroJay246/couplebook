@@ -42,7 +42,7 @@ export function PageTabs({ tabs, active, onChange, label = 'Page sections', idPr
   }
 
   return (
-    <div role="tablist" aria-label={label} className="flex gap-2 overflow-x-auto rounded-2xl border border-[#ead7df] bg-white p-2">
+    <div role="tablist" aria-label={label} className="cb-card flex gap-2 overflow-x-auto p-2">
       {tabs.map((tab, index) => {
         const selected = active === tab.id
         return (
@@ -57,13 +57,19 @@ export function PageTabs({ tabs, active, onChange, label = 'Page sections', idPr
             tabIndex={selected ? 0 : -1}
             onClick={() => selectTab(tab, index)}
             onKeyDown={handleKeyDown}
-            className={`min-h-10 shrink-0 rounded-xl px-4 text-left text-xs font-bold transition ${
-              selected ? 'bg-[#24131d] text-white' : 'text-[#6b5460] hover:bg-[#fff5f8]'
+            className={`cb-motion-standard min-h-10 shrink-0 rounded-xl px-4 text-left text-xs font-bold ${
+              selected ? 'cb-segment cb-segment-active' : 'cb-segment'
             }`}
           >
             <span>{tab.label}</span>
             {tab.count !== undefined ? (
-              <span className={`ml-2 rounded-full px-2 py-0.5 text-[10px] ${selected ? 'bg-white/15 text-white' : 'bg-[#f7f1f4] text-[#806572]'}`}>
+              <span
+                className="ml-2 rounded-full px-2 py-0.5 text-[10px]"
+                style={{
+                  background: selected ? 'color-mix(in srgb, var(--cb-accent) 22%, transparent)' : 'color-mix(in srgb, var(--cb-accent-soft) 88%, transparent)',
+                  color: selected ? 'var(--cb-text)' : 'var(--cb-text-muted)',
+                }}
+              >
                 {tab.count}
               </span>
             ) : null}

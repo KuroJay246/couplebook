@@ -3,12 +3,13 @@ import { Search } from 'lucide-react'
 export function SearchField({ label = 'Search', value, onChange, placeholder, className = '', ...props }) {
   return (
     <label className={`grid gap-2 ${className}`}>
-      <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#806572]">{label}</span>
-      <span className="flex min-h-11 items-center gap-3 rounded-xl border border-[#dcc2cd] bg-white px-3">
-        <Search className="size-4 text-[#8f5168]" aria-hidden="true" />
+      <span className="cb-kicker">{label}</span>
+      <span className="cb-input-surface flex items-center gap-3 px-3">
+        <Search className="size-4" style={{ color: 'var(--cb-accent)' }} aria-hidden="true" />
         <input
           {...props}
-          className="min-h-11 w-full border-0 bg-transparent px-0 text-sm text-[#24131d] outline-none"
+          className="min-h-11 w-full border-0 bg-transparent px-0 text-sm outline-none"
+          style={{ color: 'var(--cb-text)' }}
           onChange={onChange}
           placeholder={placeholder}
           type="search"

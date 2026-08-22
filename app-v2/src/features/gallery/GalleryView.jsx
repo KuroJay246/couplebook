@@ -118,12 +118,12 @@ function GalleryTile({ item, onSelect }) {
       >
         <div className="flex items-start justify-between gap-3">
           <StatusBadge tone={toneFor(item)}>{mediaStatus(item)}</StatusBadge>
-          {isVideo ? <Film className="size-5 text-[#8f5168]" aria-hidden="true" /> : <ImageIcon className="size-5 text-[#8f5168]" aria-hidden="true" />}
+          {isVideo ? <Film className="size-5 text-[var(--cb-accent)]" aria-hidden="true" /> : <ImageIcon className="size-5 text-[var(--cb-accent)]" aria-hidden="true" />}
         </div>
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">{item.displayDate || 'Date review'}</p>
-          <h3 className="mt-2 text-xl font-bold text-[#24131d]">{item.title}</h3>
-          <p className="mt-2 line-clamp-3 text-sm leading-6 text-[#6B564C]">{item.description}</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">{item.displayDate || 'Date review'}</p>
+          <h3 className="mt-2 text-xl font-bold text-[var(--cb-text)]">{item.title}</h3>
+          <p className="mt-2 line-clamp-3 text-sm leading-6 text-[var(--cb-text-secondary)]">{item.description}</p>
         </div>
       </button>
       <div className="flex flex-1 flex-col gap-4 p-4">
@@ -147,14 +147,14 @@ function LiveAlbumTile() {
         <div className="flex h-full flex-col justify-between gap-5">
           <div>
             <StatusBadge tone="info">Live album</StatusBadge>
-            <h3 className="mt-3 font-serif text-3xl text-[#24131d]">Our Live Album</h3>
-            <p className="mt-3 text-sm leading-6 text-[#6B564C]">
+            <h3 className="mt-3 font-serif text-3xl text-[var(--cb-text)]">Our Live Album</h3>
+            <p className="mt-3 text-sm leading-6 text-[var(--cb-text-secondary)]">
               Open the shared iCloud album for the newest photos and videos added outside Couple Book.
             </p>
           </div>
-          <div className="rounded-2xl border border-[#ead7df] bg-[#fff8fb] p-4">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Boundary</p>
-            <p className="mt-2 text-sm leading-6 text-[#6B564C]">This remains a separate private iCloud destination. Couple Book only links to it and does not expose those files as public assets.</p>
+          <div className="rounded-2xl border border-[var(--cb-border)] bg-[var(--cb-accent-soft)] p-4">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Boundary</p>
+            <p className="mt-2 text-sm leading-6 text-[var(--cb-text-secondary)]">This remains a separate private iCloud destination. Couple Book only links to it and does not expose those files as public assets.</p>
           </div>
         </div>
       </Surface>
@@ -191,7 +191,7 @@ function GalleryLightbox({ item, items, onClose, onNext, onPrevious, onRemove })
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <button type="button" className="absolute inset-0 bg-[#24131d]/75 backdrop-blur-sm" onClick={onClose} aria-label="Close Album viewer" />
+      <button type="button" className="absolute inset-0 bg-[var(--cb-bg-soft)]/75 backdrop-blur-sm" onClick={onClose} aria-label="Close Album viewer" />
       <div
         ref={dialogRef}
         role="dialog"
@@ -201,7 +201,7 @@ function GalleryLightbox({ item, items, onClose, onNext, onPrevious, onRemove })
       >
         <div className="grid min-h-[min(32rem,calc(100vh-4rem))] lg:grid-cols-[minmax(0,1.3fr)_minmax(22rem,0.7fr)]">
           <div className="flex items-center justify-center bg-[linear-gradient(180deg,#24131d_0%,#140d12_100%)] p-6">
-            <div className="flex h-full min-h-80 w-full items-center justify-center rounded-[24px] border border-white/10 bg-white/[0.04] p-8 text-center">
+            <div className="flex h-full min-h-80 w-full items-center justify-center rounded-[24px] border border-white/10 bg-[var(--cb-surface)]/[0.04] p-8 text-center">
               <div>
                 {isVideo ? <Film className="mx-auto size-12 text-[#f4d8e6]" aria-hidden="true" /> : <ImageIcon className="mx-auto size-12 text-[#f4d8e6]" aria-hidden="true" />}
                 <p className="mt-4 text-sm font-bold uppercase tracking-[0.18em] text-[#f4d8e6]">{mediaStatus(item)}</p>
@@ -221,7 +221,7 @@ function GalleryLightbox({ item, items, onClose, onNext, onPrevious, onRemove })
                 <h3 id={titleId} className="mt-3 text-2xl font-bold">{item.title}</h3>
                 <p className="mt-2 text-sm text-white/72">{item.displayDate || 'Date review'}</p>
               </div>
-              <TextButton aria-label="Close" className="text-white hover:bg-white/10" onClick={onClose}>Close</TextButton>
+              <TextButton aria-label="Close" className="text-white hover:bg-[var(--cb-surface)]/10" onClick={onClose}>Close</TextButton>
             </div>
             <p className="text-sm leading-6 text-white/78">{item.description}</p>
             <div className="flex flex-wrap gap-2">
@@ -235,9 +235,9 @@ function GalleryLightbox({ item, items, onClose, onNext, onPrevious, onRemove })
                 : 'This item is still shown through protected story metadata only.'}
             />
             <div className="mt-auto flex flex-wrap gap-2">
-              {canStep ? <SecondaryButton className="border-white/20 bg-transparent text-white hover:bg-white/10" onClick={onPrevious}>Previous</SecondaryButton> : null}
-              {canStep ? <SecondaryButton className="border-white/20 bg-transparent text-white hover:bg-white/10" onClick={onNext}>Next</SecondaryButton> : null}
-              <SecondaryButton as={Link} className="border-white/20 bg-transparent text-white hover:bg-white/10" to="/timeline">Open Story</SecondaryButton>
+              {canStep ? <SecondaryButton className="border-white/20 bg-transparent text-white hover:bg-[var(--cb-surface)]/10" onClick={onPrevious}>Previous</SecondaryButton> : null}
+              {canStep ? <SecondaryButton className="border-white/20 bg-transparent text-white hover:bg-[var(--cb-surface)]/10" onClick={onNext}>Next</SecondaryButton> : null}
+              <SecondaryButton as={Link} className="border-white/20 bg-transparent text-white hover:bg-[var(--cb-surface)]/10" to="/timeline">Open Story</SecondaryButton>
               {item.media.status === 'storage-verified' ? <DangerButton onClick={() => onRemove(item)}>Remove from Album</DangerButton> : null}
             </div>
           </div>
@@ -277,9 +277,9 @@ function UploadQueueCard({ item, onCancel, onChange, onRemove, onRetry }) {
               {queueStatusLabel(item.status)}
             </StatusBadge>
           </div>
-          <p className="mt-3 text-sm font-bold text-[#24131d]">{item.fileName}</p>
-          <p className="mt-1 text-sm text-[#806572]">{formatBytes(item.sizeBytes)}</p>
-          <p className="mt-1 text-xs text-[#806572]">
+          <p className="mt-3 text-sm font-bold text-[var(--cb-text)]">{item.fileName}</p>
+          <p className="mt-1 text-sm text-[var(--cb-text-muted)]">{formatBytes(item.sizeBytes)}</p>
+          <p className="mt-1 text-xs text-[var(--cb-text-muted)]">
             {progressValue}% • {formatBytes(item.bytesTransferred || 0)} of {formatBytes(item.totalBytes || item.sizeBytes || 0)}
           </p>
         </div>
@@ -291,13 +291,13 @@ function UploadQueueCard({ item, onCancel, onChange, onRemove, onRetry }) {
       </div>
 
       <div className="h-2 overflow-hidden rounded-full bg-[#f3e7ec]">
-        <div className={`h-full rounded-full transition-all ${item.status === QUEUE_STATUS.failed ? 'bg-[#d96b8a]' : item.status === QUEUE_STATUS.saved ? 'bg-[#4f8a63]' : 'bg-[#8f5168]'}`} style={{ width: `${progressValue}%` }} />
+        <div className={`h-full rounded-full transition-all ${item.status === QUEUE_STATUS.failed ? 'bg-[#d96b8a]' : item.status === QUEUE_STATUS.saved ? 'bg-[#4f8a63]' : 'bg-[var(--cb-accent)]'}`} style={{ width: `${progressValue}%` }} />
       </div>
 
       {item.error ? <InlineAlert description={item.error} tone="error" /> : null}
 
       {hasPreview ? (
-        <div className="overflow-hidden rounded-[20px] border border-[#ead7df] bg-[#fff8fb]">
+        <div className="overflow-hidden rounded-[20px] border border-[var(--cb-border)] bg-[var(--cb-accent-soft)]">
           {item.kind === 'video' ? (
             <video
               aria-label={`Preview for ${item.fileName}`}
@@ -436,23 +436,23 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
       <Surface className="grid gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(18rem,0.9fr)]">
         <div>
           <StatusBadge tone="warning">Metadata-first private album</StatusBadge>
-          <h3 className="mt-3 font-serif text-3xl text-[#24131d]">Moments we kept close</h3>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-[#6B564C]">
+          <h3 className="mt-3 font-serif text-3xl text-[var(--cb-text)]">Moments we kept close</h3>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--cb-text-secondary)]">
             Album keeps the image-first view quiet and spacious while preserving the current private media boundary. Verified Storage media stays scoped, older references stay descriptive instead of leaking file paths.
           </p>
         </div>
         <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
           <ContentCard>
-            <p className="text-3xl font-bold text-[#24131d]">{model.summary.totalMemories}</p>
-            <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[#806572]">Moments with media</p>
+            <p className="text-3xl font-bold text-[var(--cb-text)]">{model.summary.totalMemories}</p>
+            <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[var(--cb-text-muted)]">Moments with media</p>
           </ContentCard>
           <ContentCard>
-            <p className="text-3xl font-bold text-[#24131d]">{model.summary.photos}</p>
-            <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[#806572]">Photos</p>
+            <p className="text-3xl font-bold text-[var(--cb-text)]">{model.summary.photos}</p>
+            <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[var(--cb-text-muted)]">Photos</p>
           </ContentCard>
           <ContentCard>
-            <p className="text-3xl font-bold text-[#24131d]">{model.summary.videos}</p>
-            <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[#806572]">Videos</p>
+            <p className="text-3xl font-bold text-[var(--cb-text)]">{model.summary.videos}</p>
+            <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[var(--cb-text-muted)]">Videos</p>
           </ContentCard>
         </div>
       </Surface>
@@ -473,8 +473,8 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
           </FormField>
           <SearchField label="Search Album" onChange={(event) => setSearch(event.target.value)} placeholder="Search dates, titles, and tags" value={search} />
         </div>
-        <div className="mt-4 rounded-2xl border border-[#EFE2DA] bg-[#FBF8F5] p-4">
-          <p className="text-sm text-[#6B564C]">
+        <div className="mt-4 rounded-2xl border border-[var(--cb-border)] bg-[var(--cb-surface-soft)] p-4">
+          <p className="text-sm text-[var(--cb-text-secondary)]">
             {filtered.length} {filtered.length === 1 ? 'result' : 'results'} across photos, videos, and protected memory references.
           </p>
         </div>
@@ -483,23 +483,23 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
       <div className="grid gap-5 xl:grid-cols-[minmax(18rem,0.72fr)_minmax(0,1.28fr)]">
         <LiveAlbumTile />
         <Surface aria-label="Upload queue" tone="soft">
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Upload queue</p>
-          <h3 className="mt-2 font-serif text-2xl text-[#24131d]">Protected imports</h3>
-          <p className="mt-2 text-sm leading-6 text-[#6B564C]">
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Upload queue</p>
+          <h3 className="mt-2 font-serif text-2xl text-[var(--cb-text)]">Protected imports</h3>
+          <p className="mt-2 text-sm leading-6 text-[var(--cb-text-secondary)]">
             Add private image and video files, confirm the memory details, and save them through the same active-member Storage and Firestore boundaries already enforced in app-v2.
           </p>
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
             <ContentCard>
-              <p className="text-3xl font-bold text-[#24131d]">{uploadQueue.summary.total}</p>
-              <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[#806572]">Queued items</p>
+              <p className="text-3xl font-bold text-[var(--cb-text)]">{uploadQueue.summary.total}</p>
+              <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[var(--cb-text-muted)]">Queued items</p>
             </ContentCard>
             <ContentCard>
-              <p className="text-3xl font-bold text-[#24131d]">{uploadQueue.summary.saved}</p>
-              <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[#806572]">Saved this session</p>
+              <p className="text-3xl font-bold text-[var(--cb-text)]">{uploadQueue.summary.saved}</p>
+              <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[var(--cb-text-muted)]">Saved this session</p>
             </ContentCard>
             <ContentCard>
-              <p className="text-3xl font-bold text-[#24131d]">{formatBytes(uploadQueue.summary.bytes)}</p>
-              <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[#806572]">Private media size</p>
+              <p className="text-3xl font-bold text-[var(--cb-text)]">{formatBytes(uploadQueue.summary.bytes)}</p>
+              <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[var(--cb-text-muted)]">Private media size</p>
             </ContentCard>
           </div>
           <div className="mt-5 flex flex-wrap gap-2">
@@ -541,9 +541,9 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
           <section key={group.id} className="space-y-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Album chapter</p>
-                <h3 className="mt-2 font-serif text-3xl text-[#24131d]">{group.yearLabel}</h3>
-                <p className="mt-2 text-sm text-[#6B564C]">{group.items.length} {group.items.length === 1 ? 'memory' : 'memories'} in this chapter.</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Album chapter</p>
+                <h3 className="mt-2 font-serif text-3xl text-[var(--cb-text)]">{group.yearLabel}</h3>
+                <p className="mt-2 text-sm text-[var(--cb-text-secondary)]">{group.items.length} {group.items.length === 1 ? 'memory' : 'memories'} in this chapter.</p>
               </div>
               {group.featured ? <StatusBadge tone="info">Featured: {group.featured.title}</StatusBadge> : null}
             </div>

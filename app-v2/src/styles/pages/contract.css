@@ -1,0 +1,8 @@
+[data-route="contract"] {
+  scroll-margin-top: 6rem;
+}
+
+[data-route="contract"] .cb-surface:first-of-type {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--cb-surface) 94%, transparent), color-mix(in srgb, var(--cb-surface-raised) 98%, transparent));
+}

@@ -1,6 +1,86 @@
-[data-route="gallery"] .line-clamp-3 {
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+.cb-button {
+  border: 1px solid transparent;
+}
+
+.cb-button-primary {
+  background: linear-gradient(135deg, var(--cb-accent), var(--cb-accent-strong));
+  color: #fff;
+  box-shadow: 0 16px 36px color-mix(in srgb, var(--cb-accent) 30%, transparent);
+}
+
+.cb-button-primary:hover {
+  transform: translateY(-1px);
+  filter: saturate(1.06);
+}
+
+.cb-button-secondary {
+  border-color: var(--cb-border);
+  background: color-mix(in srgb, var(--cb-surface-raised) 94%, transparent);
+  color: var(--cb-text-secondary);
+}
+
+.cb-button-secondary:hover,
+.cb-button-text:hover {
+  background: color-mix(in srgb, var(--cb-accent-soft) 70%, transparent);
+  color: var(--cb-text);
+}
+
+.cb-button-text {
+  color: var(--cb-text-secondary);
+}
+
+.cb-button-danger {
+  background: color-mix(in srgb, var(--cb-error-text) 70%, #7a1737);
+  color: #fff;
+  box-shadow: 0 16px 32px rgba(122, 23, 55, 0.24);
+}
+
+.cb-status-badge {
+  border: 1px solid transparent;
+}
+
+.cb-status-badge-default {
+  background: var(--cb-accent-soft);
+  color: var(--cb-text-secondary);
+  border-color: color-mix(in srgb, var(--cb-accent) 18%, transparent);
+}
+
+.cb-status-badge-success {
+  background: var(--cb-success-bg);
+  color: var(--cb-success-text);
+}
+
+.cb-status-badge-warning {
+  background: var(--cb-warning-bg);
+  color: var(--cb-warning-text);
+}
+
+.cb-status-badge-error {
+  background: var(--cb-error-bg);
+  color: var(--cb-error-text);
+}
+
+.cb-status-badge-info {
+  background: var(--cb-info-bg);
+  color: var(--cb-info-text);
+}
+
+.cb-chip,
+.cb-segment {
+  border: 1px solid var(--cb-border);
+  background: color-mix(in srgb, var(--cb-surface-raised) 94%, transparent);
+  color: var(--cb-text-secondary);
+}
+
+.cb-chip:hover,
+.cb-segment:hover {
+  background: color-mix(in srgb, var(--cb-accent-soft) 72%, transparent);
+  color: var(--cb-text);
+}
+
+.cb-chip-active,
+.cb-segment-active {
+  background: color-mix(in srgb, var(--cb-accent-soft) 90%, transparent);
+  color: var(--cb-text);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cb-accent) 26%, transparent);
 }

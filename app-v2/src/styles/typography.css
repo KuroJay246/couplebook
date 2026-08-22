@@ -1,0 +1,48 @@
+html {
+  font-family: var(--cb-font-ui);
+  background: var(--cb-bg);
+  overflow-x: hidden;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  overflow-x: hidden;
+  color: var(--cb-text);
+  background: var(--cb-bg-canvas);
+  font-family: var(--cb-font-ui);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-serif,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--cb-font-display);
+  letter-spacing: 0;
+}
+
+.cb-kicker {
+  color: var(--cb-text-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.cb-page-title {
+  color: var(--cb-text);
+  font-family: var(--cb-font-display);
+  letter-spacing: 0;
+}
+
+.cb-body-copy {
+  color: var(--cb-text-secondary);
+  line-height: 1.75;
+}
+

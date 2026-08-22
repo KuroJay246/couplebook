@@ -115,7 +115,7 @@ test('settings read model keeps approved identity, appearance notes, and migrati
   assert.equal(model.status, 'ready')
   assert.equal(model.account.displayName, 'Jaylan')
   assert.equal(model.account.email, 'approved@example.com')
-  assert.equal(model.appearance.runtimeTheme.label, 'Editorial paper and ink')
+  assert.equal(model.appearance.runtimeTheme.label, 'Moonlit')
   assert.equal(model.appearance.preservedTheme.label, 'Warm sunset')
   assert.equal(model.appearance.preservedTheme.origin, 'Scoped legacy preference')
   assert.equal(model.appearance.anniversaryView.label, 'Both perspectives')
@@ -123,7 +123,7 @@ test('settings read model keeps approved identity, appearance notes, and migrati
   assert.equal(model.compatibility.items[0].statusLabel, 'Available')
   assert.equal(model.compatibility.items[4].statusLabel, 'Development only')
   assert.ok(model.migration.completed.some((entry) => entry.label === 'Dashboard'))
-  assert.ok(model.migration.completed.some((entry) => entry.label === 'Settings'))
+  assert.ok(model.migration.completed.some((entry) => entry.label === 'More'))
   assert.deepEqual(model.migration.smokeGate, {
     jaylan: 'PASS',
     partner: 'NOT TESTED',
@@ -204,6 +204,8 @@ test('settings read model keeps scoped preference precedence and fallback-only a
   assert.equal(fallbackModel.appearance.preservedTheme.label, 'Crisp light')
   assert.equal(fallbackModel.appearance.preservedTheme.origin, 'Shared legacy fallback')
   assert.equal(fallbackModel.appearance.anniversaryView.label, 'Jaylan perspective')
+  assert.equal(scopedModel.appearance.runtimeTheme.label, 'Midnight Rose')
+  assert.equal(fallbackModel.appearance.runtimeTheme.label, 'Paper Hearts')
 })
 
 test('settings read model keeps empty and invalid states safe without exposing raw technical values', () => {

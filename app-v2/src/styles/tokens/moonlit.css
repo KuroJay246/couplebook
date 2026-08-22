@@ -1,0 +1,33 @@
+html[data-theme="moonlit"] {
+  color-scheme: dark;
+  --cb-theme-id: "moonlit";
+  --cb-bg: #0f1520;
+  --cb-bg-soft: #151d2a;
+  --cb-bg-elevated: #1b2433;
+  --cb-bg-canvas: radial-gradient(circle at top left, rgba(128, 108, 170, 0.16), transparent 24rem), linear-gradient(180deg, #121925 0%, #0f1520 100%);
+  --cb-nav-bg: rgba(15, 21, 32, 0.94);
+  --cb-nav-border: rgba(234, 240, 250, 0.08);
+  --cb-surface: rgba(25, 34, 48, 0.9);
+  --cb-surface-raised: rgba(31, 42, 58, 0.96);
+  --cb-surface-soft: rgba(39, 49, 68, 0.72);
+  --cb-surface-ghost: rgba(255, 255, 255, 0.04);
+  --cb-border: rgba(232, 238, 247, 0.09);
+  --cb-border-strong: rgba(232, 238, 247, 0.14);
+  --cb-text: #edf0f7;
+  --cb-text-secondary: #cad0dd;
+  --cb-text-muted: #98a5bb;
+  --cb-accent: #b286c7;
+  --cb-accent-strong: #9d72b4;
+  --cb-accent-soft: rgba(178, 134, 199, 0.14);
+  --cb-accent-secondary: #d092a6;
+  --cb-focus: rgba(176, 145, 220, 0.4);
+  --cb-success-bg: rgba(64, 104, 92, 0.24);
+  --cb-success-text: #cae8de;
+  --cb-warning-bg: rgba(133, 113, 74, 0.24);
+  --cb-warning-text: #efe0bd;
+  --cb-error-bg: rgba(128, 52, 80, 0.24);
+  --cb-error-text: #ffdce6;
+  --cb-info-bg: rgba(68, 90, 141, 0.24);
+  --cb-info-text: #d4defc;
+}
+

@@ -1,34 +1,53 @@
-import { Shield, Sparkles } from 'lucide-react'
+import {
+  Gift,
+  Heart,
+  LockKeyhole,
+  LogOut,
+  MonitorCog,
+  PenSquare,
+  ScrollText,
+  Shield,
+  Sparkles,
+} from 'lucide-react'
 import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { PrimaryButton, SecondaryButton } from '../../components/ui/Button.jsx'
 import { ErrorState } from '../../components/ui/ErrorState.jsx'
 import { FormField, SelectField } from '../../components/ui/FormField.jsx'
 import { InlineAlert } from '../../components/ui/InlineAlert.jsx'
 import { LoadingState } from '../../components/ui/LoadingState.jsx'
 import { PageHeader } from '../../components/ui/PageHeader.jsx'
-import { PageTabs } from '../../components/ui/PageTabs.jsx'
 import { StatusBadge } from '../../components/ui/StatusBadge.jsx'
 import { ContentCard, Surface } from '../../components/ui/Surface.jsx'
+import { useAuth } from '../../auth/useAuth.js'
+import { useTheme } from '../../theme/useTheme.js'
+import { DEFAULT_THEME_ID, THEME_REGISTRY } from '../../theme/themeRegistry.js'
 import { useOwnerWrite } from '../editing/useOwnerWrite.js'
 
-const PANELS = [
-  { key: 'appearance', label: 'Appearance' },
-  { key: 'privacy', label: 'Privacy' },
-  { key: 'account', label: 'Access' },
-  { key: 'compatibility', label: 'Compatibility' },
-  { key: 'advanced', label: 'Application' },
-]
-
-const THEMES = [
-  { key: 'paper', label: 'Editorial paper' },
-  { key: 'rose', label: 'Crisp light' },
-  { key: 'olive', label: 'Warm sunset' },
-  { key: 'plum', label: 'Kuromi gothic' },
+const MOMENT_LINKS = [
+  {
+    href: '/birthday',
+    icon: Gift,
+    title: 'Birthday',
+    description: 'A warmer chapter for celebrations, notes, and meaningful reveals.',
+  },
+  {
+    href: '/valentine',
+    icon: Heart,
+    title: 'Valentine',
+    description: 'A love-letter reading flow with a softer, more intimate pace.',
+  },
+  {
+    href: '/confession',
+    icon: PenSquare,
+    title: 'Confession',
+    description: 'A quieter private page for vulnerable writing and protected edits.',
+  },
 ]
 
 function buildFormState(model) {
   return {
-    theme: model.appearance?.preservedTheme?.value || 'paper',
+    appearanceTheme: model.appearance?.currentTheme?.value || model.appearance?.preservedTheme?.value || DEFAULT_THEME_ID,
     anniversaryView: model.appearance?.anniversaryView?.value || 'dual',
     localOnlyMode: model.appearance?.privacy?.localOnlyMode === true,
     reducedMotion: model.appearance?.privacy?.reducedMotion === true,
@@ -36,50 +55,110 @@ function buildFormState(model) {
   }
 }
 
+function hasChanges(loadedForm, form) {
+  return (
+    loadedForm.appearanceTheme !== form.appearanceTheme
+    || loadedForm.anniversaryView !== form.anniversaryView
+    || loadedForm.localOnlyMode !== form.localOnlyMode
+    || loadedForm.reducedMotion !== form.reducedMotion
+  )
+}
+
 function ToggleRow({ checked, description, label, onChange }) {
   return (
-    <div className="flex items-start justify-between gap-4 rounded-2xl border border-[#EFE2DA] bg-[#FBF8F5] p-4">
+    <div className="cb-card flex items-start justify-between gap-4 p-4">
       <div className="min-w-0">
-        <p className="text-sm font-bold text-[#24131d]">{label}</p>
-        <p className="mt-1 text-sm leading-6 text-[#6B564C]">{description}</p>
+        <p className="text-sm font-semibold" style={{ color: 'var(--cb-text)' }}>{label}</p>
+        <p className="cb-body-copy mt-1 text-sm">{description}</p>
       </div>
       <button
+        aria-label={label}
         aria-pressed={checked}
-        className={`relative mt-1 h-7 w-12 rounded-full transition ${checked ? 'bg-[#8f5168]' : 'bg-[#dcc2cd]'}`}
+        className="cb-motion-standard relative mt-1 h-9 min-w-14 shrink-0 rounded-full"
+        style={{ background: checked ? 'var(--cb-accent)' : 'color-mix(in srgb, var(--cb-border-strong) 90%, transparent)' }}
         onClick={() => onChange(!checked)}
         type="button"
       >
-        <span className={`absolute top-1 size-5 rounded-full bg-white transition ${checked ? 'left-6' : 'left-1'}`} />
+        <span
+          className="cb-motion-standard absolute top-1 size-7 rounded-full"
+          style={{
+            left: checked ? '1.75rem' : '0.25rem',
+            background: 'var(--cb-surface-raised)',
+            boxShadow: 'var(--cb-shadow-soft)',
+          }}
+        />
       </button>
     </div>
   )
 }
 
+function ThemeTile({ active, onSelect, theme }) {
+  return (
+    <button
+      aria-pressed={active}
+      className="cb-motion-standard cb-card text-left"
+      style={{
+        padding: '1rem',
+        borderColor: active ? 'var(--cb-accent)' : 'var(--cb-border)',
+        boxShadow: active
+          ? '0 0 0 2px color-mix(in srgb, var(--cb-accent) 18%, transparent)'
+          : undefined,
+      }}
+      key={theme.id}
+      onClick={() => onSelect(theme.id)}
+      type="button"
+    >
+      <div className="grid gap-3">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold" style={{ color: 'var(--cb-text)' }}>{theme.name}</p>
+            <p className="mt-1 text-xs" style={{ color: 'var(--cb-text-muted)' }}>{theme.shortDescription}</p>
+          </div>
+          {active ? <StatusBadge tone="success">Selected</StatusBadge> : null}
+        </div>
+        <div className="grid grid-cols-[1.1fr_1fr_1fr_1fr] gap-2">
+          <span className="h-16 rounded-2xl border" style={{ background: theme.nav, borderColor: 'color-mix(in srgb, white 12%, transparent)' }} />
+          <span className="h-16 rounded-2xl border" style={{ background: theme.surface, borderColor: 'color-mix(in srgb, black 8%, transparent)' }} />
+          <span className="h-16 rounded-2xl border" style={{ background: theme.accent, borderColor: 'color-mix(in srgb, black 8%, transparent)' }} />
+          <span className="h-16 rounded-2xl border" style={{ background: theme.text, borderColor: 'color-mix(in srgb, black 8%, transparent)' }} />
+        </div>
+        <p className="text-sm leading-6" style={{ color: 'var(--cb-text-secondary)' }}>{theme.description}</p>
+      </div>
+    </button>
+  )
+}
+
 export function SettingsView({ compatibilityError, compatibilityState, model, onRefresh }) {
-  const [active, setActive] = useState('appearance')
   const writer = useOwnerWrite(onRefresh)
-  const loadedForm = buildFormState(model)
+  const { signOut } = useAuth()
+  const { activeTheme, previewTheme, commitTheme, resetTheme } = useTheme()
+  const loadedForm = useMemo(() => buildFormState(model), [model])
   const [draft, setDraft] = useState({})
   const [status, setStatus] = useState({ kind: '', message: '', saving: false })
   const form = useMemo(() => ({ ...loadedForm, ...draft, revision: loadedForm.revision }), [draft, loadedForm])
-  const hasDraftChanges = Object.keys(draft).length > 0
+  const dirty = hasChanges(loadedForm, form)
+  const agreementCards = [model.contract?.currentUser, model.contract?.partner].filter(Boolean)
 
   function updateField(key, value) {
     setDraft((current) => ({ ...current, [key]: value }))
+    if (key === 'appearanceTheme') {
+      previewTheme(value)
+    }
   }
 
-  function resetCurrentPanel() {
+  function resetCurrentView() {
     setDraft({})
-    setStatus({ kind: 'success', message: 'Settings restored to the current saved view.', saving: false })
+    resetTheme()
+    setStatus({ kind: 'success', message: 'Appearance and settings restored to the saved view.', saving: false })
   }
 
-  async function saveSettings(event) {
-    event.preventDefault()
+  async function saveSettings() {
     setStatus({ kind: '', message: '', saving: true })
     try {
       await writer.saveSettings(form)
+      commitTheme(form.appearanceTheme)
       setDraft({})
-      setStatus({ kind: 'success', message: 'Settings saved.', saving: false })
+      setStatus({ kind: 'success', message: 'More settings saved.', saving: false })
     } catch (error) {
       const message = error?.message || 'Settings could not be saved.'
       setStatus({
@@ -93,214 +172,221 @@ export function SettingsView({ compatibilityError, compatibilityState, model, on
   }
 
   if (compatibilityState === 'loading') {
-    return <LoadingState message="Loading Settings..." />
+    return <LoadingState message="Loading More..." />
   }
 
   if (compatibilityError || model.status === 'invalid') {
-    return <ErrorState title="Settings could not be loaded" message={compatibilityError || 'The Settings view is not available right now.'} onRetry={onRefresh} />
+    return <ErrorState title="More could not be loaded" message={compatibilityError || 'The More view is not available right now.'} onRetry={onRefresh} />
   }
 
   return (
     <section className="space-y-5" data-route="settings">
       <PageHeader
-        eyebrow="Care And Privacy"
-        title="Application Settings"
-        description="Adjust themes, preferences, and account visibility details without changing Couple Book’s private boundaries."
+        eyebrow="More"
+        title="Make the book yours"
+        description="Appearance, special pages, privacy details, and the quiet controls that belong around your private shared journal."
         actions={(
           <>
-            <StatusBadge tone={hasDraftChanges ? 'warning' : 'success'}>{hasDraftChanges ? 'Unsaved changes' : 'Saved view'}</StatusBadge>
-            <PrimaryButton loading={status.saving} onClick={saveSettings}>{status.saving ? 'Saving' : 'Save settings'}</PrimaryButton>
+            <StatusBadge tone={dirty ? 'warning' : 'success'}>
+              {dirty ? 'Unsaved changes' : `Saved theme: ${activeTheme}`}
+            </StatusBadge>
+            <SecondaryButton disabled={!dirty || status.saving} onClick={resetCurrentView}>Cancel</SecondaryButton>
+            <PrimaryButton loading={status.saving} onClick={saveSettings}>{status.saving ? 'Saving' : 'Save changes'}</PrimaryButton>
           </>
         )}
       />
 
       {status.message ? <InlineAlert description={status.message} tone={status.kind === 'error' ? 'error' : 'success'} /> : null}
 
-      <PageTabs active={active} controlsPanels={false} idPrefix="settings" label="Settings sections" onChange={setActive} tabs={PANELS.map((panel) => ({ id: panel.key, label: panel.label }))} />
-
-      <form className="space-y-5" onSubmit={saveSettings}>
-        {active === 'appearance' ? (
-          <Surface>
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Appearance</p>
-            <h3 className="mt-2 font-serif text-3xl text-[#24131d]">{model.appearance?.runtimeTheme?.label || 'Editorial paper and ink'}</h3>
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-[#6B564C]">{model.appearance?.runtimeTheme?.description}</p>
-            <div className="mt-5 grid gap-4 lg:grid-cols-2">
-              {THEMES.map((theme) => (
-                <button
-                  aria-pressed={form.theme === theme.key}
-                  className={`rounded-2xl border p-4 text-left transition ${form.theme === theme.key ? 'border-[#8f5168] bg-[#fceef3]' : 'border-[#EEDFD6] bg-white hover:bg-[#FFF8F2]'}`}
-                  key={theme.key}
-                  onClick={() => updateField('theme', theme.key)}
-                  type="button"
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(20rem,0.9fr)]">
+        <Surface className="cb-page-frame">
+          <p className="cb-kicker">Our moments</p>
+          <h3 className="cb-page-title mt-2 text-3xl">Special pages with their own mood</h3>
+          <p className="cb-body-copy mt-3 text-sm">
+            Birthday, Valentine, and Confession stay close here so they feel like part of the same product without becoming ordinary list pages.
+          </p>
+          <div className="mt-5 grid gap-3">
+            {MOMENT_LINKS.map(({ href, icon: Icon, title, description }) => (
+              <Link className="cb-card cb-motion-standard flex items-start gap-4 p-4 hover:translate-y-[-1px]" key={href} to={href}>
+                <span
+                  className="grid size-11 shrink-0 place-items-center rounded-2xl"
+                  style={{
+                    background: 'color-mix(in srgb, var(--cb-accent-soft) 88%, transparent)',
+                    color: 'var(--cb-accent)',
+                  }}
                 >
-                  <div className="flex gap-2">
-                    <span className="size-4 rounded-full bg-[#8f5168]" />
-                    <span className="size-4 rounded-full bg-[#24131d]" />
-                    <span className="size-4 rounded-full bg-[#f7dde6]" />
-                  </div>
-                  <p className="mt-3 text-sm font-bold text-[#24131d]">{theme.label}</p>
-                  <p className="mt-1 text-sm leading-6 text-[#6B564C]">{theme.key === form.theme ? 'Selected for save.' : 'Available preference.'}</p>
-                </button>
-              ))}
-            </div>
-            <div className="mt-5 grid gap-4 lg:grid-cols-2">
-              <FormField label="Relationship dates view">
-                <SelectField id="setting-anniversary-view" onChange={(event) => updateField('anniversaryView', event.target.value)} value={form.anniversaryView}>
-                  <option value="dual">Show both perspectives</option>
-                  <option value="jaylan">Jaylan perspective</option>
-                  <option value="omia">Omia perspective</option>
-                </SelectField>
-              </FormField>
-              <ContentCard>
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#806572]">Preserved preference</p>
-                <p className="mt-2 text-sm font-semibold text-[#24131d]">{model.appearance?.preservedTheme?.label}</p>
-                <p className="mt-1 text-sm text-[#6B564C]">{model.appearance?.preservedTheme?.origin}</p>
-              </ContentCard>
-            </div>
-          </Surface>
-        ) : null}
-
-        {active === 'privacy' ? (
-          <Surface>
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Privacy</p>
-            <h3 className="mt-2 font-serif text-3xl text-[#24131d]">Quiet defaults for a private book</h3>
-            <div className="mt-5 grid gap-4">
-              <ToggleRow
-                checked={form.localOnlyMode}
-                description="Helpful when reviewing Couple Book on a trusted browser."
-                label="Keep private reads on this device"
-                onChange={(value) => updateField('localOnlyMode', value)}
-              />
-              <ToggleRow
-                checked={form.reducedMotion}
-                description="Keep transitions quieter while preserving the approved look."
-                label="Reduce motion"
-                onChange={(value) => updateField('reducedMotion', value)}
-              />
-            </div>
-            <div className="mt-5 grid gap-3">
-              {(model.privacy?.items || []).map((item) => (
-                <ContentCard key={item.label}>
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-bold text-[#24131d]">{item.label}</p>
-                      <p className="mt-2 text-sm leading-6 text-[#6B564C]">{item.description}</p>
-                    </div>
-                    <StatusBadge>{item.meta}</StatusBadge>
-                  </div>
-                </ContentCard>
-              ))}
-            </div>
-          </Surface>
-        ) : null}
-
-        {active === 'account' ? (
-          <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-            <Surface>
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Access</p>
-              <h3 className="mt-2 font-serif text-3xl text-[#24131d]">{model.account?.displayName}</h3>
-              <div className="mt-5 grid gap-3">
-                {(model.account?.details || []).map((detail) => (
-                  <ContentCard key={detail.key}>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#806572]">{detail.label}</p>
-                    <p className="mt-2 text-sm font-semibold text-[#24131d]">{detail.value}</p>
-                  </ContentCard>
-                ))}
-              </div>
-            </Surface>
-            <Surface tone="soft">
-              <div className="flex items-start gap-3">
-                <Shield className="mt-1 size-5 text-[#8f5168]" aria-hidden="true" />
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Account boundaries</p>
-                  <h3 className="mt-2 font-serif text-2xl text-[#24131d]">Protected access stays separate</h3>
-                </div>
-              </div>
-              <div className="mt-5 grid gap-3">
-                {(model.account?.items || []).map((item) => (
-                  <ContentCard key={item.label}>
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-bold text-[#24131d]">{item.label}</p>
-                        <p className="mt-2 text-sm leading-6 text-[#6B564C]">{item.description}</p>
-                      </div>
-                      <StatusBadge>{item.meta}</StatusBadge>
-                    </div>
-                  </ContentCard>
-                ))}
-              </div>
-            </Surface>
+                  <Icon className="size-5" aria-hidden="true" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-semibold" style={{ color: 'var(--cb-text)' }}>{title}</span>
+                  <span className="cb-body-copy mt-1 block text-sm">{description}</span>
+                </span>
+              </Link>
+            ))}
           </div>
-        ) : null}
+        </Surface>
 
-        {active === 'compatibility' ? (
-          <Surface>
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Compatibility</p>
-            <h3 className="mt-2 font-serif text-3xl text-[#24131d]">Read bridges and migration state</h3>
+        <Surface tone="soft">
+          <div className="flex items-start gap-3">
+            <span
+              className="grid size-11 shrink-0 place-items-center rounded-2xl"
+              style={{
+                background: 'color-mix(in srgb, var(--cb-accent-soft) 88%, transparent)',
+                color: 'var(--cb-accent)',
+              }}
+            >
+              <ScrollText className="size-5" aria-hidden="true" />
+            </span>
+            <div>
+              <p className="cb-kicker">Our commitment</p>
+              <h3 className="cb-page-title mt-2 text-2xl">Our Agreement</h3>
+              <p className="cb-body-copy mt-2 text-sm">The contract stays readable, deliberate, and visually secondary to the promise itself.</p>
+            </div>
+          </div>
+          <div className="mt-5 grid gap-3">
+            {agreementCards.length > 0 ? agreementCards.map((record) => (
+              <ContentCard key={record.displayName}>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold" style={{ color: 'var(--cb-text)' }}>{record.displayName}</p>
+                    <p className="cb-body-copy mt-2 text-sm">{record.note}</p>
+                  </div>
+                  <StatusBadge tone={record.status === 'accepted' ? 'success' : 'warning'}>{record.label}</StatusBadge>
+                </div>
+              </ContentCard>
+            )) : null}
+            <SecondaryButton as={Link} to="/contract">Open Our Agreement</SecondaryButton>
+          </div>
+        </Surface>
+      </div>
+
+      <Surface className="cb-page-frame">
+        <div className="flex flex-col gap-4 border-b pb-4 sm:flex-row sm:items-end sm:justify-between" style={{ borderColor: 'var(--cb-border)' }}>
+          <div>
+            <p className="cb-kicker">Personalize</p>
+            <h3 className="cb-page-title mt-2 text-3xl">Appearance</h3>
+            <p className="cb-body-copy mt-2 text-sm">Preview every supported theme instantly. Save only one allowed theme ID to your personal settings.</p>
+          </div>
+          <StatusBadge tone="info">{THEME_REGISTRY.find((theme) => theme.id === form.appearanceTheme)?.name || 'Midnight Rose'}</StatusBadge>
+        </div>
+
+        <div className="mt-5 grid gap-4 xl:grid-cols-3">
+          {THEME_REGISTRY.map((theme) => (
+            <ThemeTile active={form.appearanceTheme === theme.id} key={theme.id} onSelect={(themeId) => updateField('appearanceTheme', themeId)} theme={theme} />
+          ))}
+        </div>
+
+        <div className="mt-5 grid gap-4 lg:grid-cols-2">
+          <FormField label="Relationship dates view">
+            <SelectField id="setting-anniversary-view" onChange={(event) => updateField('anniversaryView', event.target.value)} value={form.anniversaryView}>
+              <option value="dual">Show both perspectives</option>
+              <option value="jaylan">Jaylan perspective</option>
+              <option value="omia">Omia perspective</option>
+            </SelectField>
+          </FormField>
+          <ContentCard>
+            <p className="cb-kicker">Saved preference</p>
+            <p className="mt-2 text-sm font-semibold" style={{ color: 'var(--cb-text)' }}>{model.appearance?.preservedTheme?.label}</p>
+            <p className="cb-body-copy mt-2 text-sm">{model.appearance?.preservedTheme?.origin}</p>
+          </ContentCard>
+        </div>
+
+        <div className="mt-5 grid gap-4 lg:grid-cols-2">
+          <ToggleRow
+            checked={form.localOnlyMode}
+            description="Helpful when reviewing Couple Book on a trusted browser without changing the underlying auth boundary."
+            label="Keep private reads on this device"
+            onChange={(value) => updateField('localOnlyMode', value)}
+          />
+          <ToggleRow
+            checked={form.reducedMotion}
+            description="Use quieter transitions while preserving the Couple Book layout and route structure."
+            label="Reduce motion"
+            onChange={(value) => updateField('reducedMotion', value)}
+          />
+        </div>
+      </Surface>
+
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(20rem,0.9fr)]">
+        <Surface>
+          <div className="flex items-start gap-3">
+            <span
+              className="grid size-11 shrink-0 place-items-center rounded-2xl"
+              style={{
+                background: 'color-mix(in srgb, var(--cb-accent-soft) 88%, transparent)',
+                color: 'var(--cb-accent)',
+              }}
+            >
+              <Shield className="size-5" aria-hidden="true" />
+            </span>
+            <div>
+              <p className="cb-kicker">Privacy and access</p>
+              <h3 className="cb-page-title mt-2 text-2xl">Account boundaries stay quiet</h3>
+            </div>
+          </div>
+          <div className="mt-5 grid gap-3">
+            {(model.account?.details || []).map((detail) => (
+              <ContentCard key={detail.key}>
+                <p className="cb-kicker">{detail.label}</p>
+                <p className="mt-2 text-sm font-semibold" style={{ color: 'var(--cb-text)' }}>{detail.value}</p>
+              </ContentCard>
+            ))}
+          </div>
+          <div className="mt-5 grid gap-3">
+            {(model.privacy?.items || []).map((item) => (
+              <ContentCard key={item.label}>
+                <div className="flex items-start gap-3">
+                  <LockKeyhole className="mt-0.5 size-4 shrink-0" style={{ color: 'var(--cb-accent)' }} aria-hidden="true" />
+                  <div>
+                    <p className="text-sm font-semibold" style={{ color: 'var(--cb-text)' }}>{item.label}</p>
+                    <p className="cb-body-copy mt-2 text-sm">{item.description}</p>
+                  </div>
+                </div>
+              </ContentCard>
+            ))}
+          </div>
+        </Surface>
+
+        <div className="grid gap-5">
+          <Surface tone="soft">
+            <div className="flex items-start gap-3">
+              <MonitorCog className="mt-1 size-5" style={{ color: 'var(--cb-accent)' }} aria-hidden="true" />
+              <div>
+                <p className="cb-kicker">Settings</p>
+                <h3 className="cb-page-title mt-2 text-2xl">Runtime and compatibility</h3>
+                <p className="cb-body-copy mt-2 text-sm">Engineering notes stay secondary here so More remains personal instead of administrative.</p>
+              </div>
+            </div>
             <div className="mt-5 grid gap-3">
               {(model.compatibility?.items || []).map((item) => (
                 <ContentCard key={item.key}>
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-sm font-bold text-[#24131d]">{item.label}</p>
-                      <p className="mt-2 text-sm leading-6 text-[#6B564C]">{item.summary}</p>
-                      {item.sourceName ? <p className="mt-2 text-xs text-[#806572]">{item.sourceName}</p> : null}
+                      <p className="text-sm font-semibold" style={{ color: 'var(--cb-text)' }}>{item.label}</p>
+                      <p className="cb-body-copy mt-2 text-sm">{item.summary}</p>
                     </div>
                     <StatusBadge>{item.statusLabel}</StatusBadge>
                   </div>
                 </ContentCard>
               ))}
             </div>
-            <div className="mt-5 rounded-2xl border border-[#EFE2DA] bg-[#FBF8F5] p-4">
-              {(model.compatibility?.notes || []).map((note) => <p className="text-sm leading-6 text-[#6B564C]" key={note}>{note}</p>)}
+          </Surface>
+
+          <Surface tone="soft">
+            <div className="flex items-start gap-3">
+              <Sparkles className="mt-1 size-5" style={{ color: 'var(--cb-accent)' }} aria-hidden="true" />
+              <div>
+                <p className="cb-kicker">Account</p>
+                <h3 className="cb-page-title mt-2 text-2xl">Leave this device</h3>
+                <p className="cb-body-copy mt-2 text-sm">Sign out remains a shell-owned account action instead of becoming a full account management console.</p>
+              </div>
+            </div>
+            <div className="mt-5">
+              <SecondaryButton onClick={signOut}><LogOut className="size-4" />Sign out</SecondaryButton>
             </div>
           </Surface>
-        ) : null}
-
-        {active === 'advanced' ? (
-          <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-            <Surface>
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Application</p>
-              <h3 className="mt-2 font-serif text-3xl text-[#24131d]">Current runtime and workflow</h3>
-              <div className="mt-5 grid gap-3">
-                {(model.advanced?.items || []).map((item) => (
-                  <ContentCard key={item.label}>
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-bold text-[#24131d]">{item.label}</p>
-                        <p className="mt-2 text-sm leading-6 text-[#6B564C]">{item.description}</p>
-                      </div>
-                      <StatusBadge>{item.meta}</StatusBadge>
-                    </div>
-                  </ContentCard>
-                ))}
-              </div>
-            </Surface>
-            <Surface tone="soft">
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Safe limits</p>
-              <h3 className="mt-2 font-serif text-2xl text-[#24131d]">Data and backup</h3>
-              <div className="mt-5 grid gap-3">
-                {(model.danger?.items || []).map((item) => (
-                  <ContentCard key={item.label}>
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-bold text-[#24131d]">{item.label}</p>
-                        <p className="mt-2 text-sm leading-6 text-[#6B564C]">{item.description}</p>
-                      </div>
-                      <StatusBadge>{item.meta}</StatusBadge>
-                    </div>
-                  </ContentCard>
-                ))}
-              </div>
-            </Surface>
-          </div>
-        ) : null}
-
-        <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
-          <SecondaryButton disabled={!hasDraftChanges} onClick={resetCurrentPanel}>Cancel changes</SecondaryButton>
-          <PrimaryButton loading={status.saving} type="submit">{status.saving ? 'Saving' : 'Save settings'}</PrimaryButton>
         </div>
-      </form>
+      </div>
     </section>
   )
 }

@@ -76,12 +76,12 @@ function ProfileEditDialog({ onClose, onSave, person, status }) {
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <button type="button" className="absolute inset-0 bg-[#24131d]/40 backdrop-blur-sm" onClick={onClose} aria-label="Close profile form" />
-      <form className="relative w-full max-w-2xl rounded-[28px] border border-[#ead7df] bg-white p-6 shadow-[0_24px_80px_rgba(36,19,29,0.18)] sm:p-8" onSubmit={handleSubmit}>
+      <button type="button" className="absolute inset-0 bg-[var(--cb-bg-soft)]/40 backdrop-blur-sm" onClick={onClose} aria-label="Close profile form" />
+      <form className="relative w-full max-w-2xl rounded-[28px] border border-[var(--cb-border)] bg-[var(--cb-surface)] p-6 shadow-[0_24px_80px_rgba(36,19,29,0.18)] sm:p-8" onSubmit={handleSubmit}>
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#8f5168]">Edit profile</p>
-            <h3 className="mt-2 font-serif text-3xl text-[#24131d]">Update your section of Us</h3>
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--cb-accent)]">Edit profile</p>
+            <h3 className="mt-2 font-serif text-3xl text-[var(--cb-text)]">Update your section of Us</h3>
           </div>
           <TextButton onClick={onClose}>Close</TextButton>
         </div>
@@ -121,7 +121,7 @@ function ProfileCard({ canEdit, onEdit, person, index }) {
   const tone = personTone(index)
   const togetherDays = daysTogether(person.joinedDate)
   const displayName = relationshipDisplayName(person.displayName, index)
-  const accentClass = tone === 'jaylan' ? 'bg-[#fceef3] text-[#8f5168]' : 'bg-[#f7f0ff] text-[#5c4677]'
+  const accentClass = tone === 'jaylan' ? 'bg-[var(--cb-accent-soft)] text-[var(--cb-accent)]' : 'bg-[var(--cb-accent-soft)] text-[#5c4677]'
 
   return (
     <Surface className="h-full">
@@ -131,24 +131,24 @@ function ProfileCard({ canEdit, onEdit, person, index }) {
             <span className={`inline-flex rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] ${accentClass}`}>
               {tone === 'jaylan' ? 'Jaylan' : 'Omia'}
             </span>
-            <h3 className="mt-3 font-serif text-3xl text-[#24131d]">{displayName}</h3>
+            <h3 className="mt-3 font-serif text-3xl text-[var(--cb-text)]">{displayName}</h3>
           </div>
           {canEdit ? <SecondaryButton onClick={() => onEdit(person)}>Edit</SecondaryButton> : null}
         </div>
 
-        <p className="text-sm leading-6 text-[#6B564C]">{person.bio || 'A personal note is waiting to be written.'}</p>
+        <p className="text-sm leading-6 text-[var(--cb-text-secondary)]">{person.bio || 'A personal note is waiting to be written.'}</p>
 
         <div className="grid gap-3 sm:grid-cols-2">
           {(person.details || []).map((detail) => (
             <ContentCard key={detail.key}>
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#806572]">{detail.label}</p>
-              <p className="mt-2 text-sm font-semibold text-[#24131d]">{detail.value || 'Still to be added'}</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-text-muted)]">{detail.label}</p>
+              <p className="mt-2 text-sm font-semibold text-[var(--cb-text)]">{detail.value || 'Still to be added'}</p>
             </ContentCard>
           ))}
           {togetherDays !== null ? (
             <ContentCard>
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#806572]">Days together</p>
-              <p className="mt-2 text-sm font-semibold text-[#24131d]">{togetherDays}</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-text-muted)]">Days together</p>
+              <p className="mt-2 text-sm font-semibold text-[var(--cb-text)]">{togetherDays}</p>
             </ContentCard>
           ) : null}
         </div>
@@ -247,21 +247,21 @@ export function ProfileView({ compatibilityError, compatibilityState, model, onR
       <Surface className="grid gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(18rem,0.9fr)]">
         <div>
           <StatusBadge tone="info">Shared profile</StatusBadge>
-          <h3 className="mt-3 font-serif text-4xl text-[#24131d]">{displayRelationshipTitle}</h3>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-[#6B564C]">{model.relationship?.summary}</p>
+          <h3 className="mt-3 font-serif text-4xl text-[var(--cb-text)]">{displayRelationshipTitle}</h3>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--cb-text-secondary)]">{model.relationship?.summary}</p>
         </div>
         <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
           <ContentCard>
-            <p className="text-3xl font-bold text-[#24131d]">{people.length}</p>
-            <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[#806572]">People in us</p>
+            <p className="text-3xl font-bold text-[var(--cb-text)]">{people.length}</p>
+            <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[var(--cb-text-muted)]">People in us</p>
           </ContentCard>
           <ContentCard>
-            <p className="text-3xl font-bold text-[#24131d]">{(model.relationship?.anniversaries || []).length}</p>
-            <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[#806572]">Shared dates</p>
+            <p className="text-3xl font-bold text-[var(--cb-text)]">{(model.relationship?.anniversaries || []).length}</p>
+            <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[var(--cb-text-muted)]">Shared dates</p>
           </ContentCard>
           <ContentCard>
-            <p className="text-3xl font-bold text-[#24131d]">{(model.relationship?.milestones || []).length}</p>
-            <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[#806572]">Milestones</p>
+            <p className="text-3xl font-bold text-[var(--cb-text)]">{(model.relationship?.milestones || []).length}</p>
+            <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[var(--cb-text-muted)]">Milestones</p>
           </ContentCard>
         </div>
       </Surface>
@@ -271,30 +271,30 @@ export function ProfileView({ compatibilityError, compatibilityState, model, onR
       {activeTab === 'overview' ? (
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(22rem,0.9fr)]">
           <Surface>
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Our Story</p>
-            <h3 className="mt-2 font-serif text-3xl text-[#24131d]">The pieces that make this ours</h3>
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Our Story</p>
+            <h3 className="mt-2 font-serif text-3xl text-[var(--cb-text)]">The pieces that make this ours</h3>
             <div className="mt-5 grid gap-4 md:grid-cols-2">
               {people.map((person, index) => (
                 <ContentCard key={person.id}>
-                  <p className="text-sm font-bold text-[#24131d]">{relationshipDisplayName(person.displayName, index)}</p>
-                  <p className="mt-2 text-sm leading-6 text-[#6B564C]">{person.bio || 'A personal note is waiting to be written.'}</p>
+                  <p className="text-sm font-bold text-[var(--cb-text)]">{relationshipDisplayName(person.displayName, index)}</p>
+                  <p className="mt-2 text-sm leading-6 text-[var(--cb-text-secondary)]">{person.bio || 'A personal note is waiting to be written.'}</p>
                 </ContentCard>
               ))}
             </div>
           </Surface>
           <div className="grid gap-5">
             <Surface tone="soft">
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Shared matches</p>
-              <h3 className="mt-2 font-serif text-2xl text-[#24131d]">Things you already have in common</h3>
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Shared matches</p>
+              <h3 className="mt-2 font-serif text-2xl text-[var(--cb-text)]">Things you already have in common</h3>
               <div className="mt-4 flex flex-wrap gap-2">
                 {model.sharedHighlights?.length > 0
                   ? model.sharedHighlights.map((highlight) => <StatusBadge key={highlight.id}>{highlight.label}</StatusBadge>)
-                  : <p className="text-sm text-[#6B564C]">Shared favorites will surface here as the preserved collection fills out.</p>}
+                  : <p className="text-sm text-[var(--cb-text-secondary)]">Shared favorites will surface here as the preserved collection fills out.</p>}
               </div>
             </Surface>
             <Surface tone="soft">
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Things to try</p>
-              <p className="mt-2 text-sm leading-6 text-[#6B564C]">Ideas and future memories stay in Plans so the shared profile can stay calm and readable.</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Things to try</p>
+              <p className="mt-2 text-sm leading-6 text-[var(--cb-text-secondary)]">Ideas and future memories stay in Plans so the shared profile can stay calm and readable.</p>
               <div className="mt-4">
                 <SecondaryButton as={Link} to="/plans">Open Plans</SecondaryButton>
               </div>
@@ -320,18 +320,18 @@ export function ProfileView({ compatibilityError, compatibilityState, model, onR
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <Surface>
             <div className="flex items-start gap-3">
-              <CalendarDays className="mt-1 size-5 text-[#8f5168]" aria-hidden="true" />
+              <CalendarDays className="mt-1 size-5 text-[var(--cb-accent)]" aria-hidden="true" />
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Relationship dates</p>
-                <h3 className="mt-2 font-serif text-3xl text-[#24131d]">Dates worth holding close</h3>
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Relationship dates</p>
+                <h3 className="mt-2 font-serif text-3xl text-[var(--cb-text)]">Dates worth holding close</h3>
               </div>
             </div>
             <div className="mt-5 grid gap-3">
               {(model.relationship?.anniversaries || []).map((item) => (
                 <ContentCard key={item.id}>
-                  <p className="text-sm font-bold text-[#24131d]">{item.label}</p>
-                  <p className="mt-2 text-sm text-[#6B564C]">{item.dateLabel || 'Still to be added'}</p>
-                  <p className="mt-1 text-sm text-[#806572]">{item.summary}</p>
+                  <p className="text-sm font-bold text-[var(--cb-text)]">{item.label}</p>
+                  <p className="mt-2 text-sm text-[var(--cb-text-secondary)]">{item.dateLabel || 'Still to be added'}</p>
+                  <p className="mt-1 text-sm text-[var(--cb-text-muted)]">{item.summary}</p>
                 </ContentCard>
               ))}
               {(model.relationship?.anniversaries || []).length === 0 ? <EmptyState title="No dates are saved yet." description="Joined dates and anniversaries will appear here when they are available." /> : null}
@@ -339,17 +339,17 @@ export function ProfileView({ compatibilityError, compatibilityState, model, onR
           </Surface>
           <Surface>
             <div className="flex items-start gap-3">
-              <HeartHandshake className="mt-1 size-5 text-[#8f5168]" aria-hidden="true" />
+              <HeartHandshake className="mt-1 size-5 text-[var(--cb-accent)]" aria-hidden="true" />
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Milestones</p>
-                <h3 className="mt-2 font-serif text-3xl text-[#24131d]">Birthdays and contract progress</h3>
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Milestones</p>
+                <h3 className="mt-2 font-serif text-3xl text-[var(--cb-text)]">Birthdays and contract progress</h3>
               </div>
             </div>
             <div className="mt-5 grid gap-3">
               {(model.relationship?.milestones || []).map((item) => (
                 <ContentCard key={item.id}>
-                  <p className="text-sm font-bold text-[#24131d]">{item.label}</p>
-                  <p className="mt-2 text-sm text-[#6B564C]">{item.value || 'Still to be added'}</p>
+                  <p className="text-sm font-bold text-[var(--cb-text)]">{item.label}</p>
+                  <p className="mt-2 text-sm text-[var(--cb-text-secondary)]">{item.value || 'Still to be added'}</p>
                 </ContentCard>
               ))}
               {(model.relationship?.milestones || []).length === 0 ? <EmptyState title="No milestones are saved yet." description="Birthday and contract milestones will appear here when they are available." /> : null}
@@ -361,24 +361,24 @@ export function ProfileView({ compatibilityError, compatibilityState, model, onR
       {activeTab === 'shared' ? (
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <Surface>
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Favorites</p>
-            <h3 className="mt-2 font-serif text-3xl text-[#24131d]">Shared matches</h3>
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Favorites</p>
+            <h3 className="mt-2 font-serif text-3xl text-[var(--cb-text)]">Shared matches</h3>
             <div className="mt-5 grid gap-3">
               {model.sharedHighlights?.length > 0 ? model.sharedHighlights.map((highlight) => (
                 <ContentCard key={highlight.id}>
-                  <p className="text-sm font-bold text-[#24131d]">{highlight.label}</p>
-                  <p className="mt-2 text-sm text-[#6B564C]">{highlight.owner} • {highlight.category}</p>
+                  <p className="text-sm font-bold text-[var(--cb-text)]">{highlight.label}</p>
+                  <p className="mt-2 text-sm text-[var(--cb-text-secondary)]">{highlight.owner} • {highlight.category}</p>
                 </ContentCard>
               )) : <EmptyState title="No shared matches are visible yet." description="Favorites will begin surfacing here as the shared collection is filled out." />}
             </div>
           </Surface>
           <Surface tone="soft">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Explore more</p>
-            <h3 className="mt-2 font-serif text-2xl text-[#24131d]">Open the full shared lists</h3>
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Explore more</p>
+            <h3 className="mt-2 font-serif text-2xl text-[var(--cb-text)]">Open the full shared lists</h3>
             <div className="mt-5 grid gap-3">
               <ContentCard>
-                <p className="text-sm font-bold text-[#24131d]">{model.entries?.favorites?.title || 'Shared favorites'}</p>
-                <p className="mt-2 text-sm leading-6 text-[#6B564C]">{model.entries?.favorites?.description}</p>
+                <p className="text-sm font-bold text-[var(--cb-text)]">{model.entries?.favorites?.title || 'Shared favorites'}</p>
+                <p className="mt-2 text-sm leading-6 text-[var(--cb-text-secondary)]">{model.entries?.favorites?.description}</p>
                 <div className="mt-4">
                   <SecondaryButton as={Link} to={model.entries?.favorites?.href || '/favorites'}>Open Favorites</SecondaryButton>
                 </div>
@@ -392,20 +392,20 @@ export function ProfileView({ compatibilityError, compatibilityState, model, onR
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(22rem,0.9fr)]">
           <Surface>
             <div className="flex items-start gap-3">
-              <ScrollText className="mt-1 size-5 text-[#8f5168]" aria-hidden="true" />
+              <ScrollText className="mt-1 size-5 text-[var(--cb-accent)]" aria-hidden="true" />
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Our Promises</p>
-                <h3 className="mt-2 font-serif text-3xl text-[#24131d]">Relationship contract</h3>
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Our Promises</p>
+                <h3 className="mt-2 font-serif text-3xl text-[var(--cb-text)]">Relationship contract</h3>
               </div>
             </div>
-            <p className="mt-3 text-sm leading-6 text-[#6B564C]">{model.entries?.contract?.description}</p>
+            <p className="mt-3 text-sm leading-6 text-[var(--cb-text-secondary)]">{model.entries?.contract?.description}</p>
             <div className="mt-5">
               <PrimaryButton as={Link} to={model.entries?.contract?.href || '/contract'}>Open Contract</PrimaryButton>
             </div>
           </Surface>
           <Surface tone="soft">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Protected</p>
-            <p className="mt-2 text-sm leading-6 text-[#6B564C]">UIDs, membership status, Firestore paths, and internal authorization language stay out of this view.</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Protected</p>
+            <p className="mt-2 text-sm leading-6 text-[var(--cb-text-secondary)]">UIDs, membership status, Firestore paths, and internal authorization language stay out of this view.</p>
           </Surface>
         </div>
       ) : null}

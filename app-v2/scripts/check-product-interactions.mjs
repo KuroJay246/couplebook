@@ -28,13 +28,13 @@ const VIEWPORTS = Object.freeze([
 ])
 
 const ROUTES = Object.freeze([
-  { path: '/login', heading: 'Open the book kept between the two of you.', fixture: browserRegressionSignedOutFixture },
+  { path: '/login', heading: 'Open the shared journal kept between the two of you.', fixture: browserRegressionSignedOutFixture },
   { path: '/dashboard', heading: 'Pick up where your story left off.', fixture: browserRegressionAuthorizedFixture },
   { path: '/timeline', heading: /Our Story/, fixture: browserRegressionAuthorizedFixture, detailButton: 'View memory' },
   { path: '/gallery', heading: /Our Shared Gallery/, fixture: browserRegressionAuthorizedFixture, detailSelector: 'button.gallery-media-frame' },
   { path: '/profile', heading: /Us/, fixture: browserRegressionAuthorizedFixture },
   { path: '/favorites', heading: /Favorite Things/, fixture: browserRegressionAuthorizedFixture },
-  { path: '/settings', heading: /Application Settings/, fixture: browserRegressionAuthorizedFixture },
+  { path: '/settings', heading: /Make the book yours/, fixture: browserRegressionAuthorizedFixture },
   { path: '/contract', heading: /Shared Relationship Contract/, fixture: browserRegressionAuthorizedFixture },
   { path: '/birthday', heading: 'Fictional birthday runtime chapter', fixture: browserRegressionAuthorizedFixture },
   { path: '/valentine', heading: 'Fictional Valentine runtime chapter', fixture: browserRegressionAuthorizedFixture },

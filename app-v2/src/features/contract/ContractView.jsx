@@ -67,16 +67,16 @@ export function ContractView({ compatibilityError, compatibilityState, model, on
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(20rem,0.8fr)]">
         <Surface>
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Agreement</p>
-          <h3 className="mt-2 font-serif text-3xl text-[#24131d]">{model.agreement?.title || 'Our agreement'}</h3>
-          <p className="mt-3 text-sm leading-6 text-[#6B564C]">{model.agreement?.introduction}</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Agreement</p>
+          <h3 className="mt-2 font-serif text-3xl text-[var(--cb-text)]">{model.agreement?.title || 'Our agreement'}</h3>
+          <p className="mt-3 text-sm leading-6 text-[var(--cb-text-secondary)]">{model.agreement?.introduction}</p>
           <div className="mt-5 grid gap-4">
             {agreementSections.length > 0 ? agreementSections.map((section) => (
               <ContentCard key={section.id}>
-                <h4 className="text-lg font-bold text-[#24131d]">{section.heading}</h4>
-                {section.paragraphs?.map((paragraph) => <p className="mt-3 text-sm leading-6 text-[#6B564C]" key={paragraph}>{paragraph}</p>)}
+                <h4 className="text-lg font-bold text-[var(--cb-text)]">{section.heading}</h4>
+                {section.paragraphs?.map((paragraph) => <p className="mt-3 text-sm leading-6 text-[var(--cb-text-secondary)]" key={paragraph}>{paragraph}</p>)}
                 {section.clauses?.length > 0 ? (
-                  <ul className="mt-3 grid gap-2 pl-5 text-sm leading-6 text-[#6B564C]">
+                  <ul className="mt-3 grid gap-2 pl-5 text-sm leading-6 text-[var(--cb-text-secondary)]">
                     {section.clauses.map((clause) => <li key={clause}>{clause}</li>)}
                   </ul>
                 ) : null}
@@ -89,16 +89,16 @@ export function ContractView({ compatibilityError, compatibilityState, model, on
 
         <div className="grid gap-5">
           <Surface tone="soft">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Acceptance</p>
-            <h3 className="mt-2 font-serif text-2xl text-[#24131d]">Current status</h3>
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Acceptance</p>
+            <h3 className="mt-2 font-serif text-2xl text-[var(--cb-text)]">Current status</h3>
             <div className="mt-5 grid gap-3">
               {acceptanceCards.map((record) => (
                 <ContentCard key={record.displayName}>
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-sm font-bold text-[#24131d]">{record.displayName}</p>
-                      <p className="mt-2 text-sm text-[#6B564C]">{record.acceptedAtLabel}</p>
-                      <p className="mt-2 text-sm leading-6 text-[#6B564C]">{record.note}</p>
+                      <p className="text-sm font-bold text-[var(--cb-text)]">{record.displayName}</p>
+                      <p className="mt-2 text-sm text-[var(--cb-text-secondary)]">{record.acceptedAtLabel}</p>
+                      <p className="mt-2 text-sm leading-6 text-[var(--cb-text-secondary)]">{record.note}</p>
                     </div>
                     <StatusBadge tone={record.status === 'accepted' ? 'success' : record.status === 'unavailable' ? 'error' : 'warning'}>
                       {record.label}
@@ -110,12 +110,12 @@ export function ContractView({ compatibilityError, compatibilityState, model, on
           </Surface>
 
           <Surface tone="soft">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Protected boundaries</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Protected boundaries</p>
             <div className="mt-5 grid gap-3">
               {(model.privacy?.items || []).map((item) => (
                 <ContentCard key={item.label}>
-                  <p className="text-sm font-bold text-[#24131d]">{item.label}</p>
-                  <p className="mt-2 text-sm leading-6 text-[#6B564C]">{item.description}</p>
+                  <p className="text-sm font-bold text-[var(--cb-text)]">{item.label}</p>
+                  <p className="mt-2 text-sm leading-6 text-[var(--cb-text-secondary)]">{item.description}</p>
                 </ContentCard>
               ))}
             </div>
@@ -125,16 +125,16 @@ export function ContractView({ compatibilityError, compatibilityState, model, on
 
       {history.length > 0 ? (
         <Surface>
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">History</p>
-          <h3 className="mt-2 font-serif text-2xl text-[#24131d]">Acceptance history</h3>
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">History</p>
+          <h3 className="mt-2 font-serif text-2xl text-[var(--cb-text)]">Acceptance history</h3>
           <div className="mt-5 grid gap-3">
             {history.slice(0, 6).map((entry) => (
               <ContentCard className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between" key={entry.id}>
                 <div>
-                  <p className="text-sm font-bold text-[#24131d]">{entry.actorDisplayName}</p>
-                  <p className="mt-2 text-sm text-[#6B564C]">{entry.title}</p>
+                  <p className="text-sm font-bold text-[var(--cb-text)]">{entry.actorDisplayName}</p>
+                  <p className="mt-2 text-sm text-[var(--cb-text-secondary)]">{entry.title}</p>
                 </div>
-                <div className="text-sm text-[#806572] sm:text-right">
+                <div className="text-sm text-[var(--cb-text-muted)] sm:text-right">
                   <p>{entry.dateLabel}</p>
                   <p className="mt-1">{entry.note}</p>
                 </div>

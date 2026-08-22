@@ -21,12 +21,12 @@ test('shared page layout keeps only the remaining not-found primitives', async (
 test('settings page layout keeps the faithful utility information architecture explicit', async () => {
   const settingsViewSource = await readSource('../features/settings/SettingsView.jsx')
 
-  assert.match(settingsViewSource, /Application Settings/)
-  assert.match(settingsViewSource, /PageTabs/)
+  assert.match(settingsViewSource, /Make the book yours/)
+  assert.match(settingsViewSource, /Our moments/)
   assert.match(settingsViewSource, /Appearance/)
-  assert.match(settingsViewSource, /Privacy/)
-  assert.match(settingsViewSource, /Compatibility/)
-  assert.match(settingsViewSource, /Application/)
+  assert.match(settingsViewSource, /Privacy and access/)
+  assert.match(settingsViewSource, /Runtime and compatibility/)
+  assert.match(settingsViewSource, /Leave this device/)
   assert.match(settingsViewSource, /ToggleRow/)
   assert.doesNotMatch(settingsViewSource, /jaylanspencer99@gmail\.com/i)
 })

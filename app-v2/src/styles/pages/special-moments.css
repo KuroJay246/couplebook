@@ -3,3 +3,13 @@
 [data-route="confession"] {
   scroll-margin-top: 6rem;
 }
+
+.special-page-standalone {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--cb-surface) 94%, transparent), color-mix(in srgb, var(--cb-surface-raised) 98%, transparent));
+}
+
+.special-page-standalone .cb-surface-soft,
+.special-page-standalone .cb-card {
+  background: color-mix(in srgb, var(--cb-surface-raised) 94%, transparent);
+}

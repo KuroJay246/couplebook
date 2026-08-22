@@ -138,18 +138,18 @@ function MemoryFormDialog({ memory = null, mode, onClose, onSave, status }) {
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <button type="button" className="absolute inset-0 bg-[#24131d]/40 backdrop-blur-sm" onClick={onClose} aria-label="Close memory form" />
+      <button type="button" className="absolute inset-0 bg-[var(--cb-bg-soft)]/40 backdrop-blur-sm" onClick={onClose} aria-label="Close memory form" />
       <form
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative w-full max-w-2xl rounded-[28px] border border-[#ead7df] bg-white p-6 shadow-[0_24px_80px_rgba(36,19,29,0.18)] sm:p-8"
+        className="relative w-full max-w-2xl rounded-[28px] border border-[var(--cb-border)] bg-[var(--cb-surface)] p-6 shadow-[0_24px_80px_rgba(36,19,29,0.18)] sm:p-8"
         onSubmit={handleSubmit}
       >
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#8f5168]">{mode === 'edit' ? 'Edit memory' : 'New memory'}</p>
-            <h3 id={titleId} className="mt-2 font-serif text-3xl text-[#24131d]">{mode === 'edit' ? 'Update this part of the story' : 'Add the next memory'}</h3>
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--cb-accent)]">{mode === 'edit' ? 'Edit memory' : 'New memory'}</p>
+            <h3 id={titleId} className="mt-2 font-serif text-3xl text-[var(--cb-text)]">{mode === 'edit' ? 'Update this part of the story' : 'Add the next memory'}</h3>
           </div>
           <TextButton aria-label="Close" onClick={onClose}>Close</TextButton>
         </div>
@@ -205,20 +205,20 @@ function DetailModal({ memory, onArchive, onClose, onEdit, status }) {
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <button type="button" className="absolute inset-0 bg-[#24131d]/40 backdrop-blur-sm" onClick={onClose} aria-label="Close memory details" />
+      <button type="button" className="absolute inset-0 bg-[var(--cb-bg-soft)]/40 backdrop-blur-sm" onClick={onClose} aria-label="Close memory details" />
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative max-h-[calc(100vh-2rem)] w-full max-w-3xl overflow-auto rounded-[28px] border border-[#ead7df] bg-white p-6 shadow-[0_24px_80px_rgba(36,19,29,0.18)] sm:p-8"
+        className="relative max-h-[calc(100vh-2rem)] w-full max-w-3xl overflow-auto rounded-[28px] border border-[var(--cb-border)] bg-[var(--cb-surface)] p-6 shadow-[0_24px_80px_rgba(36,19,29,0.18)] sm:p-8"
       >
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <StatusBadge tone={memory.media.kind === 'video' ? 'info' : memory.media.kind === 'image' ? 'success' : memory.specialMoment.isSpecial ? 'warning' : 'default'}>
               {mediaLabel(memory)}
             </StatusBadge>
-            <h3 id={titleId} className="mt-3 font-serif text-3xl text-[#24131d]">{memory.displayTitle}</h3>
-            <p className="mt-2 text-sm text-[#6B564C]">{memory.displayDate || 'Date review'}</p>
+            <h3 id={titleId} className="mt-3 font-serif text-3xl text-[var(--cb-text)]">{memory.displayTitle}</h3>
+            <p className="mt-2 text-sm text-[var(--cb-text-secondary)]">{memory.displayDate || 'Date review'}</p>
           </div>
           <TextButton aria-label="Close" autoFocus onClick={onClose} ref={closeButtonRef}>Close</TextButton>
         </div>
@@ -227,9 +227,9 @@ function DetailModal({ memory, onArchive, onClose, onEdit, status }) {
           <ContentCard className="min-h-72 bg-[linear-gradient(180deg,#fff9fb_0%,#fdf4f8_100%)]">
             <div className="flex h-full flex-col justify-between gap-6">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#8f5168]">Story preview</p>
-                <h4 className="mt-2 text-lg font-bold text-[#24131d]">{memory.displayTitle}</h4>
-                <p className="mt-3 text-sm leading-6 text-[#6B564C]">{memory.displayDescription}</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--cb-accent)]">Story preview</p>
+                <h4 className="mt-2 text-lg font-bold text-[var(--cb-text)]">{memory.displayTitle}</h4>
+                <p className="mt-3 text-sm leading-6 text-[var(--cb-text-secondary)]">{memory.displayDescription}</p>
               </div>
               <InlineAlert
                 tone={memory.media.status === 'storage-verified' ? 'success' : 'info'}
@@ -245,15 +245,15 @@ function DetailModal({ memory, onArchive, onClose, onEdit, status }) {
 
           <div className="grid gap-4">
             <Surface tone="soft">
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Tags</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Tags</p>
               <div className="mt-3 flex flex-wrap gap-2">
-                {memory.tags.length > 0 ? memory.tags.map((tag) => <StatusBadge key={tag.key}>{tag.label}</StatusBadge>) : <span className="text-sm text-[#806572]">No tags saved.</span>}
+                {memory.tags.length > 0 ? memory.tags.map((tag) => <StatusBadge key={tag.key}>{tag.label}</StatusBadge>) : <span className="text-sm text-[var(--cb-text-muted)]">No tags saved.</span>}
               </div>
             </Surface>
             {memory.specialMoment.route ? (
               <Surface tone="soft">
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Related page</p>
-                <p className="mt-2 text-sm leading-6 text-[#6B564C]">This memory also connects to a protected special page inside Couple Book.</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Related page</p>
+                <p className="mt-2 text-sm leading-6 text-[var(--cb-text-secondary)]">This memory also connects to a protected special page inside Couple Book.</p>
                 <div className="mt-4">
                   <SecondaryButton as={Link} to={memory.specialMoment.route}>Open related page</SecondaryButton>
                 </div>
@@ -290,8 +290,8 @@ function TimelineCard({ memory, onArchive, onEdit, onSelect }) {
               </StatusBadge>
               {memory.tags.slice(0, 2).map((tag) => <StatusBadge key={tag.key}>{tag.label}</StatusBadge>)}
             </div>
-            <h3 className="mt-3 text-xl font-bold text-[#24131d]">{memory.displayTitle}</h3>
-            <p className="mt-2 text-sm leading-6 text-[#6B564C]">{memory.displayDescription}</p>
+            <h3 className="mt-3 text-xl font-bold text-[var(--cb-text)]">{memory.displayTitle}</h3>
+            <p className="mt-2 text-sm leading-6 text-[var(--cb-text-secondary)]">{memory.displayDescription}</p>
           </div>
           <ContextMenu
             label={`Actions for ${memory.displayTitle}`}
@@ -303,7 +303,7 @@ function TimelineCard({ memory, onArchive, onEdit, onSelect }) {
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 text-sm text-[#806572]">
+        <div className="flex flex-wrap items-center gap-3 text-sm text-[var(--cb-text-muted)]">
           <span>{memory.displayDate || 'Date review'}</span>
           <span aria-hidden="true">•</span>
           <span>{memory.typeLabel || memory.kindLabel || 'Saved memory'}</span>
@@ -516,7 +516,7 @@ export function TimelineView({ compatibilityError, compatibilityState, model, on
             value={selectedType}
           />
           <div className="grid gap-2">
-            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#806572]">Browse by tag</span>
+            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-text-muted)]">Browse by tag</span>
             <div className="flex flex-wrap gap-2">
               <FilterChip active={selectedTag === 'all'} onClick={() => setSelectedTag('all')}>All</FilterChip>
               {tags.map((tag) => (
@@ -528,8 +528,8 @@ export function TimelineView({ compatibilityError, compatibilityState, model, on
           </div>
         </div>
 
-        <div className="mt-4 flex flex-col gap-3 rounded-2xl border border-[#EFE2DA] bg-[#FBF8F5] p-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-[#6B564C]">
+        <div className="mt-4 flex flex-col gap-3 rounded-2xl border border-[var(--cb-border)] bg-[var(--cb-surface-soft)] p-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-[var(--cb-text-secondary)]">
             {filtered.length === memories.length ? 'Showing the full story.' : `Showing ${filtered.length} of ${memories.length} memories.`}
           </p>
           <SecondaryButton onClick={clearFilters}>Clear filters</SecondaryButton>
@@ -538,7 +538,7 @@ export function TimelineView({ compatibilityError, compatibilityState, model, on
 
       {years.length ? (
         <Surface tone="soft">
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Jump to year</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Jump to year</p>
           <div className="mt-3 flex flex-wrap gap-2">
             <FilterChip active={selectedYear === 'all'} onClick={() => setSelectedYear('all')}>All years</FilterChip>
             {years.map((year) => (
@@ -560,7 +560,7 @@ export function TimelineView({ compatibilityError, compatibilityState, model, on
               <section key={memory.id} className="space-y-3">
                 {currentChapter !== previousChapter ? (
                   <div className="sticky top-[5.5rem] z-10">
-                    <div className="inline-flex rounded-full border border-[#ead7df] bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-[#8f5168] shadow-[0_8px_24px_rgba(84,53,67,0.06)]">
+                    <div className="inline-flex rounded-full border border-[var(--cb-border)] bg-[var(--cb-surface)] px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)] shadow-[0_8px_24px_rgba(84,53,67,0.06)]">
                       {currentChapter}
                     </div>
                   </div>
@@ -593,9 +593,9 @@ export function TimelineView({ compatibilityError, compatibilityState, model, on
         <Surface>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Archived memories</p>
-              <h3 className="mt-2 font-serif text-2xl text-[#24131d]">Hidden from the active story</h3>
-              <p className="mt-2 text-sm leading-6 text-[#6B564C]">Restored memories return to Story and Album grouping.</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Archived memories</p>
+              <h3 className="mt-2 font-serif text-2xl text-[var(--cb-text)]">Hidden from the active story</h3>
+              <p className="mt-2 text-sm leading-6 text-[var(--cb-text-secondary)]">Restored memories return to Story and Album grouping.</p>
             </div>
             <StatusBadge tone="warning">{archivedMemories.length}</StatusBadge>
           </div>
@@ -603,8 +603,8 @@ export function TimelineView({ compatibilityError, compatibilityState, model, on
             {archivedMemories.map((memory) => (
               <ContentCard key={memory.id} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
-                  <p className="text-sm font-bold text-[#24131d]">{memory.displayTitle}</p>
-                  <p className="mt-1 text-sm text-[#6B564C]">{memory.displayDate || 'Date review'} • {memory.typeLabel}</p>
+                  <p className="text-sm font-bold text-[var(--cb-text)]">{memory.displayTitle}</p>
+                  <p className="mt-1 text-sm text-[var(--cb-text-secondary)]">{memory.displayDate || 'Date review'} • {memory.typeLabel}</p>
                 </div>
                 <SecondaryButton onClick={() => setConfirmState({ mode: 'restore', memory })}><RotateCcw className="size-4" />Restore memory</SecondaryButton>
               </ContentCard>

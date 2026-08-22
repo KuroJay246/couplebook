@@ -25,6 +25,7 @@ export function normalizeFirestoreSettings(id, data, warnings) {
   if (!requireSchemaVersion(data, warnings)) return null
   return {
     id,
+    appearanceTheme: safeString(data.appearanceTheme, 40),
     theme: safeString(data.theme, 40),
     anniversaryView: safeString(data.anniversaryView, 40),
     privacy: data.privacy && typeof data.privacy === 'object'

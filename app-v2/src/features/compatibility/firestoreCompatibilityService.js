@@ -79,14 +79,17 @@ function settingsToCompatibility({ shared, privateResult, username }) {
   }
   const privateData = privateResult.data || {}
   const sharedData = shared.data || {}
+  const privateAppearanceTheme = privateData.appearanceTheme || privateData.theme || null
+  const sharedAppearanceTheme = sharedData.appearanceTheme || sharedData.theme || null
   return createCompatibilityResult({
     status: 'ready',
     source: FIRESTORE_SOURCE,
     data: {
       username,
-      theme: privateData.theme || sharedData.theme || null,
+      appearanceTheme: privateAppearanceTheme || sharedAppearanceTheme || null,
+      theme: privateAppearanceTheme || sharedAppearanceTheme || null,
       revision: Number.isInteger(privateData.revision) && privateData.revision > 0 ? privateData.revision : 0,
-      usedGlobalThemeFallback: false,
+      usedGlobalThemeFallback: !privateAppearanceTheme && Boolean(sharedAppearanceTheme),
       settings: {
         anniversaryConfig: privateData.anniversaryView || sharedData.anniversaryView || null,
         privacyToggles: {

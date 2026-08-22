@@ -6,8 +6,8 @@ export function FilterChip({ active = false, children, className = '', ...props 
       {...props}
       type="button"
       className={cn(
-        'inline-flex min-h-10 items-center rounded-full px-4 text-xs font-bold transition',
-        active ? 'bg-[#24131d] text-white' : 'border border-[#e5d7cf] bg-white text-[#80685B] hover:bg-[#fff8f2]',
+        'cb-motion-standard inline-flex min-h-10 items-center rounded-full px-4 text-xs font-bold',
+        active ? 'cb-chip-active' : 'cb-chip',
         className,
       )}
     >

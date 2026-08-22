@@ -1,3 +1,50 @@
 [data-route="dashboard"] {
   scroll-margin-top: 6rem;
 }
+
+[data-route="dashboard"] > :first-child {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--cb-accent-soft) 78%, transparent), transparent 52%),
+    linear-gradient(180deg, color-mix(in srgb, var(--cb-surface) 96%, transparent), color-mix(in srgb, var(--cb-surface-raised) 98%, transparent));
+  box-shadow: var(--cb-shadow-soft);
+}
+
+[data-route="dashboard"] > :first-child h2 {
+  max-width: 14ch;
+}
+
+[data-route="dashboard"] > :first-child .rounded-\[24px\] {
+  border: 1px solid var(--cb-border);
+  background: color-mix(in srgb, var(--cb-accent-soft) 72%, transparent);
+}
+
+[data-route="dashboard"] > div:nth-child(3) > section:first-child article:first-child {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--cb-accent-soft) 92%, transparent), color-mix(in srgb, var(--cb-surface-raised) 96%, transparent));
+}
+
+[data-route="dashboard"] > div:nth-child(4) > div:last-child > section:last-child a,
+[data-route="dashboard"] > div:nth-child(3) a,
+[data-route="dashboard"] > div:nth-child(2) a {
+  transition:
+    transform var(--cb-motion-quick) ease,
+    background-color var(--cb-motion-standard) ease,
+    border-color var(--cb-motion-standard) ease;
+}
+
+[data-route="dashboard"] > div:nth-child(4) > div:last-child > section:last-child a:hover,
+[data-route="dashboard"] > div:nth-child(3) a:hover,
+[data-route="dashboard"] > div:nth-child(2) a:hover {
+  transform: translateY(-1px);
+}
+
+@media (min-width: 1280px) {
+  [data-route="dashboard"] > div:nth-child(3) {
+    align-items: start;
+  }
+
+  [data-route="dashboard"] > div:nth-child(3) > div:last-child {
+    position: sticky;
+    top: 7.5rem;
+  }
+}

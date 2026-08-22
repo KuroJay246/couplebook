@@ -1,3 +1,36 @@
 [data-route="timeline"] {
   scroll-margin-top: 6rem;
 }
+
+[data-route="timeline"] .timeline-card {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--cb-surface) 94%, transparent), color-mix(in srgb, var(--cb-surface-raised) 98%, transparent));
+  border-radius: var(--cb-radius-lg);
+  border-color: var(--cb-border);
+}
+
+[data-route="timeline"] .timeline-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--cb-shadow-soft);
+}
+
+@media (min-width: 1024px) {
+  [data-route="timeline"] > .space-y-6 {
+    position: relative;
+    padding-left: 2rem;
+  }
+
+  [data-route="timeline"] > .space-y-6::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 1rem;
+    width: 1px;
+    background: linear-gradient(180deg, transparent, var(--cb-border-strong), transparent);
+  }
+
+  [data-route="timeline"] > .space-y-6 > section:nth-child(even) .timeline-card {
+    margin-left: 3rem;
+  }
+}

@@ -130,7 +130,7 @@ async function validateDesktop(browser) {
 
     assert.equal(metrics.overflowX, 0, 'Desktop shell should not overflow horizontally.')
     assert.equal(metrics.railWidth >= 84, true, 'Desktop rail should render with Event Hub-style width.')
-    assert.equal(metrics.heading, 'Settings', 'Desktop top bar should render the current route title.')
+    assert.equal(metrics.heading, 'More', 'Desktop top bar should render the current route title.')
     assert.deepEqual(consoleErrors, [], 'Desktop shell should not log console errors.')
     assert.deepEqual(responseErrors, [], 'Desktop shell should not request failed resources.')
 

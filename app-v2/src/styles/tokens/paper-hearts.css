@@ -1,0 +1,33 @@
+html[data-theme="paper-hearts"] {
+  color-scheme: light;
+  --cb-theme-id: "paper-hearts";
+  --cb-bg: #f6efe6;
+  --cb-bg-soft: #fbf6ef;
+  --cb-bg-elevated: #fffaf4;
+  --cb-bg-canvas: radial-gradient(circle at top left, rgba(211, 143, 130, 0.14), transparent 24rem), linear-gradient(180deg, #f3ece2 0%, #fcf7f0 100%);
+  --cb-nav-bg: rgba(248, 241, 232, 0.96);
+  --cb-nav-border: rgba(76, 54, 58, 0.08);
+  --cb-surface: rgba(255, 250, 244, 0.96);
+  --cb-surface-raised: rgba(255, 252, 247, 0.98);
+  --cb-surface-soft: rgba(246, 237, 229, 0.9);
+  --cb-surface-ghost: rgba(61, 43, 47, 0.03);
+  --cb-border: rgba(93, 67, 71, 0.09);
+  --cb-border-strong: rgba(93, 67, 71, 0.16);
+  --cb-text: #2e2427;
+  --cb-text-secondary: #5d4b4f;
+  --cb-text-muted: #887478;
+  --cb-accent: #af6476;
+  --cb-accent-strong: #954f60;
+  --cb-accent-soft: rgba(175, 100, 118, 0.13);
+  --cb-accent-secondary: #93627b;
+  --cb-focus: rgba(159, 88, 107, 0.28);
+  --cb-success-bg: rgba(84, 131, 105, 0.16);
+  --cb-success-text: #295840;
+  --cb-warning-bg: rgba(184, 145, 80, 0.2);
+  --cb-warning-text: #715220;
+  --cb-error-bg: rgba(177, 73, 97, 0.16);
+  --cb-error-text: #8a2a45;
+  --cb-info-bg: rgba(127, 105, 177, 0.16);
+  --cb-info-text: #574678;
+}
+

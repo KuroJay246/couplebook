@@ -106,12 +106,12 @@ function AddFavoriteDialog({ category, onClose, onSave, status }) {
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <button type="button" className="absolute inset-0 bg-[#24131d]/40 backdrop-blur-sm" onClick={onClose} aria-label="Close favorite form" />
-      <form className="relative w-full max-w-xl rounded-[28px] border border-[#ead7df] bg-white p-6 shadow-[0_24px_80px_rgba(36,19,29,0.18)] sm:p-8" onSubmit={handleSubmit}>
+      <button type="button" className="absolute inset-0 bg-[var(--cb-bg-soft)]/40 backdrop-blur-sm" onClick={onClose} aria-label="Close favorite form" />
+      <form className="relative w-full max-w-xl rounded-[28px] border border-[var(--cb-border)] bg-[var(--cb-surface)] p-6 shadow-[0_24px_80px_rgba(36,19,29,0.18)] sm:p-8" onSubmit={handleSubmit}>
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#8f5168]">Add favorite</p>
-            <h3 className="mt-2 font-serif text-3xl text-[#24131d]">Add {category.label.toLowerCase()}</h3>
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--cb-accent)]">Add favorite</p>
+            <h3 className="mt-2 font-serif text-3xl text-[var(--cb-text)]">Add {category.label.toLowerCase()}</h3>
           </div>
           <TextButton onClick={onClose}>Close</TextButton>
         </div>
@@ -142,20 +142,20 @@ function FavoriteSection({ canEdit, category, onAdd, onRemove, ownerId, search }
     <ContentCard>
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-sm font-bold text-[#24131d]">{category.icon || CATEGORY_ICONS[category.key] || '♡'} {category.label}</p>
-          <p className="mt-1 text-sm text-[#806572]">{filteredItems.length} saved</p>
+          <p className="text-sm font-bold text-[var(--cb-text)]">{category.icon || CATEGORY_ICONS[category.key] || '♡'} {category.label}</p>
+          <p className="mt-1 text-sm text-[var(--cb-text-muted)]">{filteredItems.length} saved</p>
         </div>
         {canEdit ? <SecondaryButton onClick={() => onAdd(category)}>Add</SecondaryButton> : null}
       </div>
       <div className="mt-4 flex flex-wrap gap-2">
         {filteredItems.map((item) => (
-          <button className="inline-flex items-center gap-2 rounded-full border border-[#E7D6CC] bg-white px-3 py-2 text-sm text-[#5A443B]" key={`${ownerId}-${category.key}-${item}`} onClick={canEdit ? () => onRemove(category, item) : undefined} type="button">
+          <button className="inline-flex items-center gap-2 rounded-full border border-[#E7D6CC] bg-[var(--cb-surface)] px-3 py-2 text-sm text-[#5A443B]" key={`${ownerId}-${category.key}-${item}`} onClick={canEdit ? () => onRemove(category, item) : undefined} type="button">
             <span>{item}</span>
             {canEdit ? <span aria-hidden="true">×</span> : null}
           </button>
         ))}
       </div>
-      {filteredItems.length === 0 ? <p className="mt-4 text-sm text-[#806572]">{search ? 'No favorites in this category match your search.' : 'Nothing saved in this category yet.'}</p> : null}
+      {filteredItems.length === 0 ? <p className="mt-4 text-sm text-[var(--cb-text-muted)]">{search ? 'No favorites in this category match your search.' : 'Nothing saved in this category yet.'}</p> : null}
     </ContentCard>
   )
 }
@@ -170,7 +170,7 @@ function FavoritesCard({ canEdit, onAdd, onRemove, person, search }) {
 
   return (
     <Surface className="h-full">
-      <h3 className="font-serif text-3xl text-[#24131d]">{person.displayName}</h3>
+      <h3 className="font-serif text-3xl text-[var(--cb-text)]">{person.displayName}</h3>
       <div className="mt-5 grid gap-4">
         {categories.map((category) => (
           <FavoriteSection canEdit={canEdit} category={category} key={category.key} onAdd={onAdd} onRemove={onRemove} ownerId={person.id} search={search} />
@@ -264,9 +264,9 @@ export function FavoritesView({ compatibilityError, compatibilityState, model, o
       <Surface>
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Shared matches</p>
-            <h3 className="mt-2 font-serif text-3xl text-[#24131d]">Things you both reach for</h3>
-            <p className="mt-3 text-sm leading-6 text-[#6B564C]">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Shared matches</p>
+            <h3 className="mt-2 font-serif text-3xl text-[var(--cb-text)]">Things you both reach for</h3>
+            <p className="mt-3 text-sm leading-6 text-[var(--cb-text-secondary)]">
               {sharedMatches.length > 0
                 ? `${sharedMatches.length} shared ${sharedMatches.length === 1 ? 'match' : 'matches'} already stand out.`
                 : 'No exact shared matches yet, but everything still lives in one collection.'}

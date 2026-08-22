@@ -1,6 +1,10 @@
 import { LEGACY_LOCAL_DEV_SOURCE, toTrimmedString } from '../../data/adapterUtils.js'
+import { findTheme, normalizeThemeId } from '../../theme/themeRegistry.js'
 
 const LEGACY_THEME_LABELS = Object.freeze({
+  'midnight-rose': 'Midnight Rose',
+  'paper-hearts': 'Paper Hearts',
+  moonlit: 'Moonlit',
   dark: 'Glassmorphism dark',
   light: 'Crisp light',
   sunset: 'Warm sunset',
@@ -121,9 +125,11 @@ export function selectSettingsAccount({ approvedUser = null, authUser = null } =
 
 export function selectSettingsAppearance(settingsSource) {
   const settingsData = settingsSource?.data
-  const savedTheme = toTrimmedString(settingsData?.theme)
+  const savedTheme = toTrimmedString(settingsData?.appearanceTheme || settingsData?.theme)
   const anniversaryView = toTrimmedString(settingsData?.settings?.anniversaryConfig)
   const privacyToggles = settingsData?.settings?.privacyToggles || {}
+  const themeDefinition = findTheme(savedTheme)
+  const normalizedTheme = normalizeThemeId(savedTheme)
 
   let preservedThemeOrigin = 'No saved value'
   if (savedTheme) {
@@ -132,16 +138,21 @@ export function selectSettingsAppearance(settingsSource) {
 
   return {
     runtimeTheme: {
-      label: 'Editorial paper and ink',
-      description: 'The routed shell now keeps one calm paper-and-ink reading direction instead of switching visual systems page by page.',
-      meta: 'Current shell',
+      label: themeDefinition.name,
+      description: themeDefinition.description,
+      meta: 'Current atmosphere',
+    },
+    currentTheme: {
+      label: themeDefinition.name,
+      value: normalizedTheme,
+      description: themeDefinition.shortDescription,
     },
     preservedTheme: {
       label: formatThemeLabel(savedTheme),
-      value: savedTheme || 'paper',
+      value: normalizedTheme,
       description: savedTheme
-        ? 'A preserved legacy preference is still visible here for reference, but it does not take over the routed shell.'
-        : 'No preserved theme preference is stored here yet.',
+        ? 'Your saved appearance follows your approved account and restores across devices.'
+        : 'No saved appearance preference is stored here yet.',
       origin: preservedThemeOrigin,
     },
     anniversaryView: {
@@ -159,15 +170,15 @@ export function selectSettingsAppearance(settingsSource) {
     revision: Number.isInteger(settingsData?.revision) && settingsData.revision > 0 ? settingsData.revision : 0,
     items: [
       {
-        label: 'Current routed theme',
-        description: 'This React shell keeps the approved Couple Book look while saving your preference.',
-        meta: 'Fixed',
+        label: 'Current appearance',
+        description: 'The shell restores your allowed Couple Book theme before the first meaningful paint where possible.',
+        meta: themeDefinition.name,
       },
       {
         label: 'Preserved appearance preference',
         description: savedTheme
           ? 'Your saved appearance preference is available here.'
-          : 'The page can stay calm and complete even when no legacy appearance preference exists.',
+          : 'Midnight Rose is used until a personal preference is saved.',
         meta: preservedThemeOrigin,
       },
       {
@@ -370,9 +381,9 @@ export function describeSettingsOpening(model) {
 
   return [
     model.account.email !== 'Not available yet' ? 'Approved identity restored' : 'Approved identity remains quiet',
-    model.appearance.preservedTheme.label !== 'No saved preference yet'
-      ? `Preserved theme noted: ${model.appearance.preservedTheme.label}`
-      : 'Using the default editorial shell',
+    model.appearance.currentTheme?.label
+      ? `Current theme: ${model.appearance.currentTheme.label}`
+      : 'Using the default Couple Book shell',
     `${completedCount} routed pages complete, ${pendingCount} still pending`,
   ]
 }

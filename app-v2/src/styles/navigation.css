@@ -1,3 +1,24 @@
+.cb-nav-panel {
+  border: 1px solid var(--cb-nav-border);
+  border-radius: var(--cb-radius-lg);
+  background: color-mix(in srgb, var(--cb-surface-ghost) 84%, transparent);
+}
+
+.cb-nav-link {
+  color: var(--cb-text-secondary);
+}
+
+.cb-nav-link:hover {
+  background: color-mix(in srgb, var(--cb-accent-soft) 48%, transparent);
+  color: var(--cb-text);
+}
+
+.cb-nav-link-active {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--cb-accent) 24%, transparent), color-mix(in srgb, var(--cb-accent-soft) 88%, transparent));
+  color: var(--cb-text);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cb-accent) 26%, var(--cb-border));
+}
+
 .mobile-tab-bar {
   position: fixed;
   right: 0.75rem;
@@ -5,36 +26,36 @@
   left: 0.75rem;
   z-index: 35;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(3.8rem, 1fr));
-  min-height: 4.25rem;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  min-height: 4.35rem;
   overflow: hidden;
-  border: 1px solid rgba(234, 215, 223, 0.92);
-  border-radius: 1.25rem;
-  background: rgba(255, 253, 253, 0.96);
+  border: 1px solid var(--cb-border);
+  border-radius: 1.45rem;
+  background: color-mix(in srgb, var(--cb-surface) 90%, transparent);
   padding: 0.35rem 0.35rem max(0.35rem, env(safe-area-inset-bottom));
-  box-shadow: 0 16px 40px rgba(36, 19, 29, 0.16);
+  box-shadow: var(--cb-shadow-strong);
   backdrop-filter: blur(18px);
 }
 
 .mobile-tab-item {
   display: flex;
-  min-height: 3.5rem;
+  min-height: 3.55rem;
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 0.24rem;
   border: 0;
-  border-radius: 0.95rem;
+  border-radius: 1rem;
   background: transparent;
-  color: #6b5460;
+  color: var(--cb-text-muted);
   font-size: 0.63rem;
   font-weight: 700;
   line-height: 1;
 }
 
 .mobile-tab-item-active {
-  background: #fceef3;
-  color: #8f5168;
+  background: color-mix(in srgb, var(--cb-accent-soft) 84%, transparent);
+  color: var(--cb-text);
 }
 
 @media (min-width: 1024px) {

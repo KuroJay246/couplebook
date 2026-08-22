@@ -1,0 +1,26 @@
+.cb-field-label {
+  color: var(--cb-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.cb-input-surface {
+  min-height: 2.9rem;
+  border: 1px solid var(--cb-border);
+  border-radius: var(--cb-radius-sm);
+  background: var(--cb-surface-raised);
+  color: var(--cb-text);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.cb-input-surface::placeholder {
+  color: var(--cb-text-muted);
+}
+
+.cb-input-surface:focus {
+  border-color: var(--cb-accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--cb-accent) 18%, transparent);
+  outline: 0;
+}
+

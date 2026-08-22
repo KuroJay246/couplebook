@@ -1,3 +1,22 @@
 [data-route="profile"] {
   scroll-margin-top: 6rem;
 }
+
+[data-route="profile"] > .cb-surface:first-of-type {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--cb-accent-soft) 68%, transparent), transparent 46%),
+    linear-gradient(180deg, color-mix(in srgb, var(--cb-surface) 96%, transparent), color-mix(in srgb, var(--cb-surface-raised) 98%, transparent));
+}
+
+[data-route="profile"] [role="tablist"] {
+  position: sticky;
+  top: 7rem;
+  z-index: 10;
+  backdrop-filter: blur(12px);
+}
+
+[data-route="profile"] .cb-surface,
+[data-route="profile"] .cb-card {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--cb-surface) 94%, transparent), color-mix(in srgb, var(--cb-surface-raised) 98%, transparent));
+}

@@ -1,12 +1,12 @@
 import { cn } from './classNames.js'
 
 export function Surface({ as: Tag = 'section', children, className = '', tone = 'default', ...props }) {
-  const toneClass = tone === 'soft' ? 'bg-[#fff8fb]' : 'bg-white'
+  const toneClass = tone === 'soft' ? 'cb-surface-soft' : ''
   return (
     <Tag
       {...props}
       className={cn(
-        'rounded-[24px] border border-[#ead7df] p-5 shadow-[0_8px_24px_rgba(84,53,67,0.04)] sm:p-6',
+        'cb-surface p-5 sm:p-6',
         toneClass,
         className,
       )}
@@ -20,7 +20,7 @@ export function ContentCard({ as: Tag = 'article', children, className = '', ...
   return (
     <Tag
       {...props}
-      className={cn('rounded-2xl border border-[#ead7df] bg-[#fffdfd] p-4', className)}
+      className={cn('cb-card p-4', className)}
     >
       {children}
     </Tag>

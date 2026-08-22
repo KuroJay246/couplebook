@@ -28,13 +28,13 @@ const VIEWPORTS = Object.freeze([
 ])
 
 const ROUTES = Object.freeze([
-  { path: '/login', heading: 'Open the book kept between the two of you.', mode: 'signed-out' },
+  { path: '/login', heading: 'Open the shared journal kept between the two of you.', mode: 'signed-out' },
   { path: '/dashboard', heading: 'Pick up where your story left off.', mode: 'authorized' },
   { path: '/timeline', heading: /Our Story/, mode: 'authorized' },
   { path: '/gallery', heading: /Our Shared Gallery/, mode: 'authorized' },
   { path: '/profile', heading: /Us/, mode: 'authorized' },
   { path: '/favorites', heading: /Favorite Things/, mode: 'authorized' },
-  { path: '/settings', heading: /Application Settings/, mode: 'authorized' },
+  { path: '/settings', heading: /Make the book yours/, mode: 'authorized' },
   { path: '/contract', heading: /Shared Relationship Contract/, mode: 'authorized' },
   { path: '/birthday', heading: 'Fictional birthday runtime chapter', mode: 'authorized' },
   { path: '/valentine', heading: 'Fictional Valentine runtime chapter', mode: 'authorized' },

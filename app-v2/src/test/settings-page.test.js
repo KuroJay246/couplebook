@@ -14,20 +14,20 @@ test('settings route uses the read-only feature hook and utility view', async ()
 
   assert.match(settingsPageSource, /useSettingsData/)
   assert.match(settingsPageSource, /SettingsView/)
-  assert.match(settingsViewSource, /Application Settings/)
-  assert.match(settingsViewSource, /PageTabs/)
-  assert.match(settingsViewSource, /Editorial paper/)
+  assert.match(settingsViewSource, /Make the book yours/)
+  assert.match(settingsViewSource, /THEME_REGISTRY/)
+  assert.match(settingsViewSource, /Our moments/)
   assert.match(settingsViewSource, /buildFormState/)
   assert.match(settingsViewSource, /draft/)
-  assert.match(settingsViewSource, /Cancel changes/)
-  assert.match(settingsViewSource, /Data and backup/i)
+  assert.match(settingsViewSource, /Cancel/)
+  assert.match(settingsViewSource, /Leave this device/i)
   assert.doesNotMatch(settingsViewSource, /selectTheme|Remote sign-out|Delete account|Reset Local Device Data/)
 })
 
 test('settings migration progress and utility navigation stay explicit', () => {
   assert.deepEqual(
     routeMigrationStatus.completed.map((entry) => entry.label),
-    ['Home', 'Story', 'Album', 'Us', 'Favorites', 'Plans', 'Contract', 'Birthday', 'Valentine', 'Confession', 'Settings'],
+    ['Home', 'Story', 'Album', 'Us', 'Favorites', 'Plans', 'Contract', 'Birthday', 'Valentine', 'Confession', 'More'],
   )
   assert.deepEqual(routeMigrationStatus.pending.map((entry) => entry.label), [])
   assert.deepEqual(specialMomentContentConnectionStatus, {
@@ -43,7 +43,7 @@ test('settings migration progress and utility navigation stay explicit', () => {
   })
   assert.deepEqual(
     getRoutesByGroup(ROUTE_GROUPS.primary).map((route) => route.path),
-    ['/dashboard', '/timeline', '/gallery', '/profile'],
+    ['/dashboard', '/timeline', '/gallery', '/profile', '/plans'],
   )
   assert.deepEqual(getRoutesByGroup(ROUTE_GROUPS.utility).map((route) => route.path), ['/settings'])
 })

@@ -1,6 +1,7 @@
 import { doc, getDoc, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore'
 import { isFirestoreWriteMode } from '../data/writeMode.js'
 import { db } from '../lib/firebase.js'
+import { DEFAULT_THEME_ID, isSupportedThemeInput, normalizeThemeId, THEME_REGISTRY } from '../theme/themeRegistry.js'
 import {
   currentContractPath,
   favoritesPath,
@@ -13,7 +14,7 @@ import {
 } from './firestorePaths.js'
 
 export const FAVORITE_WRITE_CATEGORIES = Object.freeze(['food', 'songs', 'movies', 'places', 'memories', 'notes'])
-export const APPEARANCE_THEMES = Object.freeze(['paper', 'rose', 'olive', 'plum'])
+export const APPEARANCE_THEMES = Object.freeze(THEME_REGISTRY.map((theme) => theme.id))
 export const MEMORY_TYPES = Object.freeze(['ordinary', 'birthday', 'valentine', 'confession'])
 export const MEMORY_KIND_LABELS = Object.freeze([
   'Everyday Moment',
@@ -246,12 +247,15 @@ export async function saveOwnSettings(payload, context) {
   const writeDocument = context.setDocument || setDoc
   const reference = docRef(firestore, privateSettingsPath(coupleId, uid), createDoc)
   const nextRevision = await resolveNextRevision(reference, payload.revision, getDocument, 'Settings')
-  const theme = cleanText(payload.theme, 40, 'Theme') || 'paper'
-  if (!APPEARANCE_THEMES.includes(theme)) throw new Error('Theme is not supported.')
+  const rawTheme = cleanText(payload.appearanceTheme ?? payload.theme, 40, 'Appearance theme') || DEFAULT_THEME_ID
+  if (!isSupportedThemeInput(rawTheme)) {
+    throw new Error('Theme is not supported.')
+  }
+  const appearanceTheme = normalizeThemeId(rawTheme)
   const next = {
     schemaVersion: 1,
     revision: nextRevision,
-    theme,
+    appearanceTheme,
     anniversaryView: cleanText(payload.anniversaryView, 40, 'Anniversary view'),
     privacy: {
       localOnlyMode: payload.localOnlyMode === true,

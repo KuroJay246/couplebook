@@ -11,14 +11,14 @@ export const ROUTE_GROUPS = Object.freeze({
 export const protectedRouteMeta = [
   {
     path: '/dashboard',
-    label: 'Dashboard',
+    label: 'Home',
     navLabel: 'Home',
     title: 'Home',
     chapter: 'Chapter 01',
     group: ROUTE_GROUPS.primary,
     icon: 'House',
     mobilePrimary: true,
-    summary: 'Today in Us, On This Day, and the next actions across your private memory book.',
+    summary: 'Relationship highlights, featured memories, and what matters today.',
   },
   {
     path: '/timeline',
@@ -29,7 +29,7 @@ export const protectedRouteMeta = [
     group: ROUTE_GROUPS.primary,
     icon: 'BookHeart',
     mobilePrimary: true,
-    summary: 'Browse the relationship timeline with year navigation, restored memories, and anchored entries.',
+    summary: 'An editorial journal of memories, milestones, and restored chapters.',
   },
   {
     path: '/gallery',
@@ -40,7 +40,7 @@ export const protectedRouteMeta = [
     group: ROUTE_GROUPS.primary,
     icon: 'Images',
     mobilePrimary: true,
-    summary: 'Group photos and videos into a cleaner private album surface without exposing production media paths.',
+    summary: 'A private shared photo book for saved images, videos, and protected uploads.',
   },
   {
     path: '/profile',
@@ -51,7 +51,7 @@ export const protectedRouteMeta = [
     group: ROUTE_GROUPS.primary,
     icon: 'HeartHandshake',
     mobilePrimary: true,
-    summary: 'Shared profile details, relationship identity, and couple-scoped information stay private here.',
+    summary: 'The two of you, your dates, favorites, and the personal details that shape the book.',
   },
   {
     path: '/favorites',
@@ -60,17 +60,17 @@ export const protectedRouteMeta = [
     title: 'Favorites',
     group: ROUTE_GROUPS.shared,
     icon: 'Star',
-    summary: 'Read-only shared favorites now stay here, with exact overlap shown only when it is honestly preserved.',
+    summary: 'The saved foods, songs, places, and little details you keep reaching for.',
   },
   {
     path: '/plans',
     label: 'Plans',
     navLabel: 'Plans',
     title: 'Plans',
-    group: ROUTE_GROUPS.shared,
+    group: ROUTE_GROUPS.primary,
     icon: 'NotebookTabs',
     mobilePrimary: true,
-    summary: 'Couple-scoped ideas, planned dates, and completed plans can safely become memories.',
+    summary: 'Date ideas, trips, goals, and moments waiting to happen.',
   },
   {
     path: '/contract',
@@ -79,7 +79,7 @@ export const protectedRouteMeta = [
     title: 'Contract',
     group: ROUTE_GROUPS.shared,
     icon: 'ScrollText',
-    summary: 'Read-only contract status and document framing now live here inside the protected shell.',
+    summary: 'A document-style reading surface for your shared agreement and acceptance status.',
   },
   {
     path: '/birthday',
@@ -89,7 +89,7 @@ export const protectedRouteMeta = [
     group: ROUTE_GROUPS.special,
     accent: 'gold',
     icon: 'Gift',
-    summary: 'Protected birthday content now uses a runtime-only source boundary.',
+    summary: 'A warmer chapter for birthday messages, celebrations, and private notes.',
   },
   {
     path: '/valentine',
@@ -99,7 +99,7 @@ export const protectedRouteMeta = [
     group: ROUTE_GROUPS.special,
     accent: 'rose',
     icon: 'Heart',
-    summary: 'Protected Valentine content now uses a runtime-only source boundary.',
+    summary: 'A love-letter reading flow for Valentine notes and protected content.',
   },
   {
     path: '/confession',
@@ -109,16 +109,16 @@ export const protectedRouteMeta = [
     group: ROUTE_GROUPS.special,
     accent: 'oxblood',
     icon: 'PenSquare',
-    summary: 'Protected confession content now uses a runtime-only source boundary.',
+    summary: 'A quieter private reading space for confessions and intimate writing.',
   },
   {
     path: '/settings',
-    label: 'Settings',
-    navLabel: 'Settings',
-    title: 'Settings',
+    label: 'More',
+    navLabel: 'More',
+    title: 'More',
     group: ROUTE_GROUPS.utility,
     icon: 'Settings',
-    summary: 'Read-only account, privacy, and migration notes stay here without exposing live controls or writes.',
+    summary: 'Appearance, special pages, privacy details, and personal account actions.',
   },
 ]
 

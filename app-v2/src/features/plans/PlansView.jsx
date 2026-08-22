@@ -64,8 +64,8 @@ function PlanForm({ initialPlan, onCancel, onSave, saving }) {
     <Surface as="form" onSubmit={submit}>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">{form.id ? 'Edit plan' : 'New plan'}</p>
-          <h3 className="mt-2 font-serif text-3xl text-[#24131d]">{form.id ? 'Update this plan' : 'Add a new plan'}</h3>
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">{form.id ? 'Edit plan' : 'New plan'}</p>
+          <h3 className="mt-2 font-serif text-3xl text-[var(--cb-text)]">{form.id ? 'Update this plan' : 'Add a new plan'}</h3>
         </div>
         <SecondaryButton onClick={onCancel}>Cancel</SecondaryButton>
       </div>
@@ -103,8 +103,8 @@ function PlanCard({ onConvert, onEdit, onStatus, plan, saving }) {
       <div className="flex items-start justify-between gap-3">
         <div>
           <StatusBadge tone={planTone(plan.status)}>{statusLabel(plan.status)}</StatusBadge>
-          <h3 className="mt-3 text-xl font-bold text-[#24131d]">{plan.title}</h3>
-          <p className="mt-2 text-sm text-[#6B564C]">{plan.category}</p>
+          <h3 className="mt-3 text-xl font-bold text-[var(--cb-text)]">{plan.title}</h3>
+          <p className="mt-2 text-sm text-[var(--cb-text-secondary)]">{plan.category}</p>
         </div>
         <ContextMenu
           label={`Actions for ${plan.title}`}
@@ -117,17 +117,17 @@ function PlanCard({ onConvert, onEdit, onStatus, plan, saving }) {
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <div className="rounded-2xl border border-[#EFE2DA] bg-[#FBF8F5] p-3">
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#806572]">Target date</p>
-          <p className="mt-2 text-sm font-semibold text-[#24131d]">{plan.targetDate || 'No date yet'}</p>
+        <div className="rounded-2xl border border-[var(--cb-border)] bg-[var(--cb-surface-soft)] p-3">
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-text-muted)]">Target date</p>
+          <p className="mt-2 text-sm font-semibold text-[var(--cb-text)]">{plan.targetDate || 'No date yet'}</p>
         </div>
-        <div className="rounded-2xl border border-[#EFE2DA] bg-[#FBF8F5] p-3">
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#806572]">Status</p>
-          <p className="mt-2 text-sm font-semibold text-[#24131d]">{statusLabel(plan.status)}</p>
+        <div className="rounded-2xl border border-[var(--cb-border)] bg-[var(--cb-surface-soft)] p-3">
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-text-muted)]">Status</p>
+          <p className="mt-2 text-sm font-semibold text-[var(--cb-text)]">{statusLabel(plan.status)}</p>
         </div>
       </div>
 
-      {plan.notes ? <p className="text-sm leading-6 text-[#6B564C]">{plan.notes}</p> : <p className="text-sm leading-6 text-[#806572]">No extra notes yet.</p>}
+      {plan.notes ? <p className="text-sm leading-6 text-[var(--cb-text-secondary)]">{plan.notes}</p> : <p className="text-sm leading-6 text-[var(--cb-text-muted)]">No extra notes yet.</p>}
 
       <div className="mt-auto flex flex-wrap gap-2">
         <SecondaryButton onClick={() => onEdit(plan)}>Edit</SecondaryButton>
@@ -154,9 +154,9 @@ function PlansSummary({ counts, setStatus, status }) {
           key={item.key}
           type="button"
           onClick={() => setStatus(item.key)}
-          className={`rounded-2xl border p-4 text-left transition ${status === item.key ? 'border-[#9A5260] bg-[#FCEEF1]' : 'border-[#EEDFD6] bg-white hover:bg-[#FFF8F2]'}`}
+          className={`rounded-2xl border p-4 text-left transition ${status === item.key ? 'border-[#9A5260] bg-[#FCEEF1]' : 'border-[var(--cb-border)] bg-[var(--cb-surface)] hover:bg-[var(--cb-accent-soft)]'}`}
         >
-          <p className="text-3xl font-bold text-[#24131d]">{item.value}</p>
+          <p className="text-3xl font-bold text-[var(--cb-text)]">{item.value}</p>
           <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[#80685B]">{item.label}</p>
         </button>
       ))}

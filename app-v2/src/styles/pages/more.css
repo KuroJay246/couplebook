@@ -1,3 +1,13 @@
 [aria-label="Navigation menu"] {
   max-width: 100%;
 }
+
+[data-route="settings"] {
+  scroll-margin-top: 6rem;
+}
+
+[data-route="settings"] .cb-page-frame {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--cb-accent-soft) 72%, transparent), transparent 46%),
+    linear-gradient(180deg, color-mix(in srgb, var(--cb-surface) 94%, transparent), color-mix(in srgb, var(--cb-surface-raised) 98%, transparent));
+}

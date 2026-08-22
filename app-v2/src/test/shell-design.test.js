@@ -10,11 +10,11 @@ async function readSource(relativePath) {
 test('route registry keeps the final primary and secondary hierarchy explicit', () => {
   assert.deepEqual(
     getRoutesByGroup(ROUTE_GROUPS.primary).map((route) => route.path),
-    ['/dashboard', '/timeline', '/gallery', '/profile'],
+    ['/dashboard', '/timeline', '/gallery', '/profile', '/plans'],
   )
   assert.deepEqual(
     getRoutesByGroup(ROUTE_GROUPS.shared).map((route) => route.path),
-    ['/favorites', '/plans', '/contract'],
+    ['/favorites', '/contract'],
   )
   assert.deepEqual(
     getRoutesByGroup(ROUTE_GROUPS.special).map((route) => route.path),
@@ -36,15 +36,17 @@ test('app shell keeps the refined navigation hierarchy explicit', async () => {
   assert.match(routeConfigSource, /navLabel: 'Story'/)
   assert.match(routeConfigSource, /navLabel: 'Album'/)
   assert.match(routeConfigSource, /navLabel: 'Us'/)
+  assert.match(routeConfigSource, /navLabel: 'Plans'/)
   assert.match(shellSource, /Couple Book/)
-  assert.match(brandSource, /Private memory archive/)
+  assert.match(brandSource, /Private shared journal/)
   assert.match(shellSource, /mobile-tab-bar/)
   assert.match(shellSource, /Navigation menu/)
-  assert.match(shellSource, /Shared archive/)
+  assert.match(shellSource, /Shared between two/)
   assert.match(shellSource, /desktopNavGroups/)
   assert.match(shellSource, /Add Memory/)
   assert.match(shellSource, /Sign out/)
   assert.match(shellSource, /Keepsakes/)
+  assert.match(shellSource, /Private pages/)
 })
 
 test('shared states and login shell keep the Event Hub-family framing explicit', async () => {
@@ -53,7 +55,7 @@ test('shared states and login shell keep the Event Hub-family framing explicit',
   const errorSource = await readSource('../components/ErrorState.jsx')
   const pageLayoutSource = await readSource('../components/PageLayout.jsx')
 
-  assert.match(loginSource, /Open the book kept between the two of you\./)
+  assert.match(loginSource, /Open the shared journal kept between the two of you\./)
   assert.match(loginSource, /Enter Couple Book/)
   assert.match(loginSource, /Approved accounts only/)
   assert.match(loginSource, /BrandMark/)

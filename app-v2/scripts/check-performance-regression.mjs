@@ -21,7 +21,7 @@ const ROUTES = Object.freeze([
   { path: '/gallery', heading: /Our Shared Gallery/ },
   { path: '/profile', heading: /Us/ },
   { path: '/favorites', heading: /Favorite Things/ },
-  { path: '/settings', heading: /Application Settings/ },
+  { path: '/settings', heading: /Make the book yours/ },
   { path: '/contract', heading: /Shared Relationship Contract/ },
   { path: '/birthday', heading: 'Fictional birthday runtime chapter' },
   { path: '/valentine', heading: 'Fictional Valentine runtime chapter' },

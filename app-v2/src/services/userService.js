@@ -22,6 +22,7 @@ export function normalizeApprovedUserRecord(uid, data = {}) {
     schemaVersion: Number.isInteger(data.schemaVersion) ? data.schemaVersion : null,
     profileName: data.profile?.name || '',
     contractAccepted: data.contractAccepted === true,
+    appearanceTheme: data.appearanceTheme || null,
     theme: data.theme || null,
     hasFavorites: !!(data.favorites && Object.keys(data.favorites).length > 0),
     hasProfile: !!(data.profile && Object.keys(data.profile).length > 0),

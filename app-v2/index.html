@@ -6,12 +6,24 @@
     <title>Couple Book v2</title>
     <meta
       name="description"
-      content="Private Couple Book migration shell for the next routed React experience."
+      content="A private shared journal for Jaylan and Omia, built around memories, plans, and protected relationship pages."
     />
     <link
       rel="icon"
-      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%230a0c10'/%3E%3Cpath d='M32 51 14 33c-7-8 4-20 14-10l4 4 4-4c10-10 21 2 14 10L32 51Z' fill='%23ff4a6b'/%3E%3Cpath d='M32 51 50 33c7-8-4-20-14-10l-4 4v24Z' fill='%238b5cf6' opacity='.9'/%3E%3C/svg%3E"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' rx='14' fill='%23120d14'/%3E%3Cpath d='M13.5 11.5C13.5 9.84315 14.8431 8.5 16.5 8.5H24V35.5H17.5C15.2909 35.5 13.5 33.7091 13.5 31.5V11.5Z' fill='%23f4eced' fill-opacity='.92'/%3E%3Cpath d='M34.5 11.5C34.5 9.84315 33.1569 8.5 31.5 8.5H24V35.5H30.5C32.7091 35.5 34.5 33.7091 34.5 31.5V11.5Z' fill='%23f4eced' fill-opacity='.6'/%3E%3Cpath d='M24 13.5C21.75 11.7 19.55 10.8 17.4 10.8C14.7 10.8 13 12.4 13 14.9V31.6C13 33.9 14.8 35.8 17.1 35.8H24' stroke='%23d27c99' stroke-linecap='round' stroke-linejoin='round' stroke-width='2.2'/%3E%3Cpath d='M24 13.5C26.25 11.7 28.45 10.8 30.6 10.8C33.3 10.8 35 12.4 35 14.9V31.6C35 33.9 33.2 35.8 30.9 35.8H24' stroke='%23d27c99' stroke-linecap='round' stroke-linejoin='round' stroke-width='2.2'/%3E%3C/svg%3E"
     />
+    <script>
+      (() => {
+        const key = 'couplebook:appearance-theme'
+        const allowed = new Set(['midnight-rose', 'paper-hearts', 'moonlit'])
+        let theme = 'midnight-rose'
+        try {
+          const stored = String(window.localStorage.getItem(key) || '').trim().toLowerCase()
+          if (allowed.has(stored)) theme = stored
+        } catch {}
+        document.documentElement.dataset.theme = theme
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>
