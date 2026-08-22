@@ -24,8 +24,8 @@ const SPOOFED_SESSION = Object.freeze({
   memorybook_active_user: 'spoofed-reader',
   memorybook_active_uid: 'spoofed-reader-only',
 })
-const SIGNED_OUT_ROUTES = ['/dashboard', '/timeline', '/gallery', '/contract', '/birthday', '/valentine', '/confession']
-const SPOOFED_STORAGE_ROUTES = ['/dashboard', '/timeline', '/gallery', '/contract', '/birthday', '/valentine', '/confession']
+const SIGNED_OUT_ROUTES = ['/dashboard', '/timeline', '/gallery', '/plans', '/contract', '/birthday', '/valentine', '/confession']
+const SPOOFED_STORAGE_ROUTES = ['/dashboard', '/timeline', '/gallery', '/plans', '/contract', '/birthday', '/valentine', '/confession']
 const FORBIDDEN_CONTRACT_TEXT = /data:image|base64|strokeData|Sign & Open Vault/i
 
 function log(message) {
@@ -358,6 +358,11 @@ async function runAuthenticatedDesktopCoverage(browser) {
     await page.goto(`${getBaseUrl()}/dashboard`, { waitUntil: 'domcontentloaded' })
     await waitForRouteContent(page, '/dashboard', 'Pick up where your story left off.')
 
+    await page.goto(`${getBaseUrl()}/plans`, { waitUntil: 'domcontentloaded' })
+    await waitForRouteContent(page, '/plans', /Ideas worth doing together\./)
+    assert.equal(await page.getByRole('button', { name: 'Add plan' }).count() > 0, true, 'Plans should keep the add-plan entry point visible.')
+    assert.equal(await page.getByRole('searchbox', { name: 'Search plans' }).count(), 1, 'Plans should keep search visible.')
+
     await page.goto(`${getBaseUrl()}/contract`, { waitUntil: 'domcontentloaded' })
     await waitForRouteContent(page, '/contract', 'Shared Relationship Contract')
     assert.equal(await page.getByText('Agreement wording is unavailable here.').count() > 0, true)
@@ -454,6 +459,10 @@ async function runAuthenticatedMobileCoverage(browser) {
     await page.goto(`${getBaseUrl()}/timeline`, { waitUntil: 'domcontentloaded' })
     await waitForRouteContent(page, '/timeline', 'Our Story')
     assert.equal(await page.getByRole('button', { name: 'View memory' }).count() > 0, true, 'Timeline mobile should retain detail actions.')
+
+    await page.goto(`${getBaseUrl()}/plans`, { waitUntil: 'domcontentloaded' })
+    await waitForRouteContent(page, '/plans', /Ideas worth doing together\./)
+    assert.equal(await page.getByRole('button', { name: 'Add plan' }).count() > 0, true, 'Plans mobile should keep the add-plan entry point visible.')
 
     await page.goto(`${getBaseUrl()}/gallery`, { waitUntil: 'domcontentloaded' })
     await waitForRouteContent(page, '/gallery', 'Our Shared Gallery')

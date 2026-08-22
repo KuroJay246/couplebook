@@ -34,6 +34,7 @@ const ROUTES = Object.freeze([
   { path: '/gallery', heading: /Our Shared Gallery/, mode: 'authorized' },
   { path: '/profile', heading: /Us/, mode: 'authorized' },
   { path: '/favorites', heading: /Favorite Things/, mode: 'authorized' },
+  { path: '/plans', heading: /Ideas worth doing together\./, mode: 'authorized' },
   { path: '/settings', heading: /Make the book yours/, mode: 'authorized' },
   { path: '/contract', heading: /Shared Relationship Contract/, mode: 'authorized' },
   { path: '/birthday', heading: 'Fictional birthday runtime chapter', mode: 'authorized' },

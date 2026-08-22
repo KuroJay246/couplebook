@@ -11,6 +11,7 @@
 - `npm --prefix app-v2 run test:media-mapping`
 - `npm --prefix app-v2 run build`
 - `npm --prefix app-v2 run test:browser`
+- `npm --prefix app-v2 run test:owner-ui-review`
 - `npm run product:qa`
 - `npm run product:audit`
 
@@ -50,4 +51,5 @@ The distinct-identity branch also requires:
 
 - `npm run eventhub:review`
 - `npm run identity:check`
+- `npm --prefix app-v2 run test:owner-ui-review`
 - verification that the three supported themes are present and route QA still passes after theme persistence changes

@@ -34,6 +34,7 @@ const ROUTES = Object.freeze([
   { path: '/gallery', heading: /Our Shared Gallery/, fixture: browserRegressionAuthorizedFixture, detailSelector: 'button.gallery-media-frame' },
   { path: '/profile', heading: /Us/, fixture: browserRegressionAuthorizedFixture },
   { path: '/favorites', heading: /Favorite Things/, fixture: browserRegressionAuthorizedFixture },
+  { path: '/plans', heading: /Ideas worth doing together\./, fixture: browserRegressionAuthorizedFixture },
   { path: '/settings', heading: /Make the book yours/, fixture: browserRegressionAuthorizedFixture },
   { path: '/contract', heading: /Shared Relationship Contract/, fixture: browserRegressionAuthorizedFixture },
   { path: '/birthday', heading: 'Fictional birthday runtime chapter', fixture: browserRegressionAuthorizedFixture },
@@ -41,7 +42,7 @@ const ROUTES = Object.freeze([
   { path: '/confession', heading: 'Fictional confession runtime chapter', fixture: browserRegressionAuthorizedFixture },
 ])
 
-const READ_ONLY_WORKFLOW_ROUTES = new Set(['/timeline', '/profile', '/favorites', '/settings', '/contract', '/birthday', '/valentine', '/confession'])
+const READ_ONLY_WORKFLOW_ROUTES = new Set(['/timeline', '/profile', '/favorites', '/plans', '/settings', '/contract', '/birthday', '/valentine', '/confession'])
 
 function log(message) {
   process.stdout.write(`${message}\n`)

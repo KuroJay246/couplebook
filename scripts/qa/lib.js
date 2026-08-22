@@ -12,6 +12,7 @@ const DEFAULT_ROUTES = [
   '/timeline',
   '/gallery',
   '/profile',
+  '/plans',
   '/favorites',
   '/settings',
   '/contract',

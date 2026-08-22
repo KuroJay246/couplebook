@@ -47,25 +47,25 @@ async function openWithStorage(browser, route, storageState = null) {
   return { context, page };
 }
 
-async function assertSignedOutContractRedirect(browser) {
-  const { context, page } = await openWithStorage(browser, '/contract');
+async function assertSignedOutProtectedRedirect(browser, route) {
+  const { context, page } = await openWithStorage(browser, route);
   try {
-    expect(page.url().endsWith('/login'), 'Signed-out contract access should redirect to login.');
+    expect(page.url().endsWith('/login'), `Signed-out ${route} access should redirect to login.`);
     const bodyText = await page.locator('body').innerText();
-    expect(bodyText.includes('Sign in'), 'Signed-out contract access should land on the login screen.');
-    log('Privacy OK: signed-out contract access redirects to login.');
+    expect(bodyText.includes('Sign in'), `Signed-out ${route} access should land on the login screen.`);
+    log(`Privacy OK: signed-out ${route} access redirects to login.`);
   } finally {
     await context.close();
   }
 }
 
-async function assertSpoofedContractRedirect(browser) {
-  const { context, page } = await openWithStorage(browser, '/contract', SPOOFED_SESSION);
+async function assertSpoofedProtectedRedirect(browser, route) {
+  const { context, page } = await openWithStorage(browser, route, SPOOFED_SESSION);
   try {
-    expect(page.url().endsWith('/login'), 'Spoofed localStorage must not unlock contract access.');
+    expect(page.url().endsWith('/login'), `Spoofed localStorage must not unlock ${route} access.`);
     const bodyText = await page.locator('body').innerText();
-    expect(!bodyText.includes('Initialize MemoryBook'), 'Contract wizard should not render for spoofed localStorage.');
-    log('Privacy OK: spoofed localStorage does not unlock the contract.');
+    expect(!bodyText.includes('Initialize MemoryBook'), `${route} wizard should not render for spoofed localStorage.`);
+    log(`Privacy OK: spoofed localStorage does not unlock ${route}.`);
   } finally {
     await context.close();
   }
@@ -142,8 +142,10 @@ async function run() {
   }
 
   try {
-    await assertSignedOutContractRedirect(browser);
-    await assertSpoofedContractRedirect(browser);
+    await assertSignedOutProtectedRedirect(browser, '/contract');
+    await assertSpoofedProtectedRedirect(browser, '/contract');
+    await assertSignedOutProtectedRedirect(browser, '/plans');
+    await assertSpoofedProtectedRedirect(browser, '/plans');
 
     for (const expectation of SPECIAL_ROUTE_EXPECTATIONS) {
       await assertSpecialRouteBlocked(browser, expectation.route, expectation.forbiddenText);

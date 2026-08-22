@@ -14,6 +14,7 @@
     "test:media-workflows": "npx -y firebase-tools@14.19.0 emulators:exec --only auth,firestore,storage --project couplebook-97830 --config ../firebase.app-v2.json \"node scripts/check-media-workflows.mjs\"",
     "test:performance": "node scripts/check-performance-regression.mjs",
     "test:product": "node scripts/check-product-interactions.mjs",
+    "test:owner-ui-review": "node scripts/owner-ui-review.mjs",
     "test:visual": "node scripts/check-visual-regression.mjs",
     "test:rules": "node scripts/run-firestore-rules-tests.mjs",
     "test:storage-rules": "node scripts/run-storage-rules-tests.mjs",

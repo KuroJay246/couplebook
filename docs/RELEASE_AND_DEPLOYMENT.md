@@ -26,6 +26,7 @@ npm --prefix app-v2 run test:browser
 npm --prefix app-v2 run test:product
 npm --prefix app-v2 run test:visual
 npm --prefix app-v2 run test:performance
+npm --prefix app-v2 run test:owner-ui-review
 npm --prefix app-v2 run health:react
 npm run product:qa
 npm run product:audit
@@ -43,3 +44,5 @@ firebase hosting:channel:deploy couplebook-distinct-identity --project coupleboo
 ## Evidence Boundary
 
 Evidence belongs outside the repo under `C:\Users\Jaylan\Documents\couplebook.visual-review\distinct-product-identity\`.
+
+The owner review evidence lane writes to `C:\Users\Jaylan\Documents\couplebook.visual-review\distinct-product-identity\owner-ui-review\` and generates `COUPLE_BOOK_OWNER_UI_REVIEW.pdf` there.
