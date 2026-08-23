@@ -13,3 +13,699 @@
 .special-page-standalone .cb-card {
   background: color-mix(in srgb, var(--cb-surface-raised) 94%, transparent);
 }
+
+.special-moment-page {
+  position: relative;
+  display: grid;
+  gap: 1rem;
+  overflow: hidden;
+}
+
+.special-moment-utility {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.special-moment-link {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--cb-surface-raised) 92%, transparent);
+  padding: 0.75rem 1.1rem;
+  color: var(--cb-text);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 14px 34px rgba(36, 19, 29, 0.08);
+}
+
+.special-moment-link.subtle {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cb-border) 92%, transparent);
+  color: var(--cb-text-secondary);
+}
+
+.birthday-canvas,
+.valentine-stage,
+.confession-shell {
+  position: relative;
+  overflow: hidden;
+  border-radius: 2rem;
+}
+
+.birthday-canvas {
+  min-height: 39rem;
+  background:
+    radial-gradient(circle at top left, rgba(104, 52, 161, 0.82), transparent 30rem),
+    linear-gradient(180deg, #0a0612 0%, #150820 100%);
+  padding: 1.25rem;
+}
+
+.birthday-card {
+  position: relative;
+  min-height: 36rem;
+  overflow: hidden;
+  border-radius: 2rem;
+  background: linear-gradient(160deg, #a87bdc, #6b21a8);
+  box-shadow: 0 24px 64px rgba(8, 4, 14, 0.42);
+}
+
+.birthday-card-glow {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 10% 20%, rgba(255, 255, 255, 0.14), transparent 20%),
+    radial-gradient(circle at 86% 78%, rgba(255, 255, 255, 0.08), transparent 18%);
+}
+
+.birthday-card-inner {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  gap: 1.5rem;
+  padding: 3rem 1.5rem 4rem;
+}
+
+.birthday-cake {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 0.5rem;
+  padding-top: 2rem;
+}
+
+.birthday-cake-layer {
+  position: relative;
+  border-radius: 999px;
+  opacity: 0;
+  transform: translateY(2.25rem);
+}
+
+.birthday-cake.is-revealed .birthday-cake-layer,
+.birthday-cake.is-revealed .birthday-candles,
+.birthday-cake.is-revealed .birthday-cake-plate {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+.birthday-cake-layer.bottom {
+  width: 14rem;
+  height: 3rem;
+  background: linear-gradient(180deg, #d9a6ff 0%, #8b3ebd 100%);
+  transition-delay: 0.15s;
+}
+
+.birthday-cake-layer.middle {
+  width: 11rem;
+  height: 2.5rem;
+  background: linear-gradient(180deg, #f3d9ff 0%, #c084fc 100%);
+  transition-delay: 0.45s;
+}
+
+.birthday-cake-layer.top {
+  width: 7.5rem;
+  height: 2.2rem;
+  background: linear-gradient(180deg, #fff0ff 0%, #f0abfc 100%);
+  transition-delay: 0.75s;
+}
+
+.birthday-cake-layer .frosting {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 1rem;
+  border-radius: 999px 999px 0 0;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.birthday-cake-layer .sprinkle {
+  position: absolute;
+  top: 52%;
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 999px;
+}
+
+.birthday-cake-layer .sprinkle.pink { left: 18%; background: #f0abfc; }
+.birthday-cake-layer .sprinkle.gold { left: 38%; background: #ffd36b; }
+.birthday-cake-layer .sprinkle.green { left: 58%; background: #88d18a; }
+.birthday-cake-layer .sprinkle.violet { left: 78%; background: #a78bfa; }
+
+.birthday-cake-cherry {
+  position: absolute;
+  top: -0.5rem;
+  left: calc(50% - 0.35rem);
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 999px;
+  background: #e11d48;
+  box-shadow: 0 -0.5rem 0 -0.25rem #a3e635;
+}
+
+.birthday-candles {
+  position: absolute;
+  top: 0;
+  display: flex;
+  gap: 1rem;
+  opacity: 0;
+  transform: translateY(2rem);
+  transition-delay: 1s;
+}
+
+.birthday-candles .candle {
+  position: relative;
+  display: block;
+  width: 0.75rem;
+  border-radius: 999px;
+  background: #fff8ed;
+  box-shadow: inset 0 0 0 1px rgba(216, 180, 254, 0.9);
+}
+
+.birthday-candles .candle.tall { height: 2.3rem; }
+.birthday-candles .candle.medium { height: 1.9rem; margin-top: 0.35rem; }
+.birthday-candles .candle.short { height: 1.7rem; margin-top: 0.5rem; }
+
+.birthday-candles .flame {
+  position: absolute;
+  top: -0.85rem;
+  left: calc(50% - 0.32rem);
+  width: 0.64rem;
+  height: 0.88rem;
+  border-radius: 999px;
+  background: radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.96), #ffe28a 58%, rgba(255, 196, 79, 0.88) 100%);
+  animation: birthday-flame 1s infinite alternate ease-in-out;
+}
+
+.birthday-cake-plate {
+  width: 16rem;
+  height: 1rem;
+  border-radius: 999px;
+  background: #e5e7eb;
+  opacity: 0;
+  transform: translateY(1rem);
+  transition-delay: 1.2s;
+}
+
+.birthday-copy {
+  display: grid;
+  gap: 0.65rem;
+  text-align: center;
+  color: #f5f3ff;
+  opacity: 0;
+  transform: translateY(1.6rem);
+}
+
+.birthday-copy.is-revealed {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.9s ease 1.5s, transform 0.9s ease 1.5s;
+}
+
+.birthday-kicker {
+  margin: 0;
+  color: #f5d0fe;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.birthday-copy h1 {
+  margin: 0;
+  color: #f5d0fe;
+  font-size: clamp(2.2rem, 4vw, 3.4rem);
+  line-height: 0.95;
+}
+
+.birthday-subtitle {
+  margin: 0;
+  color: rgba(245, 243, 255, 0.92);
+  font-size: 1rem;
+}
+
+.birthday-confetti {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.birthday-confetti-piece {
+  position: absolute;
+  top: -1rem;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 0.2rem;
+  background: #f0abfc;
+  opacity: 0;
+  animation: birthday-confetti-fall linear infinite;
+}
+
+.birthday-confetti-piece:nth-child(3n) { background: #ffd36b; }
+.birthday-confetti-piece:nth-child(4n) { background: #88d18a; }
+.birthday-confetti-piece:nth-child(5n) { background: #a78bfa; }
+
+.valentine-stage {
+  min-height: 39rem;
+  background: linear-gradient(-45deg, #fb7185, #ec4899, #db2777, #f9a8d4);
+  background-size: 280% 280%;
+  animation: valentine-bg-move 12s ease infinite;
+  padding: 1.25rem;
+}
+
+.valentine-floating {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.valentine-heart {
+  position: absolute;
+  bottom: -2rem;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1.3rem;
+  animation: valentine-float linear infinite;
+}
+
+.valentine-card {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 27rem);
+  margin: 4rem auto;
+  border-radius: 1.8rem;
+  background: rgba(255, 255, 255, 0.86);
+  padding: 2.6rem 1.7rem 2.1rem;
+  text-align: center;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(18px);
+}
+
+.valentine-card::before {
+  position: absolute;
+  inset: -2px;
+  border-radius: 1.9rem;
+  content: "";
+  background: linear-gradient(120deg, #ff4d6d, #ff9a9e, #fbc2eb);
+  filter: blur(18px);
+  opacity: 0.6;
+  z-index: -1;
+}
+
+.valentine-emoji {
+  font-size: 4rem;
+  animation: valentine-heartbeat 1.8s infinite;
+}
+
+.valentine-kicker,
+.confession-kicker,
+.confession-overline {
+  margin: 0;
+  color: #8f5168;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.valentine-card h1,
+.confession-gate h1,
+.confession-card h2 {
+  margin: 0.8rem 0 0;
+  color: #4a1c2f;
+  font-size: clamp(2rem, 4vw, 2.8rem);
+  line-height: 1.05;
+}
+
+.valentine-hint,
+.confession-intro {
+  margin: 0.9rem auto 0;
+  max-width: 34rem;
+  color: #6b5561;
+  font-size: 0.95rem;
+  line-height: 1.7;
+}
+
+.valentine-buttons {
+  position: relative;
+  height: 7rem;
+  margin-top: 1.8rem;
+}
+
+.valentine-action,
+.confession-open-button {
+  display: inline-flex;
+  min-height: 3rem;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.9rem 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.valentine-action {
+  position: absolute;
+  min-width: 8.2rem;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.16);
+}
+
+.valentine-action.yes,
+.confession-open-button {
+  background: linear-gradient(135deg, #ff4d6d, #ff758f);
+  color: #fff;
+}
+
+.valentine-action.no {
+  background: rgba(255, 255, 255, 0.92);
+  color: #755d6b;
+}
+
+.valentine-response {
+  min-height: 3rem;
+  margin-top: 1.1rem;
+  color: #6a4556;
+  font-size: 0.96rem;
+  font-weight: 600;
+}
+
+.valentine-card.is-accepted {
+  box-shadow: 0 30px 84px rgba(173, 38, 93, 0.32);
+}
+
+.confession-shell {
+  min-height: 42rem;
+  background:
+    radial-gradient(circle at top left, rgba(115, 39, 75, 0.34), transparent 26rem),
+    linear-gradient(180deg, #180a14 0%, #09040a 100%);
+  padding: 1.25rem;
+}
+
+.confession-atmosphere {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.confession-atmosphere span {
+  position: absolute;
+  border-radius: 999px;
+  background: rgba(255, 173, 214, 0.12);
+  animation: confession-float 12s linear infinite;
+}
+
+.confession-atmosphere span:nth-child(1) { top: 8%; left: 6%; width: 0.85rem; height: 0.85rem; }
+.confession-atmosphere span:nth-child(2) { top: 18%; right: 12%; width: 0.65rem; height: 0.65rem; animation-duration: 10s; }
+.confession-atmosphere span:nth-child(3) { bottom: 16%; left: 18%; width: 0.9rem; height: 0.9rem; animation-duration: 11s; }
+.confession-atmosphere span:nth-child(4) { bottom: 10%; right: 8%; width: 0.7rem; height: 0.7rem; animation-duration: 13s; }
+
+.confession-gate,
+.confession-card {
+  position: relative;
+  z-index: 1;
+  border-radius: 1.9rem;
+  background: rgba(255, 250, 252, 0.94);
+  box-shadow: 0 24px 60px rgba(3, 2, 5, 0.35);
+}
+
+.confession-gate {
+  display: grid;
+  gap: 0.85rem;
+  padding: 2rem 1.5rem;
+  text-align: center;
+}
+
+.confession-card {
+  display: none;
+  margin-top: 1rem;
+  padding: 1.75rem;
+}
+
+.confession-shell.is-opened .confession-card {
+  display: grid;
+  gap: 1.3rem;
+}
+
+.confession-notes,
+.confession-media {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.confession-slot {
+  display: grid;
+  gap: 0.35rem;
+  border-radius: 1.3rem;
+  background: #fff2f7;
+  padding: 1rem;
+}
+
+.confession-slot-image,
+.confession-video,
+.confession-candidate-preview {
+  width: 100%;
+  border-radius: 1.2rem;
+  object-fit: cover;
+  background: #fff6fa;
+  box-shadow: 0 12px 30px rgba(79, 28, 48, 0.14);
+}
+
+.confession-slot-image,
+.confession-candidate-preview {
+  min-height: 12rem;
+}
+
+.confession-inline-media {
+  display: grid;
+}
+
+.confession-slot-label {
+  color: #7a5366;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.confession-slot-status {
+  color: #a3264c;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.confession-letter {
+  display: grid;
+  gap: 1rem;
+  border-radius: 1.5rem;
+  background: linear-gradient(180deg, #fff9fb 0%, #fff3f7 100%);
+  padding: 1.35rem;
+}
+
+.confession-letter p {
+  margin: 0;
+  color: #3b2531;
+  font-size: 0.98rem;
+  line-height: 1.8;
+}
+
+.confession-owner-panel {
+  border-radius: 1.4rem;
+  background: #f8edf4;
+  padding: 1rem 1.1rem;
+}
+
+.confession-owner-copy,
+.confession-owner-current,
+.confession-candidate-note,
+.confession-candidate-confidence,
+.confession-owner-status,
+.confession-owner-slot-meta {
+  margin: 0;
+  color: #6b4e5c;
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.confession-owner-panel h3 {
+  margin: 0;
+  color: #5e3144;
+  font-size: 1.15rem;
+}
+
+.confession-owner-toolbar,
+.confession-owner-slot-header,
+.confession-owner-slot-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.confession-owner-toolbar {
+  margin-top: 0.9rem;
+  flex-wrap: wrap;
+}
+
+.confession-owner-button {
+  display: inline-flex;
+  min-height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #be123c, #db2777);
+  padding: 0.72rem 1rem;
+  color: #fff;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.confession-owner-button.subtle {
+  background: rgba(255, 255, 255, 0.72);
+  color: #7b365a;
+}
+
+.confession-owner-button:disabled {
+  opacity: 0.7;
+}
+
+.confession-owner-error {
+  margin: 0.9rem 0 0;
+  color: #9f1239;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.confession-owner-slots {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.confession-owner-slot {
+  display: grid;
+  gap: 0.85rem;
+  border-radius: 1.25rem;
+  background: rgba(255, 255, 255, 0.7);
+  padding: 1rem;
+}
+
+.confession-owner-slot-label,
+.confession-candidate-name,
+.confession-owner-slot-state {
+  margin: 0;
+  color: #5e3144;
+  font-weight: 800;
+}
+
+.confession-owner-slot-state {
+  font-size: 0.85rem;
+}
+
+.confession-owner-candidates {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 0.85rem;
+}
+
+.confession-candidate {
+  display: grid;
+  gap: 0.75rem;
+  border-radius: 1.1rem;
+  background: #fff8fb;
+  padding: 0.85rem;
+}
+
+.confession-candidate-copy {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.confession-candidate-audio,
+.confession-audio {
+  width: 100%;
+}
+
+.confession-video {
+  min-height: 14rem;
+}
+
+@keyframes birthday-flame {
+  from { transform: scale(1); }
+  to { transform: scale(1.16); }
+}
+
+@keyframes birthday-confetti-fall {
+  0% { opacity: 0; transform: translateY(-1rem) rotate(0deg); }
+  10% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(20rem) rotate(680deg); }
+}
+
+@keyframes valentine-bg-move {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes valentine-heartbeat {
+  0%, 100% { transform: scale(1); }
+  25% { transform: scale(1.08); }
+  75% { transform: scale(1.13); }
+}
+
+@keyframes valentine-float {
+  from { transform: translateY(0) scale(1); opacity: 0.82; }
+  to { transform: translateY(-120vh) scale(1.5); opacity: 0; }
+}
+
+@keyframes confession-float {
+  from { transform: translateY(0) scale(1); opacity: 0.1; }
+  50% { opacity: 0.24; }
+  to { transform: translateY(-2rem) scale(1.22); opacity: 0.08; }
+}
+
+@media (max-width: 900px) {
+  .confession-notes,
+  .confession-media {
+    grid-template-columns: 1fr;
+  }
+
+  .confession-owner-slot-header,
+  .confession-owner-slot-actions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 640px) {
+  .birthday-canvas,
+  .valentine-stage,
+  .confession-shell {
+    min-height: auto;
+    padding: 0.75rem;
+  }
+
+  .birthday-card-inner,
+  .valentine-card,
+  .confession-gate,
+  .confession-card {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .birthday-cake-layer.bottom { width: 11.5rem; }
+  .birthday-cake-layer.middle { width: 8.9rem; }
+  .birthday-cake-layer.top { width: 6rem; }
+  .birthday-cake-plate { width: 13rem; }
+
+  .valentine-buttons {
+    height: 8rem;
+  }
+
+  .valentine-action {
+    min-width: 7rem;
+  }
+}

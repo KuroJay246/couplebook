@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
+import { isLocalHostname, readRuntimeEnv } from '../../data/adapterUtils.js'
 import { useOwnerWrite } from '../editing/useOwnerWrite.js'
 import {
   ACCEPTED_MEDIA_TYPES,
@@ -19,7 +20,7 @@ export { QUEUE_STATUS, summarizeQueueItems, isRetryableFailurePhase } from './me
 
 const RETRYABLE_STATUSES = new Set([QUEUE_STATUS.failed, QUEUE_STATUS.cancelled])
 const FINISHED_STATUSES = new Set([QUEUE_STATUS.saved, QUEUE_STATUS.failed, QUEUE_STATUS.cancelled])
-const env = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env : {}
+const env = readRuntimeEnv()
 
 const initialState = Object.freeze({
   items: [],
@@ -126,7 +127,7 @@ function isLocalUploadTestWindow() {
   if (typeof window === 'undefined') return false
   if (env.VITE_ENABLE_LOCAL_UPLOAD_TEST_HOOKS !== 'true') return false
   const host = String(window.location?.hostname || '')
-  return host === '127.0.0.1' || host === 'localhost'
+  return isLocalHostname(host)
 }
 
 function readUploadTestDelay(phase) {

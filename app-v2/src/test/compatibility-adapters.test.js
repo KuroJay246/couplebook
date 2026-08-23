@@ -332,7 +332,7 @@ test('legacy memory bridge rejects non-local URLs and non-local runtime origins'
   })
 
   assert.equal(nonLocalOriginResult.status, 'unavailable')
-  assert.match(nonLocalOriginResult.warnings.join(' '), /localhost/i)
+  assert.match(nonLocalOriginResult.warnings.join(' '), /local development origin/i)
 })
 
 test('legacy memory bridge accepts localhost, normalizes data, and never persists', async () => {

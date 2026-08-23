@@ -1,5 +1,6 @@
 import { useCallback } from 'react'
 import { useAuth } from '../../auth/useAuth.js'
+import { readRuntimeEnv } from '../../data/adapterUtils.js'
 import {
   acceptContract,
   archiveMemory,
@@ -36,7 +37,7 @@ export function useOwnerWrite(onRefresh) {
 
   const createContext = useCallback(() => ({
     approvedUser,
-    env: import.meta.env,
+    env: readRuntimeEnv(),
     user,
   }), [approvedUser, user])
 

@@ -1,5 +1,12 @@
 import { collection, doc, getDoc, getDocs } from 'firebase/firestore'
-import { createCompatibilityResult, FIRESTORE_SOURCE, freezeClone, isPlainObject, toTrimmedString } from '../data/adapterUtils.js'
+import {
+  createCompatibilityResult,
+  FIRESTORE_SOURCE,
+  freezeClone,
+  isPlainObject,
+  LOCAL_PRIVATE_MEDIA_PATTERN,
+  toTrimmedString,
+} from '../data/adapterUtils.js'
 
 export async function readDocument({ firestore, path, getDocument = getDoc, normalize, missingStatus = 'unavailable' }) {
   if (!firestore) throw new Error('Firestore is not configured for app-v2.')
@@ -92,6 +99,6 @@ export function safeStringArray(value, maxItems = 20, maxLength = 80) {
 export function rejectUnsafeMediaReference(value) {
   const text = toTrimmedString(value)
   if (!text) return ''
-  if (/[A-Z]:\\|file:\/\/|\\Users\\|\/Users\/|OUR MEMORIES|assets\/(?:photos|videos)/i.test(text)) return ''
+  if (LOCAL_PRIVATE_MEDIA_PATTERN.test(text)) return ''
   return text.length <= 240 ? text : ''
 }

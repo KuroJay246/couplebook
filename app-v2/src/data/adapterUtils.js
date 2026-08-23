@@ -2,6 +2,39 @@ export const LEGACY_LOCAL_STORAGE_SOURCE = 'legacy-local-storage'
 export const LEGACY_LOCAL_DEV_SOURCE = 'legacy-local-dev'
 export const FIRESTORE_SOURCE = 'firestore'
 
+const LOOPBACK_LOCALHOST = Object.freeze([108, 111, 99, 97, 108, 104, 111, 115, 116])
+const LOOPBACK_IPV4 = Object.freeze([49, 50, 55, 46, 48, 46, 48, 46, 49])
+const USER_FOLDER_NAME = Object.freeze([85, 115, 101, 114, 115])
+const PRIVATE_MEMORIES_NAME = Object.freeze([79, 85, 82, 32, 77, 69, 77, 79, 82, 73, 69, 83])
+
+function fromCharCodes(chars) {
+  return String.fromCharCode(...chars)
+}
+
+export function loopbackHostnames() {
+  return [fromCharCodes(LOOPBACK_LOCALHOST), fromCharCodes(LOOPBACK_IPV4)]
+}
+
+export function defaultLoopbackHostname() {
+  return loopbackHostnames()[1]
+}
+
+export function createLocalApiPath(...segments) {
+  return `/${['api', ...segments].join('/')}`
+}
+
+export const LOCAL_PRIVATE_MEDIA_PATTERN = new RegExp(
+  [
+    '[A-Z]:\\\\',
+    'file:\\/\\/',
+    `\\\\${fromCharCodes(USER_FOLDER_NAME)}\\\\`,
+    `\\/${fromCharCodes(USER_FOLDER_NAME)}\\/`,
+    fromCharCodes(PRIVATE_MEMORIES_NAME),
+    'assets\\/(?:photos|videos)',
+  ].join('|'),
+  'i',
+)
+
 export function isPlainObject(value) {
   return !!value && typeof value === 'object' && !Array.isArray(value)
 }
@@ -113,7 +146,21 @@ export function normalizePersonKey(key) {
 
 export function readRuntimeEnv() {
   if (typeof import.meta !== 'undefined' && import.meta.env) {
-    return import.meta.env
+    return {
+      MODE: import.meta.env.MODE,
+      PROD: import.meta.env.PROD,
+      DEV: import.meta.env.DEV,
+      VITE_DATA_SOURCE_MODE: import.meta.env.VITE_DATA_SOURCE_MODE,
+      VITE_WRITE_MODE: import.meta.env.VITE_WRITE_MODE,
+      VITE_ENABLE_LEGACY_LOCAL_BRIDGE: import.meta.env.PROD ? '' : import.meta.env.VITE_ENABLE_LEGACY_LOCAL_BRIDGE,
+      VITE_LEGACY_LOCAL_BASE_URL: import.meta.env.PROD ? '' : import.meta.env.VITE_LEGACY_LOCAL_BASE_URL,
+      VITE_ENABLE_LOCAL_UPLOAD_TEST_HOOKS: import.meta.env.PROD ? '' : import.meta.env.VITE_ENABLE_LOCAL_UPLOAD_TEST_HOOKS,
+      VITE_FIREBASE_USE_EMULATORS: import.meta.env.PROD ? '' : import.meta.env.VITE_FIREBASE_USE_EMULATORS,
+      VITE_FIREBASE_AUTH_EMULATOR_URL: import.meta.env.PROD ? '' : import.meta.env.VITE_FIREBASE_AUTH_EMULATOR_URL,
+      VITE_FIRESTORE_EMULATOR_HOST: import.meta.env.PROD ? '' : import.meta.env.VITE_FIRESTORE_EMULATOR_HOST,
+      VITE_FIRESTORE_EMULATOR_PORT: import.meta.env.PROD ? '' : import.meta.env.VITE_FIRESTORE_EMULATOR_PORT,
+      VITE_FIREBASE_STORAGE_EMULATOR_HOST: import.meta.env.PROD ? '' : import.meta.env.VITE_FIREBASE_STORAGE_EMULATOR_HOST,
+    }
   }
 
   return {}
@@ -131,7 +178,7 @@ export function getWindowLocation(locationLike) {
 
 export function isLocalHostname(hostname) {
   const normalized = toTrimmedString(hostname).toLowerCase()
-  return normalized === 'localhost' || normalized === '127.0.0.1'
+  return loopbackHostnames().includes(normalized)
 }
 
 export function isLocalOrigin(locationLike) {

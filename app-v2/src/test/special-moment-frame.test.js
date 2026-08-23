@@ -30,30 +30,29 @@ test('special moment config stays non-sensitive and pending', () => {
   assert.doesNotMatch(serialized, /jaylan|omia|spencer|private message|real letter|birthday content|confession content|\.html|assets\/|OUR MEMORIES/i)
 })
 
-test('special routes use the shared protected frame instead of placeholders', async () => {
+test('special routes use dedicated protected experiences instead of placeholders', async () => {
   const birthdayPageSource = await readSource('../pages/BirthdayPage.jsx')
   const valentinePageSource = await readSource('../pages/ValentinePage.jsx')
   const confessionPageSource = await readSource('../pages/ConfessionPage.jsx')
-  const frameSource = await readSource('../features/specialMoments/SpecialMomentFrame.jsx')
   const hookSource = await readSource('../features/specialMoments/useSpecialMomentContent.js')
   const adapterSource = await readSource('../data/legacySpecialMomentAdapter.js')
   const mainSource = await readSource('../main.jsx')
 
+  assert.match(birthdayPageSource, /special-birthday-page/)
+  assert.match(valentinePageSource, /special-valentine-page/)
+  assert.match(confessionPageSource, /special-confession-page/)
+
   for (const source of [birthdayPageSource, valentinePageSource, confessionPageSource]) {
-    assert.match(source, /SpecialMomentFrame/)
+    assert.match(source, /useSpecialMomentContent/)
     assert.doesNotMatch(source, /PlaceholderPage/)
   }
 
-  assert.match(frameSource, /PageHeader/)
   assert.match(hookSource, /useCompatibilityData/)
   assert.match(adapterSource, /VITE_ENABLE_LEGACY_LOCAL_BRIDGE/)
-  assert.match(adapterSource, /\/api\/special-moment\/\$\{momentKey\}/)
-  assert.match(frameSource, /Return to Home/)
-  assert.match(frameSource, /Open Album/)
+  assert.match(adapterSource, /createLocalApiPath\('special-moment', momentKey\)/)
   assert.match(mainSource, /import '\.\/styles\/pages\/special-moments\.css'/)
-  assert.doesNotMatch(`${frameSource}\n${hookSource}\n${adapterSource}`, /<img|<video|<audio|dangerouslySetInnerHTML|autoplay|confetti|legacy\.html/)
-  assert.doesNotMatch(`${frameSource}\n${hookSource}`, /pages\/confession|pages\/valentine|omnia-happy-birthday/)
-  assert.doesNotMatch(`${frameSource}\n${hookSource}\n${adapterSource}`, /\bsetItem\s*\(|\bupdateDoc\s*\(|\baddDoc\s*\(|\bdeleteDoc\s*\(|collectionGroup\(|collection\([^)]*users/)
+  assert.doesNotMatch(`${birthdayPageSource}\n${valentinePageSource}\n${confessionPageSource}\n${hookSource}`, /dangerouslySetInnerHTML|legacy\.html|OUR MEMORIES|pages\/confession|pages\/valentine|omnia-happy-birthday/)
+  assert.doesNotMatch(`${birthdayPageSource}\n${valentinePageSource}\n${confessionPageSource}\n${hookSource}\n${adapterSource}`, /\bsetItem\s*\(|\bupdateDoc\s*\(|\baddDoc\s*\(|\bdeleteDoc\s*\(|collectionGroup\(|collection\([^)]*users/)
 })
 
 test('special moment content normalizes ready, partial, empty, unavailable, and invalid states safely', () => {
@@ -77,6 +76,7 @@ test('special moment content normalizes ready, partial, empty, unavailable, and 
   assert.equal(ready.status, 'ready')
   assert.equal(ready.data.content.sections.length, 2)
   assert.equal(ready.data.privacy.privateContentBundled, false)
+  assert.deepEqual(ready.data.mediaSlots, [])
 
   const partial = normalizeSpecialMomentPayload('valentine', {
     moment: {
@@ -102,6 +102,24 @@ test('special moment content normalizes ready, partial, empty, unavailable, and 
 
   const invalid = normalizeSpecialMomentPayload('unknown', { moment: { type: 'unknown' } })
   assert.equal(invalid.status, 'invalid')
+})
+
+test('special moment media slots resolve local bridge asset URLs without exposing private paths', () => {
+  const payload = normalizeSpecialMomentPayload('confession', {
+    moment: {
+      type: 'confession',
+      title: 'Recovered confession',
+      sections: [{ id: 'note', kind: 'note', content: 'Recovered text.' }],
+    },
+    mediaSlots: [
+      { id: 'top-note-photo', label: 'Top note photo', kind: 'image', status: 'mapped', url: '/api/private-media/confession/top-note-photo' },
+    ],
+  }, {
+    baseUrl: 'http://127.0.0.1:3000',
+  })
+
+  assert.equal(payload.data.mediaSlots[0].url, 'http://127.0.0.1:3000/api/private-media/confession/top-note-photo')
+  assert.doesNotMatch(JSON.stringify(payload), /OUR MEMORIES|C:\\|\/Users\//i)
 })
 
 test('special moment bridge rejects production, non-local, traversal, and unapproved keys', async () => {
@@ -142,10 +160,12 @@ test('special moment content model renders runtime and unavailable states withou
   const readyModel = buildSpecialMomentContentModel({ momentKey: 'confession', contentSource: source, contentState: 'ready' })
   assert.equal(readyModel.status, 'ready')
   assert.equal(readyModel.moment.title, 'Fictional confession runtime chapter')
+  assert.deepEqual(readyModel.mediaSlots, [])
   assert.equal(JSON.stringify(source), before)
 
   const unavailableModel = buildSpecialMomentContentModel({ momentKey: 'birthday', contentSource: null, contentState: 'unavailable' })
   assert.equal(unavailableModel.status, 'unavailable')
   assert.equal(unavailableModel.moment, null)
+  assert.deepEqual(unavailableModel.mediaSlots, [])
   assert.match(unavailableModel.media.note, /private/i)
 })

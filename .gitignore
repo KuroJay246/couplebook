@@ -62,6 +62,15 @@ pages/confession/*.mp4
 pages/confession/*.mov
 pages/confession/*.webm
 pages/valentine/*.mp3
+/*.jpg
+/*.jpeg
+/*.png
+/*.gif
+/*.webp
+/*.mp3
+/*.mp4
+/*.mov
+/*.webm
 
 users_export.json
 app-v2/local-migration-packages/
@@ -77,3 +86,10 @@ media-inventory*.csv
 duplicate-groups*.json
 folder-summary*.json
 recovery-log*.json
+couplebook.private-import/
+docs/CONFESSION_MEDIA_RESTORATION_MANIFEST.md
+docs/GOOGLE_DRIVE_RECOVERY_STATUS.md
+docs/KURUMI_KUROMI_LEGACY_FINDING.md
+docs/LEGACY_SPECIAL_PAGE_INVENTORY.md
+docs/OWNER_FEEDBACK_CORRECTION_REGISTER.md
+docs/REAL_MEDIA_INVENTORY.md

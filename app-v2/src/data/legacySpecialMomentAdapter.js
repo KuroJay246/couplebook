@@ -1,5 +1,7 @@
 import {
+  LOCAL_PRIVATE_MEDIA_PATTERN,
   LEGACY_LOCAL_DEV_SOURCE,
+  createLocalApiPath,
   createCompatibilityResult,
   getRuntimeMode,
   isLocalHostname,
@@ -15,7 +17,7 @@ export const SPECIAL_MOMENT_KEYS = Object.freeze(['birthday', 'valentine', 'conf
 
 const ALLOWED_SECTION_KINDS = new Set(['paragraph', 'quote', 'list', 'note', 'timeline'])
 const FORBIDDEN_TEXT_PATTERN = /<\s*\/?\s*(script|style|iframe|object|embed|img|video|audio|source|link|meta)\b|on[a-z]+\s*=|javascript:/i
-const PRIVATE_PATH_PATTERN = /[A-Z]:\\|file:\/\/|\\Users\\|\/Users\/|OUR MEMORIES|assets\/(?:photos|videos)/i
+const PRIVATE_PATH_PATTERN = LOCAL_PRIVATE_MEDIA_PATTERN
 
 export function isSpecialMomentKey(value) {
   return SPECIAL_MOMENT_KEYS.includes(toTrimmedString(value).toLowerCase())
@@ -29,10 +31,18 @@ export function createSpecialMomentBridgeConfig(env = readRuntimeEnv()) {
   }
 }
 
+function resolveBridgeAssetUrl(rawUrl, bridgeBaseUrl) {
+  const value = toTrimmedString(rawUrl)
+  if (!value) return ''
+  const resolved = resolveUrl(value, bridgeBaseUrl || undefined)
+  return resolved ? resolved.toString() : ''
+}
+
 function createEmptyContent(momentKey, status, warnings = []) {
   return {
     status,
     content: null,
+    mediaSlots: [],
     media: {
       status: 'unavailable',
       type: null,
@@ -135,6 +145,42 @@ function normalizeMedia(rawMedia, warnings) {
   }
 }
 
+function normalizeMediaSlots(rawSlots, warnings, options = {}) {
+  if (!Array.isArray(rawSlots)) return []
+  const bridgeBaseUrl = toTrimmedString(options.bridgeBaseUrl)
+
+  return rawSlots.flatMap((rawSlot, index) => {
+    if (!isPlainObject(rawSlot)) {
+      warnings.push('A special-moment media slot was not an object and was omitted.')
+      return []
+    }
+
+    const id = rejectUnsafeText(rawSlot.id, warnings, 'Media slot id') || `slot-${index + 1}`
+    const label = rejectUnsafeText(rawSlot.label, warnings, 'Media slot label') || 'Private media'
+    const kind = toTrimmedString(rawSlot.kind).toLowerCase()
+    if (!['image', 'video', 'audio'].includes(kind)) {
+      warnings.push('A special-moment media slot used an unsupported type and was omitted.')
+      return []
+    }
+
+    const status = toTrimmedString(rawSlot.status).toLowerCase()
+    const normalizedStatus = ['mapped', 'pending', 'optional'].includes(status) ? status : 'pending'
+    const note = rejectUnsafeText(rawSlot.note, warnings, 'Media slot note') || ''
+    const safeUrl = rejectUnsafeText(rawSlot.url, warnings, 'Media slot url')
+    const url = resolveBridgeAssetUrl(safeUrl, bridgeBaseUrl)
+
+    return [{
+      id,
+      label,
+      kind,
+      required: rawSlot.required === true,
+      status: normalizedStatus,
+      note,
+      url,
+    }]
+  })
+}
+
 export function normalizeSpecialMomentPayload(momentKey, payload, options = {}) {
   const normalizedKey = toTrimmedString(momentKey).toLowerCase()
   const warnings = Array.isArray(options.warnings) ? [...options.warnings] : []
@@ -180,6 +226,9 @@ export function normalizeSpecialMomentPayload(momentKey, payload, options = {}) 
   const subtitle = rejectUnsafeText(rawMoment.subtitle, warnings, 'Special moment subtitle')
   const date = rejectUnsafeText(rawMoment.date, warnings, 'Special moment date')
   const media = normalizeMedia(payload.media, warnings)
+  const mediaSlots = normalizeMediaSlots(payload.mediaSlots, warnings, {
+    bridgeBaseUrl: options.bridgeConfig?.baseUrl || options.baseUrl,
+  })
   const hasUnsafeInput = warnings.length > 0
   const hasContent = Boolean(title || subtitle || date || sections.length > 0)
   const status = hasUnsafeInput ? (hasContent ? 'partial' : 'invalid') : hasContent ? 'ready' : 'empty'
@@ -198,6 +247,7 @@ export function normalizeSpecialMomentPayload(momentKey, payload, options = {}) 
             sections,
           }
         : null,
+      mediaSlots,
       media,
       sourceStatus: {
         source: LEGACY_LOCAL_DEV_SOURCE,
@@ -221,7 +271,7 @@ function resolveSpecialMomentEndpoint(baseUrl, momentKey) {
     return null
   }
 
-  return new URL(`/api/special-moment/${momentKey}`, parsedUrl).toString()
+  return new URL(createLocalApiPath('special-moment', momentKey), parsedUrl).toString()
 }
 
 export async function readLegacySpecialMoment(momentKey, options = {}) {
@@ -258,8 +308,8 @@ export async function readLegacySpecialMoment(momentKey, options = {}) {
     return createCompatibilityResult({
       status: 'unavailable',
       source: LEGACY_LOCAL_DEV_SOURCE,
-      data: createEmptyContent(normalizedKey, 'unavailable', ['Special moment local bridge is allowed only from localhost or 127.0.0.1.']),
-      warnings: ['Special moment local bridge is allowed only from localhost or 127.0.0.1.'],
+      data: createEmptyContent(normalizedKey, 'unavailable', ['Special moment local bridge is allowed only from a local development origin.']),
+      warnings: ['Special moment local bridge is allowed only from a local development origin.'],
     })
   }
 
@@ -294,7 +344,7 @@ export async function readLegacySpecialMoment(momentKey, options = {}) {
     }
 
     const payload = await response.json()
-    return normalizeSpecialMomentPayload(normalizedKey, payload)
+    return normalizeSpecialMomentPayload(normalizedKey, payload, { bridgeConfig })
   } catch {
     return createCompatibilityResult({
       status: 'unavailable',

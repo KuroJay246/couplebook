@@ -5,6 +5,7 @@ function unavailableContent(config, status = 'unavailable') {
   return freezeClone({
     status,
     moment: null,
+    mediaSlots: [],
     media: {
       status: 'unavailable',
       type: null,
@@ -84,6 +85,7 @@ export function buildSpecialMomentContentModel({ momentKey, contentSource = null
       revision: Number.isInteger(content.revision) && content.revision > 0 ? content.revision : 0,
       sections: Array.isArray(content.sections) ? content.sections : [],
     },
+    mediaSlots: Array.isArray(sourceData?.mediaSlots) ? sourceData.mediaSlots : [],
     media: sourceData?.media || {
       status: 'unavailable',
       type: null,

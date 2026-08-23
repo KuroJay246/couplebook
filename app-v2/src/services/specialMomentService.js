@@ -21,6 +21,7 @@ export function normalizeFirestoreSpecialMoment(momentKey, data, warnings) {
       sections: data.sections,
     },
     media: data.media,
+    mediaSlots: data.mediaSlots,
   })
   warnings.push(...normalized.warnings)
   if (normalized.status === 'invalid') return null

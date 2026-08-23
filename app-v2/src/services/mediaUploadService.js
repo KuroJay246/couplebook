@@ -1,4 +1,5 @@
 import { deleteObject, ref, uploadBytesResumable } from 'firebase/storage'
+import { isLocalHostname, readRuntimeEnv } from '../data/adapterUtils.js'
 import { storage } from '../lib/firebase.js'
 
 const IMAGE_CONTENT_TYPES = Object.freeze(['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
@@ -10,13 +11,13 @@ export const MAX_UPLOAD_RETRY_ATTEMPTS = 2
 const MAX_IMAGE_BYTES = 20 * 1024 * 1024
 const MAX_VIDEO_BYTES = 250 * 1024 * 1024
 const SAFE_STORAGE_PATH = /^couples\/[A-Za-z0-9_-]{1,120}\/media\/[A-Za-z0-9_-]{1,120}\/(original|thumbnail|poster)$/
-const env = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env : {}
+const env = readRuntimeEnv()
 
 function isLocalUploadTestWindow() {
   if (typeof window === 'undefined') return false
   if (env.VITE_ENABLE_LOCAL_UPLOAD_TEST_HOOKS !== 'true') return false
   const host = String(window.location?.hostname || '')
-  return host === '127.0.0.1' || host === 'localhost'
+  return isLocalHostname(host)
 }
 
 function readUploadTestConfig() {

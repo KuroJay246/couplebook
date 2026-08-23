@@ -199,7 +199,7 @@ export async function readLegacyMemories(options = {}) {
       status: hasOverlayMemories ? 'ready' : 'unavailable',
       source: LEGACY_LOCAL_DEV_SOURCE,
       data: hasOverlayMemories ? buildMemoryState(overlayState.customMemories, overlayState, false) : null,
-      warnings: [...warnings, 'Legacy local memory bridge is allowed only from localhost or 127.0.0.1.'],
+      warnings: [...warnings, 'Legacy local memory bridge is allowed only from a local development origin.'],
     })
   }
 

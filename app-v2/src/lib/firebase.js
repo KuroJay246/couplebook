@@ -8,6 +8,7 @@ import {
   persistentMultipleTabManager,
 } from 'firebase/firestore'
 import { connectStorageEmulator, getStorage } from 'firebase/storage'
+import { defaultLoopbackHostname, readRuntimeEnv } from '../data/adapterUtils.js'
 import {
   createFirebaseConfig,
   formatMissingFirebaseConfigMessage,
@@ -16,11 +17,12 @@ import {
 
 const firebaseConfig = createFirebaseConfig()
 const missingFirebaseConfigKeys = getMissingFirebaseConfigKeys(firebaseConfig)
-const env = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env : {}
-const FIREBASE_AUTH_EMULATOR_URL = env.VITE_FIREBASE_AUTH_EMULATOR_URL || 'http://127.0.0.1:9099'
-const FIRESTORE_EMULATOR_HOST = env.VITE_FIRESTORE_EMULATOR_HOST || '127.0.0.1'
+const env = readRuntimeEnv()
+const LOOPBACK_HOST = defaultLoopbackHostname()
+const FIREBASE_AUTH_EMULATOR_URL = env.VITE_FIREBASE_AUTH_EMULATOR_URL || `http://${LOOPBACK_HOST}:9099`
+const FIRESTORE_EMULATOR_HOST = env.VITE_FIRESTORE_EMULATOR_HOST || LOOPBACK_HOST
 const FIRESTORE_EMULATOR_PORT = Number.parseInt(env.VITE_FIRESTORE_EMULATOR_PORT || '8085', 10)
-const STORAGE_EMULATOR_HOST = env.VITE_FIREBASE_STORAGE_EMULATOR_HOST || '127.0.0.1'
+const STORAGE_EMULATOR_HOST = env.VITE_FIREBASE_STORAGE_EMULATOR_HOST || LOOPBACK_HOST
 const STORAGE_EMULATOR_PORT = Number.parseInt(env.VITE_FIREBASE_STORAGE_EMULATOR_PORT || '9199', 10)
 
 export const missingFirebaseConfigMessage = formatMissingFirebaseConfigMessage(missingFirebaseConfigKeys)

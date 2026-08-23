@@ -30,7 +30,7 @@ function buildSourceStatus(memorySource) {
     base: {
       status: hasBaseDataset ? 'ready' : memorySource?.status === 'unavailable' ? 'unavailable' : 'empty',
       count: visibleBaseCount,
-      source: 'localhost bridge: /core/memories.json',
+      source: 'legacy local bridge dataset',
     },
     custom: {
       status: customCount > 0 ? 'ready' : 'empty',

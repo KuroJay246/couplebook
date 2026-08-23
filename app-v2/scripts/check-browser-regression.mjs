@@ -401,12 +401,26 @@ async function runAuthenticatedDesktopCoverage(browser) {
     ]) {
       await page.goto(`${getBaseUrl()}${route}`, { waitUntil: 'domcontentloaded' })
       await waitForRouteContent(page, route, heading)
-      assert.equal(await page.getByText('Fictional runtime section').count() > 0, true, `${route} should render sanitized runtime sections.`)
-      assert.equal(await page.getByText('Sanitized item one').count() > 0, true, `${route} should render sanitized runtime lists.`)
       assert.equal(await page.getByRole('heading', { name: heading }).count(), 1)
-      assert.equal(await page.locator('main img, main video, main audio, main iframe').count(), 0, `${route} should not render private media elements.`)
-      assert.equal(await page.getByRole('link', { name: 'Return to Home' }).count() > 0, true, `${route} should keep return navigation.`)
-      assert.equal(await page.getByRole('link', { name: 'Open Album' }).count() > 0, true, `${route} should keep gallery navigation.`)
+      assert.equal(await page.locator('main iframe').count(), 0, `${route} should not render embedded third-party frames.`)
+      assert.equal(await page.getByRole('link', { name: 'Back to Home' }).count() > 0, true, `${route} should keep return navigation.`)
+
+      if (route === '/birthday') {
+        assert.equal(await page.locator('.birthday-cake').count(), 1, 'Birthday should render the rebuilt cake scene.')
+        assert.equal(await page.getByRole('link', { name: 'Open Settings' }).count(), 1, 'Birthday should link back to Settings.')
+      }
+
+      if (route === '/valentine') {
+        assert.equal(await page.getByRole('button', { name: 'Yes' }).count(), 1, 'Valentine should keep the yes action visible.')
+        assert.equal(await page.getByRole('button', { name: 'No' }).count(), 1, 'Valentine should keep the moving no action visible.')
+        assert.equal(await page.getByRole('link', { name: 'Open Story' }).count(), 1, 'Valentine should link back to Story.')
+      }
+
+      if (route === '/confession') {
+        assert.equal(await page.getByRole('button', { name: 'Open card' }).count(), 1, 'Confession should keep the card reveal action visible.')
+        assert.equal(await page.getByRole('link', { name: 'Open Album' }).count(), 1, 'Confession should link back to Album.')
+        assert.equal(await page.locator('main img, main video, main audio').count(), 0, 'Fixture-backed Confession should not render private media.')
+      }
     }
 
     await page.goto(`${getBaseUrl()}/gallery`, { waitUntil: 'domcontentloaded' })
