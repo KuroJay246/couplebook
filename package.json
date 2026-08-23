@@ -2,7 +2,13 @@
   "name": "memorybook",
   "version": "3.0.0",
   "description": "Relationship Memory System for Jaylan and Omia",
+  "private": true,
   "main": "index.html",
+  "workspaces": [
+    "app-v2",
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "dev": "node server.js",
     "check:routes": "node scripts/qa/check-routes.js",
@@ -27,6 +33,14 @@
     "product:audit": "node scripts/product-audit.mjs",
     "alignment:check": "node scripts/check-event-hub-alignment.mjs",
     "identity:check": "node scripts/check-couple-book-identity.mjs",
+    "permissions:check": "node scripts/check-permissions.mjs",
+    "schema:check": "node scripts/check-schema.mjs",
+    "shared-contracts:check": "node scripts/workspaces/check-shared-contracts.mjs",
+    "mobile:dev": "npm --workspace apps/mobile run start",
+    "mobile:android": "npm --workspace apps/mobile run android",
+    "mobile:web": "npm --workspace apps/mobile run web",
+    "mobile:lint": "npm --workspace apps/mobile run lint",
+    "mobile:typecheck": "npm --workspace apps/mobile run typecheck",
     "release:preflight": "set EXPECTED_FIREBASE_PROJECT_ID=couplebook-97830&& node scripts/assert-firebase-project.mjs --project couplebook-97830 && npm run docs:check && npm run alignment:check && npm run identity:check"
   },
   "keywords": [

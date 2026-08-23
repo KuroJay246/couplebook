@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
+import { pathToFileURL } from 'node:url'
 
 const repoRoot = process.cwd()
 const errors = []
@@ -35,10 +36,17 @@ if (!String(config.visualIdentityVersion || '').trim()) {
   errors.push('config/event-hub-reference.json must record visualIdentityVersion.')
 }
 
-const themeRegistrySource = readFileSync(path.join(repoRoot, 'app-v2', 'src', 'theme', 'themeRegistry.js'), 'utf8')
+const themeRegistrySourcePath = path.join(repoRoot, 'app-v2', 'src', 'theme', 'themeRegistry.js')
+const themeRegistrySource = readFileSync(themeRegistrySourcePath, 'utf8')
+if (!themeRegistrySource.includes('THEME_REGISTRY') || !themeRegistrySource.includes('THEME_IDS')) {
+  errors.push('themeRegistry.js must expose shared theme contracts.')
+}
+
+const themeRegistryModule = await import(pathToFileURL(themeRegistrySourcePath).href)
+const exportedThemeIds = new Set((themeRegistryModule.THEME_REGISTRY || []).map((theme) => theme.id))
 for (const themeId of ['midnight-rose', 'paper-hearts', 'moonlit']) {
-  if (!themeRegistrySource.includes(themeId)) {
-    errors.push(`themeRegistry.js must include ${themeId}.`)
+  if (!exportedThemeIds.has(themeId)) {
+    errors.push(`themeRegistry export must include ${themeId}.`)
   }
 }
 

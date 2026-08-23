@@ -1,6 +1,7 @@
 import { normalizeTimelineMemories } from '../timeline/memoryNormalizer.js'
 import { selectTimelineDisplayMemories } from '../timeline/memorySelectors.js'
 import { selectOnThisDayMemory } from '../timeline/onThisDay.js'
+import { calculateBirthdayCountdown } from '../../../../packages/core/src/dates.js'
 
 const SPECIAL_MOMENT_PATHS = ['/birthday', '/valentine', '/confession']
 const SUPPORTING_ROUTE_PATHS = ['/timeline', '/gallery', '/profile', '/favorites', '/settings', '/contract']
@@ -17,7 +18,11 @@ function pluralize(count, singular, plural = `${singular}s`) {
 function createDateAtNoon(dateLike) {
   if (!dateLike) return null
 
-  const date = new Date(dateLike)
+  const normalized = String(dateLike).trim()
+  const match = normalized.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  const date = match
+    ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]), 12, 0, 0, 0)
+    : new Date(normalized)
   if (Number.isNaN(date.getTime())) return null
 
   date.setHours(12, 0, 0, 0)
@@ -115,51 +120,7 @@ function calculateDurationSince(startDateValue, nowValue) {
 }
 
 function calculateBirthdayDetails(birthdayValue, nowValue) {
-  const birthday = createDateAtNoon(birthdayValue)
-  const now = new Date(nowValue)
-
-  if (!birthday || Number.isNaN(now.getTime())) {
-    return {
-      nextAge: null,
-      isToday: false,
-      days: 0,
-      hours: 0,
-      minutes: 0,
-      seconds: 0,
-    }
-  }
-
-  const nextBirthday = new Date(now.getFullYear(), birthday.getMonth(), birthday.getDate(), 0, 0, 0, 0)
-  const currentDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0)
-
-  if (currentDay > nextBirthday) {
-    nextBirthday.setFullYear(now.getFullYear() + 1)
-  }
-
-  const isToday = birthday.getMonth() === now.getMonth() && birthday.getDate() === now.getDate()
-  const nextAge = nextBirthday.getFullYear() - birthday.getFullYear()
-
-  if (isToday) {
-    return {
-      nextAge,
-      isToday: true,
-      days: 0,
-      hours: 0,
-      minutes: 0,
-      seconds: 0,
-    }
-  }
-
-  const diffMs = nextBirthday.getTime() - now.getTime()
-
-  return {
-    nextAge,
-    isToday: false,
-    days: Math.floor(diffMs / (1000 * 60 * 60 * 24)),
-    hours: Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-    minutes: Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60)),
-    seconds: Math.floor((diffMs % (1000 * 60)) / 1000),
-  }
+  return calculateBirthdayCountdown(birthdayValue, nowValue)
 }
 
 function normalizeParticipants(profileSource, approvedUser) {

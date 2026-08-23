@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { ErrorState } from '../components/ui/ErrorState.jsx'
 import { LoadingState } from '../components/ui/LoadingState.jsx'
 import { useSpecialMomentContent } from '../features/specialMoments/useSpecialMomentContent.js'
+import { formatMonthDayLabel } from '../../../packages/core/src/dates.js'
 
 const CONFETTI = Array.from({ length: 18 }, (_, index) => ({
   id: `birthday-confetti-${index}`,
@@ -12,10 +13,7 @@ const CONFETTI = Array.from({ length: 18 }, (_, index) => ({
 }))
 
 function formatMomentDate(value) {
-  if (!value) return 'September 16'
-  const parsed = new Date(`${value}T00:00:00`)
-  if (Number.isNaN(parsed.valueOf())) return 'September 16'
-  return parsed.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })
+  return formatMonthDayLabel(value)
 }
 
 export function BirthdayPage() {
