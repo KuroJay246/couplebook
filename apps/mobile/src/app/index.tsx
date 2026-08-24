@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
 import {
@@ -9,6 +10,8 @@ import {
 } from '@/components/couplebook-screen';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
+import { useAuth } from '@/hooks/use-auth';
+import { useCoupleData } from '@/hooks/use-couple-data';
 import {
   PARTNER_BIRTHDAY_LABEL,
   calculateBirthdayCountdown,
@@ -16,15 +19,27 @@ import {
 
 export default function HomeScreen() {
   const birthdayCountdown = calculateBirthdayCountdown('2006-09-16');
+  const { approvedUser } = useAuth();
+  const { loading, memories, plans, profiles, warnings } = useCoupleData();
+  const displayName =
+    approvedUser?.displayName || approvedUser?.profileName || approvedUser?.username || 'the two of you';
+  const activeMemories = memories.filter((entry) => entry.status === 'active');
+  const featuredMemory =
+    activeMemories.find((entry) => entry.mediaState !== 'none') || activeMemories[0] || null;
+  const nextPlan =
+    plans.find((entry) => entry.status === 'planned' || entry.status === 'idea') || null;
+  const peopleSummary =
+    profiles.map((entry) => entry.name).filter(Boolean).join(' and ') || displayName;
 
   return (
     <CoupleBookScreen
       eyebrow="Home"
       title="Couple Book"
-      subtitle="One private relationship space across web and native, with shared dates, shared themes, and the same album and memory system.">
+      subtitle="One private relationship space across web and native, with shared dates, shared themes, and the same memory timeline.">
       <SectionCard
         title="Shared milestone"
-        description="The mobile app is already reading the same birthday contract as the web app.">
+        description="The native shell now reads approved couple data and user-scoped settings from the same Firebase project as the website.">
+        <BadgePill>{peopleSummary}</BadgePill>
         <BadgePill tone="accent">Partner birthday: {PARTNER_BIRTHDAY_LABEL}</BadgePill>
         <InfoRow
           label="Countdown"
@@ -36,32 +51,67 @@ export default function HomeScreen() {
           tone="accent"
         />
         <InfoRow label="Next age" value={String(birthdayCountdown.nextAge ?? '--')} />
+        <InfoRow label="Memories synced" value={String(activeMemories.length)} />
       </SectionCard>
 
       <SectionCard
         title="Featured memory"
-        description="This slot becomes the first real photo or video after Firebase and Drive repositories are wired into the native feed.">
+        description="This summary comes from the live couple-scoped memory collection and updates through the native listener.">
         <View style={styles.featureStack}>
-          <View style={styles.mediaPlaceholder}>
-            <ThemedText type="smallBold">Featured photograph</ThemedText>
+          {featuredMemory ? (
+            <>
+              <View style={styles.mediaPlaceholder}>
+                <ThemedText type="smallBold">{featuredMemory.title || 'Untitled memory'}</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  {featuredMemory.description || 'No extra note saved for this memory yet.'}
+                </ThemedText>
+              </View>
+              <InfoRow label="Saved date" value={featuredMemory.date || 'Undated'} />
+              <InfoRow
+                label="Media"
+                value={
+                  featuredMemory.mediaState === 'none'
+                    ? 'Text memory'
+                    : featuredMemory.isVideo
+                      ? 'Video memory'
+                      : 'Photo memory'
+                }
+              />
+            </>
+          ) : (
             <ThemedText type="small" themeColor="textSecondary">
-              Native cover treatment pending repository hookup
+              {loading ? 'Loading shared memories.' : 'No approved shared memories are available yet.'}
             </ThemedText>
-          </View>
-          <InfoRow label="Story link" value="Recent shared memory" />
-          <InfoRow label="Album" value="Photo Book cover slot" />
+          )}
         </View>
       </SectionCard>
 
       <SectionCard
         title="Today"
-        description="Quick actions stay compact on mobile and map to the same shared data model as the website.">
+        description="Quick actions stay compact on mobile and open the same routed features that use the shared data layer.">
         <View style={styles.actionGrid}>
-          <ActionButton label="Add Memory" detail="Create text, photo, or video entry" />
-          <ActionButton label="Open Album" detail="Jump to Photo Book and Live Album" />
-          <ActionButton label="Next Plan" detail="See the next shared date or outing" />
-          <ActionButton label="On This Day" detail="Review matching memories and milestones" />
+          <ActionButton disabled label="Add Memory" detail="Write flow not wired on native yet" />
+          <ActionButton
+            label="Open Album"
+            detail="Review photos and videos from the shared memory set"
+            onPress={() => router.push('/album')}
+          />
+          <ActionButton
+            label="Next Plan"
+            detail={nextPlan ? nextPlan.title : 'No saved plan yet'}
+            onPress={() => router.push('/plans')}
+          />
+          <ActionButton
+            label="Open Story"
+            detail="Review the latest couple timeline entries"
+            onPress={() => router.push('/story')}
+          />
         </View>
+        {warnings[0] ? (
+          <ThemedText type="small" themeColor="textSecondary">
+            {warnings[0]}
+          </ThemedText>
+        ) : null}
       </SectionCard>
     </CoupleBookScreen>
   );

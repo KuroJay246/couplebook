@@ -6,51 +6,62 @@ import {
   InfoRow,
   SectionCard,
 } from '@/components/couplebook-screen';
+import { useCoupleData } from '@/hooks/use-couple-data';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 
-const albumHighlights = [
-  'Photo Book with larger editorial imagery',
-  'All Memories grid with denser scan mode',
-  'Live Album fallback when Drive is unavailable',
-];
-
 export default function AlbumScreen() {
+  const { loading, memories, warnings } = useCoupleData();
+  const visualMemories = memories.filter((entry) => entry.status === 'active' && entry.mediaState !== 'none');
+  const photos = visualMemories.filter((entry) => !entry.isVideo);
+  const videos = visualMemories.filter((entry) => entry.isVideo);
+  const latestVisuals = visualMemories.slice(0, 6);
+
   return (
     <CoupleBookScreen
       eyebrow="Album"
       title="Photo Book and Live Album"
-      subtitle="The native Album is being built as a media-first surface, not an upload queue dashboard.">
+      subtitle="The native Album now reads real shared memory metadata and separates text-only entries from visual memories.">
       <SectionCard
         title="Primary views"
-        description="The same metadata model must drive both platforms while each surface keeps its own layout rules.">
+        description="The same memory metadata now feeds both platforms while native keeps a simpler first pass layout.">
         <View style={styles.pillRow}>
-          <BadgePill tone="accent">Photo Book</BadgePill>
-          <BadgePill>All Memories</BadgePill>
-          <BadgePill>Live Album</BadgePill>
+          <BadgePill tone="accent">Photo Book: {photos.length}</BadgePill>
+          <BadgePill>Videos: {videos.length}</BadgePill>
+          <BadgePill>All active: {memories.filter((entry) => entry.status === 'active').length}</BadgePill>
         </View>
-        <InfoRow label="Preview source" value="Google Drive authenticated previews" />
-        <InfoRow label="Fallback" value="Selected cover, counts, and open-folder action" />
+        <InfoRow label="Preview source" value="Shared Firestore media metadata" />
+        <InfoRow label="Drive fallback" value="Not connected in native yet" />
       </SectionCard>
 
       <SectionCard
         title="Media presentation"
-        description="Images, videos, captions, and linked Story entries need native full-screen playback without exposing private locations.">
+        description="The current native Album keeps titles, dates, and media type explicit without exposing private file locations or Drive IDs.">
         <View style={styles.stack}>
-          {albumHighlights.map((line) => (
-            <View key={line} style={styles.highlightRow}>
-              <ThemedText type="smallBold">{line}</ThemedText>
+          {latestVisuals.map((entry) => (
+            <View key={entry.id} style={styles.highlightRow}>
+              <ThemedText type="smallBold">{entry.title || 'Untitled memory'}</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                {[entry.date || 'Undated', entry.isVideo ? 'Video' : 'Photo', entry.mediaState]
+                  .filter(Boolean)
+                  .join(' • ')}
+              </ThemedText>
             </View>
           ))}
+          {!latestVisuals.length ? (
+            <ThemedText type="small" themeColor="textSecondary">
+              {loading ? 'Loading visual memory metadata.' : 'No approved photo or video memories are available yet.'}
+            </ThemedText>
+          ) : null}
         </View>
       </SectionCard>
 
       <SectionCard
         title="Upload workflow"
-        description="Selection, duplicate checks, retry, and final metadata write still need to be wired after the screen shell.">
-        <InfoRow label="Picker" value="Expo Image Picker" />
-        <InfoRow label="Drive upload" value="Separate auth from Firebase session" />
-        <InfoRow label="Queue surface" value="Visible only during active or failed work" />
+        description="Upload, retry, duplicate detection, and Google Drive handoff are still separate work items. This tab now honestly reports the current state from live metadata.">
+        <InfoRow label="Sync" value={loading ? 'Refreshing' : 'Live metadata ready'} />
+        <InfoRow label="Warnings" value={warnings.length ? String(warnings.length) : 'None'} />
+        <InfoRow label="Next wiring" value="Picker, viewer, and Drive connection flow" />
       </SectionCard>
     </CoupleBookScreen>
   );

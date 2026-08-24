@@ -33,6 +33,8 @@ type BadgePillProps = {
 type ActionButtonProps = {
   label: string;
   detail?: string;
+  onPress?: () => void;
+  disabled?: boolean;
 };
 
 export function CoupleBookScreen({
@@ -135,11 +137,14 @@ export function BadgePill({ children, tone = 'default' }: BadgePillProps) {
   );
 }
 
-export function ActionButton({ label, detail }: ActionButtonProps) {
+export function ActionButton({ label, detail, onPress, disabled = false }: ActionButtonProps) {
   const theme = useTheme();
 
   return (
-    <Pressable style={({ pressed }) => [styles.actionButton, pressed && styles.pressed]}>
+    <Pressable
+      disabled={disabled}
+      onPress={onPress}
+      style={({ pressed }) => [styles.actionButton, (pressed || disabled) && styles.pressed]}>
       <View
         style={[
           styles.actionButtonSurface,
@@ -240,6 +245,6 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   pressed: {
-    opacity: 0.88,
+    opacity: 0.72,
   },
 });

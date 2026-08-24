@@ -6,55 +6,66 @@ import {
   InfoRow,
   SectionCard,
 } from '@/components/couplebook-screen';
+import { useCoupleData } from '@/hooks/use-couple-data';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 
-const storyRows = [
-  { title: 'Written memory', detail: 'Text-first entry with caption, tags, and linked date' },
-  { title: 'Photo memory', detail: 'Cover image, date, Story link, and Album relationship' },
-  { title: 'Video memory', detail: 'Poster frame, duration, playback, and archive status' },
-];
-
 export default function StoryScreen() {
+  const { loading, memories, warnings } = useCoupleData();
+  const activeMemories = memories.filter((entry) => entry.status === 'active');
+  const archivedMemories = memories.filter((entry) => entry.status === 'archived');
+
   return (
     <CoupleBookScreen
       eyebrow="Story"
       title="Chronological Story"
-      subtitle="Native Story is being shaped around search, filters, archive controls, and efficient scrolling without reusing the desktop layout.">
+      subtitle="Native Story now reads the same couple-scoped memory collection as the website and keeps archived entries out of the active feed.">
       <SectionCard
         title="Timeline controls"
-        description="The shared contracts are already in place for dates, special moments, and theme IDs.">
+        description="The live mobile read model is still compact, but it now uses real Firestore memory records instead of shell copy.">
         <View style={styles.pillRow}>
-          <BadgePill tone="accent">Search</BadgePill>
-          <BadgePill>Year groups</BadgePill>
-          <BadgePill>Photo and video filters</BadgePill>
-          <BadgePill>Archive and restore</BadgePill>
+          <BadgePill tone="accent">Active: {activeMemories.length}</BadgePill>
+          <BadgePill>Archived: {archivedMemories.length}</BadgePill>
+          <BadgePill>Photos: {activeMemories.filter((entry) => entry.mediaState !== 'none' && !entry.isVideo).length}</BadgePill>
+          <BadgePill>Videos: {activeMemories.filter((entry) => entry.isVideo).length}</BadgePill>
         </View>
-        <InfoRow label="List strategy" value="SectionList or FlatList" />
-        <InfoRow label="State source" value="Shared memory repositories pending" />
+        <InfoRow label="List strategy" value="Client-side date ordering from the live listener" />
+        <InfoRow label="Special moments" value={String(activeMemories.filter((entry) => Boolean(entry.specialMomentType)).length)} />
       </SectionCard>
 
       <SectionCard
         title="Memory presentation"
-        description="The native feed must support written entries, photos, videos, and milestone moments without exposing file paths or Drive IDs.">
+        description="Written entries, photos, videos, and special routes are all normalized before they reach the native tab.">
         <View style={styles.stack}>
-          {storyRows.map((row) => (
-            <View key={row.title} style={styles.itemRow}>
-              <ThemedText type="smallBold">{row.title}</ThemedText>
+          {activeMemories.slice(0, 8).map((entry) => (
+            <View key={entry.id} style={styles.itemRow}>
+              <ThemedText type="smallBold">{entry.title || 'Untitled memory'}</ThemedText>
               <ThemedText type="small" themeColor="textSecondary">
-                {row.detail}
+                {[entry.date || 'Undated', entry.isVideo ? 'Video' : entry.mediaState === 'none' ? 'Text' : 'Photo']
+                  .filter(Boolean)
+                  .join(' • ')}
               </ThemedText>
+              {entry.description ? (
+                <ThemedText type="small" themeColor="textSecondary">
+                  {entry.description}
+                </ThemedText>
+              ) : null}
             </View>
           ))}
+          {!activeMemories.length ? (
+            <ThemedText type="small" themeColor="textSecondary">
+              {loading ? 'Loading the shared Story feed.' : 'No active memories are available for Story yet.'}
+            </ThemedText>
+          ) : null}
         </View>
       </SectionCard>
 
       <SectionCard
-        title="Next wiring"
-        description="The next implementation step after the mobile shell is the repository layer: auth gate, approved membership, Firestore reads, and linked Album media.">
-        <InfoRow label="Search behavior" value="Client input with shared validation" />
-        <InfoRow label="Edit flow" value="Memory detail modal route" />
-        <InfoRow label="Reload" value="Pull to refresh and stale-state notice" />
+        title="Sync state"
+        description="The mobile Story tab is now fed by couple-scoped Firestore reads and stays aligned with the same access model as the website.">
+        <InfoRow label="Loading" value={loading ? 'Refreshing' : 'Live'} />
+        <InfoRow label="Warnings" value={warnings.length ? String(warnings.length) : 'None'} />
+        <InfoRow label="Next wiring" value="Search, detail routes, and native media preview" />
       </SectionCard>
     </CoupleBookScreen>
   );

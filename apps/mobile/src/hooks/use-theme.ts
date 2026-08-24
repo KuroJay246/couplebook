@@ -1,5 +1,10 @@
-import { Colors } from '@/constants/theme';
+import { DefaultCoupleBookTheme } from '@/constants/couplebook-theme';
+import { useCoupleData } from '@/hooks/use-couple-data';
 
 export function useTheme() {
-  return Colors;
+  try {
+    return useCoupleData().theme.colors;
+  } catch {
+    return DefaultCoupleBookTheme.colors;
+  }
 }
