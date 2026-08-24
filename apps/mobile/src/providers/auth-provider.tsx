@@ -3,7 +3,12 @@ import { startTransition, useCallback, useEffect, useMemo, useReducer } from 're
 import { isFirebaseConfigured, missingFirebaseConfigMessage, signOutCurrentUser } from '@/lib/firebase';
 import { AuthContext, type MobileApprovedUser } from '@/providers/auth-context';
 import { resolveApprovedUser } from '@/services/authorization-service';
-import { ensureAuthPersistence, observeAuthState, signInWithEmail } from '@/services/auth-service';
+import {
+  ensureAuthPersistence,
+  observeAuthState,
+  refreshObservedUser,
+  signInWithEmail,
+} from '@/services/auth-service';
 
 type AuthState = {
   user: { uid: string; email: string | null; displayName: string | null } | null;
@@ -16,6 +21,7 @@ type AuthState = {
 
 const UNAPPROVED_ACCOUNT_MESSAGE = 'This account is not approved for Couple Book.';
 const PENDING_ACCOUNT_MESSAGE = 'This private book has not been opened for this account yet.';
+const EXPIRED_SESSION_MESSAGE = 'Your Couple Book session is no longer valid. Sign in again.';
 
 function getAuthorizationMessage(status: string) {
   return status === 'pending' ? PENDING_ACCOUNT_MESSAGE : UNAPPROVED_ACCOUNT_MESSAGE;
@@ -119,15 +125,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         unsubscribe = observeAuthState(
           (nextUser) => {
-            void hydrateAuthorizedUser(
-              nextUser
-                ? {
-                    uid: nextUser.uid,
-                    email: nextUser.email,
-                    displayName: nextUser.displayName,
-                  }
-                : null,
-            );
+            void (async () => {
+              if (!nextUser) {
+                await hydrateAuthorizedUser(null);
+                return;
+              }
+
+              try {
+                const refreshedUser = await refreshObservedUser(nextUser);
+                await hydrateAuthorizedUser({
+                  uid: refreshedUser.uid,
+                  email: refreshedUser.email,
+                  displayName: refreshedUser.displayName,
+                });
+              } catch (error) {
+                if (!active) return;
+                transitionAuthState(dispatchAuthState, {
+                  user: null,
+                  approvedUser: null,
+                  isAuthorized: false,
+                  authError:
+                    error instanceof Error &&
+                    /auth\/(invalid-user-token|user-disabled|user-not-found|user-token-expired)/.test(
+                      error.message,
+                    )
+                      ? EXPIRED_SESSION_MESSAGE
+                      : error instanceof Error
+                        ? error.message
+                        : 'Couple Book auth monitoring failed.',
+                  authInitialized: true,
+                  loading: false,
+                });
+              }
+            })();
           },
           (error) => {
             if (!active) return;

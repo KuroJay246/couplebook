@@ -1,7 +1,9 @@
 import {
   browserLocalPersistence,
   onAuthStateChanged,
+  reload,
   setPersistence,
+  signOut,
   signInWithEmailAndPassword,
   type User,
 } from 'firebase/auth';
@@ -11,6 +13,12 @@ import { auth, isFirebaseConfigured, missingFirebaseConfigMessage } from '@/lib/
 import { secureStorePersistence } from '@/lib/secure-store-persistence';
 
 let persistencePromise: Promise<void> | null = null;
+const INVALID_SESSION_ERROR_CODES = new Set([
+  'auth/invalid-user-token',
+  'auth/user-disabled',
+  'auth/user-not-found',
+  'auth/user-token-expired',
+]);
 
 export async function ensureAuthPersistence() {
   if (!auth || !isFirebaseConfigured) {
@@ -40,6 +48,25 @@ export function observeAuthState(
   }
 
   return onAuthStateChanged(auth, onResolve, onError);
+}
+
+function getFirebaseErrorCode(error: unknown) {
+  if (!error || typeof error !== 'object') return '';
+  const code = 'code' in error ? error.code : '';
+  return typeof code === 'string' ? code : '';
+}
+
+export async function refreshObservedUser(user: User) {
+  try {
+    await reload(user);
+    return user;
+  } catch (error) {
+    if (auth && INVALID_SESSION_ERROR_CODES.has(getFirebaseErrorCode(error))) {
+      await signOut(auth);
+    }
+
+    throw error;
+  }
 }
 
 export async function signInWithEmail(email: string, password: string) {
