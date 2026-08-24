@@ -8,9 +8,11 @@
     "scheme": "couple-book",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.jaylan.couplebook"
     },
     "android": {
+      "package": "com.jaylan.couplebook",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -24,7 +26,9 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      "expo-dev-client",
       "expo-router",
+      "./plugins/with-react-activity-key-guards",
       [
         "expo-splash-screen",
         {

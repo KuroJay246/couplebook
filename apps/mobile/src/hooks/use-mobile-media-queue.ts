@@ -196,7 +196,7 @@ export function useMobileMediaQueue() {
         }
 
         const mediaId = createMediaEntityId('media');
-        const { task, verifiedMedia } = createPrivateMediaUploadTask({
+        const { task, verifiedMedia } = await createPrivateMediaUploadTask({
           checksum,
           contentType: details.contentType,
           coupleId: approvedUser.coupleId,

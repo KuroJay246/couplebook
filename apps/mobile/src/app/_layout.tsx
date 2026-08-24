@@ -16,7 +16,6 @@ function AuthorizedTabs() {
 
   return (
     <ThemeProvider value={theme.isDark ? DarkTheme : DefaultTheme}>
-      <AnimatedSplashOverlay />
       <AppTabs />
     </ThemeProvider>
   );
@@ -27,6 +26,7 @@ function AuthenticatedApp() {
 
   return (
     <ThemeProvider value={DarkTheme}>
+      <AnimatedSplashOverlay />
       {isAuthorized ? (
         <CoupleDataProvider>
           <AuthorizedTabs />

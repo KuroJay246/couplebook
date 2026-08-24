@@ -1,7 +1,13 @@
 const PERSISTENCE_PREFIX = 'couplebook.firebase.auth.';
 
 export function getStorageKey(key) {
-  return `${PERSISTENCE_PREFIX}${key}`;
+  const safeKey = String(key || '')
+    .trim()
+    .replace(/[^A-Za-z0-9._-]+/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_+|_+$/g, '');
+
+  return `${PERSISTENCE_PREFIX}${safeKey || 'firebase_auth'}`;
 }
 
 export function createSecureStorePersistence({ platformOs, secureStore }) {

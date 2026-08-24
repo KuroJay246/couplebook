@@ -1,4 +1,4 @@
-import { File, Directory, Paths } from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as ImagePicker from 'expo-image-picker';
 import { deleteObject, getDownloadURL, ref, uploadBytesResumable } from 'firebase/storage';
 
@@ -54,10 +54,46 @@ export type MobileUploadQueueItem = {
   updatedAt: string;
 };
 
-const QUEUE_DIRECTORY = new Directory(Paths.document, 'couplebook-mobile');
-const QUEUE_FILE = new File(QUEUE_DIRECTORY, 'upload-queue.json');
 const SAFE_STORAGE_PATH =
   /^couples\/[A-Za-z0-9_-]{1,120}\/media\/[A-Za-z0-9_-]{1,120}\/(original|thumbnail|poster)$/;
+
+function getQueueDirectoryUri() {
+  if (!FileSystem.documentDirectory) {
+    throw new Error('Local device storage is unavailable in this build.');
+  }
+  return `${FileSystem.documentDirectory}couplebook-mobile`;
+}
+
+function getQueueFileUri() {
+  return `${getQueueDirectoryUri()}/upload-queue.json`;
+}
+
+function fileNameFromUri(uri: string) {
+  const cleanUri = String(uri || '').split('?')[0].split('#')[0];
+  const segments = cleanUri.split('/').filter(Boolean);
+  return segments[segments.length - 1] || 'memory';
+}
+
+function contentTypeFromName(name: string) {
+  const extension = fileNameFromUri(name).split('.').pop()?.toLowerCase() || '';
+  switch (extension) {
+    case 'jpg':
+    case 'jpeg':
+      return 'image/jpeg';
+    case 'png':
+      return 'image/png';
+    case 'webp':
+      return 'image/webp';
+    case 'gif':
+      return 'image/gif';
+    case 'mp4':
+      return 'video/mp4';
+    case 'webm':
+      return 'video/webm';
+    default:
+      return '';
+  }
+}
 
 function bytesToHex(bytes: Uint8Array) {
   return Array.from(bytes, (value) => value.toString(16).padStart(2, '0')).join('');
@@ -118,10 +154,32 @@ function normalizeQueueItem(item: Record<string, unknown>) {
   } satisfies MobileUploadQueueItem;
 }
 
-function ensureQueueDirectory() {
-  if (!QUEUE_DIRECTORY.exists) {
-    QUEUE_DIRECTORY.create({ idempotent: true, intermediates: true });
+async function ensureQueueDirectory() {
+  await FileSystem.makeDirectoryAsync(getQueueDirectoryUri(), { intermediates: true });
+}
+
+async function readLocalFileInfo(uri: string) {
+  const info = await FileSystem.getInfoAsync(uri);
+  return {
+    exists: !!info.exists,
+    name: fileNameFromUri(uri),
+    size: info.exists && typeof info.size === 'number' ? info.size : 0,
+    type: contentTypeFromName(uri),
+  };
+}
+
+async function createUploadBlob(localUri: string, contentType: string) {
+  const response = await fetch(localUri);
+  if (!response.ok) {
+    throw new Error('The selected file could not be opened from local storage.');
   }
+
+  const sourceBlob = await response.blob();
+  if (!contentType || sourceBlob.type === contentType) {
+    return sourceBlob;
+  }
+
+  return sourceBlob.slice(0, sourceBlob.size, contentType);
 }
 
 export async function requestMediaLibraryPermission() {
@@ -140,7 +198,7 @@ export async function launchMobileMediaPicker() {
 }
 
 export async function createQueueItemFromAsset(asset: ImagePicker.ImagePickerAsset) {
-  const file = new File(asset.uri);
+  const file = await readLocalFileInfo(asset.uri);
   const fileInfo = {
     name: file.name,
     size: file.size,
@@ -150,10 +208,12 @@ export async function createQueueItemFromAsset(asset: ImagePicker.ImagePickerAss
 }
 
 export async function readQueueSnapshot() {
-  if (!QUEUE_FILE.exists) return [];
+  const fileUri = getQueueFileUri();
+  const info = await FileSystem.getInfoAsync(fileUri);
+  if (!info.exists) return [];
 
   try {
-    const raw = await QUEUE_FILE.text();
+    const raw = await FileSystem.readAsStringAsync(fileUri);
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
     return parsed
@@ -167,22 +227,20 @@ export async function readQueueSnapshot() {
 }
 
 export async function persistQueueSnapshot(items: MobileUploadQueueItem[]) {
-  ensureQueueDirectory();
-  if (!QUEUE_FILE.exists) {
-    QUEUE_FILE.create({ intermediates: true, overwrite: true });
-  }
-  QUEUE_FILE.write(JSON.stringify(items, null, 2));
+  await ensureQueueDirectory();
+  await FileSystem.writeAsStringAsync(getQueueFileUri(), JSON.stringify(items, null, 2));
 }
 
 export async function clearPersistedQueueSnapshot() {
-  if (QUEUE_FILE.exists) {
-    QUEUE_FILE.delete();
-  }
+  await FileSystem.deleteAsync(getQueueFileUri(), { idempotent: true });
 }
 
 export async function computeSha256ForLocalFile(localUri: string) {
-  const file = new File(localUri);
-  const buffer = await file.arrayBuffer();
+  const response = await fetch(localUri);
+  if (!response.ok) {
+    throw new Error('The selected file could not be opened from local storage.');
+  }
+  const buffer = await response.arrayBuffer();
   if (!globalThis.crypto?.subtle) {
     throw new Error('Secure hashing is unavailable in this device build.');
   }
@@ -191,15 +249,14 @@ export async function computeSha256ForLocalFile(localUri: string) {
 }
 
 export async function validateLocalMediaItem(item: MobileUploadQueueItem) {
-  const file = new File(item.localUri);
-  const fileInfo = file.info();
+  const fileInfo = await readLocalFileInfo(item.localUri);
   return validateMobileMediaAsset(
     {
       uri: item.localUri,
       fileName: item.originalDisplayName,
-      fileSize: item.sizeBytes || fileInfo.size,
+      fileSize: item.sizeBytes || fileInfo.size || 0,
       height: item.height,
-      mimeType: item.contentType || file.type,
+      mimeType: item.contentType || fileInfo.type,
       type: item.mediaType,
       width: item.width,
       duration: item.durationMs,
@@ -208,7 +265,7 @@ export async function validateLocalMediaItem(item: MobileUploadQueueItem) {
   );
 }
 
-export function createPrivateMediaUploadTask({
+export async function createPrivateMediaUploadTask({
   checksum,
   contentType,
   coupleId,
@@ -230,7 +287,7 @@ export function createPrivateMediaUploadTask({
   if (!storage) {
     throw new Error('Firebase Storage is not configured for this build.');
   }
-  const file = new File(localUri);
+  const file = await createUploadBlob(localUri, contentType);
   const verifiedMedia = buildVerifiedMediaRecord({
     checksum,
     contentType,

@@ -30,7 +30,7 @@ function createFakeSecureStore() {
 }
 
 test('getStorageKey keeps Couple Book auth keys scoped with a stable prefix', () => {
-  assert.equal(getStorageKey('firebase:user'), 'couplebook.firebase.auth.firebase:user');
+  assert.equal(getStorageKey('firebase:user'), 'couplebook.firebase.auth.firebase_user');
 });
 
 test('native persistence stores, reads, and removes auth payloads through SecureStore', async () => {
@@ -46,7 +46,7 @@ test('native persistence stores, reads, and removes auth payloads through Secure
 
   assert.deepEqual(secureStore.calls[0], [
     'set',
-    'couplebook.firebase.auth.firebase:user',
+    'couplebook.firebase.auth.firebase_user',
     '"session-value"',
     { keychainAccessible: 'device-only' },
   ]);
