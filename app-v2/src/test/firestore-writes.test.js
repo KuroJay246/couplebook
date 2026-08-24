@@ -212,6 +212,40 @@ test('plan-to-memory creates one deterministic memory and blocks duplicate conve
   )
 })
 
+test('plan-to-memory retry reuses an existing deterministic memory before finalizing the plan marker', async () => {
+  const firestore = createFirestoreStub()
+  firestore.seed('couples/couple_alpha/memories/memory_from_plan_plan_one', {
+    revision: 1,
+    title: 'Picnic at the beach',
+    date: '2026-08-21',
+    mediaState: 'none',
+    linkedPlanId: 'plan_one',
+    createdBy: 'member_one',
+    updatedBy: 'member_one',
+    status: 'active',
+    schemaVersion: 1,
+  })
+
+  const memoryId = await convertPlanToMemory(
+    'plan_one',
+    {
+      title: 'Picnic at the beach',
+      category: 'Date Idea',
+      status: 'planned',
+      targetDate: '2026-08-21',
+      notes: 'Bring snacks.',
+      revision: 0,
+      convertedMemoryId: '',
+    },
+    { ...context, firestore, ...firestore },
+  )
+
+  assert.equal(memoryId, 'memory_from_plan_plan_one')
+  assert.equal(firestore.writes.length, 1)
+  assert.equal(firestore.writes[0].path, 'couples/couple_alpha/plans/plan_one')
+  assert.equal(firestore.writes[0].data.convertedMemoryId, memoryId)
+})
+
 test('write services reject stale revisions before overwriting newer data', async () => {
   const firestore = createFirestoreStub()
 

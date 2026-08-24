@@ -78,6 +78,10 @@ service cloud.firestore {
       return /databases/$(database)/documents/couples/$(coupleId)/members/$(uid);
     }
 
+    function memoryDocPath(coupleId, memoryId) {
+      return /databases/$(database)/documents/couples/$(coupleId)/memories/$(memoryId);
+    }
+
     function isActiveApprovedUserForCouple(coupleId) {
       return isSignedIn()
         && exists(userDocPath(request.auth.uid))
@@ -123,6 +127,30 @@ service cloud.firestore {
       return value is list && value.size() <= maxSize;
     }
 
+    function isOptionalTimestamp(value) {
+      return !(value is timestamp) ? false : true;
+    }
+
+    function hasOptionalMetadata() {
+      return (!('createdAt' in request.resource.data)
+          || (
+            request.resource.data.createdAt is timestamp
+            && (
+              resource == null
+              || !('createdAt' in resource.data)
+              || request.resource.data.createdAt == resource.data.createdAt
+            )
+          ))
+        && (!('updatedAt' in request.resource.data) || request.resource.data.updatedAt is timestamp)
+        && (!('createdBy' in request.resource.data)
+          || request.resource.data.createdBy == (
+            resource == null || !('createdBy' in resource.data)
+              ? request.auth.uid
+              : resource.data.createdBy
+          ))
+        && (!('updatedBy' in request.resource.data) || request.resource.data.updatedBy == request.auth.uid);
+    }
+
     function currentRevision() {
       return resource == null || !(resource.data.get('revision', 0) is int) ? 0 : resource.data.get('revision', 0);
     }
@@ -133,9 +161,27 @@ service cloud.firestore {
         && request.resource.data.revision == currentRevision() + 1;
     }
 
+    function existingPlanCreatedBy() {
+      return resource != null && resource.data.createdBy is string
+        ? resource.data.createdBy
+        : request.auth.uid;
+    }
+
+    function existingPlanCreatedAt() {
+      return resource != null && resource.data.createdAt is timestamp
+        ? resource.data.createdAt
+        : request.resource.data.createdAt;
+    }
+
+    function existingPlanConvertedMemoryId() {
+      return resource != null && resource.data.convertedMemoryId is string
+        ? resource.data.convertedMemoryId
+        : '';
+    }
+
     function isValidProfile(uid) {
       return isOwnUser(uid)
-        && hasOnly(['schemaVersion', 'revision', 'name', 'bio', 'anniversaryView', 'joinedDate', 'birthday'])
+        && hasOnly(['schemaVersion', 'revision', 'name', 'bio', 'anniversaryView', 'joinedDate', 'birthday', 'createdAt', 'createdBy', 'updatedAt', 'updatedBy'])
         && hasAll(['schemaVersion', 'revision', 'name'])
         && request.resource.data.schemaVersion == 1
         && hasNextRevision()
@@ -143,7 +189,8 @@ service cloud.firestore {
         && (!('bio' in request.resource.data) || isSafeString(request.resource.data.bio, 500))
         && (!('anniversaryView' in request.resource.data) || isSafeString(request.resource.data.anniversaryView, 40))
         && (!('joinedDate' in request.resource.data) || isDateOrEmpty(request.resource.data.joinedDate))
-        && (!('birthday' in request.resource.data) || isDateOrEmpty(request.resource.data.birthday));
+        && (!('birthday' in request.resource.data) || isDateOrEmpty(request.resource.data.birthday))
+        && hasOptionalMetadata();
     }
 
     function isValidFavorites(uid) {
@@ -161,7 +208,7 @@ service cloud.firestore {
 
     function isValidPrivateSettings(uid) {
       return isOwnUser(uid)
-        && hasOnly(['schemaVersion', 'revision', 'appearanceTheme', 'theme', 'anniversaryView', 'privacy'])
+        && hasOnly(['schemaVersion', 'revision', 'appearanceTheme', 'theme', 'anniversaryView', 'preferredAlbumView', 'privacy', 'createdAt', 'createdBy', 'updatedAt', 'updatedBy'])
         && request.resource.data.schemaVersion == 1
         && hasNextRevision()
         && (
@@ -169,33 +216,57 @@ service cloud.firestore {
           || ('theme' in request.resource.data && request.resource.data.theme in ['paper', 'rose', 'olive', 'plum'])
         )
         && (!('anniversaryView' in request.resource.data) || isSafeString(request.resource.data.anniversaryView, 40))
+        && (!('preferredAlbumView' in request.resource.data) || request.resource.data.preferredAlbumView in ['photo-book', 'all-memories'])
         && request.resource.data.privacy is map
         && request.resource.data.privacy.keys().hasOnly(['localOnlyMode', 'reducedMotion'])
         && request.resource.data.privacy.localOnlyMode is bool
-        && request.resource.data.privacy.reducedMotion is bool;
+        && request.resource.data.privacy.reducedMotion is bool
+        && hasOptionalMetadata();
+    }
+
+    function isValidSharedSettings() {
+      return hasOnly(['schemaVersion', 'revision', 'appearanceTheme', 'theme', 'anniversaryView', 'preferredAlbumView', 'liveAlbumCover', 'previewOrder', 'createdAt', 'createdBy', 'updatedAt', 'updatedBy'])
+        && hasAll(['schemaVersion', 'revision'])
+        && request.resource.data.schemaVersion == 1
+        && hasNextRevision()
+        && (!('appearanceTheme' in request.resource.data) || request.resource.data.appearanceTheme in ['midnight-rose', 'paper-hearts', 'moonlit'])
+        && (!('theme' in request.resource.data) || request.resource.data.theme in ['paper', 'rose', 'olive', 'plum'])
+        && (!('anniversaryView' in request.resource.data) || isSafeString(request.resource.data.anniversaryView, 40))
+        && (!('preferredAlbumView' in request.resource.data) || request.resource.data.preferredAlbumView in ['photo-book', 'all-memories'])
+        && (!('liveAlbumCover' in request.resource.data) || isSafeString(request.resource.data.liveAlbumCover, 260))
+        && (!('previewOrder' in request.resource.data) || isStringList(request.resource.data.previewOrder, 12))
+        && hasOptionalMetadata();
     }
 
     function isValidMemory() {
-      return hasOnly(['schemaVersion', 'revision', 'title', 'description', 'date', 'tags', 'kindLabel', 'mediaNote', 'mediaState', 'media', 'specialMomentType', 'createdBy', 'updatedBy', 'status'])
+      return hasOnly(['schemaVersion', 'revision', 'title', 'description', 'date', 'caption', 'tags', 'kindLabel', 'mediaNote', 'mediaState', 'mediaType', 'media', 'linkedPlanId', 'specialMomentType', 'createdAt', 'createdBy', 'updatedAt', 'updatedBy', 'status'])
         && hasAll(['schemaVersion', 'revision', 'title', 'date', 'mediaState', 'createdBy', 'updatedBy', 'status'])
         && request.resource.data.schemaVersion == 1
         && hasNextRevision()
         && isRequiredSafeString(request.resource.data.title, 180)
         && (!('description' in request.resource.data) || isSafeString(request.resource.data.description, 2000))
         && request.resource.data.date.matches('^\\d{4}-\\d{2}-\\d{2}$')
+        && (!('caption' in request.resource.data) || isSafeString(request.resource.data.caption, 300))
         && (!('tags' in request.resource.data) || isStringList(request.resource.data.tags, 30))
         && (!('kindLabel' in request.resource.data) || request.resource.data.kindLabel in ['Everyday Moment', 'Date', 'First', 'Trip', 'Milestone', 'Celebration', 'Funny Moment', 'Note', 'Photo Memory', 'Video Memory'])
         && (!('mediaNote' in request.resource.data) || isSafeString(request.resource.data.mediaNote, 300))
         && request.resource.data.mediaState in ['none', 'private-legacy-reference', 'storage-verified']
+        && (!('mediaType' in request.resource.data) || request.resource.data.mediaType in ['text', 'photo', 'video', 'milestone'])
         && (
           request.resource.data.mediaState == 'storage-verified'
             ? ('media' in request.resource.data && isValidMediaMetadata(request.resource.data.media))
             : !('media' in request.resource.data)
         )
-        && (!('specialMomentType' in request.resource.data) || request.resource.data.specialMomentType in ['birthday', 'valentine', 'confession'])
-        && request.resource.data.createdBy == request.auth.uid
+        && (!('linkedPlanId' in request.resource.data) || isSafeString(request.resource.data.linkedPlanId, 120))
+        && (!('specialMomentType' in request.resource.data) || request.resource.data.specialMomentType in ['ordinary', 'birthday', 'valentine', 'confession', 'milestone'])
+        && request.resource.data.createdBy == (
+          resource == null || !('createdBy' in resource.data)
+            ? request.auth.uid
+            : resource.data.createdBy
+        )
         && request.resource.data.updatedBy == request.auth.uid
-        && request.resource.data.status in ['active', 'archived'];
+        && request.resource.data.status in ['active', 'archived']
+        && hasOptionalMetadata();
     }
 
     function isValidPlan() {
@@ -209,7 +280,11 @@ service cloud.firestore {
         && (!('targetDate' in request.resource.data) || request.resource.data.targetDate == '' || request.resource.data.targetDate.matches('^\\d{4}-\\d{2}-\\d{2}$'))
         && (!('notes' in request.resource.data) || isSafeString(request.resource.data.notes, 1200))
         && (!('convertedMemoryId' in request.resource.data) || isSafeString(request.resource.data.convertedMemoryId, 120))
-        && request.resource.data.createdBy == (resource == null ? request.auth.uid : resource.data.createdBy)
+        && (
+          request.resource.data.get('convertedMemoryId', '') == ''
+          || exists(memoryDocPath(coupleId, request.resource.data.convertedMemoryId))
+        )
+        && request.resource.data.createdBy == existingPlanCreatedBy()
         && request.resource.data.updatedBy == request.auth.uid
         && request.resource.data.createdAt is timestamp
         && request.resource.data.updatedAt is timestamp;
@@ -335,7 +410,8 @@ service cloud.firestore {
 
       match /settings/shared {
         allow get: if isActiveCoupleMember(coupleId);
-        allow create, update, delete: if false;
+        allow create, update: if isActiveCoupleMember(coupleId) && isValidSharedSettings();
+        allow delete: if false;
       }
 
       match /settings/{uid} {

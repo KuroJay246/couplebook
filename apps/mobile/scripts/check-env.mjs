@@ -12,6 +12,12 @@ const REQUIRED_ENV_KEYS = [
 
 const REQUIRED_PROJECT_ID = 'couplebook-97830';
 const PROHIBITED_PROJECT_IDS = new Set(['gathervibeshub']);
+const ALLOWED_WRITE_MODES = new Set([
+  '',
+  'production-write-disabled',
+  'firestore-emulator-write',
+  'firestore-production-write',
+]);
 
 function parseEnvFile(filePath) {
   if (!fs.existsSync(filePath)) return {};
@@ -60,6 +66,21 @@ if (projectId !== REQUIRED_PROJECT_ID && !/^demo-/i.test(projectId)) {
 }
 
 const isDevelopment = String(env.NODE_ENV || 'development').trim().toLowerCase() !== 'production';
+const writeMode = String(env.EXPO_PUBLIC_FIREBASE_WRITE_MODE || '').trim().toLowerCase();
+if (!ALLOWED_WRITE_MODES.has(writeMode)) {
+  console.error(
+    `Couple Book mobile env check failed. Unsupported write mode: ${env.EXPO_PUBLIC_FIREBASE_WRITE_MODE}.`,
+  );
+  process.exit(1);
+}
+
+if (!isDevelopment && writeMode === 'firestore-emulator-write') {
+  console.error(
+    'Couple Book mobile env check failed. Production builds must not use firestore-emulator-write.',
+  );
+  process.exit(1);
+}
+
 const useEmulators = String(env.EXPO_PUBLIC_FIREBASE_USE_EMULATORS || '').trim() === 'true';
 const hasLocalRuntimeConfig =
   isLocalhostValue(env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN) ||

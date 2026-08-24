@@ -58,3 +58,11 @@ test('mobile env check rejects the prohibited Event Hub project', () => {
   assert.notEqual(result.status, 0)
   assert.match(result.stderr, /prohibited/i)
 })
+
+test('mobile env check rejects unsupported mobile write modes', () => {
+  const result = runCheck({
+    envFile: `${validEnv}\nEXPO_PUBLIC_FIREBASE_WRITE_MODE=always-write\n`,
+  })
+  assert.notEqual(result.status, 0)
+  assert.match(result.stderr, /Unsupported write mode/i)
+})

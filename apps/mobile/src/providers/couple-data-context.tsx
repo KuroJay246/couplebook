@@ -54,6 +54,9 @@ export type MobileSettingsRecord = {
   appearanceTheme: string;
   theme: string;
   anniversaryView: string;
+  preferredAlbumView: string;
+  liveAlbumCover: string;
+  previewOrder: string[];
   privacy: {
     localOnlyMode: boolean;
     reducedMotion: boolean;

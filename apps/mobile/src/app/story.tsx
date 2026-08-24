@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import {
   BadgePill,
@@ -13,6 +13,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useCoupleData } from '@/hooks/use-couple-data';
+import { useOwnerWrite } from '@/hooks/use-owner-write';
 import { createDateAtNoon } from '../../../../packages/core/src/index.js';
 
 type StoryFilter = 'all' | 'text' | 'photo' | 'video';
@@ -51,9 +52,19 @@ function matchesFilter(
 export default function StoryScreen() {
   const { error, loading, memories, warnings } = useCoupleData();
   const theme = useTheme();
+  const writer = useOwnerWrite();
   const [search, setSearch] = useState('');
   const [activeFilter, setActiveFilter] = useState<StoryFilter>('all');
   const [showArchived, setShowArchived] = useState(false);
+  const [composerOpen, setComposerOpen] = useState(false);
+  const [saveState, setSaveState] = useState({ kind: '', message: '', saving: false });
+  const [form, setForm] = useState({
+    id: '',
+    title: '',
+    description: '',
+    date: new Date().toISOString().slice(0, 10),
+    revision: 0,
+  });
 
   const filteredMemories = useMemo(() => {
     const searchTerm = search.trim().toLowerCase();
@@ -83,6 +94,114 @@ export default function StoryScreen() {
   const activeMemories = memories.filter((entry) => entry.status === 'active');
   const archivedMemories = memories.filter((entry) => entry.status === 'archived');
 
+  function resetComposer() {
+    setForm({
+      id: '',
+      title: '',
+      description: '',
+      date: new Date().toISOString().slice(0, 10),
+      revision: 0,
+    });
+    setComposerOpen(false);
+  }
+
+  function beginCreate() {
+    setSaveState({ kind: '', message: '', saving: false });
+    setComposerOpen(true);
+    setForm({
+      id: '',
+      title: '',
+      description: '',
+      date: new Date().toISOString().slice(0, 10),
+      revision: 0,
+    });
+  }
+
+  function beginEdit(entry: (typeof filteredMemories)[number]) {
+    setSaveState({ kind: '', message: '', saving: false });
+    setComposerOpen(true);
+    setForm({
+      id: entry.id,
+      title: entry.title || '',
+      description: entry.description || '',
+      date: entry.date || new Date().toISOString().slice(0, 10),
+      revision: entry.revision || 0,
+    });
+  }
+
+  function formatWriteError(error: unknown) {
+    const message = error instanceof Error ? error.message : 'This memory could not be saved.';
+    if (/disabled outside approved mobile Firestore write mode/i.test(message)) {
+      return 'Memory writes are disabled in this build. Use the approved emulator write mode for development writes.';
+    }
+    if (/changed in another session/i.test(message)) {
+      return 'This memory changed somewhere else. Reload the latest version and try again.';
+    }
+    if (/membership|approved user/i.test(message)) {
+      return 'This account cannot write to Couple Book right now.';
+    }
+    return message;
+  }
+
+  async function handleSave() {
+    setSaveState({ kind: '', message: '', saving: true });
+
+    try {
+      if (form.id) {
+        await writer.updateMemory(form.id, {
+          title: form.title,
+          description: form.description,
+          date: form.date,
+          mediaType: 'text',
+          revision: form.revision,
+        });
+        setSaveState({ kind: 'success', message: 'Memory updated.', saving: false });
+      } else {
+        await writer.createMemory({
+          title: form.title,
+          description: form.description,
+          date: form.date,
+          mediaType: 'text',
+          kindLabel: 'Note',
+        });
+        setSaveState({ kind: 'success', message: 'Memory saved.', saving: false });
+      }
+      resetComposer();
+    } catch (writeError) {
+      setSaveState({
+        kind: 'error',
+        message: formatWriteError(writeError),
+        saving: false,
+      });
+    }
+  }
+
+  async function handleArchive(entry: (typeof filteredMemories)[number]) {
+    try {
+      await writer.archiveMemory(entry.id, entry.revision || 0);
+      setSaveState({ kind: 'success', message: 'Memory archived.', saving: false });
+    } catch (writeError) {
+      setSaveState({
+        kind: 'error',
+        message: formatWriteError(writeError),
+        saving: false,
+      });
+    }
+  }
+
+  async function handleRestore(entry: (typeof filteredMemories)[number]) {
+    try {
+      await writer.restoreMemory(entry.id, entry.revision || 0);
+      setSaveState({ kind: 'success', message: 'Memory restored.', saving: false });
+    } catch (writeError) {
+      setSaveState({
+        kind: 'error',
+        message: formatWriteError(writeError),
+        saving: false,
+      });
+    }
+  }
+
   return (
     <CoupleBookScreen
       eyebrow="Story"
@@ -108,6 +227,90 @@ export default function StoryScreen() {
           <FilterChip active={activeFilter === 'photo'} label="Photos" onPress={() => setActiveFilter('photo')} />
           <FilterChip active={activeFilter === 'video'} label="Videos" onPress={() => setActiveFilter('video')} />
           <FilterChip active={showArchived} label="Archived" onPress={() => setShowArchived((value) => !value)} />
+        </View>
+      </SectionCard>
+
+      <SectionCard
+        title="Write memory"
+        description="Create a text memory, reopen it for edits, or archive and restore existing entries from the native Story tab.">
+        <View style={styles.stack}>
+          <Pressable
+            onPress={beginCreate}
+            style={[
+              styles.primaryButton,
+              { backgroundColor: theme.accent, borderColor: theme.accentStrong },
+            ]}>
+            <ThemedText type="smallBold" style={styles.lightText}>
+              Add Memory
+            </ThemedText>
+          </Pressable>
+          {composerOpen ? (
+            <View
+              style={[
+                styles.composerCard,
+                { backgroundColor: theme.backgroundElement, borderColor: theme.border },
+              ]}>
+              <TextInput
+                value={form.title}
+                onChangeText={(value) => setForm((current) => ({ ...current, title: value }))}
+                placeholder="Memory title"
+                placeholderTextColor={theme.textMuted}
+                style={[
+                  styles.input,
+                  { backgroundColor: theme.backgroundSelected, borderColor: theme.border, color: theme.text },
+                ]}
+              />
+              <TextInput
+                value={form.description}
+                onChangeText={(value) => setForm((current) => ({ ...current, description: value }))}
+                placeholder="What happened?"
+                placeholderTextColor={theme.textMuted}
+                multiline
+                style={[
+                  styles.textArea,
+                  { backgroundColor: theme.backgroundSelected, borderColor: theme.border, color: theme.text },
+                ]}
+              />
+              <TextInput
+                value={form.date}
+                onChangeText={(value) => setForm((current) => ({ ...current, date: value }))}
+                placeholder="YYYY-MM-DD"
+                placeholderTextColor={theme.textMuted}
+                style={[
+                  styles.input,
+                  { backgroundColor: theme.backgroundSelected, borderColor: theme.border, color: theme.text },
+                ]}
+              />
+              <View style={styles.actionRow}>
+                <Pressable
+                  onPress={resetComposer}
+                  style={[
+                    styles.secondaryButton,
+                    { backgroundColor: theme.backgroundSelected, borderColor: theme.border },
+                  ]}>
+                  <ThemedText type="smallBold">Cancel</ThemedText>
+                </Pressable>
+                <Pressable
+                  disabled={saveState.saving}
+                  onPress={() => {
+                    void handleSave();
+                  }}
+                  style={[
+                    styles.primaryButton,
+                    { backgroundColor: theme.accent, borderColor: theme.accentStrong, opacity: saveState.saving ? 0.7 : 1 },
+                  ]}>
+                  <ThemedText type="smallBold" style={styles.lightText}>
+                    {saveState.saving ? 'Saving...' : form.id ? 'Save Memory' : 'Create Memory'}
+                  </ThemedText>
+                </Pressable>
+              </View>
+            </View>
+          ) : null}
+          {saveState.message ? (
+            <ThemedText type="small" themeColor="textSecondary">
+              {saveState.message}
+            </ThemedText>
+          ) : null}
         </View>
       </SectionCard>
 
@@ -140,6 +343,28 @@ export default function StoryScreen() {
                         {entry.description}
                       </ThemedText>
                     ) : null}
+                    <View style={styles.actionRow}>
+                      <Pressable
+                        onPress={() => beginEdit(entry)}
+                        style={[
+                          styles.secondaryButton,
+                          { backgroundColor: theme.backgroundSelected, borderColor: theme.border },
+                        ]}>
+                        <ThemedText type="smallBold">Edit</ThemedText>
+                      </Pressable>
+                      <Pressable
+                        onPress={() => {
+                          void (entry.status === 'archived' ? handleRestore(entry) : handleArchive(entry));
+                        }}
+                        style={[
+                          styles.secondaryButton,
+                          { backgroundColor: theme.backgroundSelected, borderColor: theme.border },
+                        ]}>
+                        <ThemedText type="smallBold">
+                          {entry.status === 'archived' ? 'Restore' : 'Archive'}
+                        </ThemedText>
+                      </Pressable>
+                    </View>
                   </Pressable>
                 ))}
               </View>
@@ -193,5 +418,56 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: Spacing.two,
     alignItems: 'flex-start',
+  },
+  composerCard: {
+    borderWidth: 1,
+    borderRadius: Spacing.three,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.three,
+    gap: Spacing.two,
+  },
+  input: {
+    minHeight: 48,
+    borderWidth: 1,
+    borderRadius: Spacing.three,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+    fontSize: 16,
+  },
+  textArea: {
+    minHeight: 112,
+    borderWidth: 1,
+    borderRadius: Spacing.three,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+    fontSize: 16,
+    textAlignVertical: 'top',
+  },
+  actionRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.two,
+  },
+  primaryButton: {
+    minHeight: 44,
+    minWidth: 120,
+    borderWidth: 1,
+    borderRadius: Spacing.three,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  secondaryButton: {
+    minHeight: 40,
+    borderWidth: 1,
+    borderRadius: Spacing.three,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  lightText: {
+    color: '#fff',
   },
 });

@@ -120,6 +120,7 @@ function domainRefs(db, coupleId = ids.couple, uid = ids.memberOne) {
     doc(db, 'couples', coupleId, 'settings', 'shared'),
     doc(db, 'couples', coupleId, 'contracts', 'current'),
     doc(db, 'couples', coupleId, 'memories', 'memory_one'),
+    doc(db, 'couples', coupleId, 'plans', 'plan_one'),
     doc(db, 'couples', coupleId, 'specialMoments', 'birthday'),
   ]
 }
@@ -205,7 +206,18 @@ test('active members can perform valid emulator writes', { skip: !hasEmulator },
     revision: 2,
     appearanceTheme: 'moonlit',
     anniversaryView: 'shared',
+    preferredAlbumView: 'photo-book',
     privacy: { localOnlyMode: true, reducedMotion: true },
+  }))
+  await assertSucceeds(setDoc(doc(db, 'couples', ids.couple, 'settings', 'shared'), {
+    schemaVersion: 1,
+    revision: 1,
+    theme: 'paper',
+    liveAlbumCover: 'cover_alpha',
+    previewOrder: ['media_001', 'media_002'],
+    preferredAlbumView: 'photo-book',
+    createdBy: ids.memberOne,
+    updatedBy: ids.memberOne,
   }))
   await assertSucceeds(setDoc(doc(db, 'couples', ids.couple, 'memories', 'new_memory'), {
     schemaVersion: 1,
@@ -213,9 +225,12 @@ test('active members can perform valid emulator writes', { skip: !hasEmulator },
     title: 'Fictional new memory',
     description: 'Text only.',
     date: '2026-02-14',
+    caption: 'Fictional caption.',
     tags: ['fictional'],
+    kindLabel: 'Note',
     mediaState: 'none',
-    specialMomentType: 'valentine',
+    mediaType: 'text',
+    linkedPlanId: 'plan_one',
     createdBy: ids.memberOne,
     updatedBy: ids.memberOne,
     status: 'active',
@@ -317,7 +332,15 @@ test('write rules reject unauthorized, cross-couple, partner-private, and malfor
     schemaVersion: 1,
     revision: 2,
     appearanceTheme: 'paper-hearts',
+    preferredAlbumView: 'photo-book',
     privacy: { localOnlyMode: false, reducedMotion: false },
+  }))
+  await assertFails(updateDoc(doc(db, 'couples', ids.couple, 'settings', 'shared'), {
+    schemaVersion: 1,
+    revision: 1,
+    liveAlbumCover: 'cover_alpha',
+    previewOrder: ['media_001'],
+    role: 'admin',
   }))
   await assertFails(deleteDoc(doc(db, 'couples', ids.couple, 'profiles', ids.memberOne)))
   await assertFails(setDoc(doc(db, 'couples', ids.otherCouple, 'profiles', ids.memberOne), { schemaVersion: 1, name: 'Cross couple' }))
@@ -408,6 +431,17 @@ test('write rules reject unauthorized, cross-couple, partner-private, and malfor
     title: 'Bad plan',
     category: 'Finance',
     status: 'idea',
+    createdBy: ids.memberOne,
+    createdAt: serverTimestamp(),
+    updatedBy: ids.memberOne,
+    updatedAt: serverTimestamp(),
+  }))
+  await assertFails(setDoc(doc(db, 'couples', ids.couple, 'plans', 'bad_status_plan'), {
+    schemaVersion: 1,
+    revision: 1,
+    title: 'Bad status plan',
+    category: 'Date Idea',
+    status: 'later',
     createdBy: ids.memberOne,
     createdAt: serverTimestamp(),
     updatedBy: ids.memberOne,
@@ -518,6 +552,45 @@ test('revision rules reject stale and conflicting same-document writes', { skip:
     anniversaryView: '',
     joinedDate: '',
     birthday: '',
+  }))
+
+  await assertFails(updateDoc(doc(memberOneDb, 'couples', ids.couple, 'memories', 'memory_one'), {
+    schemaVersion: 1,
+    revision: 5,
+    title: 'Fictional memory',
+    description: 'Ownership swap should fail.',
+    date: '2026-01-01',
+    tags: ['updated'],
+    mediaState: 'none',
+    createdBy: ids.memberTwo,
+    updatedBy: ids.memberOne,
+    status: 'active',
+  }))
+})
+
+test('shared settings writes stay couple-scoped', { skip: !hasEmulator }, async () => {
+  const memberOneDb = authed(ids.memberOne)
+  const outsiderDb = authed(ids.otherMember)
+
+  await assertSucceeds(setDoc(doc(memberOneDb, 'couples', ids.couple, 'settings', 'shared'), {
+    schemaVersion: 1,
+    revision: 1,
+    theme: 'paper',
+    liveAlbumCover: 'cover_alpha',
+    previewOrder: ['media_001', 'media_002'],
+    preferredAlbumView: 'photo-book',
+    createdBy: ids.memberOne,
+    updatedBy: ids.memberOne,
+  }))
+
+  await assertFails(setDoc(doc(outsiderDb, 'couples', ids.couple, 'settings', 'shared'), {
+    schemaVersion: 1,
+    revision: 1,
+    liveAlbumCover: 'cover_alpha',
+    previewOrder: ['media_001'],
+    preferredAlbumView: 'photo-book',
+    createdBy: ids.otherMember,
+    updatedBy: ids.otherMember,
   }))
 })
 

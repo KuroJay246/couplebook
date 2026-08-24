@@ -368,14 +368,26 @@ export async function convertPlanToMemory(planId, plan, context) {
   const memoryId = `memory_from_plan_${planId}`
   const existingMemoryId = cleanText(plan.convertedMemoryId, 120, 'Converted memory id')
   if (existingMemoryId) throw new Error('This plan already has a memory.')
-  await saveMemory(memoryId, {
-    title: plan.title,
-    description: plan.notes || '',
-    date: plan.completedDate || new Date().toISOString().slice(0, 10),
-    kindLabel: 'Date',
-    tags: [plan.category, 'Plan'],
-    revision: 0,
-  }, context)
+  const { coupleId, createDoc, firestore, getDocument, uid } = await assertWriteContext(context)
+  const memoryReference = docRef(firestore, memoryPath(coupleId, memoryId), createDoc)
+  const memorySnapshot = await getDocument(memoryReference)
+  const existingMemory = memorySnapshot.exists() ? memorySnapshot.data() : null
+  const memoryAlreadyCreated =
+    existingMemory?.linkedPlanId === planId
+    || existingMemory?.createdBy === uid
+
+  if (!memoryAlreadyCreated) {
+    await saveMemory(memoryId, {
+      title: plan.title,
+      description: plan.notes || '',
+      date: plan.completedDate || new Date().toISOString().slice(0, 10),
+      kindLabel: 'Date',
+      tags: [plan.category, 'Plan'],
+      linkedPlanId: planId,
+      mediaType: 'text',
+      revision: 0,
+    }, context)
+  }
   await savePlan(planId, { ...plan, status: 'completed', convertedMemoryId: memoryId }, context)
   return memoryId
 }

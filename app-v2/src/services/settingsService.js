@@ -28,6 +28,11 @@ export function normalizeFirestoreSettings(id, data, warnings) {
     appearanceTheme: safeString(data.appearanceTheme, 40),
     theme: safeString(data.theme, 40),
     anniversaryView: safeString(data.anniversaryView, 40),
+    preferredAlbumView: safeString(data.preferredAlbumView, 40),
+    liveAlbumCover: safeString(data.liveAlbumCover, 260),
+    previewOrder: Array.isArray(data.previewOrder)
+      ? data.previewOrder.filter((value) => typeof value === 'string').slice(0, 12)
+      : [],
     privacy: data.privacy && typeof data.privacy === 'object'
       ? {
           localOnlyMode: data.privacy.localOnlyMode === true,
