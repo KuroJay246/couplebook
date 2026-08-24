@@ -4,8 +4,10 @@ import { useAuth } from '@/hooks/use-auth';
 import {
   archiveMemory,
   convertPlanToMemory,
+  removeVerifiedMediaFromMemory,
   restoreMemory,
   saveMemory,
+  saveMemoryWithVerifiedMedia,
   saveOwnProfile,
   saveOwnSettings,
   savePlan,
@@ -49,15 +51,27 @@ export function useOwnerWrite() {
 
   return {
     canWrite: Boolean(user?.uid && approvedUser?.uid),
+    approvedUser,
+    user,
     createMemory: async (payload: Record<string, unknown>) => {
       const memoryId = createMemoryId();
       await saveMemory(memoryId, payload, createContext());
       return memoryId;
     },
+    createMemoryWithMedia: async (
+      payload: Record<string, unknown>,
+      verifiedMedia: Record<string, unknown>,
+    ) => {
+      const memoryId = createMemoryId();
+      await saveMemoryWithVerifiedMedia(memoryId, payload, verifiedMedia, createContext());
+      return { memoryId, refreshError: null, revision: 1, verifiedMedia };
+    },
     updateMemory: (memoryId: string, payload: Record<string, unknown>) =>
       saveMemory(memoryId, payload, createContext()),
     archiveMemory: (memoryId: string, revision: number) =>
       archiveMemory(memoryId, revision, createContext()),
+    removeMemoryMedia: (memoryId: string, revision = 0) =>
+      removeVerifiedMediaFromMemory(memoryId, revision, createContext()),
     restoreMemory: (memoryId: string, revision: number) =>
       restoreMemory(memoryId, revision, createContext()),
     createPlan: async (payload: Record<string, unknown>) => {

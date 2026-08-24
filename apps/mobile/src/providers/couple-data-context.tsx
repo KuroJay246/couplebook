@@ -9,13 +9,31 @@ export type MobileMemoryRecord = {
   title: string;
   description: string;
   date: string;
+  caption: string;
   tags: string[];
   mediaState: string;
+  mediaType: string;
+  mediaNote: string;
+  linkedPlanId: string;
   specialMomentType: string;
   revision: number;
   schemaVersion: number;
   status: 'active' | 'archived';
   isVideo: boolean;
+  media:
+    | {
+        status: 'storage-verified';
+        id: string;
+        kind: 'image' | 'video';
+        storagePath: string;
+        thumbnailPath: string;
+        posterPath: string;
+        contentType: string;
+        sizeBytes: number;
+        checksum: string;
+      }
+    | 'private-legacy-reference'
+    | '';
 };
 
 export type MobilePlanRecord = {

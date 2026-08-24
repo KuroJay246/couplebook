@@ -10,6 +10,7 @@ import {
   getFirestore,
   initializeFirestore,
 } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage';
 import { Platform } from 'react-native';
 
 import {
@@ -86,6 +87,7 @@ function initializeDatabase() {
 
 export const auth = initializeMobileAuth();
 export const db = initializeDatabase();
+export const storage = firebaseApp ? getStorage(firebaseApp) : null;
 
 if (useFirebaseEmulators && auth && db) {
   const globalKey = '__COUPLEBOOK_MOBILE_FIREBASE_EMULATORS__';

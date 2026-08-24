@@ -1,4 +1,4 @@
-const PERSISTENCE_PREFIX = 'couplebook.firebase.auth:';
+const PERSISTENCE_PREFIX = 'couplebook.firebase.auth.';
 
 export function getStorageKey(key) {
   return `${PERSISTENCE_PREFIX}${key}`;
@@ -9,24 +9,51 @@ export function createSecureStorePersistence({ platformOs, secureStore }) {
     return platformOs !== 'web';
   }
 
-  return {
-    type: 'LOCAL',
+  class SecureStorePersistence {
+    static type = 'LOCAL';
+
+    constructor() {
+      this.type = 'LOCAL';
+    }
+
     async _isAvailable() {
-      return supportsSecureStore();
-    },
+      if (!supportsSecureStore()) return false;
+
+      if (typeof secureStore?.isAvailableAsync === 'function') {
+        try {
+          return await secureStore.isAvailableAsync();
+        } catch {
+          return false;
+        }
+      }
+
+      return true;
+    }
+
     async _set(key, value) {
       if (!supportsSecureStore()) return;
-      await secureStore.setItemAsync(getStorageKey(key), value, {
+
+      await secureStore.setItemAsync(getStorageKey(key), JSON.stringify(value), {
         keychainAccessible: secureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
       });
-    },
+    }
+
     async _get(key) {
       if (!supportsSecureStore()) return null;
-      return secureStore.getItemAsync(getStorageKey(key));
-    },
+
+      const json = await secureStore.getItemAsync(getStorageKey(key));
+      return json ? JSON.parse(json) : null;
+    }
+
     async _remove(key) {
       if (!supportsSecureStore()) return;
       await secureStore.deleteItemAsync(getStorageKey(key));
-    },
-  };
+    }
+
+    _addListener() {}
+
+    _removeListener() {}
+  }
+
+  return SecureStorePersistence;
 }

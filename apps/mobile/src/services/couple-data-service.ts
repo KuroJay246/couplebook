@@ -102,22 +102,70 @@ function normalizeTimestampLabel(value: unknown) {
   return '';
 }
 
+const SAFE_STORAGE_PATH =
+  /^couples\/[A-Za-z0-9_-]{1,120}\/media\/[A-Za-z0-9_-]{1,120}\/(original|thumbnail|poster)$/;
+const SAFE_MEDIA_ID = /^[A-Za-z0-9_-]{1,120}$/;
+
+function normalizeStorageMedia(data: Record<string, unknown>, warnings: string[]) {
+  if (safeString(data.mediaState, 60) !== 'storage-verified') return '';
+
+  const media =
+    data.media && typeof data.media === 'object' && !Array.isArray(data.media)
+      ? (data.media as Record<string, unknown>)
+      : null;
+  if (!media) {
+    warnings.push('A verified media record was missing its media metadata.');
+    return '';
+  }
+
+  const id = safeString(media.id, 120);
+  const kind = safeString(media.kind, 20);
+  const storagePath = safeString(media.storagePath, 260);
+  const thumbnailPath = safeString(media.thumbnailPath, 260);
+  const posterPath = safeString(media.posterPath, 260);
+  if (!SAFE_MEDIA_ID.test(id) || !['image', 'video'].includes(kind) || !SAFE_STORAGE_PATH.test(storagePath)) {
+    warnings.push('A verified media record had invalid storage metadata and was withheld.');
+    return '';
+  }
+
+  return {
+    status: 'storage-verified' as const,
+    id,
+    kind: kind as 'image' | 'video',
+    storagePath,
+    thumbnailPath: thumbnailPath && SAFE_STORAGE_PATH.test(thumbnailPath) ? thumbnailPath : '',
+    posterPath: posterPath && SAFE_STORAGE_PATH.test(posterPath) ? posterPath : '',
+    contentType: safeString(media.contentType, 80),
+    sizeBytes: Number.isFinite(Number(media.sizeBytes)) && Number(media.sizeBytes) >= 0 ? Number(media.sizeBytes) : 0,
+    checksum: safeString(media.checksum, 128),
+  };
+}
+
 function normalizeMemory(id: string, data: Record<string, unknown>, warnings: string[]) {
   if (!requireSchemaVersion(data, warnings)) return null;
 
   const status = safeString(data.status, 20) === 'archived' ? 'archived' : 'active';
+  const mediaState = safeString(data.mediaState, 60) || 'none';
+  const media = normalizeStorageMedia(data, warnings);
   return {
     id,
     title: safeString(data.title, 180),
     description: safeString(data.description, 2000),
     date: safeString(data.date, 40),
+    caption: safeString(data.caption, 300),
     tags: safeStringArray(data.tags, 30, 60),
-    mediaState: safeString(data.mediaState, 60) || 'none',
+    mediaState,
+    mediaType:
+      safeString(data.mediaType, 20) ||
+      (data.isVideo === true ? 'video' : mediaState === 'none' ? 'text' : 'photo'),
+    mediaNote: safeString(data.mediaNote, 300),
+    linkedPlanId: safeString(data.linkedPlanId, 120),
     specialMomentType: safeString(data.specialMomentType, 40),
     revision: readRevision(data.revision),
     schemaVersion: readSchemaVersion(data.schemaVersion),
     status,
-    isVideo: data.isVideo === true,
+    isVideo: data.isVideo === true || safeString(data.mediaType, 20) === 'video',
+    media: media || (mediaState === 'private-legacy-reference' ? 'private-legacy-reference' : ''),
   } satisfies MobileMemoryRecord;
 }
 

@@ -30,12 +30,13 @@ function createFakeSecureStore() {
 }
 
 test('getStorageKey keeps Couple Book auth keys scoped with a stable prefix', () => {
-  assert.equal(getStorageKey('firebase:user'), 'couplebook.firebase.auth:firebase:user');
+  assert.equal(getStorageKey('firebase:user'), 'couplebook.firebase.auth.firebase:user');
 });
 
 test('native persistence stores, reads, and removes auth payloads through SecureStore', async () => {
   const secureStore = createFakeSecureStore();
-  const persistence = createSecureStorePersistence({ platformOs: 'ios', secureStore });
+  const Persistence = createSecureStorePersistence({ platformOs: 'ios', secureStore });
+  const persistence = new Persistence();
 
   assert.equal(await persistence._isAvailable(), true);
   await persistence._set('firebase:user', 'session-value');
@@ -45,15 +46,16 @@ test('native persistence stores, reads, and removes auth payloads through Secure
 
   assert.deepEqual(secureStore.calls[0], [
     'set',
-    'couplebook.firebase.auth:firebase:user',
-    'session-value',
+    'couplebook.firebase.auth.firebase:user',
+    '"session-value"',
     { keychainAccessible: 'device-only' },
   ]);
 });
 
 test('web persistence is a safe no-op and does not touch SecureStore', async () => {
   const secureStore = createFakeSecureStore();
-  const persistence = createSecureStorePersistence({ platformOs: 'web', secureStore });
+  const Persistence = createSecureStorePersistence({ platformOs: 'web', secureStore });
+  const persistence = new Persistence();
 
   assert.equal(await persistence._isAvailable(), false);
   await persistence._set('firebase:user', 'session-value');

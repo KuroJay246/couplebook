@@ -404,6 +404,76 @@ export async function saveMemory(memoryId, payload, context) {
   return next;
 }
 
+export async function saveMemoryWithVerifiedMedia(memoryId, payload, verifiedMedia, context) {
+  const { coupleId, uid } = await assertWriteContext(context);
+  const reference = context.createDoc(context.firestore, ...memoryPath(coupleId, memoryId));
+  const { nextRevision, snapshot } = await resolveNextRevision(
+    reference,
+    payload.revision,
+    context.getDocument,
+    'Memory',
+  );
+  const existingData = snapshot.exists() ? snapshot.data() : null;
+  const next = buildMemoryDocument(
+    {
+      ...payload,
+      media: verifiedMedia,
+      mediaState: 'storage-verified',
+    },
+    existingData,
+    nextRevision,
+    uid,
+    context,
+  );
+  await context.setDocument(reference, next);
+  return next;
+}
+
+export async function removeVerifiedMediaFromMemory(memoryId, revision, context) {
+  const { coupleId, uid } = await assertWriteContext(context);
+  const reference = context.createDoc(context.firestore, ...memoryPath(coupleId, memoryId));
+  const snapshot = await context.getDocument(reference);
+  if (!snapshot.exists()) throw new Error('Memory could not be found.');
+
+  const current = snapshot.data() || {};
+  if (current.status === MEMORY_STATUSES.archived) {
+    throw new Error('This memory is already archived.');
+  }
+  if (current.mediaState !== 'storage-verified') {
+    throw new Error('Only verified private media memories can be removed from Album.');
+  }
+
+  const { nextRevision } = await resolveNextRevision(
+    reference,
+    revision,
+    context.getDocument,
+    'Memory',
+  );
+  const next = buildMemoryDocument(
+    {
+      ...current,
+      description: current.description || '',
+      kindLabel: current.kindLabel || '',
+      mediaNote: current.mediaNote || '',
+      specialMomentType: current.specialMomentType || MEMORY_TYPES.ordinary,
+      status: MEMORY_STATUSES.archived,
+      tags: Array.isArray(current.tags) ? current.tags : [],
+      title: current.title,
+    },
+    current,
+    nextRevision,
+    current.createdBy || uid,
+    context,
+  );
+  next.updatedBy = uid;
+  next.status = MEMORY_STATUSES.archived;
+  next.mediaState = 'none';
+  delete next.media;
+
+  await context.setDocument(reference, next);
+  return next;
+}
+
 export async function archiveMemory(memoryId, revision, context) {
   const { coupleId, uid } = await assertWriteContext(context);
   const reference = context.createDoc(context.firestore, ...memoryPath(coupleId, memoryId));

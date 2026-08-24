@@ -4,8 +4,10 @@ import { db } from '@/lib/firebase';
 import {
   archiveMemory as archiveMemoryCore,
   convertPlanToMemory as convertPlanToMemoryCore,
+  removeVerifiedMediaFromMemory as removeVerifiedMediaFromMemoryCore,
   restoreMemory as restoreMemoryCore,
   saveMemory as saveMemoryCore,
+  saveMemoryWithVerifiedMedia as saveMemoryWithVerifiedMediaCore,
   saveOwnProfile as saveOwnProfileCore,
   saveOwnSettings as saveOwnSettingsCore,
   savePlan as savePlanCore,
@@ -41,8 +43,25 @@ export async function saveMemory(memoryId: string, payload: Record<string, unkno
   return saveMemoryCore(memoryId, payload, createContext(context));
 }
 
+export async function saveMemoryWithVerifiedMedia(
+  memoryId: string,
+  payload: Record<string, unknown>,
+  verifiedMedia: Record<string, unknown>,
+  context: Record<string, unknown>,
+) {
+  return saveMemoryWithVerifiedMediaCore(memoryId, payload, verifiedMedia, createContext(context));
+}
+
 export async function archiveMemory(memoryId: string, revision: number, context: Record<string, unknown>) {
   return archiveMemoryCore(memoryId, revision, createContext(context));
+}
+
+export async function removeVerifiedMediaFromMemory(
+  memoryId: string,
+  revision: number,
+  context: Record<string, unknown>,
+) {
+  return removeVerifiedMediaFromMemoryCore(memoryId, revision, createContext(context));
 }
 
 export async function restoreMemory(memoryId: string, revision: number, context: Record<string, unknown>) {
