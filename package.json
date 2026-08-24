@@ -39,6 +39,7 @@
     "mobile:dev": "npm --workspace apps/mobile run start",
     "mobile:android": "npm --workspace apps/mobile run android",
     "mobile:web": "npm --workspace apps/mobile run web",
+    "mobile:env:check": "npm --workspace apps/mobile run env:check",
     "mobile:lint": "npm --workspace apps/mobile run lint",
     "mobile:typecheck": "npm --workspace apps/mobile run typecheck",
     "release:preflight": "set EXPECTED_FIREBASE_PROJECT_ID=couplebook-97830&& node scripts/assert-firebase-project.mjs --project couplebook-97830 && npm run docs:check && npm run alignment:check && npm run identity:check"

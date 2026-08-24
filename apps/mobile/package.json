@@ -44,6 +44,7 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
+    "env:check": "node ./scripts/check-env.mjs",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit"
   },
