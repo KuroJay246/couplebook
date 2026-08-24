@@ -1,8 +1,9 @@
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
+import { loadEventHubReferenceConfig, readReferenceFileAtCommit } from './lib/event-hub-reference.mjs'
 
 const repoRoot = process.cwd()
-const config = JSON.parse(readFileSync(path.join(repoRoot, 'config', 'event-hub-reference.json'), 'utf8'))
+const { config } = loadEventHubReferenceConfig(repoRoot)
 
 const comparisons = [
   {
@@ -64,13 +65,18 @@ console.log(`- engineering branch baseline: ${config.referenceEngineeringBranch}
 console.log(`- visual identity version: ${config.visualIdentityVersion}`)
 
 for (const comparison of comparisons) {
-  const referencePath = path.join(config.referenceRepo, comparison.referenceFile)
   const targetPaths = comparison.targetFiles.map((targetFile) => path.join(repoRoot, targetFile))
-  const referenceExists = existsSync(referencePath)
   const missingTargets = targetPaths.filter((targetPath) => !existsSync(targetPath))
 
-  if (!referenceExists || missingTargets.length > 0) {
-    const missingPath = !referenceExists ? referencePath : missingTargets.join(', ')
+  let referenceSource = ''
+  try {
+    referenceSource = readReferenceFileAtCommit(config.referenceRepo, config.lastInspectedCommit, comparison.referenceFile)
+  } catch {
+    referenceSource = ''
+  }
+
+  if (!referenceSource || missingTargets.length > 0) {
+    const missingPath = !referenceSource ? `${config.lastInspectedCommit}:${comparison.referenceFile}` : missingTargets.join(', ')
     console.log(`- FAIL ${comparison.area}: missing ${missingPath}`)
     failures += 1
     continue
@@ -87,7 +93,7 @@ for (const comparison of comparisons) {
     continue
   }
 
-  console.log(`- OK ${comparison.area}: ${comparison.referenceFile} -> ${comparison.targetFiles.join(', ')}`)
+  console.log(`- OK ${comparison.area}: ${config.lastInspectedCommit}:${comparison.referenceFile} -> ${comparison.targetFiles.join(', ')}`)
 }
 
 console.log('- Intentional visual divergence:')

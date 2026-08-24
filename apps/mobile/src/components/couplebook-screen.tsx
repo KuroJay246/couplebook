@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
@@ -35,6 +35,18 @@ type ActionButtonProps = {
   detail?: string;
   onPress?: () => void;
   disabled?: boolean;
+};
+
+type FilterChipProps = {
+  label: string;
+  active?: boolean;
+  onPress?: () => void;
+};
+
+type SearchInputProps = {
+  value: string;
+  placeholder?: string;
+  onChangeText?: (value: string) => void;
 };
 
 export function CoupleBookScreen({
@@ -164,6 +176,53 @@ export function ActionButton({ label, detail, onPress, disabled = false }: Actio
   );
 }
 
+export function FilterChip({ label, active = false, onPress }: FilterChipProps) {
+  const theme = useTheme();
+
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.filterChip,
+        {
+          backgroundColor: active ? theme.accentSoft : theme.backgroundSelected,
+          borderColor: active ? theme.accent : theme.border,
+          opacity: pressed ? 0.82 : 1,
+        },
+      ]}>
+      <ThemedText type="smallBold" style={{ color: active ? theme.accent : theme.textSecondary }}>
+        {label}
+      </ThemedText>
+    </Pressable>
+  );
+}
+
+export function SearchInput({
+  value,
+  placeholder = 'Search',
+  onChangeText,
+}: SearchInputProps) {
+  const theme = useTheme();
+
+  return (
+    <TextInput
+      value={value}
+      onChangeText={onChangeText}
+      placeholder={placeholder}
+      placeholderTextColor={theme.textMuted}
+      selectionColor={theme.accent}
+      style={[
+        styles.searchInput,
+        {
+          backgroundColor: theme.backgroundSelected,
+          borderColor: theme.border,
+          color: theme.text,
+        },
+      ]}
+    />
+  );
+}
+
 const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
@@ -243,6 +302,24 @@ const styles = StyleSheet.create({
   },
   actionDetail: {
     lineHeight: 18,
+  },
+  filterChip: {
+    minHeight: 40,
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  searchInput: {
+    minHeight: 48,
+    borderWidth: 1,
+    borderRadius: Spacing.three,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+    fontSize: 16,
+    lineHeight: 22,
   },
   pressed: {
     opacity: 0.72,

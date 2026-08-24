@@ -96,7 +96,9 @@ function DailyPrompt({ section }) {
       <h3 className="mt-2 font-serif text-2xl text-[var(--cb-text)]" id="daily-prompt-title">{section.title}</h3>
       <p className="mt-2 text-sm leading-6 text-[var(--cb-text-secondary)]">{section.description}</p>
       <div className="mt-4">
-        <StatusBadge tone="warning">Answer saving planned for V1.3</StatusBadge>
+        <Link className="inline-flex min-h-10 items-center rounded-xl border border-[var(--cb-border)] px-4 text-xs font-bold text-[var(--cb-text-muted)] hover:bg-[var(--cb-accent-soft)]" to="/timeline">
+          Save today as a memory
+        </Link>
       </div>
     </section>
   )
@@ -222,40 +224,53 @@ function RelationshipSummary({ model }) {
 }
 
 export function DashboardView({ model }) {
+  const featuredMemory = model.todayInUs?.featured
+  const birthdayCard = model.milestones?.birthdayCards?.[0]
+
   return (
     <section className="grid gap-6">
       <section className="rounded-[24px] border border-[var(--cb-border)] bg-[var(--cb-surface)] p-6 shadow-[0_8px_24px_rgba(84,53,67,0.04)]">
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1.25fr)_minmax(280px,0.75fr)]">
           <div>
-            <StatusBadge tone="info">Shared home</StatusBadge>
-            <h2 className="mt-4 font-serif text-4xl text-[var(--cb-text)]">Pick up where your story left off.</h2>
+            <StatusBadge tone="info">Home</StatusBadge>
+            <h2 className="mt-4 font-serif text-4xl text-[var(--cb-text)]">Pick up right where the relationship feels most alive.</h2>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--cb-text-secondary)]">
-              This private home opens like the first page of your memory book: recent moments first, upcoming dates close behind, and the sentimental pages always within reach.
+              Home keeps the relationship itself first: the featured memory, the next milestone, and the pages that matter most without the dashboard feeling generic.
             </p>
             <div className="mt-5 flex flex-wrap gap-2">
               <Link className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[var(--cb-accent)] px-4 text-xs font-bold text-white" to="/timeline">
                 <NotebookPen className="size-4" />
-                Continue The Story
+                Add Memory
               </Link>
               <Link className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[var(--cb-border)] px-4 text-xs font-bold text-[var(--cb-text-muted)] hover:bg-[var(--cb-accent-soft)]" to="/gallery">
                 <Images className="size-4" />
                 Open Album
               </Link>
-              <Link className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[var(--cb-border)] px-4 text-xs font-bold text-[var(--cb-text-muted)] hover:bg-[var(--cb-accent-soft)]" to="/favorites">
-                <Star className="size-4" />
-                Favorite Things
+              <Link className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[var(--cb-border)] px-4 text-xs font-bold text-[var(--cb-text-muted)] hover:bg-[var(--cb-accent-soft)]" to="/plans">
+                <CalendarHeart className="size-4" />
+                Open Plans
               </Link>
             </div>
           </div>
           <div className="grid gap-3 rounded-[24px] bg-[var(--cb-accent-soft)] p-5">
-            <div className="flex items-center gap-3">
-              <Sparkles className="size-5 text-[var(--cb-accent)]" />
-              <span className="text-sm font-bold text-[var(--cb-text)]">Warm, private, and personal</span>
+            <div className="rounded-2xl border border-[var(--cb-border)] bg-[var(--cb-surface)] p-4">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Together</p>
+              <p className="mt-2 text-3xl font-bold text-[var(--cb-text)]">{model.todayInUs?.daysTogether || 0}</p>
+              <p className="mt-1 text-sm text-[var(--cb-text-secondary)]">days together</p>
             </div>
-            <div className="grid gap-2">
-              <StatusBadge tone="default">Recent memories first</StatusBadge>
-              <StatusBadge tone="default">Upcoming dates stay visible</StatusBadge>
-              <StatusBadge tone="default">Special pages stay close</StatusBadge>
+            <div className="rounded-2xl border border-[var(--cb-border)] bg-[var(--cb-surface)] p-4">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Milestone</p>
+              <p className="mt-2 text-sm font-semibold text-[var(--cb-text)]">{model.todayInUs?.currentMilestone || 'Keep building the story.'}</p>
+            </div>
+            <div className="rounded-2xl border border-[var(--cb-border)] bg-[var(--cb-surface)] p-4">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Featured</p>
+              <p className="mt-2 text-sm font-semibold text-[var(--cb-text)]">{featuredMemory?.title || 'No featured memory yet'}</p>
+              <p className="mt-1 text-sm leading-6 text-[var(--cb-text-secondary)]">{featuredMemory?.description || 'Add one memory and it will surface here.'}</p>
+            </div>
+            <div className="rounded-2xl border border-[var(--cb-border)] bg-[var(--cb-surface)] p-4">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Birthday</p>
+              <p className="mt-2 text-sm font-semibold text-[var(--cb-text)]">{birthdayCard?.label || 'Birthday saved'}</p>
+              <p className="mt-1 text-sm text-[var(--cb-text-secondary)]">{birthdayCard?.countdownLabel || 'Countdown available once dates are added.'}</p>
             </div>
           </div>
         </div>
@@ -292,11 +307,11 @@ export function DashboardView({ model }) {
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
               <Link className="flex items-center gap-3 rounded-2xl border border-[var(--cb-border)] bg-[var(--cb-surface-raised)] p-4 hover:bg-[var(--cb-accent-soft)]" to="/timeline">
                 <NotebookPen className="size-5 text-[var(--cb-accent)]" />
-                <span className="text-sm font-bold text-[var(--cb-text)]">Memories Book</span>
+                <span className="text-sm font-bold text-[var(--cb-text)]">Story</span>
               </Link>
               <Link className="flex items-center gap-3 rounded-2xl border border-[var(--cb-border)] bg-[var(--cb-surface-raised)] p-4 hover:bg-[var(--cb-accent-soft)]" to="/gallery">
                 <Images className="size-5 text-[var(--cb-accent)]" />
-                <span className="text-sm font-bold text-[var(--cb-text)]">Media Album</span>
+                <span className="text-sm font-bold text-[var(--cb-text)]">Album</span>
               </Link>
               <Link className="flex items-center gap-3 rounded-2xl border border-[var(--cb-border)] bg-[var(--cb-surface-raised)] p-4 hover:bg-[var(--cb-accent-soft)]" to="/profile">
                 <HeartHandshake className="size-5 text-[var(--cb-accent)]" />

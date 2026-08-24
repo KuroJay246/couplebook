@@ -113,12 +113,12 @@ export const protectedRouteMeta = [
   },
   {
     path: '/settings',
-    label: 'More',
-    navLabel: 'More',
-    title: 'More',
+    label: 'Settings',
+    navLabel: 'Settings',
+    title: 'Settings',
     group: ROUTE_GROUPS.utility,
     icon: 'Settings',
-    summary: 'Appearance, special pages, privacy details, and personal account actions.',
+    summary: 'Appearance, special pages, privacy details, and personal account controls.',
   },
 ]
 

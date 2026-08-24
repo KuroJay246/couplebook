@@ -122,8 +122,8 @@ test('settings read model keeps approved identity, appearance notes, and migrati
   assert.equal(model.privacy.items[2].label, 'Browser storage is not authentication')
   assert.equal(model.compatibility.items[0].statusLabel, 'Available')
   assert.equal(model.compatibility.items[4].statusLabel, 'Development only')
-  assert.ok(model.migration.completed.some((entry) => entry.label === 'Dashboard'))
-  assert.ok(model.migration.completed.some((entry) => entry.label === 'More'))
+  assert.ok(model.migration.completed.some((entry) => entry.label === 'Home'))
+  assert.ok(model.migration.completed.some((entry) => entry.label === 'Settings'))
   assert.deepEqual(model.migration.smokeGate, {
     jaylan: 'PASS',
     partner: 'NOT TESTED',

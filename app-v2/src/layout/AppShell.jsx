@@ -351,40 +351,6 @@ export function AppShell() {
 
         <main className="px-3 pb-[calc(7rem+env(safe-area-inset-bottom))] pt-4 sm:px-6 sm:pt-6 lg:px-8 lg:py-7">
           <div className="cb-page-container">
-            <section className="cb-shell-hero mb-5 p-5 sm:p-6">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="cb-shell-meta-pill">{currentRoute.navLabel || currentRoute.label}</span>
-                <span className="cb-shell-meta-pill">Theme: {activeThemeDefinition.name}</span>
-              </div>
-              <div className="grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.85fr)] xl:items-end">
-                <div>
-                  <h2 className="cb-page-title text-3xl sm:text-4xl">
-                    One quiet place for your memories, plans, and private pages.
-                  </h2>
-                  <p className="cb-body-copy mt-3 max-w-3xl text-sm">
-                    Couple Book keeps the relationship content first. Navigation stays predictable, the shell stays restrained, and every route opens with the same protected foundation.
-                  </p>
-                </div>
-                <div className="cb-shell-banner grid gap-3 p-4">
-                  <div>
-                    <p className="cb-kicker">Right now</p>
-                    <p className="mt-2 text-sm font-semibold" style={{ color: 'var(--cb-text)' }}>{currentRoute.summary}</p>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Link to="/profile" className="cb-button cb-button-secondary inline-flex min-h-10 px-4">
-                      Open Us
-                    </Link>
-                    <button
-                      type="button"
-                      onClick={() => setQuickAddOpen(true)}
-                      className="cb-button cb-button-primary inline-flex min-h-10 px-4 sm:hidden"
-                    >
-                      Add Memory
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </section>
             <Outlet />
           </div>
         </main>

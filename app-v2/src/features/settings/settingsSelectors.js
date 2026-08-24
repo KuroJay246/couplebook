@@ -26,10 +26,10 @@ const COMPATIBILITY_ITEM_LABELS = Object.freeze({
 })
 
 const MIGRATION_PROGRESS_LABELS = Object.freeze({
-  '/dashboard': 'Dashboard',
-  '/timeline': 'Timeline',
-  '/gallery': 'Gallery',
-  '/profile': 'Profile',
+  '/dashboard': 'Home',
+  '/timeline': 'Story',
+  '/gallery': 'Album',
+  '/profile': 'Us',
 })
 
 const DATE_LABEL_FORMATTER = new Intl.DateTimeFormat('en-US', {

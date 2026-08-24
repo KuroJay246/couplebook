@@ -23,7 +23,7 @@ export default function ConfessionScreen() {
       subtitle={moment?.subtitle || 'A protected private confession chapter for the approved couple session.'}>
       <SectionCard
         title="Confession chapter"
-        description="The mobile app now has a native confession route backed by the protected Couple Book document instead of a placeholder shell.">
+        description="The mobile app uses a native confession route backed by the protected Couple Book document.">
         <BadgePill tone="accent">{moment?.date || 'Protected date'}</BadgePill>
         <InfoRow label="Status" value={loading ? 'Loading' : moment ? 'Ready' : 'Unavailable'} />
         <InfoRow label="Revision" value={String(moment?.revision || 0)} />
@@ -32,7 +32,7 @@ export default function ConfessionScreen() {
 
       <SectionCard
         title="Letter"
-        description="The confession copy stays readable in a native format without exposing private local media locations or owner-only tooling.">
+        description="The confession copy stays readable in a native format without exposing private local media locations or private maintenance controls.">
         <View style={styles.stack}>
           {paragraphs.length ? (
             paragraphs.map((paragraph) => (

@@ -160,7 +160,7 @@ export function SettingsView({ compatibilityError, compatibilityState, model, on
       await writer.saveSettings(form)
       commitTheme(form.appearanceTheme)
       setDraft({})
-      setStatus({ kind: 'success', message: 'More settings saved.', saving: false })
+      setStatus({ kind: 'success', message: 'Settings saved.', saving: false })
     } catch (error) {
       const message = error?.message || 'Settings could not be saved.'
       setStatus({
@@ -187,19 +187,19 @@ export function SettingsView({ compatibilityError, compatibilityState, model, on
   }
 
   if (compatibilityState === 'loading') {
-    return <LoadingState message="Loading More..." />
+    return <LoadingState message="Loading Settings..." />
   }
 
   if (compatibilityError || model.status === 'invalid') {
-    return <ErrorState title="More could not be loaded" message={compatibilityError || 'The More view is not available right now.'} onRetry={onRefresh} />
+    return <ErrorState title="Settings could not be loaded" message={compatibilityError || 'The Settings view is not available right now.'} onRetry={onRefresh} />
   }
 
   return (
     <section className="space-y-5" data-route="settings">
       <PageHeader
-        eyebrow="More"
-        title="Make the book yours"
-        description="Appearance, special pages, privacy details, and the quiet controls that belong around your private shared journal."
+        eyebrow="Settings"
+        title="Settings"
+        description="Appearance, special pages, privacy details, and the personal controls that belong around your private shared journal."
         actions={(
           <>
             <StatusBadge tone={dirty ? 'warning' : 'success'}>
@@ -215,8 +215,8 @@ export function SettingsView({ compatibilityError, compatibilityState, model, on
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(20rem,0.9fr)]">
         <Surface className="cb-page-frame">
-          <p className="cb-kicker">Our moments</p>
-          <h3 className="cb-page-title mt-2 text-3xl">Special pages with their own mood</h3>
+          <p className="cb-kicker">Special moments</p>
+          <h3 className="cb-page-title mt-2 text-3xl">Birthday, Valentine, and Confession</h3>
           <p className="cb-body-copy mt-3 text-sm">
             Birthday, Valentine, and Confession stay close here so they feel like part of the same product without becoming ordinary list pages.
           </p>
@@ -254,7 +254,7 @@ export function SettingsView({ compatibilityError, compatibilityState, model, on
             </span>
             <div>
               <p className="cb-kicker">Our commitment</p>
-              <h3 className="cb-page-title mt-2 text-2xl">Our Agreement</h3>
+              <h3 className="cb-page-title mt-2 text-2xl">Contract</h3>
               <p className="cb-body-copy mt-2 text-sm">The contract stays readable, deliberate, and visually secondary to the promise itself.</p>
             </div>
           </div>
@@ -270,7 +270,7 @@ export function SettingsView({ compatibilityError, compatibilityState, model, on
                 </div>
               </ContentCard>
             )) : null}
-            <SecondaryButton as={Link} to="/contract">Open Our Agreement</SecondaryButton>
+            <SecondaryButton as={Link} to="/contract">Open Contract</SecondaryButton>
           </div>
         </Surface>
       </div>
@@ -278,7 +278,7 @@ export function SettingsView({ compatibilityError, compatibilityState, model, on
       <Surface className="cb-page-frame">
         <div className="flex flex-col gap-4 border-b pb-4 sm:flex-row sm:items-end sm:justify-between" style={{ borderColor: 'var(--cb-border)' }}>
           <div>
-            <p className="cb-kicker">Personalize</p>
+            <p className="cb-kicker">Appearance</p>
             <h3 className="cb-page-title mt-2 text-3xl">Appearance</h3>
             <p className="cb-body-copy mt-2 text-sm">Preview every supported theme instantly. Save only one allowed theme ID to your personal settings.</p>
           </div>
@@ -367,9 +367,9 @@ export function SettingsView({ compatibilityError, compatibilityState, model, on
             <div className="flex items-start gap-3">
               <MonitorCog className="mt-1 size-5" style={{ color: 'var(--cb-accent)' }} aria-hidden="true" />
               <div>
-                <p className="cb-kicker">Settings</p>
-                <h3 className="cb-page-title mt-2 text-2xl">Runtime and compatibility</h3>
-                <p className="cb-body-copy mt-2 text-sm">Engineering notes stay secondary here so More remains personal instead of administrative.</p>
+                <p className="cb-kicker">System health</p>
+                <h3 className="cb-page-title mt-2 text-2xl">System health</h3>
+                <p className="cb-body-copy mt-2 text-sm">Compatibility stays visible here without turning Settings into an engineering dashboard.</p>
               </div>
             </div>
             <div className="mt-5 grid gap-3">
@@ -393,7 +393,7 @@ export function SettingsView({ compatibilityError, compatibilityState, model, on
               <div>
                 <p className="cb-kicker">Account</p>
                 <h3 className="cb-page-title mt-2 text-2xl">Leave this device</h3>
-                <p className="cb-body-copy mt-2 text-sm">Sign out remains a shell-owned account action instead of becoming a full account management console.</p>
+                <p className="cb-body-copy mt-2 text-sm">Sign out closes Couple Book on this device and returns to the private sign-in screen.</p>
               </div>
             </div>
             <div className="mt-5">

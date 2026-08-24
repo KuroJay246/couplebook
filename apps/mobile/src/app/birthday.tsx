@@ -24,7 +24,7 @@ export default function BirthdayScreen() {
 
       <SectionCard
         title="Message"
-        description="The mobile presentation keeps the chapter readable first. Decorative motion and richer media can layer on top later.">
+        description="The mobile presentation keeps the chapter readable first, with space for the celebration details and message to lead the route.">
         <View style={styles.stack}>
           {moment?.sections.length ? (
             moment.sections.map((section) => (

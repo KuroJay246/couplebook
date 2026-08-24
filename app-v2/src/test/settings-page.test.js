@@ -14,9 +14,9 @@ test('settings route uses the read-only feature hook and utility view', async ()
 
   assert.match(settingsPageSource, /useSettingsData/)
   assert.match(settingsPageSource, /SettingsView/)
-  assert.match(settingsViewSource, /Make the book yours/)
+  assert.match(settingsViewSource, /Settings/)
   assert.match(settingsViewSource, /THEME_REGISTRY/)
-  assert.match(settingsViewSource, /Our moments/)
+  assert.match(settingsViewSource, /Special moments/)
   assert.match(settingsViewSource, /buildFormState/)
   assert.match(settingsViewSource, /draft/)
   assert.match(settingsViewSource, /Cancel/)
@@ -27,7 +27,7 @@ test('settings route uses the read-only feature hook and utility view', async ()
 test('settings migration progress and utility navigation stay explicit', () => {
   assert.deepEqual(
     routeMigrationStatus.completed.map((entry) => entry.label),
-    ['Home', 'Story', 'Album', 'Us', 'Favorites', 'Plans', 'Contract', 'Birthday', 'Valentine', 'Confession', 'More'],
+    ['Home', 'Story', 'Album', 'Us', 'Favorites', 'Plans', 'Contract', 'Birthday', 'Valentine', 'Confession', 'Settings'],
   )
   assert.deepEqual(routeMigrationStatus.pending.map((entry) => entry.label), [])
   assert.deepEqual(specialMomentContentConnectionStatus, {

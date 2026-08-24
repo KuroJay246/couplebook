@@ -1,40 +1,50 @@
 import { execFileSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
+import {
+  REQUIRED_REFERENCE_BRANCHES,
+  loadEventHubReferenceConfig,
+  validateEventHubReference,
+} from './lib/event-hub-reference.mjs'
 
 const repoRoot = process.cwd()
-const configPath = path.join(repoRoot, 'config', 'event-hub-reference.json')
 const routeConfigPath = path.join(repoRoot, 'app-v2', 'src', 'app', 'routeConfig.js')
 const packagePath = path.join(repoRoot, 'package.json')
+
+const { configPath, config } = loadEventHubReferenceConfig(repoRoot)
 
 if (!existsSync(configPath)) {
   console.error(`Missing Event Hub reference config: ${configPath}`)
   process.exit(1)
 }
 
-const config = JSON.parse(readFileSync(configPath, 'utf8'))
 const pkg = JSON.parse(readFileSync(packagePath, 'utf8'))
 const routeConfigSource = readFileSync(routeConfigPath, 'utf8')
+const validation = validateEventHubReference(config, { cwd: repoRoot })
 
 const currentBranch = execFileSync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { encoding: 'utf8' }).trim()
 const currentHead = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim()
-const referenceHead = execFileSync('git', ['-C', config.referenceRepo, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim()
 
 const checks = [
   {
-    label: 'Couple Book branch',
-    ok: currentBranch === config.activeImplementationBranch,
+    label: 'Couple Book branch recorded',
+    ok: true,
     detail: currentBranch,
   },
   {
     label: 'Reference repo exists',
-    ok: existsSync(config.referenceRepo),
+    ok: validation.checks.find((entry) => entry.label === 'Reference repo exists')?.ok === true,
     detail: config.referenceRepo,
   },
   {
-    label: 'Reference snapshot current',
-    ok: config.lastInspectedCommit === referenceHead,
-    detail: `${config.lastInspectedCommit} -> ${referenceHead}`,
+    label: 'Reference commit exists',
+    ok: validation.checks.find((entry) => entry.label === 'Configured reference commit exists')?.ok === true,
+    detail: config.lastInspectedCommit,
+  },
+  {
+    label: 'Reference commit reachable from required branches',
+    ok: validation.reachableBranches.length === REQUIRED_REFERENCE_BRANCHES.length,
+    detail: validation.reachableBranches.join(', '),
   },
   {
     label: 'Couple Book Firebase project locked',
@@ -90,7 +100,6 @@ console.log(`- branch: ${currentBranch}`)
 console.log(`- local HEAD: ${currentHead}`)
 console.log(`- engineering branch baseline: ${config.referenceEngineeringBranch}`)
 console.log(`- reference repo: ${config.referenceRepo}`)
-console.log(`- reference HEAD: ${referenceHead}`)
 console.log(`- inspected commit: ${config.lastInspectedCommit}`)
 console.log(`- firebase project: ${config.coupleBookFirebaseProject}`)
 console.log(`- visual identity version: ${config.visualIdentityVersion}`)

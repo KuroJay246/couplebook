@@ -19,7 +19,7 @@ const ROUTE_SUMMARY_BY_PATH = Object.freeze({
   '/plans': 'Couple-scoped plans now load, save, convert to memories, and stay inside the rebuilt routed shell.',
   '/profile': 'Shared identity and relationship details now render as a read-only React page.',
   '/favorites': 'Shared preferences now live in one honest read-only collection.',
-  '/settings': 'Appearance, special pages, and private account controls now live inside the More destination.',
+  '/settings': 'Appearance, special pages, and private account controls now live inside Settings.',
   '/contract': 'Read-only contract status and document framing now live inside the protected routed shell.',
   '/timeline': 'Read-only story chapters now render from the safe memory read model.',
   '/gallery': 'Read-only visual archive metadata now renders without private media previews.',

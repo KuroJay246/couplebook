@@ -1,60 +1,153 @@
-import { StyleSheet, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import {
   BadgePill,
   CoupleBookScreen,
+  FilterChip,
   InfoRow,
+  SearchInput,
   SectionCard,
 } from '@/components/couplebook-screen';
-import { useCoupleData } from '@/hooks/use-couple-data';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
+import { useCoupleData } from '@/hooks/use-couple-data';
+import { createDateAtNoon } from '../../../../packages/core/src/index.js';
+
+type StoryFilter = 'all' | 'text' | 'photo' | 'video';
+
+function formatDateLabel(value: string, fallback = 'Undated') {
+  const date = createDateAtNoon(value);
+  if (!date) return fallback;
+
+  return date.toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
+function formatMonthHeading(value: string) {
+  const date = createDateAtNoon(value);
+  if (!date) return 'Undated';
+
+  return date.toLocaleDateString('en-US', {
+    month: 'long',
+    year: 'numeric',
+  });
+}
+
+function matchesFilter(
+  entry: ReturnType<typeof useCoupleData>['memories'][number],
+  activeFilter: StoryFilter,
+) {
+  if (activeFilter === 'text') return entry.mediaState === 'none';
+  if (activeFilter === 'photo') return entry.mediaState !== 'none' && !entry.isVideo;
+  if (activeFilter === 'video') return entry.isVideo;
+  return true;
+}
 
 export default function StoryScreen() {
-  const { loading, memories, warnings } = useCoupleData();
+  const { error, loading, memories, warnings } = useCoupleData();
+  const theme = useTheme();
+  const [search, setSearch] = useState('');
+  const [activeFilter, setActiveFilter] = useState<StoryFilter>('all');
+  const [showArchived, setShowArchived] = useState(false);
+
+  const filteredMemories = useMemo(() => {
+    const searchTerm = search.trim().toLowerCase();
+
+    return memories
+      .filter((entry) => (showArchived ? true : entry.status === 'active'))
+      .filter((entry) => matchesFilter(entry, activeFilter))
+      .filter((entry) => {
+        if (!searchTerm) return true;
+        return [entry.title, entry.description, entry.date, ...(entry.tags || [])]
+          .join(' ')
+          .toLowerCase()
+          .includes(searchTerm);
+      })
+      .sort((left, right) => right.date.localeCompare(left.date));
+  }, [activeFilter, memories, search, showArchived]);
+
+  const groupedMemories = useMemo(() => {
+    return filteredMemories.reduce<Record<string, typeof filteredMemories>>((groups, entry) => {
+      const key = formatMonthHeading(entry.date);
+      groups[key] ||= [];
+      groups[key].push(entry);
+      return groups;
+    }, {});
+  }, [filteredMemories]);
+
   const activeMemories = memories.filter((entry) => entry.status === 'active');
   const archivedMemories = memories.filter((entry) => entry.status === 'archived');
 
   return (
     <CoupleBookScreen
       eyebrow="Story"
-      title="Chronological Story"
-      subtitle="Native Story now reads the same couple-scoped memory collection as the website and keeps archived entries out of the active feed.">
+      title="Story"
+      subtitle="Search, filter, and reopen the same couple-scoped memory feed the web app uses, grouped into readable monthly chapters.">
       <SectionCard
         title="Timeline controls"
-        description="The live mobile read model is still compact, but it now uses real Firestore memory records instead of shell copy.">
+        description="Story keeps the counts close and lets you narrow the feed without losing the real shared data underneath it.">
         <View style={styles.pillRow}>
           <BadgePill tone="accent">Active: {activeMemories.length}</BadgePill>
           <BadgePill>Archived: {archivedMemories.length}</BadgePill>
           <BadgePill>Photos: {activeMemories.filter((entry) => entry.mediaState !== 'none' && !entry.isVideo).length}</BadgePill>
           <BadgePill>Videos: {activeMemories.filter((entry) => entry.isVideo).length}</BadgePill>
         </View>
-        <InfoRow label="List strategy" value="Client-side date ordering from the live listener" />
-        <InfoRow label="Special moments" value={String(activeMemories.filter((entry) => Boolean(entry.specialMomentType)).length)} />
+        <SearchInput
+          value={search}
+          onChangeText={setSearch}
+          placeholder="Search titles, dates, and tags"
+        />
+        <View style={styles.filterRow}>
+          <FilterChip active={activeFilter === 'all'} label="All" onPress={() => setActiveFilter('all')} />
+          <FilterChip active={activeFilter === 'text'} label="Text" onPress={() => setActiveFilter('text')} />
+          <FilterChip active={activeFilter === 'photo'} label="Photos" onPress={() => setActiveFilter('photo')} />
+          <FilterChip active={activeFilter === 'video'} label="Videos" onPress={() => setActiveFilter('video')} />
+          <FilterChip active={showArchived} label="Archived" onPress={() => setShowArchived((value) => !value)} />
+        </View>
       </SectionCard>
 
       <SectionCard
-        title="Memory presentation"
-        description="Written entries, photos, videos, and special routes are all normalized before they reach the native tab.">
+        title="Memory feed"
+        description="Entries stay grouped by month, with the type, date, and archived state visible at a glance.">
         <View style={styles.stack}>
-          {activeMemories.slice(0, 8).map((entry) => (
-            <View key={entry.id} style={styles.itemRow}>
-              <ThemedText type="smallBold">{entry.title || 'Untitled memory'}</ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">
-                {[entry.date || 'Undated', entry.isVideo ? 'Video' : entry.mediaState === 'none' ? 'Text' : 'Photo']
-                  .filter(Boolean)
-                  .join(' • ')}
-              </ThemedText>
-              {entry.description ? (
-                <ThemedText type="small" themeColor="textSecondary">
-                  {entry.description}
-                </ThemedText>
-              ) : null}
+          {Object.entries(groupedMemories).map(([heading, entries]) => (
+            <View key={heading} style={styles.groupBlock}>
+              <ThemedText type="smallBold">{heading}</ThemedText>
+              <View style={styles.stack}>
+                {entries.map((entry) => (
+                  <Pressable
+                    key={entry.id}
+                    style={[
+                      styles.memoryCard,
+                      { backgroundColor: theme.backgroundElement, borderColor: theme.border },
+                    ]}>
+                    <View style={styles.cardHeader}>
+                      <ThemedText type="smallBold">{entry.title || 'Untitled memory'}</ThemedText>
+                      {entry.status === 'archived' ? <BadgePill>Archived</BadgePill> : null}
+                    </View>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      {[formatDateLabel(entry.date), entry.isVideo ? 'Video' : entry.mediaState === 'none' ? 'Text' : 'Photo']
+                        .filter(Boolean)
+                        .join(' • ')}
+                    </ThemedText>
+                    {entry.description ? (
+                      <ThemedText type="small" themeColor="textSecondary">
+                        {entry.description}
+                      </ThemedText>
+                    ) : null}
+                  </Pressable>
+                ))}
+              </View>
             </View>
           ))}
-          {!activeMemories.length ? (
+          {!filteredMemories.length ? (
             <ThemedText type="small" themeColor="textSecondary">
-              {loading ? 'Loading the shared Story feed.' : 'No active memories are available for Story yet.'}
+              {loading ? 'Loading the shared Story feed.' : error || 'No memories match the current Story filters.'}
             </ThemedText>
           ) : null}
         </View>
@@ -62,10 +155,10 @@ export default function StoryScreen() {
 
       <SectionCard
         title="Sync state"
-        description="The mobile Story tab is now fed by couple-scoped Firestore reads and stays aligned with the same access model as the website.">
-        <InfoRow label="Loading" value={loading ? 'Refreshing' : 'Live'} />
+        description="This native Story view stays connected to the same couple-scoped listener and preserves the warning surface when data needs attention.">
+        <InfoRow label="Feed state" value={loading ? 'Refreshing' : 'Live'} />
+        <InfoRow label="Visible entries" value={String(filteredMemories.length)} />
         <InfoRow label="Warnings" value={warnings.length ? String(warnings.length) : 'None'} />
-        <InfoRow label="Next wiring" value="Search, detail routes, and native media preview" />
       </SectionCard>
     </CoupleBookScreen>
   );
@@ -77,10 +170,28 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: Spacing.two,
   },
+  filterRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.two,
+  },
   stack: {
     gap: Spacing.two,
   },
-  itemRow: {
+  groupBlock: {
+    gap: Spacing.two,
+  },
+  memoryCard: {
+    borderWidth: 1,
+    borderRadius: Spacing.three,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.three,
     gap: Spacing.one,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: Spacing.two,
+    alignItems: 'flex-start',
   },
 });

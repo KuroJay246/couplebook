@@ -21,11 +21,11 @@ test('shared page layout keeps only the remaining not-found primitives', async (
 test('settings page layout keeps the faithful utility information architecture explicit', async () => {
   const settingsViewSource = await readSource('../features/settings/SettingsView.jsx')
 
-  assert.match(settingsViewSource, /Make the book yours/)
-  assert.match(settingsViewSource, /Our moments/)
+  assert.match(settingsViewSource, /Settings/)
+  assert.match(settingsViewSource, /Special moments/)
   assert.match(settingsViewSource, /Appearance/)
   assert.match(settingsViewSource, /Privacy and access/)
-  assert.match(settingsViewSource, /Runtime and compatibility/)
+  assert.match(settingsViewSource, /System health/)
   assert.match(settingsViewSource, /Leave this device/)
   assert.match(settingsViewSource, /ToggleRow/)
   assert.doesNotMatch(settingsViewSource, /jaylanspencer99@gmail\.com/i)
@@ -34,10 +34,10 @@ test('settings page layout keeps the faithful utility information architecture e
 test('dashboard adopts the faithful MemoryBook layout without placeholder fallbacks', async () => {
   const dashboardSource = await readSource('../features/dashboard/DashboardView.jsx')
 
-  assert.match(dashboardSource, /Continue The Story/)
+  assert.match(dashboardSource, /Add Memory/)
   assert.match(dashboardSource, /Recent memories worth reopening/)
-  assert.match(dashboardSource, /Warm, private, and personal/)
+  assert.match(dashboardSource, /days together/)
   assert.match(dashboardSource, /NotebookPen/)
-  assert.match(dashboardSource, /Media Album/)
+  assert.match(dashboardSource, /Album/)
   assert.doesNotMatch(dashboardSource, /PlaceholderPage/)
 })
