@@ -29,17 +29,17 @@ const VIEWPORTS = Object.freeze([
 
 const ROUTES = Object.freeze([
   { path: '/login', heading: 'Open the shared journal kept between the two of you.', mode: 'signed-out' },
-  { path: '/dashboard', heading: /Pick up right where the relationship feels most alive\./, mode: 'authorized' },
+  { path: '/dashboard', heading: /Our memories, plans, and special moments/, mode: 'authorized' },
   { path: '/timeline', heading: /Our Story/, mode: 'authorized' },
-  { path: '/gallery', heading: /Our Shared Gallery/, mode: 'authorized' },
+  { path: '/gallery', heading: /Moments we kept close/, mode: 'authorized' },
   { path: '/profile', heading: /Us/, mode: 'authorized' },
   { path: '/favorites', heading: /Favorite Things/, mode: 'authorized' },
-  { path: '/plans', heading: /Ideas worth doing together\./, mode: 'authorized' },
+  { path: '/plans', heading: /Things we want to do together/, mode: 'authorized' },
   { path: '/settings', heading: /Settings/, mode: 'authorized' },
   { path: '/contract', heading: /Shared Relationship Contract/, mode: 'authorized' },
-  { path: '/birthday', heading: 'Fictional birthday runtime chapter', mode: 'authorized' },
-  { path: '/valentine', heading: 'Fictional Valentine runtime chapter', mode: 'authorized' },
-  { path: '/confession', heading: 'Fictional confession runtime chapter', mode: 'authorized' },
+  { path: '/birthday', heading: /Birthday/, mode: 'authorized' },
+  { path: '/valentine', heading: /Valentine/, mode: 'authorized' },
+  { path: '/confession', heading: /Confession/, mode: 'authorized' },
 ])
 
 function log(message) {

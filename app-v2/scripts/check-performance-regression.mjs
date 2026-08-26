@@ -16,17 +16,17 @@ const REPO_ROOT = path.resolve(APP_ROOT, '..')
 const OUTPUT_ROOT = path.join(REPO_ROOT, '.visual-audit', 'performance-current')
 
 const ROUTES = Object.freeze([
-  { path: '/dashboard', heading: /Pick up right where the relationship feels most alive\./ },
+  { path: '/dashboard', heading: /Our memories, plans, and special moments/ },
   { path: '/timeline', heading: /Our Story/ },
-  { path: '/gallery', heading: /Our Shared Gallery/ },
+  { path: '/gallery', heading: /Moments we kept close/ },
   { path: '/profile', heading: /Us/ },
   { path: '/favorites', heading: /Favorite Things/ },
-  { path: '/plans', heading: /Ideas worth doing together\./ },
+  { path: '/plans', heading: /Things we want to do together/ },
   { path: '/settings', heading: /Settings/ },
   { path: '/contract', heading: /Shared Relationship Contract/ },
-  { path: '/birthday', heading: 'Fictional birthday runtime chapter' },
-  { path: '/valentine', heading: 'Fictional Valentine runtime chapter' },
-  { path: '/confession', heading: 'Fictional confession runtime chapter' },
+  { path: '/birthday', heading: /Birthday/ },
+  { path: '/valentine', heading: /Valentine/ },
+  { path: '/confession', heading: /Confession/ },
 ])
 
 const THRESHOLDS = Object.freeze({
