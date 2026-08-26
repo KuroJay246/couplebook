@@ -330,7 +330,7 @@ async function runAuthenticatedDesktopCoverage(browser) {
 
   try {
     await page.goto(`${getBaseUrl()}/settings`, { waitUntil: 'domcontentloaded' })
-    await waitForRouteContent(page, '/settings', 'Make the book yours')
+    await waitForRouteContent(page, '/settings', 'Settings')
 
     assert.equal(await page.locator('.cb-app-shell').count(), 1, 'Authorized Settings should render inside AppShell.')
     assert.equal(await page.getByText('Jaylan').count() > 0, true, 'Authorized fixture identity should render.')
@@ -353,10 +353,10 @@ async function runAuthenticatedDesktopCoverage(browser) {
     ])
 
     await page.reload({ waitUntil: 'domcontentloaded' })
-    await waitForRouteContent(page, '/settings', 'Make the book yours')
+    await waitForRouteContent(page, '/settings', 'Settings')
 
     await page.goto(`${getBaseUrl()}/dashboard`, { waitUntil: 'domcontentloaded' })
-    await waitForRouteContent(page, '/dashboard', 'Pick up where your story left off.')
+    await waitForRouteContent(page, '/dashboard', 'Pick up right where the relationship feels most alive.')
 
     await page.goto(`${getBaseUrl()}/plans`, { waitUntil: 'domcontentloaded' })
     await waitForRouteContent(page, '/plans', /Ideas worth doing together\./)
@@ -462,7 +462,7 @@ async function runAuthenticatedMobileCoverage(browser) {
 
   try {
     await page.goto(`${getBaseUrl()}/settings`, { waitUntil: 'domcontentloaded' })
-    await waitForRouteContent(page, '/settings', 'Make the book yours')
+    await waitForRouteContent(page, '/settings', 'Settings')
 
     const primaryLabels = await page.locator('.mobile-tab-bar .mobile-tab-item').allInnerTexts()
     assert.equal(primaryLabels.some((label) => label.includes('Home')), true)

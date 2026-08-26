@@ -229,7 +229,7 @@ export function DashboardView({ model }) {
 
   return (
     <section className="grid gap-6">
-      <section className="rounded-[24px] border border-[var(--cb-border)] bg-[var(--cb-surface)] p-6 shadow-[0_8px_24px_rgba(84,53,67,0.04)]">
+      <section className="cb-shell-hero rounded-[24px] border border-[var(--cb-border)] bg-[var(--cb-surface)] p-6 shadow-[0_8px_24px_rgba(84,53,67,0.04)]">
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1.25fr)_minmax(280px,0.75fr)]">
           <div>
             <StatusBadge tone="info">Home</StatusBadge>

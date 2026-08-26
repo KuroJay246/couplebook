@@ -57,13 +57,13 @@ const VIEWPORTS = Object.freeze([
 ])
 
 const DEFAULT_ROUTE_SET = Object.freeze([
-  { path: '/dashboard', slug: 'dashboard', heading: 'Pick up where your story left off.' },
+  { path: '/dashboard', slug: 'dashboard', heading: 'Pick up right where the relationship feels most alive.' },
   { path: '/timeline', slug: 'timeline', heading: /Our Story/ },
   { path: '/gallery', slug: 'gallery', heading: /Our Shared Gallery/ },
   { path: '/profile', slug: 'profile', heading: /^Us$/ },
   { path: '/favorites', slug: 'favorites', heading: /Favorite Things/ },
   { path: '/plans', slug: 'plans', heading: /Ideas worth doing together\./ },
-  { path: '/settings', slug: 'settings', heading: /Make the book yours/ },
+  { path: '/settings', slug: 'settings', heading: /Settings/ },
   { path: '/contract', slug: 'contract', heading: /Shared Relationship Contract/ },
   { path: '/birthday', slug: 'birthday', heading: 'Birthday chapter' },
   { path: '/valentine', slug: 'valentine', heading: 'Valentine chapter' },
@@ -71,9 +71,9 @@ const DEFAULT_ROUTE_SET = Object.freeze([
 ])
 
 const THEME_ROUTES = Object.freeze([
-  { path: '/dashboard', slug: 'dashboard', heading: 'Pick up where your story left off.' },
+  { path: '/dashboard', slug: 'dashboard', heading: 'Pick up right where the relationship feels most alive.' },
   { path: '/gallery', slug: 'gallery', heading: /Our Shared Gallery/ },
-  { path: '/settings', slug: 'settings', heading: /Make the book yours/ },
+  { path: '/settings', slug: 'settings', heading: /Settings/ },
 ])
 
 const REQUIRED_THEME_IDS = Object.freeze(['midnight-rose', 'paper-hearts', 'moonlit'])
@@ -190,6 +190,8 @@ function configureRuntimeEnv(emulatorEnv) {
   process.env.VITE_FIREBASE_STORAGE_EMULATOR_HOST = '127.0.0.1'
   process.env.VITE_FIREBASE_STORAGE_EMULATOR_PORT = '9199'
   process.env.VITE_ENABLE_LOCAL_UPLOAD_TEST_HOOKS = 'true'
+  process.env.VITE_ENABLE_LEGACY_LOCAL_BRIDGE = 'false'
+  process.env.VITE_LEGACY_LOCAL_BASE_URL = ''
   process.env.VITE_DATA_SOURCE_MODE = 'firestore'
   process.env.VITE_WRITE_MODE = 'firestore-emulator-write'
   return { projectId }
@@ -361,7 +363,7 @@ async function signIn(page, baseUrl, email, password) {
   await page.locator('input[type="password"]').fill(password)
   await page.getByRole('button', { name: /Enter Couple Book/i }).click()
   await page.waitForURL((url) => url.pathname === '/dashboard', { timeout: 20000 })
-  await page.getByRole('heading', { name: 'Pick up where your story left off.' }).waitFor({ state: 'visible', timeout: 15000 })
+  await page.getByRole('heading', { name: 'Pick up right where the relationship feels most alive.' }).waitFor({ state: 'visible', timeout: 15000 })
 }
 
 async function waitForRoute(page, route) {
@@ -438,7 +440,7 @@ async function waitForSettingsSave(page, timeoutMs = 20000) {
   while (Date.now() - startedAt < timeoutMs) {
     const texts = await page.locator('[role="alert"], [role="status"]').allInnerTexts().catch(() => [])
     const joined = texts.join('\n')
-    if (/More settings saved\./i.test(joined)) return
+    if (/(?:More )?settings saved\./i.test(joined)) return
     if (/could not be saved|changed somewhere else|changed in another session|disabled outside approved|approved user is required|active couple membership|authenticated approved user|required before writing/i.test(joined)) {
       throw new Error(joined.replace(/\s+/g, ' ').trim())
     }
@@ -943,7 +945,7 @@ async function runMobileChecks(summary, browser, baseUrl, ownerEmail, ownerPassw
       await page.getByRole('button', { name: 'Open all navigation' }).click()
       const dialog = page.getByRole('dialog', { name: 'Navigation menu' })
       await dialog.waitFor({ state: 'visible', timeout: 5000 })
-      await dialog.getByRole('link', { name: /^More$/i }).click()
+      await dialog.getByRole('link', { name: /^Settings$/i }).click()
       await page.waitForURL((url) => url.pathname === '/settings', { timeout: 10000 })
       await captureShot(summary, page, { captureType: 'navigation', group: 'mobile', label: 'More navigation to Settings', route: '/settings', routeSlug: 'more-navigation-settings', themeId: 'midnight-rose', viewport: VIEWPORTS[2] })
     })
@@ -1011,7 +1013,7 @@ async function captureCards(summary, browser, baseUrl, ownerEmail, ownerPassword
       ['Plan card', '/plans', async (page) => page.locator('article').filter({ has: page.getByText('Bookstore date') }).first()],
       ['Theme tile', '/settings', async (page) => themeTile(page, 'paper-hearts')],
       ['Contract section', '/contract', async (page) => page.locator('article').first()],
-      ['Special-moment section', '/settings', async (page) => page.locator('section, article').filter({ has: page.getByRole('heading', { name: 'Special pages with their own mood' }) }).first()],
+      ['Special-moment section', '/settings', async (page) => page.locator('section, article').filter({ has: page.getByRole('heading', { name: 'Birthday, Valentine, and Confession' }) }).first()],
     ]
     for (const [label, routePath, locatorFn] of targets) {
       const route = DEFAULT_ROUTE_SET.find((entry) => entry.path === routePath)

@@ -1,7 +1,9 @@
 const { chromium } = require('playwright');
 const { fail, log, withServer } = require('./lib');
 
-const BASE_URL = 'http://127.0.0.1:3000';
+function baseUrl() {
+  return process.env.COUPLEBOOK_QA_BASE_URL || 'http://127.0.0.1:3000';
+}
 const SPOOFED_SESSION = {
   memorybook_active_session: 'Jaylan',
   memorybook_active_user: 'Jaylan',
@@ -34,7 +36,7 @@ async function openWithStorage(browser, route, storageState = null) {
   const page = await context.newPage();
 
   if (storageState) {
-    await page.goto(`${BASE_URL}/login`, { waitUntil: 'networkidle' });
+    await page.goto(`${baseUrl()}/login`, { waitUntil: 'networkidle' });
     await page.evaluate((entries) => {
       localStorage.clear();
       for (const [key, value] of Object.entries(entries)) {
@@ -43,7 +45,7 @@ async function openWithStorage(browser, route, storageState = null) {
     }, storageState);
   }
 
-  await page.goto(`${BASE_URL}${route}`, { waitUntil: 'networkidle' });
+  await page.goto(`${baseUrl()}${route}`, { waitUntil: 'networkidle' });
   return { context, page };
 }
 
@@ -115,12 +117,12 @@ async function maybeCheckAuthorizedPath(browser) {
   const page = await context.newPage();
 
   try {
-    await page.goto(`${BASE_URL}/login`, { waitUntil: 'networkidle' });
+    await page.goto(`${baseUrl()}/login`, { waitUntil: 'networkidle' });
     await page.getByLabel('Account Email').fill(email);
     await page.getByLabel('Password').fill(password);
     await page.getByRole('button', { name: 'Sign In' }).click();
     await page.waitForLoadState('networkidle');
-    await page.goto(`${BASE_URL}/confession`, { waitUntil: 'networkidle' });
+    await page.goto(`${baseUrl()}/confession`, { waitUntil: 'networkidle' });
 
     const bodyText = await page.locator('body').innerText();
     expect(bodyText.includes('Private Moment Temporarily Unavailable'), 'Authorized path should show the protected placeholder state.');

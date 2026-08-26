@@ -4,7 +4,8 @@ const path = require('path');
 const { spawn, spawnSync } = require('child_process');
 
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
-const SERVER_URL = 'http://127.0.0.1:3000';
+const DEFAULT_SERVER_URL = 'http://127.0.0.1:3000';
+const FALLBACK_SERVER_URL = 'http://127.0.0.1:4177';
 const DEFAULT_ROUTES = [
   '/',
   '/login',
@@ -45,9 +46,13 @@ function runCommand(command, args, options = {}) {
   };
 }
 
+function serverUrl() {
+  return process.env.COUPLEBOOK_QA_BASE_URL || DEFAULT_SERVER_URL;
+}
+
 function httpRequest(route) {
   return new Promise((resolve, reject) => {
-    const url = new URL(route, SERVER_URL);
+    const url = new URL(route, serverUrl());
     const req = http.get(url, (res) => {
       res.resume();
       resolve({
@@ -86,16 +91,31 @@ async function waitForServer(timeoutMs = 10000) {
 async function withServer(callback) {
   const alreadyRunning = await isServerAvailable();
   if (alreadyRunning) {
-    log('Using existing local server on http://127.0.0.1:3000');
-    return callback();
+    const body = await new Promise((resolve, reject) => {
+      const request = http.get(new URL('/', serverUrl()), (response) => {
+        let text = '';
+        response.setEncoding('utf8');
+        response.on('data', (chunk) => { text += chunk; });
+        response.on('end', () => resolve(text));
+      });
+      request.on('error', reject);
+    });
+    if (body.includes('/assets/') && body.includes('Couple Book')) {
+      log(`Using existing Couple Book app-v2 server on ${serverUrl()}`);
+      return callback();
+    }
+    log(`Port ${new URL(serverUrl()).port} is occupied by another app; starting an isolated app-v2 preview.`);
   }
 
-  log('Starting app-v2 preview server for route checks');
+  const previousBaseUrl = process.env.COUPLEBOOK_QA_BASE_URL;
+  const fallbackPort = new URL(FALLBACK_SERVER_URL).port;
+  process.env.COUPLEBOOK_QA_BASE_URL = FALLBACK_SERVER_URL;
+  log(`Starting app-v2 preview server for route checks on ${FALLBACK_SERVER_URL}`);
   const child = spawn(
     process.platform === 'win32' ? 'cmd.exe' : 'npx',
     process.platform === 'win32'
-      ? ['/d', '/s', '/c', 'npx vite preview --host 127.0.0.1 --port 3000']
-      : ['vite', 'preview', '--host', '127.0.0.1', '--port', '3000'],
+      ? ['/d', '/s', '/c', `npx vite preview --host 127.0.0.1 --port ${fallbackPort}`]
+      : ['vite', 'preview', '--host', '127.0.0.1', '--port', fallbackPort],
     {
     cwd: path.join(REPO_ROOT, 'app-v2'),
     stdio: 'ignore'
@@ -110,6 +130,8 @@ async function withServer(callback) {
     return await callback();
   } finally {
     child.kill();
+    if (previousBaseUrl === undefined) delete process.env.COUPLEBOOK_QA_BASE_URL;
+    else process.env.COUPLEBOOK_QA_BASE_URL = previousBaseUrl;
   }
 }
 
