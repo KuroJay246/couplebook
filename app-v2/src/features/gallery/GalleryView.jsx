@@ -89,8 +89,13 @@ function toneFor(item) {
 function queueStatusLabel(status) {
   if (status === QUEUE_STATUS.validating) return 'Validating'
   if (status === QUEUE_STATUS.hashing) return 'Hashing'
+  if (status === QUEUE_STATUS.duplicate) return 'Duplicate blocked'
+  if (status === QUEUE_STATUS.possibleDuplicate) return 'Possible duplicate'
+  if (status === QUEUE_STATUS.ready) return 'Ready'
   if (status === QUEUE_STATUS.uploading) return 'Uploading'
   if (status === QUEUE_STATUS.finalizing) return 'Finalizing'
+  if (status === QUEUE_STATUS.orphanedUpload) return 'Finalize upload'
+  if (status === QUEUE_STATUS.reconnectRequired) return 'Reconnect Drive'
   if (status === QUEUE_STATUS.cancelling) return 'Cancelling'
   if (status === QUEUE_STATUS.cancelled) return 'Cancelled'
   if (status === QUEUE_STATUS.failed) return 'Needs review'
@@ -100,7 +105,8 @@ function queueStatusLabel(status) {
 
 function queueStatusTone(status) {
   if (status === QUEUE_STATUS.saved) return 'success'
-  if (status === QUEUE_STATUS.failed) return 'error'
+  if ([QUEUE_STATUS.failed, QUEUE_STATUS.duplicate].includes(status)) return 'error'
+  if ([QUEUE_STATUS.orphanedUpload, QUEUE_STATUS.reconnectRequired, QUEUE_STATUS.possibleDuplicate].includes(status)) return 'warning'
   if (status === QUEUE_STATUS.cancelled) return 'warning'
   if ([QUEUE_STATUS.uploading, QUEUE_STATUS.finalizing, QUEUE_STATUS.hashing].includes(status)) return 'info'
   return 'warning'
@@ -260,8 +266,8 @@ function AlbumSkeleton() {
 }
 
 function UploadQueueCard({ item, onCancel, onChange, onRemove, onRetry }) {
-  const editable = [QUEUE_STATUS.queued, QUEUE_STATUS.failed, QUEUE_STATUS.cancelled].includes(item.status)
-  const showRetry = [QUEUE_STATUS.failed, QUEUE_STATUS.cancelled].includes(item.status) && item.retryable !== false
+  const editable = [QUEUE_STATUS.queued, QUEUE_STATUS.failed, QUEUE_STATUS.cancelled, QUEUE_STATUS.orphanedUpload, QUEUE_STATUS.reconnectRequired].includes(item.status)
+  const showRetry = [QUEUE_STATUS.failed, QUEUE_STATUS.cancelled, QUEUE_STATUS.orphanedUpload, QUEUE_STATUS.reconnectRequired].includes(item.status) && item.retryable !== false
   const showCancel = [QUEUE_STATUS.validating, QUEUE_STATUS.hashing, QUEUE_STATUS.uploading, QUEUE_STATUS.finalizing, QUEUE_STATUS.cancelling].includes(item.status)
   const progressValue = item.status === QUEUE_STATUS.saved ? 100 : Math.max(0, item.progress || 0)
   const hasPreview = Boolean(item.previewUrl)
@@ -403,8 +409,8 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
   const [removeState, setRemoveState] = useState({ item: null, pending: false })
   const [manageUploadsOpen, setManageUploadsOpen] = useState(false)
   const fileInputRef = useRef(null)
-  const uploadQueue = useMediaUploadQueue(onRefresh)
   const drive = useGoogleDriveConnection()
+  const uploadQueue = useMediaUploadQueue(onRefresh, drive)
   const items = useMemo(() => (Array.isArray(model.items) ? model.items : []), [model])
   const years = model.filters?.availableYears || []
 
@@ -567,7 +573,7 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
           </div>
           <div className="mt-5 flex flex-wrap gap-2">
             <PrimaryButton disabled={!uploadQueue.canUpload} onClick={() => fileInputRef.current?.click()}><Upload className="size-4" />Select files</PrimaryButton>
-            <SecondaryButton disabled={uploadQueue.isUploading || uploadQueue.summary.queued + uploadQueue.summary.failed === 0} onClick={uploadQueue.startUploads}>
+            <SecondaryButton disabled={uploadQueue.isUploading || uploadQueue.summary.queued + uploadQueue.summary.failed + uploadQueue.summary.orphaned === 0 || uploadQueue.requiresDriveConnection} onClick={uploadQueue.startUploads}>
               {uploadQueue.isUploading ? 'Uploading…' : 'Start uploads'}
             </SecondaryButton>
             <SecondaryButton disabled={uploadQueue.summary.saved + uploadQueue.summary.failed + uploadQueue.summary.cancelled === 0 || uploadQueue.isUploading} onClick={uploadQueue.clearCompleted}>

@@ -2,8 +2,13 @@ export const QUEUE_STATUS = Object.freeze({
   queued: 'queued',
   validating: 'validating',
   hashing: 'hashing',
+  duplicate: 'duplicate',
+  possibleDuplicate: 'possible-duplicate',
+  ready: 'ready',
   uploading: 'uploading',
   finalizing: 'finalizing',
+  orphanedUpload: 'orphaned-upload',
+  reconnectRequired: 'reconnect-required',
   cancelling: 'cancelling',
   cancelled: 'cancelled',
   failed: 'failed',
@@ -13,6 +18,7 @@ export const QUEUE_STATUS = Object.freeze({
 const ACTIVE_STATUSES = new Set([
   QUEUE_STATUS.validating,
   QUEUE_STATUS.hashing,
+  QUEUE_STATUS.ready,
   QUEUE_STATUS.uploading,
   QUEUE_STATUS.finalizing,
   QUEUE_STATUS.cancelling,
@@ -26,9 +32,12 @@ export function summarizeQueueItems(items) {
     if (item.status === QUEUE_STATUS.failed) summary.failed += 1
     if (item.status === QUEUE_STATUS.cancelled) summary.cancelled += 1
     if (item.status === QUEUE_STATUS.queued) summary.queued += 1
+    if (item.status === QUEUE_STATUS.duplicate) summary.duplicate += 1
+    if (item.status === QUEUE_STATUS.possibleDuplicate) summary.possibleDuplicate += 1
+    if (item.status === QUEUE_STATUS.orphanedUpload) summary.orphaned += 1
     if (ACTIVE_STATUSES.has(item.status)) summary.active += 1
     return summary
-  }, { active: 0, bytes: 0, cancelled: 0, failed: 0, queued: 0, saved: 0, total: 0 })
+  }, { active: 0, bytes: 0, cancelled: 0, duplicate: 0, failed: 0, orphaned: 0, possibleDuplicate: 0, queued: 0, saved: 0, total: 0 })
 }
 
 export function isRetryableFailurePhase(phase) {

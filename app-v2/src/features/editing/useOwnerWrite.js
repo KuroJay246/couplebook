@@ -5,6 +5,7 @@ import {
   acceptContract,
   archiveMemory,
   convertPlanToMemory,
+  findExistingMediaDuplicate,
   removeVerifiedMediaFromMemory,
   restoreMemory,
   saveMemory,
@@ -78,6 +79,18 @@ export function useOwnerWrite(onRefresh) {
         return { memoryId, refreshError, revision: 1, verifiedMedia }
       })()
     },
+    finalizeMemoryWithMedia: (memoryId, payload, verifiedMedia) => (async () => {
+      const context = createContext()
+      await saveMemoryWithVerifiedMedia(memoryId, payload, verifiedMedia, context)
+      let refreshError = null
+      try {
+        await refresh()
+      } catch (error) {
+        refreshError = error
+      }
+      return { memoryId, refreshError, revision: 1, verifiedMedia }
+    })(),
+    findExistingMediaDuplicate: (payload) => findExistingMediaDuplicate(payload, createContext()),
     updateMemory: (memoryId, payload) => runWrite((context) => saveMemory(memoryId, payload, context)),
     archiveMemory: (memoryId, revision = 0) => runWrite((context) => archiveMemory(memoryId, revision, context)),
     removeMemoryMedia: (memoryId, revision = 0) => (async () => {

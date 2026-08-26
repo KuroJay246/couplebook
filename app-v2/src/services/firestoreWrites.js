@@ -1,4 +1,4 @@
-import { doc, getDoc, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore'
+import { collection, doc, getDoc, getDocs, limit, query, serverTimestamp, setDoc, updateDoc, where } from 'firebase/firestore'
 import { isFirestoreWriteMode } from '../data/writeMode.js'
 import { db } from '../lib/firebase.js'
 import { DEFAULT_THEME_ID, isSupportedThemeInput, normalizeThemeId, THEME_REGISTRY } from '../theme/themeRegistry.js'
@@ -7,6 +7,7 @@ import {
   favoritesPath,
   memberPath,
   memoryPath,
+  memoriesPath,
   planPath,
   privateSettingsPath,
   profilePath,
@@ -295,6 +296,40 @@ export async function saveMemoryWithVerifiedMedia(memoryId, payload, verifiedMed
   return next
 }
 
+export async function findExistingMediaDuplicate(payload, context) {
+  const { coupleId, firestore } = await assertWriteContext(context)
+  const checksum = cleanText(payload?.checksum, 64, 'Media checksum', { required: true }).toLowerCase()
+  const contentType = cleanText(payload?.contentType, 80, 'Media content type', { required: true })
+  const sizeBytes = Number(payload?.sizeBytes)
+  if (!Number.isInteger(sizeBytes) || sizeBytes < 0) throw new Error('Media size is invalid.')
+
+  const memoriesReference = collection(firestore, ...memoriesPath(coupleId))
+  const duplicateQuery = query(
+    memoriesReference,
+    where('media.checksum', '==', checksum),
+    where('media.contentType', '==', contentType),
+    where('media.sizeBytes', '==', sizeBytes),
+    limit(5),
+  )
+  const snapshot = await getDocs(duplicateQuery)
+  const matches = []
+  snapshot.forEach((entry) => {
+    const data = entry.data() || {}
+    if (!data?.media || data.mediaState === 'none' || data.status === 'archived') return
+    matches.push({
+      memoryId: entry.id,
+      title: cleanText(data.title, 180, 'Memory title'),
+      status: cleanText(data.status, 20, 'Memory status') || 'active',
+      media: cleanMediaMetadata(data.media),
+    })
+  })
+
+  return {
+    exact: matches.find((entry) => entry.media.checksum === checksum && entry.media.sizeBytes === sizeBytes && entry.media.contentType === contentType) || null,
+    matches,
+  }
+}
+
 export async function removeVerifiedMediaFromMemory(memoryId, revision, context) {
   const { coupleId, createDoc, firestore, getDocument, uid } = await assertWriteContext(context)
   const writeDocument = context.setDocument || setDoc
@@ -306,7 +341,7 @@ export async function removeVerifiedMediaFromMemory(memoryId, revision, context)
   if (current.status === 'archived') {
     throw new Error('This memory is already archived.')
   }
-  if (current.mediaState !== 'storage-verified') {
+  if (!['storage-verified', 'drive-verified'].includes(current.mediaState)) {
     throw new Error('Only verified private media memories can be removed from Album.')
   }
 

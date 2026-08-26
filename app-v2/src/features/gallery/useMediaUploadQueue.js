@@ -6,20 +6,30 @@ import {
   MAX_UPLOAD_RETRY_ATTEMPTS,
   createMediaEntityId,
   createMediaUploadDraft,
-  deleteUploadedMediaSet,
   formatBytes,
   revokePreviewUrl,
   sha256ForFile,
   validateMediaFile,
-  waitForPrivateMediaUpload,
-  createPrivateMediaUploadTask,
 } from '../../services/mediaUploadService.js'
 import { ACTIVE_STATUSES, isRetryableFailurePhase, QUEUE_STATUS, summarizeQueueItems } from './mediaUploadQueueDomain.js'
 
 export { QUEUE_STATUS, summarizeQueueItems, isRetryableFailurePhase } from './mediaUploadQueueDomain.js'
 
-const RETRYABLE_STATUSES = new Set([QUEUE_STATUS.failed, QUEUE_STATUS.cancelled])
-const FINISHED_STATUSES = new Set([QUEUE_STATUS.saved, QUEUE_STATUS.failed, QUEUE_STATUS.cancelled])
+const RETRYABLE_STATUSES = new Set([
+  QUEUE_STATUS.failed,
+  QUEUE_STATUS.cancelled,
+  QUEUE_STATUS.orphanedUpload,
+  QUEUE_STATUS.reconnectRequired,
+])
+const FINISHED_STATUSES = new Set([
+  QUEUE_STATUS.saved,
+  QUEUE_STATUS.failed,
+  QUEUE_STATUS.cancelled,
+  QUEUE_STATUS.duplicate,
+  QUEUE_STATUS.possibleDuplicate,
+  QUEUE_STATUS.orphanedUpload,
+  QUEUE_STATUS.reconnectRequired,
+])
 const env = readRuntimeEnv()
 
 const initialState = Object.freeze({
@@ -34,12 +44,14 @@ function createQueueItem(draft) {
     bytesTransferred: 0,
     checksum: '',
     createdAt: Date.now(),
+    driveFileId: '',
+    driveFolderId: '',
     error: '',
     memoryId: '',
+    mediaId: '',
     progress: 0,
     retryable: true,
     status: QUEUE_STATUS.queued,
-    storagePath: '',
     totalBytes: draft.sizeBytes || 0,
   }
 }
@@ -145,7 +157,12 @@ function waitForUploadTestDelay(phase) {
 }
 
 function canStartItem(item) {
-  return item && (item.status === QUEUE_STATUS.queued || item.status === QUEUE_STATUS.failed)
+  return item && (
+    item.status === QUEUE_STATUS.queued
+    || item.status === QUEUE_STATUS.failed
+    || item.status === QUEUE_STATUS.orphanedUpload
+    || item.status === QUEUE_STATUS.reconnectRequired
+  )
 }
 
 function canCancelItem(item) {
@@ -153,10 +170,30 @@ function canCancelItem(item) {
 }
 
 function isRetryableError(status, retryable) {
-  return status === QUEUE_STATUS.failed && retryable !== false
+  return RETRYABLE_STATUSES.has(status) && retryable !== false
 }
 
-export function useMediaUploadQueue(onRefresh) {
+function buildDriveVerifiedMedia({
+  checksum,
+  contentType,
+  driveFile,
+  file,
+  kind,
+  mediaId,
+}) {
+  return {
+    provider: 'google-drive',
+    id: mediaId,
+    kind,
+    driveFileId: driveFile.id,
+    driveFolderId: Array.isArray(driveFile.parents) ? String(driveFile.parents[0] || '') : '',
+    contentType,
+    sizeBytes: Number(driveFile.size || file.size || 0),
+    checksum,
+  }
+}
+
+export function useMediaUploadQueue(onRefresh, drive) {
   const writer = useOwnerWrite(onRefresh)
   const [state, dispatch] = useReducer(mediaUploadQueueReducer, initialState)
   const mountedRef = useRef(true)
@@ -164,6 +201,8 @@ export function useMediaUploadQueue(onRefresh) {
   const operationRef = useRef(new Map())
   const completedChecksumsRef = useRef(new Set())
   const completedFingerprintsRef = useRef(new Set())
+  const driveProvider = drive?.provider || null
+  const driveState = drive?.state || ''
 
   useEffect(() => {
     stateRef.current = state
@@ -219,28 +258,19 @@ export function useMediaUploadQueue(onRefresh) {
     setNotice({ kind: 'info', message })
   }, [findItem, setNotice, updateItem])
 
-  const removeUploadedArtifacts = useCallback(async (item) => {
-    const paths = [item?.storagePath]
-    if (item?.thumbnailPath) paths.push(item.thumbnailPath)
-    if (item?.posterPath) paths.push(item.posterPath)
-    await deleteUploadedMediaSet(paths)
-  }, [])
-
   const removeSavedAlbumItem = useCallback(async (item) => {
     const memoryId = item?.memoryId || item?.id
     const memoryRevision = item?.memoryRevision ?? item?.revision ?? 0
 
-    if (!memoryId || item?.media?.status !== 'storage-verified') {
+    if (!memoryId || !['storage-verified', 'drive-verified'].includes(item?.media?.status)) {
       throw new Error('Only verified private media items can be removed from Album.')
     }
 
-    await deleteUploadedMediaSet([
-      item.media.storagePath,
-      item.media.thumbnailPath,
-      item.media.posterPath,
-    ])
+    if (item.media.status === 'drive-verified') {
+      await driveProvider?.remove?.(item.media.driveFileId)
+    }
     return writer.removeMemoryMedia(memoryId, memoryRevision)
-  }, [writer])
+  }, [driveProvider, writer])
 
   const handleProcessingFailure = useCallback(async (itemId, error, fallbackMessage, retryable = true) => {
     const item = findItem(itemId)
@@ -251,25 +281,32 @@ export function useMediaUploadQueue(onRefresh) {
       return
     }
 
-    if (item.storagePath) {
-      try {
-        await removeUploadedArtifacts(item)
-      } catch {
-        // Best-effort cleanup only.
-      }
+    const code = String(error?.code || '').toLowerCase()
+    if (item.driveFileId && item.status !== QUEUE_STATUS.orphanedUpload && code !== QUEUE_STATUS.reconnectRequired && code !== QUEUE_STATUS.tokenExpired) {
+      updateItem(itemId, {
+        error: normalizeQueueError(error, fallbackMessage),
+        progress: 100,
+        retryable: true,
+        status: QUEUE_STATUS.orphanedUpload,
+      })
+      setNotice({
+        kind: 'error',
+        message: 'Drive upload succeeded, but Firestore finalization needs a retry.',
+      })
+      return
     }
 
     updateItem(itemId, {
       error: normalizeQueueError(error, fallbackMessage),
       progress: 0,
       retryable,
-      status: QUEUE_STATUS.failed,
+      status: code === QUEUE_STATUS.reconnectRequired || code === QUEUE_STATUS.tokenExpired ? QUEUE_STATUS.reconnectRequired : QUEUE_STATUS.failed,
     })
     setNotice({
       kind: 'error',
       message: normalizeQueueError(error, 'This upload could not be completed.'),
     })
-  }, [finalizeCancelledItem, findItem, removeUploadedArtifacts, setNotice, updateItem])
+  }, [finalizeCancelledItem, findItem, setNotice, updateItem])
 
   const processItem = useCallback(async (itemId) => {
     const startingItem = findItem(itemId)
@@ -323,49 +360,79 @@ export function useMediaUploadQueue(onRefresh) {
           error: 'This file is already saved in the current private Album session.',
           progress: 0,
           retryable: false,
-          status: QUEUE_STATUS.failed,
+          status: QUEUE_STATUS.duplicate,
         })
         setNotice({ kind: 'error', message: 'Duplicate private media was blocked before upload.' })
         return
       }
 
-      const mediaId = latest.mediaId || createMediaEntityId('media')
-      const { task, verifiedMedia } = createPrivateMediaUploadTask({
+      const duplicateLookup = await writer.findExistingMediaDuplicate({
         checksum,
         contentType: details.contentType,
-        coupleId: writer.approvedUser.coupleId,
-        extension: details.extension,
-        file: latest.file,
-        kind: details.kind,
-        mediaId,
-        ownerUid: writer.user.uid,
         sizeBytes: details.sizeBytes,
       })
+      if (duplicateLookup.exact) {
+        updateItem(itemId, {
+          checksum,
+          error: `This file already exists in Album as "${duplicateLookup.exact.title || duplicateLookup.exact.memoryId}".`,
+          progress: 0,
+          retryable: false,
+          status: QUEUE_STATUS.duplicate,
+        })
+        setNotice({ kind: 'error', message: 'Duplicate Drive media was blocked before upload.' })
+        return
+      }
 
-      operation.task = task
+      if (!driveProvider || driveState !== 'connected') {
+        updateItem(itemId, {
+          checksum,
+          error: 'Reconnect the Couple Book Google Drive account before uploading media.',
+          progress: 0,
+          retryable: true,
+          status: QUEUE_STATUS.reconnectRequired,
+        })
+        setNotice({ kind: 'error', message: 'Google Drive must be connected before uploads can continue.' })
+        return
+      }
+
+      const mediaId = latest.mediaId || createMediaEntityId('media')
+      const memoryId = latest.memoryId || createMediaEntityId('memory')
       updateItem(itemId, {
         bytesTransferred: 0,
         checksum,
         mediaId,
+        memoryId,
         progress: 20,
         status: QUEUE_STATUS.uploading,
-        storagePath: verifiedMedia.storagePath,
-        totalBytes: verifiedMedia.sizeBytes,
+        totalBytes: details.sizeBytes,
       })
       failurePhase = QUEUE_STATUS.uploading
-
-      await waitForPrivateMediaUpload(task, {
-        signal: abortController.signal,
-        onProgress: ({ bytesTransferred, progress, totalBytes }) => {
-          updateItem(itemId, {
-            bytesTransferred,
-            progress,
-            totalBytes,
-          })
-        },
+      await waitForUploadTestDelay('uploading')
+      const safeFilename = `${mediaId}.${details.extension}`
+      const uploadedFile = latest.driveFileId
+        ? await driveProvider.getFile(latest.driveFileId)
+        : await driveProvider.upload(latest.file, { mimeType: details.contentType, name: safeFilename })
+      const verifiedDriveFile = await driveProvider.getFile(uploadedFile.id)
+      const verifiedMedia = buildDriveVerifiedMedia({
+        checksum,
+        contentType: details.contentType,
+        driveFile: verifiedDriveFile,
+        file: latest.file,
+        kind: details.kind,
+        mediaId,
+      })
+      updateItem(itemId, {
+        bytesTransferred: verifiedMedia.sizeBytes,
+        driveFileId: verifiedMedia.driveFileId,
+        driveFolderId: verifiedMedia.driveFolderId,
+        progress: 95,
+        totalBytes: verifiedMedia.sizeBytes,
       })
 
       if (abortController.signal.aborted) {
+        if (verifiedMedia.driveFileId) {
+          await driveProvider.remove(verifiedMedia.driveFileId)
+        }
         finalizeCancelledItem(itemId)
         return
       }
@@ -378,20 +445,12 @@ export function useMediaUploadQueue(onRefresh) {
       await waitForUploadTestDelay('finalizing')
 
       const finalizedItem = findItem(itemId)
-      const result = await writer.createMemoryWithMedia(toMemoryPayload(finalizedItem), verifiedMedia)
+      const result = await writer.finalizeMemoryWithMedia(finalizedItem.memoryId, toMemoryPayload(finalizedItem), verifiedMedia)
 
       if (operation.cancelRequested) {
         updateItem(itemId, { status: QUEUE_STATUS.cancelling })
-        await removeSavedAlbumItem({
-          id: result.memoryId,
-          media: {
-            status: 'storage-verified',
-            storagePath: verifiedMedia.storagePath,
-            thumbnailPath: verifiedMedia.thumbnailPath,
-            posterPath: verifiedMedia.posterPath,
-          },
-          revision: result.revision || 1,
-        })
+        await driveProvider.remove(verifiedMedia.driveFileId)
+        await writer.removeMemoryMedia(result.memoryId, result.revision || 1)
         finalizeCancelledItem(itemId, 'Upload was cancelled after finalization and removed from Album.')
         return
       }
@@ -429,7 +488,8 @@ export function useMediaUploadQueue(onRefresh) {
     finalizeCancelledItem,
     findItem,
     handleProcessingFailure,
-    removeSavedAlbumItem,
+    driveProvider,
+    driveState,
     setNotice,
     updateItem,
     writer,
@@ -497,11 +557,6 @@ export function useMediaUploadQueue(onRefresh) {
     operation.cancelRequested = true
     updateItem(itemId, { status: QUEUE_STATUS.cancelling })
 
-    if (item.status === QUEUE_STATUS.uploading && typeof operation.task?.cancel === 'function') {
-      operation.task.cancel()
-      return
-    }
-
     operation.abortController.abort()
   }, [findItem, updateItem])
 
@@ -528,7 +583,7 @@ export function useMediaUploadQueue(onRefresh) {
     }
 
     const pendingIds = stateRef.current.items
-      .filter((item) => item.status === QUEUE_STATUS.queued || item.status === QUEUE_STATUS.failed)
+      .filter((item) => canStartItem(item))
       .map((item) => item.id)
 
     if (pendingIds.length === 0) {
@@ -572,5 +627,6 @@ export function useMediaUploadQueue(onRefresh) {
     startUploads,
     summary,
     updateDraft,
+    requiresDriveConnection: !driveProvider || driveState !== 'connected',
   }
 }

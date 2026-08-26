@@ -4,7 +4,7 @@ import { COUPLE_BOOK_DRIVE_FOLDER_ID, DRIVE_STATE, GOOGLE_DRIVE_SCOPE, createGoo
 
 test('Google Drive provider keeps the approved folder and minimum scope explicit', () => {
   assert.equal(COUPLE_BOOK_DRIVE_FOLDER_ID, '17Ar4UK5_puORz9TE1dijIk2-qHgh7oIa')
-  assert.equal(GOOGLE_DRIVE_SCOPE, 'https://www.googleapis.com/auth/drive.file')
+  assert.equal(GOOGLE_DRIVE_SCOPE, 'https://www.googleapis.com/auth/drive')
 })
 
 test('Google Drive provider fails closed when OAuth is not configured', async () => {

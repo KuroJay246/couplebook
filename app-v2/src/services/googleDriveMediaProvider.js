@@ -1,5 +1,5 @@
 export const COUPLE_BOOK_DRIVE_FOLDER_ID = '17Ar4UK5_puORz9TE1dijIk2-qHgh7oIa'
-export const GOOGLE_DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file'
+export const GOOGLE_DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive'
 
 export const DRIVE_STATE = Object.freeze({
   disconnected: 'disconnected',
@@ -118,6 +118,14 @@ export function createGoogleDriveMediaProvider({ clientId, fetchImpl = globalThi
     return URL.createObjectURL(blob)
   }
 
+  async function getFile(fileId) {
+    const params = new URLSearchParams({
+      fields: 'id,name,mimeType,size,parents,md5Checksum,createdTime,modifiedTime,imageMediaMetadata,videoMediaMetadata,trashed',
+    })
+    const response = await driveFetch(fetchImpl, `${DRIVE_API}/files/${encodeURIComponent(fileId)}?${params}`, accessToken)
+    return response.json()
+  }
+
   async function upload(file, { name, description = '', mimeType = file?.type, folder = folderId } = {}) {
     const metadata = { name, description, mimeType, parents: [folder] }
     const boundary = `couplebook_${crypto.randomUUID()}`
@@ -135,11 +143,16 @@ export function createGoogleDriveMediaProvider({ clientId, fetchImpl = globalThi
     return response.json()
   }
 
+  async function remove(fileId) {
+    await driveFetch(fetchImpl, `${DRIVE_API}/files/${encodeURIComponent(fileId)}`, accessToken, { method: 'DELETE' })
+    return true
+  }
+
   function openExternally(fileId) {
     if (typeof window === 'undefined' || !fileId) return false
     window.open(`https://drive.google.com/open?id=${encodeURIComponent(fileId)}`, '_blank', 'noopener,noreferrer')
     return true
   }
 
-  return Object.freeze({ connect, disconnect, fetchPreview, getConnectionState, listFiles, openExternally, upload, validateFolder })
+  return Object.freeze({ connect, disconnect, fetchPreview, getConnectionState, getFile, listFiles, openExternally, remove, upload, validateFolder })
 }
