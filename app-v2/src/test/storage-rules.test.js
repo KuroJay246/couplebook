@@ -10,6 +10,8 @@ const projectId = 'demo-couplebook-app-v2'
 const bucket = `${projectId}.appspot.com`
 const rules = readFileSync(new URL('../../../storage.app-v2.rules', import.meta.url), 'utf8')
 const hasEmulator = Boolean(process.env.FIREBASE_STORAGE_EMULATOR_HOST && process.env.FIRESTORE_EMULATOR_HOST)
+const firestorePort = Number((process.env.FIRESTORE_EMULATOR_HOST || '127.0.0.1:8085').split(':').at(-1) || 8085)
+const storagePort = Number((process.env.FIREBASE_STORAGE_EMULATOR_HOST || '127.0.0.1:9199').split(':').at(-1) || 9199)
 
 const ids = Object.freeze({
   owner: 'member_one',
@@ -30,11 +32,11 @@ test.before(async () => {
     projectId,
     firestore: {
       host: '127.0.0.1',
-      port: 8085,
+      port: firestorePort,
     },
     storage: {
       host: '127.0.0.1',
-      port: 9199,
+      port: storagePort,
       rules,
     },
   })

@@ -81,6 +81,7 @@ export function ConfessionPage() {
     : []
   const slotMap = Object.fromEntries((model.mediaSlots || []).map((slot) => [slot.id, slot]))
   const ownerSlots = ownerState?.slots || []
+  const showOwnerTools = Boolean(BRIDGE_BASE_URL) && window.location.hostname === 'localhost'
 
   useEffect(() => {
     if (!BRIDGE_BASE_URL || !user?.uid) return
@@ -183,7 +184,7 @@ export function ConfessionPage() {
         <div className="confession-gate">
           <p className="confession-kicker">Private reading</p>
           <h1>{model.moment.title}</h1>
-          <p className="confession-intro">The original page used a client-side password. This restored version keeps the private access boundary in Couple Book and opens the card only for an approved signed-in member.</p>
+          <p className="confession-intro">A private note, kept inside Couple Book and opened only for the signed-in person who belongs here.</p>
           <button className="confession-open-button" onClick={() => setOpened(true)} type="button">
             Open card
           </button>
@@ -226,7 +227,7 @@ export function ConfessionPage() {
             )}
           </div>
 
-          {user?.uid ? (
+          {user?.uid && showOwnerTools ? (
             <aside className="confession-owner-panel">
               <h3>Owner restoration status</h3>
               <p className="confession-owner-copy">

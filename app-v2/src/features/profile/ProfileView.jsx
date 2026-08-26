@@ -224,9 +224,9 @@ export function ProfileView({ compatibilityError, compatibilityState, model, onR
   return (
     <section className="space-y-5" data-route="profile">
       <PageHeader
-        eyebrow="About Us"
-        title="Us"
-        description="Both of you, the dates that matter, and the promises that give the story its shape."
+        eyebrow="Us"
+        title="About us"
+        description="Both of you, the dates that matter, and the things that make this relationship feel like yours."
         actions={(
           <>
             <SecondaryButton as={Link} to="/favorites"><Star className="size-4" />Favorites</SecondaryButton>
@@ -271,8 +271,8 @@ export function ProfileView({ compatibilityError, compatibilityState, model, onR
       {activeTab === 'overview' ? (
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(22rem,0.9fr)]">
           <Surface>
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Our Story</p>
-            <h3 className="mt-2 font-serif text-3xl text-[var(--cb-text)]">The pieces that make this ours</h3>
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Our story</p>
+            <h3 className="mt-2 font-serif text-3xl text-[var(--cb-text)]">What feels most like us</h3>
             <div className="mt-5 grid gap-4 md:grid-cols-2">
               {people.map((person, index) => (
                 <ContentCard key={person.id}>
@@ -294,7 +294,7 @@ export function ProfileView({ compatibilityError, compatibilityState, model, onR
             </Surface>
             <Surface tone="soft">
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Things to try</p>
-              <p className="mt-2 text-sm leading-6 text-[var(--cb-text-secondary)]">Ideas and future memories stay in Plans so the shared profile can stay calm and readable.</p>
+              <p className="mt-2 text-sm leading-6 text-[var(--cb-text-secondary)]">Plans keeps upcoming dates, gifts, and ideas close without turning this page into a dashboard.</p>
               <div className="mt-4">
                 <SecondaryButton as={Link} to="/plans">Open Plans</SecondaryButton>
               </div>

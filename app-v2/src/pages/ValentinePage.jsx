@@ -74,7 +74,7 @@ export function ValentinePage() {
   function acceptValentine() {
     setAccepted(true)
     setMessage('As you should ml')
-    window.setTimeout(() => setMessage('I cannot wait for Valentine’s Day with you.'), 700)
+    window.setTimeout(() => setMessage('I can’t wait for Valentine’s Day with you.'), 700)
   }
 
   return (
@@ -93,7 +93,7 @@ export function ValentinePage() {
           <div className="valentine-emoji" aria-hidden="true">🌸💜</div>
           <p className="valentine-kicker">A kept love note</p>
           <h1>{question}</h1>
-          <p className="valentine-hint">No is not an option ml</p>
+          <p className="valentine-hint">The playful answer is still yes.</p>
 
           <div className="valentine-buttons">
             <button className="valentine-action yes" onClick={acceptValentine} type="button">Yes</button>
@@ -101,7 +101,7 @@ export function ValentinePage() {
           </div>
 
           <div className="valentine-response" aria-live="polite">
-            {message || 'Audio remains optional. The page stays fully usable without it.'}
+            {message || 'The page still works even when the private audio is not available here.'}
           </div>
         </div>
       </div>

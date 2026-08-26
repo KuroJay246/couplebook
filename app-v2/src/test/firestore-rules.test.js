@@ -33,6 +33,7 @@ import { buildTimelineReadModel } from '../features/timeline/timelineReadModel.j
 const projectId = 'demo-couplebook-app-v2'
 const rules = readFileSync(new URL('../../../firestore.rules', import.meta.url), 'utf8')
 const hasEmulator = Boolean(process.env.FIRESTORE_EMULATOR_HOST)
+const firestorePort = Number((process.env.FIRESTORE_EMULATOR_HOST || '127.0.0.1:8085').split(':').at(-1) || 8085)
 
 const ids = Object.freeze({
   memberOne: 'member_one',
@@ -53,7 +54,7 @@ test.before(async () => {
     projectId,
     firestore: {
       host: '127.0.0.1',
-      port: 8085,
+      port: firestorePort,
       rules,
     },
   })

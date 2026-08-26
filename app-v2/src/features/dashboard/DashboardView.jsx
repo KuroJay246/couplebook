@@ -1,4 +1,4 @@
-import { CalendarHeart, Clock3, HeartHandshake, Images, NotebookPen, Sparkles, Star } from 'lucide-react'
+import { CalendarHeart, Clock3, HeartHandshake, Images, NotebookPen, Plus, Star } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { EmptyState } from '../../components/ui/EmptyState.jsx'
 import { StatusBadge } from '../../components/ui/StatusBadge.jsx'
@@ -229,48 +229,50 @@ export function DashboardView({ model }) {
 
   return (
     <section className="grid gap-6">
-      <section className="cb-shell-hero rounded-[24px] border border-[var(--cb-border)] bg-[var(--cb-surface)] p-6 shadow-[0_8px_24px_rgba(84,53,67,0.04)]">
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.25fr)_minmax(280px,0.75fr)]">
+      <section className="cb-editorial-hero rounded-[28px] border border-[var(--cb-border)] p-6 shadow-[0_10px_34px_rgba(84,53,67,0.06)] lg:p-8">
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)]">
           <div>
-            <StatusBadge tone="info">Home</StatusBadge>
-            <h2 className="mt-4 font-serif text-4xl text-[var(--cb-text)]">Pick up right where the relationship feels most alive.</h2>
+            <StatusBadge tone="info">Our space</StatusBadge>
+            <h2 className="mt-4 max-w-xl font-serif text-4xl text-[var(--cb-text)] lg:text-5xl">Our memories, plans, and special moments in one place.</h2>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--cb-text-secondary)]">
-              Home keeps the relationship itself first: the featured memory, the next milestone, and the pages that matter most without the dashboard feeling generic.
+              Start with the part of the relationship that still feels closest, then move into the album, the story, or what is coming up next.
             </p>
-            <div className="mt-5 flex flex-wrap gap-2">
-              <Link className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[var(--cb-accent)] px-4 text-xs font-bold text-white" to="/timeline">
-                <NotebookPen className="size-4" />
-                Add Memory
+            <div className="mt-6 flex flex-wrap items-center gap-3">
+              <Link className="cb-button cb-button-primary cb-button-pill inline-flex items-center gap-3 text-sm font-bold text-white" to="/timeline">
+                <span className="cb-button-pill-icon" aria-hidden="true">
+                  <Plus className="size-4" />
+                </span>
+                Add memory
               </Link>
-              <Link className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[var(--cb-border)] px-4 text-xs font-bold text-[var(--cb-text-muted)] hover:bg-[var(--cb-accent-soft)]" to="/gallery">
+              <Link className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--cb-border)] px-4 text-xs font-bold text-[var(--cb-text-muted)] hover:bg-[var(--cb-accent-soft)]" to="/gallery">
                 <Images className="size-4" />
                 Open Album
               </Link>
-              <Link className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[var(--cb-border)] px-4 text-xs font-bold text-[var(--cb-text-muted)] hover:bg-[var(--cb-accent-soft)]" to="/plans">
+              <Link className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--cb-border)] px-4 text-xs font-bold text-[var(--cb-text-muted)] hover:bg-[var(--cb-accent-soft)]" to="/plans">
                 <CalendarHeart className="size-4" />
-                Open Plans
+                See plans
               </Link>
             </div>
           </div>
-          <div className="grid gap-3 rounded-[24px] bg-[var(--cb-accent-soft)] p-5">
-            <div className="rounded-2xl border border-[var(--cb-border)] bg-[var(--cb-surface)] p-4">
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Together</p>
-              <p className="mt-2 text-3xl font-bold text-[var(--cb-text)]">{model.todayInUs?.daysTogether || 0}</p>
-              <p className="mt-1 text-sm text-[var(--cb-text-secondary)]">days together</p>
-            </div>
-            <div className="rounded-2xl border border-[var(--cb-border)] bg-[var(--cb-surface)] p-4">
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Milestone</p>
-              <p className="mt-2 text-sm font-semibold text-[var(--cb-text)]">{model.todayInUs?.currentMilestone || 'Keep building the story.'}</p>
-            </div>
-            <div className="rounded-2xl border border-[var(--cb-border)] bg-[var(--cb-surface)] p-4">
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Featured</p>
-              <p className="mt-2 text-sm font-semibold text-[var(--cb-text)]">{featuredMemory?.title || 'No featured memory yet'}</p>
-              <p className="mt-1 text-sm leading-6 text-[var(--cb-text-secondary)]">{featuredMemory?.description || 'Add one memory and it will surface here.'}</p>
-            </div>
-            <div className="rounded-2xl border border-[var(--cb-border)] bg-[var(--cb-surface)] p-4">
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Birthday</p>
-              <p className="mt-2 text-sm font-semibold text-[var(--cb-text)]">{birthdayCard?.label || 'Birthday saved'}</p>
-              <p className="mt-1 text-sm text-[var(--cb-text-secondary)]">{birthdayCard?.countdownLabel || 'Countdown available once dates are added.'}</p>
+          <div className="cb-editorial-photo">
+            <div className="cb-editorial-photo-grid">
+              <div className="cb-editorial-photo-card ml-auto">
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Featured memory</p>
+                <p className="mt-2 text-lg font-semibold text-[var(--cb-text)]">{featuredMemory?.title || 'Your next favorite memory goes here'}</p>
+                <p className="mt-2 text-sm leading-6 text-[var(--cb-text-secondary)]">{featuredMemory?.description || 'Add one good photo, one honest note, or one saved video and Home will start feeling lived in.'}</p>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="cb-editorial-photo-card">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Together</p>
+                  <p className="mt-2 text-3xl font-bold text-[var(--cb-text)]">{model.todayInUs?.daysTogether || 0}</p>
+                  <p className="mt-1 text-sm text-[var(--cb-text-secondary)]">days together</p>
+                </div>
+                <div className="cb-editorial-photo-card">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Coming up</p>
+                  <p className="mt-2 text-sm font-semibold text-[var(--cb-text)]">{birthdayCard?.label || 'A saved date'}</p>
+                  <p className="mt-1 text-sm text-[var(--cb-text-secondary)]">{birthdayCard?.countdownLabel || 'Add birthdays and plans to keep the next milestone close.'}</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -302,8 +304,8 @@ export function DashboardView({ model }) {
         <div className="grid gap-6">
           <DailyPrompt section={model.prompt} />
           <section className="rounded-[24px] border border-[var(--cb-border)] bg-[var(--cb-surface)] p-6 shadow-[0_8px_24px_rgba(84,53,67,0.04)]">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Keep Exploring</p>
-            <h3 className="mt-2 font-serif text-2xl text-[var(--cb-text)]">The rest of the book stays one step away</h3>
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Keep exploring</p>
+            <h3 className="mt-2 font-serif text-2xl text-[var(--cb-text)]">Everything else is one step away</h3>
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
               <Link className="flex items-center gap-3 rounded-2xl border border-[var(--cb-border)] bg-[var(--cb-surface-raised)] p-4 hover:bg-[var(--cb-accent-soft)]" to="/timeline">
                 <NotebookPen className="size-5 text-[var(--cb-accent)]" />

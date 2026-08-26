@@ -216,9 +216,9 @@ export function PlansView({ model, onRefresh, search, setSearch, setStatus, stat
   return (
     <section className="space-y-5" data-route="plans">
       <PageHeader
-        eyebrow="Our Plans"
-        title="Ideas worth doing together."
-        description="Keep date ideas, trips, goals, and little surprises in one private couple-scoped place."
+        eyebrow="Plans"
+        title="Things we want to do together"
+        description="Keep date ideas, places, little surprises, and finished plans in one calm place."
         actions={(
           <>
             <StatusBadge tone="info">{model.counts.total} active</StatusBadge>

@@ -52,6 +52,17 @@ export const DangerButton = forwardRef(function DangerButton(props, ref) {
   return <ButtonBase {...props} ref={ref} tone="danger" />
 })
 
+export const FabButton = forwardRef(function FabButton({ className, ...props }, ref) {
+  return (
+    <ButtonBase
+      {...props}
+      className={cn('cb-button-fab min-h-14 min-w-14 rounded-full px-0 shadow-[0_18px_42px_rgba(36,19,29,0.18)]', className)}
+      ref={ref}
+      tone="primary"
+    />
+  )
+})
+
 export function IconButton({ className, label, children, ...props }) {
   return (
     <ButtonBase

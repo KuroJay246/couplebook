@@ -12,14 +12,14 @@ test('profile route uses the feature hook and owner editing view', async () => {
 
   assert.match(profilePageSource, /useProfileData/)
   assert.match(profilePageSource, /ProfileView/)
-  assert.match(profileViewSource, /About Us/)
+  assert.match(profileViewSource, /About us/)
   assert.match(profileViewSource, /PageTabs/)
   assert.match(profileViewSource, /Shared matches/)
   assert.match(profileViewSource, /Our Promises/)
   assert.match(profileViewSource, /useOwnerWrite/)
   assert.match(profileViewSource, /ProfileEditDialog/)
   assert.match(profileViewSource, /saveProfile/)
-  assert.match(profileViewSource, /Our Story/)
+  assert.match(profileViewSource, /Our story/)
   assert.doesNotMatch(profileViewSource, /type="file"/)
 })
 

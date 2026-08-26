@@ -43,7 +43,7 @@ export function BirthdayPage() {
     <section className="special-moment-page special-birthday-page" data-route="birthday">
       <div className="special-moment-utility">
         <Link className="special-moment-link" to="/dashboard">Back to Home</Link>
-        <Link className="special-moment-link subtle" to="/settings">Open Settings</Link>
+        <Link className="special-moment-link subtle" to="/gallery">Open Album</Link>
       </div>
 
       <div className="birthday-canvas">
