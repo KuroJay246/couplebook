@@ -2,6 +2,30 @@
   box-sizing: border-box;
 }
 
+.cb-theme-initialization-shell {
+  min-height: 100dvh;
+  display: grid;
+  place-content: center;
+  gap: 1rem;
+  padding: 2rem;
+  background: #18121b;
+  color: #fff7fb;
+  text-align: center;
+}
+
+.cb-theme-initialization-mark {
+  width: 3.5rem;
+  height: 3.5rem;
+  display: grid;
+  place-items: center;
+  margin: 0 auto;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 1rem;
+  color: #ffd9e7;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
 #root {
   min-width: 0;
 }
