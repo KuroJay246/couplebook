@@ -6,6 +6,7 @@ const GENERATED_ARCHIVE_DESCRIPTION = /^(A beautiful shared moment captured on|A
 const AUTO_IMPORT_DESCRIPTION = /^Auto-imported from your (videos|photos) folder\.?$/i
 const LOCAL_FILE_PATH = /^(?:[a-zA-Z]:\\|\\\\|file:\/\/)/i
 const LEGACY_ASSET_PATH = /^(?:\/assets\/|assets\/|\.\.\/assets\/|\.\/assets\/)/i
+const SAFE_DRIVE_ID = /^[A-Za-z0-9_-]{10,200}$/
 
 export const legacySpecialMomentRoutes = Object.freeze({
   'confession/index.html': '/confession',
@@ -195,6 +196,23 @@ function inferReferencedMediaKind(record) {
 function normalizeMediaReference(record, specialMoment) {
   if (record?.media && typeof record.media === 'object') {
     const kind = toTrimmedString(record.media.kind)
+    const provider = toTrimmedString(record.media.provider)
+    const driveFileId = toTrimmedString(record.media.driveFileId)
+    const driveFolderId = toTrimmedString(record.media.driveFolderId)
+    if (provider === 'google-drive' && (kind === 'image' || kind === 'video') && SAFE_DRIVE_ID.test(driveFileId) && SAFE_DRIVE_ID.test(driveFolderId)) {
+      return {
+        status: 'drive-verified',
+        provider,
+        kind,
+        hasReference: true,
+        isAvailableInApp: true,
+        displayUrl: null,
+        driveFileId,
+        driveFolderId,
+        contentType: toTrimmedString(record.media.contentType),
+        sizeBytes: Number.isSafeInteger(record.media.sizeBytes) ? record.media.sizeBytes : 0,
+      }
+    }
     const storagePath = toTrimmedString(record.media.storagePath)
     const thumbnailPath = toTrimmedString(record.media.thumbnailPath)
     const posterPath = toTrimmedString(record.media.posterPath)

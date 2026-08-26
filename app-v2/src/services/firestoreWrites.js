@@ -41,6 +41,7 @@ export const PLAN_CATEGORIES = Object.freeze([
 ])
 export const SPECIAL_SECTION_KINDS = Object.freeze(['paragraph', 'note', 'quote', 'list'])
 const SAFE_STORAGE_PATH = /^couples\/[A-Za-z0-9_-]{1,120}\/media\/[A-Za-z0-9_-]{1,120}\/(original|thumbnail|poster)$/
+const SAFE_DRIVE_ID = /^[A-Za-z0-9_-]{10,200}$/
 const MEDIA_CONTENT_TYPES = Object.freeze([
   'image/jpeg',
   'image/png',
@@ -106,14 +107,19 @@ function cleanMediaMetadata(media) {
   const kind = cleanText(media.kind, 20, 'Media kind', { required: true })
   if (!['image', 'video'].includes(kind)) throw new Error('Media kind is not supported.')
 
-  const storagePath = cleanText(media.storagePath, 260, 'Storage path', { required: true })
-  if (!SAFE_STORAGE_PATH.test(storagePath)) throw new Error('Storage path is invalid.')
+  const provider = cleanText(media.provider, 40, 'Media provider') || 'firebase-storage'
+  if (!['firebase-storage', 'google-drive'].includes(provider)) throw new Error('Media provider is not supported.')
+  const storagePath = cleanText(media.storagePath, 260, 'Storage path')
+  if (provider === 'firebase-storage' && (!storagePath || !SAFE_STORAGE_PATH.test(storagePath))) throw new Error('Storage path is invalid.')
 
   const thumbnailPath = cleanText(media.thumbnailPath, 260, 'Thumbnail path')
   if (thumbnailPath && !SAFE_STORAGE_PATH.test(thumbnailPath)) throw new Error('Thumbnail path is invalid.')
 
   const posterPath = cleanText(media.posterPath, 260, 'Poster path')
   if (posterPath && !SAFE_STORAGE_PATH.test(posterPath)) throw new Error('Poster path is invalid.')
+  const driveFileId = cleanText(media.driveFileId, 200, 'Drive file ID')
+  const driveFolderId = cleanText(media.driveFolderId, 200, 'Drive folder ID')
+  if (provider === 'google-drive' && (!SAFE_DRIVE_ID.test(driveFileId) || !SAFE_DRIVE_ID.test(driveFolderId))) throw new Error('Drive media identifiers are invalid.')
 
   const contentType = cleanText(media.contentType, 80, 'Media content type', { required: true })
   if (!MEDIA_CONTENT_TYPES.includes(contentType)) throw new Error('Media content type is not supported.')
@@ -127,11 +133,14 @@ function cleanMediaMetadata(media) {
   if (!/^[A-Fa-f0-9]{64}$/.test(checksum)) throw new Error('Media checksum is invalid.')
 
   return {
+    provider,
     id,
     kind,
     storagePath,
     thumbnailPath,
     posterPath,
+    driveFileId,
+    driveFolderId,
     contentType,
     sizeBytes,
     checksum: checksum.toLowerCase(),
@@ -198,7 +207,7 @@ function buildMemoryDocument(payload, nextRevision, uid, verifiedMedia = null) {
     tags: cleanStringList(payload.tags, { label: 'Tag', maxItems: 30, maxLength: 60 }),
     kindLabel: MEMORY_KIND_LABELS.includes(payload.kindLabel) ? payload.kindLabel : 'Everyday Moment',
     mediaNote: cleanText(payload.mediaNote, 300, 'Media note'),
-    mediaState: verifiedMedia ? 'storage-verified' : 'none',
+    mediaState: verifiedMedia ? (verifiedMedia.provider === 'google-drive' ? 'drive-verified' : 'storage-verified') : 'none',
     createdBy: uid,
     updatedBy: uid,
     status: payload.status === 'archived' ? 'archived' : 'active',

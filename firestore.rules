@@ -250,11 +250,11 @@ service cloud.firestore {
         && (!('tags' in request.resource.data) || isStringList(request.resource.data.tags, 30))
         && (!('kindLabel' in request.resource.data) || request.resource.data.kindLabel in ['Everyday Moment', 'Date', 'First', 'Trip', 'Milestone', 'Celebration', 'Funny Moment', 'Note', 'Photo Memory', 'Video Memory'])
         && (!('mediaNote' in request.resource.data) || isSafeString(request.resource.data.mediaNote, 300))
-        && request.resource.data.mediaState in ['none', 'private-legacy-reference', 'storage-verified']
+        && request.resource.data.mediaState in ['none', 'private-legacy-reference', 'storage-verified', 'drive-verified']
         && (!('mediaType' in request.resource.data) || request.resource.data.mediaType in ['text', 'photo', 'video', 'milestone'])
         && (
-          request.resource.data.mediaState == 'storage-verified'
-            ? ('media' in request.resource.data && isValidMediaMetadata(request.resource.data.media))
+          request.resource.data.mediaState in ['storage-verified', 'drive-verified']
+            ? ('media' in request.resource.data && isValidMediaMetadata(request.resource.data.media, request.resource.data.mediaState))
             : !('media' in request.resource.data)
         )
         && (!('linkedPlanId' in request.resource.data) || isSafeString(request.resource.data.linkedPlanId, 120))
@@ -295,13 +295,16 @@ service cloud.firestore {
         && value.matches('^couples/[A-Za-z0-9_-]{1,120}/media/[A-Za-z0-9_-]{1,120}/(original|thumbnail|poster)$');
     }
 
-    function isValidMediaMetadata(media) {
+    function isValidMediaMetadata(media, mediaState) {
       return media is map
-        && media.keys().hasOnly(['id', 'kind', 'storagePath', 'thumbnailPath', 'posterPath', 'contentType', 'sizeBytes', 'checksum'])
+        && media.keys().hasOnly(['provider', 'id', 'kind', 'storagePath', 'thumbnailPath', 'posterPath', 'driveFileId', 'driveFolderId', 'contentType', 'sizeBytes', 'checksum'])
         && media.id is string
         && media.id.matches('^[A-Za-z0-9_-]{1,120}$')
         && media.kind in ['image', 'video']
-        && isSafeStoragePath(media.storagePath)
+        && ((mediaState == 'storage-verified' && (!('provider' in media) || media.provider == 'firebase-storage') && isSafeStoragePath(media.storagePath))
+          || (mediaState == 'drive-verified' && media.provider == 'google-drive'
+            && media.driveFileId is string && media.driveFileId.matches('^[A-Za-z0-9_-]{10,200}$')
+            && media.driveFolderId is string && media.driveFolderId.matches('^[A-Za-z0-9_-]{10,200}$')))
         && (!('thumbnailPath' in media) || media.thumbnailPath == '' || isSafeStoragePath(media.thumbnailPath))
         && (!('posterPath' in media) || media.posterPath == '' || isSafeStoragePath(media.posterPath))
         && media.contentType is string

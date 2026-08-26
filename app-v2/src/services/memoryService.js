@@ -6,6 +6,7 @@ import { readCollection, rejectUnsafeMediaReference, requireSchemaVersion, safeS
 
 const SAFE_STORAGE_PATH = /^couples\/[A-Za-z0-9_-]{1,120}\/media\/[A-Za-z0-9_-]{1,120}\/(original|thumbnail|poster)$/
 const SAFE_MEDIA_ID = /^[A-Za-z0-9_-]{1,120}$/
+const SAFE_DRIVE_ID = /^[A-Za-z0-9_-]{10,200}$/
 
 function normalizeStorageMedia(data, warnings) {
   if (data.mediaState !== 'storage-verified') return null
@@ -37,6 +38,20 @@ function normalizeStorageMedia(data, warnings) {
   }
 }
 
+function normalizeDriveMedia(data, warnings) {
+  if (data.mediaState !== 'drive-verified') return null
+  const media = data.media && typeof data.media === 'object' ? data.media : null
+  const id = safeString(media?.id, 120)
+  const kind = safeString(media?.kind, 20)
+  const driveFileId = safeString(media?.driveFileId, 200)
+  const driveFolderId = safeString(media?.driveFolderId, 200)
+  if (!media || !SAFE_MEDIA_ID.test(id) || !['image', 'video'].includes(kind) || !SAFE_DRIVE_ID.test(driveFileId) || !SAFE_DRIVE_ID.test(driveFolderId)) {
+    warnings.push('A verified Drive media record had invalid identifiers and was withheld.')
+    return null
+  }
+  return { id, kind, provider: 'google-drive', driveFileId, driveFolderId, contentType: safeString(media.contentType, 80), sizeBytes: Number.isSafeInteger(media.sizeBytes) && media.sizeBytes >= 0 ? media.sizeBytes : 0, checksum: safeString(media.checksum, 128) }
+}
+
 export function buildMemoryCollectionPath(coupleId) {
   return pathToString(memoriesPath(coupleId))
 }
@@ -58,6 +73,7 @@ export function normalizeFirestoreMemory(id, data, warnings) {
   if (!requireSchemaVersion(data, warnings)) return null
   const mediaState = safeString(data.mediaState, 60)
   const storageMedia = normalizeStorageMedia(data, warnings)
+  const driveMedia = normalizeDriveMedia(data, warnings)
   const mediaReference = rejectUnsafeMediaReference(data.mediaReference)
   if (data.mediaReference && !mediaReference) {
     warnings.push('A memory media reference was unsafe and was withheld.')
@@ -68,7 +84,7 @@ export function normalizeFirestoreMemory(id, data, warnings) {
     description: safeString(data.description, 2000),
     date: safeString(data.date, 60),
     tags: safeStringArray(data.tags, 30, 60),
-    media: storageMedia || (mediaState === 'private-legacy-reference' ? 'private-legacy-reference' : mediaReference),
+    media: storageMedia || driveMedia || (mediaState === 'private-legacy-reference' ? 'private-legacy-reference' : mediaReference),
     mediaState: mediaState || 'none',
     isVideo: data.isVideo === true,
     isSpecialPage: Boolean(data.specialMomentType),

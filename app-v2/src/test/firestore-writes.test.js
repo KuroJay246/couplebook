@@ -142,6 +142,31 @@ test('verified media memory writes preserve private storage metadata without loc
   assert.equal(JSON.stringify(firestore.writes[0].data).includes('C:\\Users'), false)
 })
 
+test('verified Drive media writes preserve stable IDs without temporary URLs', async () => {
+  const firestore = createFirestoreStub()
+  await saveMemoryWithVerifiedMedia(
+    'memory_drive',
+    { title: 'Drive photo', date: '2026-02-15', kindLabel: 'Photo Memory' },
+    {
+      provider: 'google-drive',
+      id: 'media_drive_001',
+      kind: 'image',
+      driveFileId: 'drive-file-001',
+      driveFolderId: 'drive-folder-001',
+      contentType: 'image/jpeg',
+      sizeBytes: 2048,
+      checksum: 'b'.repeat(64),
+    },
+    { ...context, firestore, ...firestore },
+  )
+
+  assert.equal(firestore.writes[0].data.mediaState, 'drive-verified')
+  assert.equal(firestore.writes[0].data.media.provider, 'google-drive')
+  assert.equal(firestore.writes[0].data.media.driveFileId, 'drive-file-001')
+  assert.equal(firestore.writes[0].data.media.storagePath, '')
+  assert.equal(JSON.stringify(firestore.writes[0].data).includes('blob:'), false)
+})
+
 test('full-document v1 writes replace legacy extra fields instead of merging them forward', async () => {
   const firestore = createFirestoreStub()
   firestore.seed('couples/couple_alpha/favorites/member_one', {
