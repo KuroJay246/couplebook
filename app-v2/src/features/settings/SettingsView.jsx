@@ -46,6 +46,15 @@ const MOMENT_LINKS = [
   },
 ]
 
+const SETTINGS_CATEGORIES = [
+  ['profiles', 'Profiles and dates'],
+  ['appearance', 'Appearance'],
+  ['media', 'Photos and videos'],
+  ['privacy', 'Privacy and access'],
+  ['preferences', 'Preferences'],
+  ['advanced', 'Advanced'],
+]
+
 function buildFormState(model) {
   return {
     appearanceTheme: model.appearance?.currentTheme?.value || model.appearance?.preservedTheme?.value || DEFAULT_THEME_ID,
@@ -137,6 +146,7 @@ export function SettingsView({ compatibilityError, compatibilityState, model, on
   const [draft, setDraft] = useState({})
   const [signOutState, setSignOutState] = useState({ open: false, pending: false })
   const [status, setStatus] = useState({ kind: '', message: '', saving: false })
+  const [activeCategory, setActiveCategory] = useState('profiles')
   const form = useMemo(() => ({ ...loadedForm, ...draft, revision: loadedForm.revision }), [draft, loadedForm])
   const dirty = hasChanges(loadedForm, form)
   const agreementCards = [model.contract?.currentUser, model.contract?.partner].filter(Boolean)
@@ -212,6 +222,20 @@ export function SettingsView({ compatibilityError, compatibilityState, model, on
       />
 
       {status.message ? <InlineAlert description={status.message} tone={status.kind === 'error' ? 'error' : 'success'} /> : null}
+
+      <nav aria-label="Settings categories" className="cb-settings-tabs">
+        {SETTINGS_CATEGORIES.map(([key, label]) => (
+          <button
+            aria-current={activeCategory === key ? 'page' : undefined}
+            className={activeCategory === key ? 'cb-settings-tab cb-settings-tab-active min-h-11' : 'cb-settings-tab min-h-11'}
+            key={key}
+            onClick={() => setActiveCategory(key)}
+            type="button"
+          >
+            {label}
+          </button>
+        ))}
+      </nav>
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(20rem,0.9fr)]">
         <Surface className="cb-page-frame">

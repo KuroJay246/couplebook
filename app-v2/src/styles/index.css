@@ -146,6 +146,32 @@ h6 {
   position: relative;
 }
 
+.cb-settings-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.55rem;
+  padding: 0.35rem;
+  border: 1px solid var(--cb-border);
+  border-radius: 1.25rem;
+  background: var(--cb-surface-soft);
+}
+
+.cb-settings-tab {
+  min-height: 2.75rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.9rem;
+  color: var(--cb-text-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-align: left;
+}
+
+.cb-settings-tab-active {
+  background: var(--cb-surface);
+  color: var(--cb-text);
+  box-shadow: 0 8px 20px rgba(84, 53, 67, 0.08);
+}
+
 /* The primary dashboard memory action remains a full touch target even when rendered as a route link. */
 a[href="/timeline"].cb-button-pill {
   min-height: 2.75rem;
@@ -316,6 +342,7 @@ a[href="/timeline"].cb-button-pill {
 }
 
 @media (max-width: 640px) {
+  .cb-settings-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .cb-album-intro {
     padding: 1.25rem;
   }
