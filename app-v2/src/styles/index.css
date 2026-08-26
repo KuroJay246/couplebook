@@ -123,8 +123,11 @@ h6 {
   border-radius: 1rem;
 }
 
-.cb-button-pill {
+.cb-button.cb-button-pill {
+  height: 2.75rem;
   min-height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
   border-radius: 999px;
   padding-inline: 0.55rem 1rem;
   box-shadow: 0 10px 30px rgba(36, 19, 29, 0.1);
@@ -141,6 +144,12 @@ h6 {
 
 .cb-button-fab {
   position: relative;
+}
+
+/* The primary dashboard memory action remains a full touch target even when rendered as a route link. */
+a[href="/timeline"].cb-button-pill {
+  min-height: 2.75rem;
+  height: 2.75rem;
 }
 
 .cb-editorial-hero {

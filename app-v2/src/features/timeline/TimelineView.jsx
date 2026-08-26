@@ -49,6 +49,11 @@ function chapterLabel(memory) {
   return 'Date Review'
 }
 
+function monthLabel(memory) {
+  if (memory.date?.status !== 'valid' || !memory.date?.year || !memory.date?.month) return 'Undated'
+  return new Date(Date.UTC(memory.date.year, memory.date.month - 1, 1)).toLocaleDateString('en-US', { month: 'long', timeZone: 'UTC' })
+}
+
 function memoryDateValue(memory) {
   if (typeof memory?.date?.raw === 'string') return memory.date.raw.slice(0, 10)
   if (typeof memory?.date?.value === 'string') return memory.date.value.slice(0, 10)
@@ -551,20 +556,21 @@ export function TimelineView({ compatibilityError, compatibilityState, model, on
       ) : null}
 
       {filtered.length > 0 ? (
-        <div className="space-y-6">
+        <div className="cb-story-rail space-y-8">
           {filtered.map((memory, index) => {
             const previous = filtered[index - 1]
             const currentChapter = chapterLabel(memory)
             const previousChapter = previous ? chapterLabel(previous) : null
+            const currentMonth = monthLabel(memory)
+            const previousMonth = previous ? monthLabel(previous) : null
             return (
-              <section key={memory.id} className="space-y-3">
+              <section key={memory.id} className="cb-story-marker relative space-y-3 pl-8 sm:pl-12">
                 {currentChapter !== previousChapter ? (
-                  <div className="sticky top-[5.5rem] z-10">
-                    <div className="inline-flex rounded-full border border-[var(--cb-border)] bg-[var(--cb-surface)] px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)] shadow-[0_8px_24px_rgba(84,53,67,0.06)]">
-                      {currentChapter}
-                    </div>
+                  <div className="sticky top-[5.5rem] z-10 mb-2">
+                    <div className="inline-flex rounded-full border border-[var(--cb-border)] bg-[var(--cb-surface)] px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)] shadow-[0_8px_24px_rgba(84,53,67,0.06)]">{currentChapter}</div>
                   </div>
                 ) : null}
+                {currentMonth !== previousMonth || currentChapter !== previousChapter ? <p className="text-sm font-semibold text-[var(--cb-text-secondary)]">{currentMonth}</p> : null}
                 <TimelineCard
                   memory={memory}
                   onArchive={(candidate) => setConfirmState({ mode: 'archive', memory: candidate })}

@@ -2,6 +2,7 @@ import { CalendarHeart, Clock3, HeartHandshake, Images, NotebookPen, Plus, Star 
 import { Link } from 'react-router-dom'
 import { EmptyState } from '../../components/ui/EmptyState.jsx'
 import { StatusBadge } from '../../components/ui/StatusBadge.jsx'
+import { PrimaryButton } from '../../components/ui/Button.jsx'
 
 function RecentMemories({ section }) {
   const items = section.items || []
@@ -238,12 +239,12 @@ export function DashboardView({ model }) {
               Start with the part of the relationship that still feels closest, then move into the album, the story, or what is coming up next.
             </p>
             <div className="mt-6 flex flex-wrap items-center gap-3">
-              <Link className="cb-button cb-button-primary cb-button-pill inline-flex items-center gap-3 text-sm font-bold text-white" to="/timeline">
+              <PrimaryButton as={Link} className="cb-button-pill" to="/timeline">
                 <span className="cb-button-pill-icon" aria-hidden="true">
                   <Plus className="size-4" />
                 </span>
                 Add memory
-              </Link>
+              </PrimaryButton>
               <Link className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--cb-border)] px-4 text-xs font-bold text-[var(--cb-text-muted)] hover:bg-[var(--cb-accent-soft)]" to="/gallery">
                 <Images className="size-4" />
                 Open Album

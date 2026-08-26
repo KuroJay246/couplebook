@@ -29,17 +29,17 @@ const VIEWPORTS = Object.freeze([
 
 const ROUTES = Object.freeze([
   { path: '/login', heading: 'Sign in with your Couple Book email', fixture: browserRegressionSignedOutFixture },
-  { path: '/dashboard', heading: /Pick up right where the relationship feels most alive\./, fixture: browserRegressionAuthorizedFixture },
+  { path: '/dashboard', heading: /Home/, fixture: browserRegressionAuthorizedFixture },
   { path: '/timeline', heading: /Our Story/, fixture: browserRegressionAuthorizedFixture, detailButton: 'View memory' },
-  { path: '/gallery', heading: /Our Shared Gallery/, fixture: browserRegressionAuthorizedFixture, detailSelector: 'button.gallery-media-frame' },
-  { path: '/profile', heading: /Us/, fixture: browserRegressionAuthorizedFixture },
+  { path: '/gallery', heading: /Moments we kept close/, fixture: browserRegressionAuthorizedFixture, detailSelector: 'button.gallery-media-frame' },
+  { path: '/profile', heading: /About us/, fixture: browserRegressionAuthorizedFixture },
   { path: '/favorites', heading: /Favorite Things/, fixture: browserRegressionAuthorizedFixture },
-  { path: '/plans', heading: /Ideas worth doing together\./, fixture: browserRegressionAuthorizedFixture },
+  { path: '/plans', heading: /Things we want to do together/, fixture: browserRegressionAuthorizedFixture },
   { path: '/settings', heading: /Settings/, fixture: browserRegressionAuthorizedFixture },
   { path: '/contract', heading: /Shared Relationship Contract/, fixture: browserRegressionAuthorizedFixture },
-  { path: '/birthday', heading: 'Fictional birthday runtime chapter', fixture: browserRegressionAuthorizedFixture },
-  { path: '/valentine', heading: 'Fictional Valentine runtime chapter', fixture: browserRegressionAuthorizedFixture },
-  { path: '/confession', heading: 'Fictional confession runtime chapter', fixture: browserRegressionAuthorizedFixture },
+  { path: '/birthday', heading: /Birthday/, fixture: browserRegressionAuthorizedFixture },
+  { path: '/valentine', heading: /Valentine/, fixture: browserRegressionAuthorizedFixture },
+  { path: '/confession', heading: /Confession/, fixture: browserRegressionAuthorizedFixture },
 ])
 
 const READ_ONLY_WORKFLOW_ROUTES = new Set(['/timeline', '/profile', '/favorites', '/plans', '/settings', '/contract', '/birthday', '/valentine', '/confession'])

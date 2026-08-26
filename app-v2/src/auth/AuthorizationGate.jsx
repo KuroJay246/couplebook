@@ -1,5 +1,6 @@
 import { ErrorState } from '../components/ErrorState'
 import { useAuth } from './useAuth'
+import { toUserFacingError } from '../services/userFacingError.js'
 
 export function AuthorizationGate({
   title = 'Private access blocked',
@@ -12,7 +13,7 @@ export function AuthorizationGate({
       <main className="mx-auto max-w-3xl">
         <ErrorState
           actionLabel="Sign out"
-          description={authError || description}
+          description={toUserFacingError(authError, description)}
           onAction={() => signOut()}
           title={title}
         >

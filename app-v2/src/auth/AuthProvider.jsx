@@ -3,6 +3,7 @@ import { auth, isFirebaseConfigured, missingFirebaseConfigMessage } from '../lib
 import { getBrowserTestAuthState } from '../lib/browserTestMode'
 import { ensureAuthPersistence, observeAuthState, signInWithEmail, signOutCurrentUser } from '../services/authService'
 import { resolveApprovedUser } from '../services/authorizationService'
+import { toAuthError, toUserFacingError } from '../services/userFacingError.js'
 import { AuthContext } from './AuthContext'
 
 const UNAPPROVED_ACCOUNT_MESSAGE = 'This account is not approved for Couple Book.'
@@ -105,7 +106,7 @@ export function AuthProvider({ children }) {
           user: nextUser,
           approvedUser: null,
           isAuthorized: false,
-          authError: error?.message || 'Couple Book could not verify this account.',
+          authError: toUserFacingError(error, 'We could not verify this account right now. Try again.'),
           authInitialized: true,
           loading: false,
         })
@@ -128,7 +129,7 @@ export function AuthProvider({ children }) {
               user: null,
               approvedUser: null,
               isAuthorized: false,
-              authError: error?.message || 'Couple Book auth monitoring failed.',
+              authError: toUserFacingError(error, 'We could not keep your sign-in active. Try again.'),
               authInitialized: true,
               loading: false,
             })
@@ -148,7 +149,7 @@ export function AuthProvider({ children }) {
           user: null,
           approvedUser: null,
           isAuthorized: false,
-          authError: error?.message || 'Couple Book could not initialize Firebase auth.',
+          authError: toUserFacingError(error, 'We could not start sign-in right now. Try again.'),
           authInitialized: true,
           loading: false,
         })
@@ -182,7 +183,7 @@ export function AuthProvider({ children }) {
         user: null,
         approvedUser: null,
         isAuthorized: false,
-        authError: error?.message || 'Unable to complete sign-in.',
+        authError: toAuthError(error),
         authInitialized: true,
         loading: false,
       })

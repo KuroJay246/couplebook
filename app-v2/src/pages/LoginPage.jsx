@@ -6,6 +6,7 @@ import { LoadingState } from '../components/LoadingState'
 import { BrandMark } from '../components/BrandMark.jsx'
 import { useAuth } from '../auth/useAuth'
 import { getRequestedReturnPath } from '../utils/navigation'
+import { toAuthError } from '../services/userFacingError.js'
 
 export function LoginPage() {
   const { authError, authInitialized, isAuthorized, isConfigured, loading, signIn, signOut, user } = useAuth()
@@ -40,7 +41,7 @@ export function LoginPage() {
     try {
       await signIn(email, password)
     } catch (error) {
-      setSubmitError(error?.message || 'Unable to complete sign-in.')
+      setSubmitError(toAuthError(error))
     } finally {
       setSubmitting(false)
     }

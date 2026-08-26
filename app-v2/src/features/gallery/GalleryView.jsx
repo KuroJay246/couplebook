@@ -109,10 +109,10 @@ function GalleryTile({ item, onSelect }) {
   const isVideo = item.media.kind === 'video'
 
   return (
-    <ContentCard className="gallery-item flex h-full flex-col overflow-hidden p-0">
+    <article className="cb-photo-book-tile gallery-item flex h-full flex-col overflow-hidden">
       <button
         aria-label={galleryTileLabel(item)}
-        className="gallery-media-frame flex min-h-56 w-full flex-col justify-between bg-[linear-gradient(180deg,#fff9fb_0%,#fdf4f8_100%)] p-5 text-left"
+        className="cb-photo-book-tile-inner gallery-media-frame flex min-h-56 w-full flex-col justify-between bg-[linear-gradient(180deg,#fff9fb_0%,#fdf4f8_100%)] p-5 text-left"
         onClick={() => onSelect(item)}
         type="button"
       >
@@ -136,7 +136,7 @@ function GalleryTile({ item, onSelect }) {
           {item.specialMoment.route ? <SecondaryButton as={Link} to={item.specialMoment.route}>Open related page</SecondaryButton> : null}
         </div>
       </div>
-    </ContentCard>
+    </article>
   )
 }
 
