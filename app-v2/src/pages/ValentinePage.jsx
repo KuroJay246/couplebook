@@ -77,6 +77,12 @@ export function ValentinePage() {
     window.setTimeout(() => setMessage('I can’t wait for Valentine’s Day with you.'), 700)
   }
 
+  function replay() {
+    setAccepted(false)
+    setMessage('')
+    setNoStyle({ left: '57%', top: '0.75rem' })
+  }
+
   return (
     <section className="special-moment-page special-valentine-page" data-route="valentine">
       <div className="special-moment-utility">
@@ -103,6 +109,7 @@ export function ValentinePage() {
           <div className="valentine-response" aria-live="polite">
             {message || 'The page still works even when the private audio is not available here.'}
           </div>
+          <button className="special-moment-link subtle mt-5" onClick={replay} type="button">Replay</button>
         </div>
       </div>
     </section>

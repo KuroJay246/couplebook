@@ -20,6 +20,11 @@ export function BirthdayPage() {
   const { model, refreshCompatibility } = useSpecialMomentContent('birthday')
   const [revealed, setRevealed] = useState(false)
 
+  function replay() {
+    setRevealed(false)
+    window.setTimeout(() => setRevealed(true), 120)
+  }
+
   useEffect(() => {
     const timer = window.setTimeout(() => setRevealed(true), 220)
     return () => window.clearTimeout(timer)
@@ -50,7 +55,7 @@ export function BirthdayPage() {
         <div className="birthday-card">
           <div className="birthday-card-glow" aria-hidden="true" />
           <div className="birthday-card-inner">
-            <div className={`birthday-cake ${revealed ? 'is-revealed' : ''}`} aria-hidden="true">
+            <button aria-label="Reveal birthday cake" className={`birthday-cake ${revealed ? 'is-revealed' : ''}`} onClick={() => setRevealed(true)} type="button">
               <div className="birthday-candles">
                 <span className="candle tall"><span className="flame" /></span>
                 <span className="candle medium"><span className="flame" /></span>
@@ -77,13 +82,16 @@ export function BirthdayPage() {
                 <span className="sprinkle violet" />
               </div>
               <div className="birthday-cake-plate" />
-            </div>
+            </button>
 
             <div className={`birthday-copy ${revealed ? 'is-revealed' : ''}`}>
               <p className="birthday-kicker">{formatMomentDate(model.moment.date)}</p>
               <h1>{model.moment.title}</h1>
               <p className="birthday-subtitle">{model.moment.subtitle || 'With all my heart'}</p>
             </div>
+          </div>
+          <div className="birthday-actions">
+            <button className="special-moment-link" onClick={replay} type="button">Replay</button>
           </div>
 
           <div className="birthday-confetti" aria-hidden="true">
