@@ -135,5 +135,11 @@ export function createGoogleDriveMediaProvider({ clientId, fetchImpl = globalThi
     return response.json()
   }
 
-  return Object.freeze({ connect, disconnect, fetchPreview, getConnectionState, listFiles, upload, validateFolder })
+  function openExternally(fileId) {
+    if (typeof window === 'undefined' || !fileId) return false
+    window.open(`https://drive.google.com/open?id=${encodeURIComponent(fileId)}`, '_blank', 'noopener,noreferrer')
+    return true
+  }
+
+  return Object.freeze({ connect, disconnect, fetchPreview, getConnectionState, listFiles, openExternally, upload, validateFolder })
 }

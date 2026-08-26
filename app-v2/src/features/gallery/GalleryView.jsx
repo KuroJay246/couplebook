@@ -340,6 +340,61 @@ function UploadQueueCard({ item, onCancel, onChange, onRemove, onRetry }) {
   )
 }
 
+function DriveMediaGrid({ drive }) {
+  const [loadingId, setLoadingId] = useState('')
+  const [error, setError] = useState('')
+
+  async function showPreview(file) {
+    setLoadingId(file.id)
+    setError('')
+    try {
+      await drive.getPreview(file.id)
+    } catch (previewError) {
+      setError(previewError.message || 'This Drive preview is temporarily unavailable.')
+    } finally {
+      setLoadingId('')
+    }
+  }
+
+  if (drive.state !== 'connected') return null
+  return (
+    <Surface aria-label="Google Drive media" tone="soft">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="cb-kicker">Drive media</p>
+          <h2 className="mt-2 font-serif text-2xl text-[var(--cb-text)]">Originals from the private folder</h2>
+        </div>
+        <SecondaryButton onClick={() => void drive.refreshListing()}>Refresh media</SecondaryButton>
+      </div>
+      {error ? <InlineAlert className="mt-4" tone="error" title="Preview unavailable" description={error} /> : null}
+      {drive.files.length === 0 ? <p className="mt-5 text-sm text-[var(--cb-text-secondary)]">Drive access is confirmed and the folder contains no supported images or videos.</p> : (
+        <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {drive.files.map((file) => {
+            const preview = drive.previews[file.id]
+            const isVideo = file.mimeType?.startsWith('video/')
+            return (
+              <article className="cb-card overflow-hidden" key={file.id}>
+                <div className="aspect-[4/3] bg-[var(--cb-surface-raised)]">
+                  {preview && !isVideo ? <img alt={file.name} className="h-full w-full object-cover" src={preview} /> : (
+                    <button className="grid h-full w-full place-items-center p-5 text-center" onClick={() => void showPreview(file)} type="button">
+                      <span className="text-sm font-semibold text-[var(--cb-text)]">{loadingId === file.id ? 'Loading preview...' : isVideo ? 'Open video preview' : 'Load image preview'}</span>
+                    </button>
+                  )}
+                </div>
+                <div className="p-4">
+                  <p className="truncate text-sm font-semibold text-[var(--cb-text)]">{file.name}</p>
+                  <p className="mt-1 text-xs text-[var(--cb-text-muted)]">{isVideo ? 'Video' : 'Image'} · Drive file</p>
+                  {isVideo ? <SecondaryButton className="mt-3" onClick={() => drive.provider.openExternally(file.id)}>Open in Drive</SecondaryButton> : null}
+                </div>
+              </article>
+            )
+          })}
+        </div>
+      )}
+    </Surface>
+  )
+}
+
 export function GalleryView({ compatibilityError, compatibilityState, model, onRefresh }) {
   const [filter, setFilter] = useState('all')
   const [year, setYear] = useState('all')
@@ -487,6 +542,7 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
         {drive.message ? <InlineAlert className="mt-4" tone={drive.state === 'wrong-account' || drive.state === 'folder-inaccessible' ? 'warning' : 'error'} title="Drive access needs attention" description={drive.message} /> : null}
         {drive.state === 'wrong-account' || drive.state === 'folder-inaccessible' ? <p className="mt-3 text-sm text-[var(--cb-text-secondary)]">This Google account cannot access the Couple Book media folder. Reconnect using the account that owns the folder or has permission to open it.</p> : null}
       </Surface>
+      <DriveMediaGrid drive={drive} />
       <LiveAlbumTile />
       {manageUploadsOpen ? <div className="grid gap-5" aria-label="Album management tools">
         <Surface aria-label="Upload queue" tone="soft">

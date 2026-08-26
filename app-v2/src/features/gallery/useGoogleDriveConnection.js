@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { readRuntimeEnv } from '../../data/adapterUtils.js'
 import { createGoogleDriveMediaProvider, DRIVE_STATE } from '../../services/googleDriveMediaProvider.js'
 
@@ -26,6 +26,22 @@ export function useGoogleDriveConnection() {
   const provider = useMemo(() => createGoogleDriveMediaProvider({ clientId: env.VITE_GOOGLE_CLIENT_ID }), [env.VITE_GOOGLE_CLIENT_ID])
   const [state, setState] = useState(() => provider.getConnectionState())
   const [message, setMessage] = useState('')
+  const [files, setFiles] = useState([])
+  const [previews, setPreviews] = useState({})
+  const previewUrlsRef = useRef(new Set())
+
+  const refreshListing = useCallback(async () => {
+    const nextFiles = []
+    let pageToken = ''
+    for (let page = 0; page < 5; page += 1) {
+      const result = await provider.listFiles({ pageToken, pageSize: 100 })
+      nextFiles.push(...result.files)
+      pageToken = result.nextPageToken
+      if (!pageToken) break
+    }
+    setFiles(nextFiles)
+    return nextFiles
+  }, [provider])
 
   const connect = useCallback(async () => {
     setState(DRIVE_STATE.connecting)
@@ -34,21 +50,39 @@ export function useGoogleDriveConnection() {
       await loadGoogleIdentityScript()
       const result = await provider.connect()
       setState(result.state)
+      await refreshListing()
       return result
     } catch (error) {
       setState(error.code || DRIVE_STATE.temporaryFailure)
       setMessage(error.message)
       throw error
     }
-  }, [provider])
+  }, [provider, refreshListing])
 
   const disconnect = useCallback(() => {
     provider.disconnect()
+    for (const url of previewUrlsRef.current) URL.revokeObjectURL(url)
+    previewUrlsRef.current.clear()
+    setFiles([])
+    setPreviews({})
     setState(DRIVE_STATE.disconnected)
     setMessage('')
   }, [provider])
 
   const retryAccess = useCallback(async () => connect(), [connect])
 
-  return { connect, disconnect, message, provider, retryAccess, state }
+  const getPreview = useCallback(async (fileId) => {
+    if (previews[fileId]) return previews[fileId]
+    const url = await provider.fetchPreview(fileId)
+    previewUrlsRef.current.add(url)
+    setPreviews((current) => ({ ...current, [fileId]: url }))
+    return url
+  }, [previews, provider])
+
+  useEffect(() => () => {
+    for (const url of previewUrlsRef.current) URL.revokeObjectURL(url)
+    previewUrlsRef.current.clear()
+  }, [])
+
+  return { connect, disconnect, files, getPreview, message, previews, provider, refreshListing, retryAccess, state }
 }
