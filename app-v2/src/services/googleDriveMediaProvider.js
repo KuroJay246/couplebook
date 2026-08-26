@@ -61,13 +61,14 @@ export function createGoogleDriveMediaProvider({ clientId, fetchImpl = globalThi
 
   async function connect() {
     if (!clientId) throw driveError(DRIVE_STATE.temporaryFailure, 'Google Drive connection is not configured for this preview.')
-    if (!fetchImpl || !google?.accounts?.oauth2?.initTokenClient) {
+    const googleApi = google || globalThis.google
+    if (!fetchImpl || !googleApi?.accounts?.oauth2?.initTokenClient) {
       throw driveError(DRIVE_STATE.temporaryFailure, 'Google Drive authorization is unavailable in this browser.')
     }
 
     state = DRIVE_STATE.connecting
     return new Promise((resolve, reject) => {
-      tokenClient = google.accounts.oauth2.initTokenClient({
+      tokenClient = googleApi.accounts.oauth2.initTokenClient({
         client_id: clientId,
         scope: GOOGLE_DRIVE_SCOPE,
         callback: async (response) => {

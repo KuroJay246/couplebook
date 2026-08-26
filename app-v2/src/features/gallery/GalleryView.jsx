@@ -19,6 +19,7 @@ import { Toast } from '../../components/ui/Toast.jsx'
 import { formatBytes } from '../../services/mediaUploadService.js'
 import { QUEUE_STATUS } from './useMediaUploadQueue.js'
 import { useMediaUploadQueue } from './useMediaUploadQueue.js'
+import { useGoogleDriveConnection } from './useGoogleDriveConnection.js'
 
 const LIVE_SHARED_ALBUM_URL = 'https://www.icloud.com/photos/#/sa,20BC8532-D41C-4AB3-9C83-B05458C10B78/'
 const FILTERS = [
@@ -348,6 +349,7 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
   const [manageUploadsOpen, setManageUploadsOpen] = useState(false)
   const fileInputRef = useRef(null)
   const uploadQueue = useMediaUploadQueue(onRefresh)
+  const drive = useGoogleDriveConnection()
   const items = useMemo(() => (Array.isArray(model.items) ? model.items : []), [model])
   const years = model.filters?.availableYears || []
 
@@ -467,13 +469,31 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
         </div>
       </Surface>
 
+      <Surface tone="soft" aria-label="Google Drive media connection">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="cb-kicker">Private media provider</p>
+            <h2 className="mt-2 font-serif text-2xl text-[var(--cb-text)]">Google Drive connection</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--cb-text-secondary)]">
+              Album media is intended to come from the private Couple Book Drive folder. Temporary previews stay in memory and are never saved to Firestore.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {drive.state === 'connected' ? <StatusBadge tone="success">Connected</StatusBadge> : <StatusBadge tone="warning">{drive.state === 'disconnected' ? 'Not connected' : drive.state}</StatusBadge>}
+            {drive.state === 'connected' ? <SecondaryButton onClick={drive.disconnect}>Disconnect</SecondaryButton> : <PrimaryButton loading={drive.state === 'connecting'} onClick={() => void drive.connect()}>{drive.state === 'connecting' ? 'Connecting' : 'Connect Google Drive'}</PrimaryButton>}
+            {drive.state !== 'connected' && drive.state !== 'connecting' ? <SecondaryButton onClick={() => void drive.retryAccess()}>Retry access</SecondaryButton> : null}
+          </div>
+        </div>
+        {drive.message ? <InlineAlert className="mt-4" tone={drive.state === 'wrong-account' || drive.state === 'folder-inaccessible' ? 'warning' : 'error'} title="Drive access needs attention" description={drive.message} /> : null}
+        {drive.state === 'wrong-account' || drive.state === 'folder-inaccessible' ? <p className="mt-3 text-sm text-[var(--cb-text-secondary)]">This Google account cannot access the Couple Book media folder. Reconnect using the account that owns the folder or has permission to open it.</p> : null}
+      </Surface>
       <LiveAlbumTile />
       {manageUploadsOpen ? <div className="grid gap-5" aria-label="Album management tools">
         <Surface aria-label="Upload queue" tone="soft">
           <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Upload queue</p>
           <h3 className="mt-2 font-serif text-2xl text-[var(--cb-text)]">Protected imports</h3>
           <p className="mt-2 text-sm leading-6 text-[var(--cb-text-secondary)]">
-            Add private image and video files, confirm the memory details, and save them through the same active-member Storage and Firestore boundaries already enforced in app-v2.
+            Add private image and video files, confirm the memory details, and save them through Google Drive plus the active-member Firestore metadata boundary.
           </p>
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
             <ContentCard>
