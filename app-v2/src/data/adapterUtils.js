@@ -160,6 +160,8 @@ export function readRuntimeEnv() {
       VITE_FIRESTORE_EMULATOR_HOST: import.meta.env.PROD ? '' : import.meta.env.VITE_FIRESTORE_EMULATOR_HOST,
       VITE_FIRESTORE_EMULATOR_PORT: import.meta.env.PROD ? '' : import.meta.env.VITE_FIRESTORE_EMULATOR_PORT,
       VITE_FIREBASE_STORAGE_EMULATOR_HOST: import.meta.env.PROD ? '' : import.meta.env.VITE_FIREBASE_STORAGE_EMULATOR_HOST,
+      VITE_GOOGLE_CLIENT_ID: import.meta.env.VITE_GOOGLE_CLIENT_ID || '',
+      VITE_MEDIA_PROVIDER: import.meta.env.VITE_MEDIA_PROVIDER || 'google-drive',
     }
   }
 

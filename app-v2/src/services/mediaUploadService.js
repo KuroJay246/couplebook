@@ -1,6 +1,7 @@
 import { deleteObject, ref, uploadBytesResumable } from 'firebase/storage'
 import { isLocalHostname, readRuntimeEnv } from '../data/adapterUtils.js'
 import { storage } from '../lib/firebase.js'
+import { assertProductionMediaProvider } from './mediaProviderConfig.js'
 
 const IMAGE_CONTENT_TYPES = Object.freeze(['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
 const VIDEO_CONTENT_TYPES = Object.freeze(['video/mp4', 'video/webm'])
@@ -204,6 +205,11 @@ export function createPrivateMediaUploadTask({
   sizeBytes,
   storageInstance = storage,
 }) {
+  const runtimeEnv = readRuntimeEnv()
+  if (runtimeEnv.VITE_WRITE_MODE === 'firestore-production-write') {
+    assertProductionMediaProvider(runtimeEnv)
+    throw new Error('Google Drive upload is required for production media. Firebase Storage upload is disabled until Drive finalization is configured.')
+  }
   if (!storageInstance) {
     throw new Error('Firebase Storage is not configured for this build.')
   }
