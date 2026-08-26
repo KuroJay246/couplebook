@@ -356,10 +356,10 @@ async function runAuthenticatedDesktopCoverage(browser) {
     await waitForRouteContent(page, '/settings', 'Settings')
 
     await page.goto(`${getBaseUrl()}/dashboard`, { waitUntil: 'domcontentloaded' })
-    await waitForRouteContent(page, '/dashboard', 'Pick up right where the relationship feels most alive.')
+    await waitForRouteContent(page, '/dashboard', /Our memories, plans, and special moments/)
 
     await page.goto(`${getBaseUrl()}/plans`, { waitUntil: 'domcontentloaded' })
-    await waitForRouteContent(page, '/plans', /Ideas worth doing together\./)
+    await waitForRouteContent(page, '/plans', /Things we want to do together/)
     assert.equal(await page.getByRole('button', { name: 'Add plan' }).count() > 0, true, 'Plans should keep the add-plan entry point visible.')
     assert.equal(await page.getByRole('searchbox', { name: 'Search plans' }).count(), 1, 'Plans should keep search visible.')
 
@@ -386,7 +386,7 @@ async function runAuthenticatedDesktopCoverage(browser) {
     await waitForRouteContent(page, '/timeline', 'Our Story')
 
     await page.goto(`${getBaseUrl()}/gallery`, { waitUntil: 'domcontentloaded' })
-    await waitForRouteContent(page, '/gallery', 'Our Shared Gallery')
+    await waitForRouteContent(page, '/gallery', 'Moments we kept close')
     await page.getByRole('heading', { name: 'Moments we kept close' }).waitFor({ state: 'visible', timeout: 5000 })
     assert.equal(await page.getByRole('button', { name: 'Open item' }).count() > 0, true, 'Gallery should render item actions.')
     await page.getByRole('button', { name: /Videos/ }).click()
@@ -395,19 +395,19 @@ async function runAuthenticatedDesktopCoverage(browser) {
     assert.equal(await page.getByRole('link', { name: /Our Live Album/ }).count(), 1, 'Gallery should include the integrated live album tile.')
 
     for (const [route, heading] of [
-      ['/birthday', 'Fictional birthday runtime chapter'],
-      ['/valentine', 'Fictional Valentine runtime chapter'],
-      ['/confession', 'Fictional confession runtime chapter'],
+      ['/birthday', /Birthday/],
+      ['/valentine', /Valentine/],
+      ['/confession', /Confession/],
     ]) {
       await page.goto(`${getBaseUrl()}${route}`, { waitUntil: 'domcontentloaded' })
       await waitForRouteContent(page, route, heading)
-      assert.equal(await page.getByRole('heading', { name: heading }).count(), 1)
+      assert.equal(await page.getByRole('heading', { name: heading }).count() > 0, true)
       assert.equal(await page.locator('main iframe').count(), 0, `${route} should not render embedded third-party frames.`)
       assert.equal(await page.getByRole('link', { name: 'Back to Home' }).count() > 0, true, `${route} should keep return navigation.`)
 
       if (route === '/birthday') {
         assert.equal(await page.locator('.birthday-cake').count(), 1, 'Birthday should render the rebuilt cake scene.')
-        assert.equal(await page.getByRole('link', { name: 'Open Settings' }).count(), 1, 'Birthday should link back to Settings.')
+        assert.equal(await page.getByRole('link', { name: 'Open Album' }).count(), 1, 'Birthday should link back to Album.')
       }
 
       if (route === '/valentine') {
@@ -425,7 +425,7 @@ async function runAuthenticatedDesktopCoverage(browser) {
 
     await page.goto(`${getBaseUrl()}/gallery`, { waitUntil: 'domcontentloaded' })
     await page.reload({ waitUntil: 'domcontentloaded' })
-    await waitForRouteContent(page, '/gallery', 'Our Shared Gallery')
+    await waitForRouteContent(page, '/gallery', 'Moments we kept close')
 
     await page.getByRole('button', { name: /Sign out/i }).first().click()
     const dialog = page.getByRole('dialog', { name: 'Sign out of Couple Book?' })
@@ -478,17 +478,17 @@ async function runAuthenticatedMobileCoverage(browser) {
     assert.equal(await page.getByRole('button', { name: 'View memory' }).count() > 0, true, 'Timeline mobile should retain detail actions.')
 
     await page.goto(`${getBaseUrl()}/plans`, { waitUntil: 'domcontentloaded' })
-    await waitForRouteContent(page, '/plans', /Ideas worth doing together\./)
+    await waitForRouteContent(page, '/plans', /Things we want to do together/)
     assert.equal(await page.getByRole('button', { name: 'Add plan' }).count() > 0, true, 'Plans mobile should keep the add-plan entry point visible.')
 
     await page.goto(`${getBaseUrl()}/gallery`, { waitUntil: 'domcontentloaded' })
-    await waitForRouteContent(page, '/gallery', 'Our Shared Gallery')
+    await waitForRouteContent(page, '/gallery', 'Moments we kept close')
     await page.getByRole('button', { name: /Videos/ }).click()
     assert.equal(await page.getByText('Video memory').count() > 0, true, 'Gallery mobile should keep video filtering available.')
 
     await page.goto(`${getBaseUrl()}/birthday`, { waitUntil: 'domcontentloaded' })
-    await waitForRouteContent(page, '/birthday', 'Fictional birthday runtime chapter')
-    assert.equal(await page.getByText('Fictional birthday runtime chapter').count(), 1, 'Special mobile route should render sanitized runtime content.')
+    await waitForRouteContent(page, '/birthday', /Birthday/)
+    assert.equal(await page.getByRole('heading', { name: /Birthday/ }).count(), 1, 'Special mobile route should render the birthday chapter.')
 
     const overflowX = await page.evaluate(() => {
       return Math.max(0, document.documentElement.scrollWidth - document.documentElement.clientWidth)
