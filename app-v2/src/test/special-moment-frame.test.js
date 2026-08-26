@@ -167,5 +167,5 @@ test('special moment content model renders runtime and unavailable states withou
   assert.equal(unavailableModel.status, 'unavailable')
   assert.equal(unavailableModel.moment, null)
   assert.deepEqual(unavailableModel.mediaSlots, [])
-  assert.match(unavailableModel.media.note, /private/i)
+  assert.match(unavailableModel.media.note, /private companion media/i)
 })

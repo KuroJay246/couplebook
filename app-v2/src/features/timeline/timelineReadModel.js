@@ -64,7 +64,7 @@ function buildSourceStatus(memorySource) {
         key: 'fallback-seed',
         status: 'deferred',
         source: 'core/state.js fallback seed',
-        summary: 'The old seeded fallback memory stays excluded from the routed shell.',
+        summary: 'A saved memory is being kept out until it can be shown safely.',
       },
     ],
   })

@@ -128,7 +128,7 @@ test('dashboard read model keeps unavailable memory states honest instead of pre
 
   assert.equal(model.recentMemories.state, 'unavailable')
   assert.match(model.recentMemories.emptyState.title, /still waiting on its archive/i)
-  assert.match(model.recentMemories.emptyState.description, /safe read-only path/i)
+  assert.match(model.recentMemories.emptyState.description, /shared archive is connected/i)
   assert.equal(model.sourceState.totals.unavailable, 1)
   assert.equal(model.sourceState.warnings.length, 1)
 })

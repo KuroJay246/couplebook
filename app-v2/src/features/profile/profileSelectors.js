@@ -40,10 +40,10 @@ function normalizeAnniversaryView(value) {
 function summarizeSource(key, source) {
   const status = source?.status || 'empty'
 
-  let summary = 'No legacy value is currently stored for this surface.'
+    let summary = 'Nothing is saved here yet.'
   if (status === 'ready') summary = 'Read-only compatibility data is available for this surface.'
-  if (status === 'unavailable') summary = 'This source remains intentionally disconnected until its read path is approved.'
-  if (status === 'invalid') summary = 'The routed shell refused malformed legacy data for this surface.'
+    if (status === 'unavailable') summary = 'These details are not available on this device right now.'
+    if (status === 'invalid') summary = 'Some saved details could not be read right now.'
 
   return {
     key,

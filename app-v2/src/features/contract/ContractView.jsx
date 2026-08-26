@@ -151,7 +151,7 @@ export function ContractView({ compatibilityError, compatibilityState, model, on
 
       <ConfirmDialog
         confirmLabel="Record acceptance"
-        message="This records your acceptance status. Do not continue during QA unless this is a deliberate write test."
+          message="This records your acceptance status. Continue only after you have read the agreement carefully."
         onCancel={() => setConfirmOpen(false)}
         onConfirm={handleAccept}
         open={confirmOpen && !accepted}

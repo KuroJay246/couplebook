@@ -1,6 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Film, ImageIcon, Images, RotateCcw, Upload, XCircle } from 'lucide-react'
+import { Film, ImageIcon, Images, RotateCcw, SlidersHorizontal, Upload, XCircle } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { DangerButton, PrimaryButton, SecondaryButton, TextButton } from '../../components/ui/Button.jsx'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx'
@@ -345,6 +345,7 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
   const [search, setSearch] = useState('')
   const [selectedItem, setSelectedItem] = useState(null)
   const [removeState, setRemoveState] = useState({ item: null, pending: false })
+  const [manageUploadsOpen, setManageUploadsOpen] = useState(false)
   const fileInputRef = useRef(null)
   const uploadQueue = useMediaUploadQueue(onRefresh)
   const items = useMemo(() => (Array.isArray(model.items) ? model.items : []), [model])
@@ -415,47 +416,33 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
       <PageHeader
         eyebrow="Album"
         title="Our Shared Gallery"
-        description="Browse photos and video memories, reopen the related story, and keep the live album close without changing private media boundaries."
+        description="A visual record of the days, places, and little moments you have chosen to keep."
         actions={(
           <>
             <StatusBadge tone="info">{model.summary.totalMemories} items</StatusBadge>
+            <SecondaryButton aria-expanded={manageUploadsOpen} onClick={() => setManageUploadsOpen((value) => !value)}><SlidersHorizontal className="size-4" />{manageUploadsOpen ? 'Close tools' : 'Manage uploads'}</SecondaryButton>
             <PrimaryButton disabled={!uploadQueue.canUpload} onClick={() => fileInputRef.current?.click()}><Upload className="size-4" />Add files</PrimaryButton>
           </>
         )}
       />
 
-      {model.warnings?.length ? (
-        <InlineAlert
-          tone="info"
-          title="Album bridge notes"
-          description={`The current Album view loaded with ${model.warnings.length} compatibility note${model.warnings.length === 1 ? '' : 's'}.`}
-        />
-      ) : null}
       {uploadQueue.notice.message ? <InlineAlert description={uploadQueue.notice.message} tone={uploadQueue.notice.kind === 'error' ? 'error' : uploadQueue.notice.kind === 'success' ? 'success' : 'info'} /> : null}
 
-      <Surface className="grid gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(18rem,0.9fr)]">
+      <section className="cb-album-intro grid gap-5 rounded-[28px] border border-[var(--cb-border)] bg-[var(--cb-surface)] p-6 shadow-[var(--cb-shadow-card)] lg:grid-cols-[minmax(0,1.1fr)_minmax(18rem,0.9fr)]">
         <div>
-          <StatusBadge tone="warning">Metadata-first private album</StatusBadge>
-          <h3 className="mt-3 font-serif text-3xl text-[var(--cb-text)]">Moments we kept close</h3>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--cb-text-secondary)]">
-            Album keeps the image-first view quiet and spacious while preserving the current private media boundary. Verified Storage media stays scoped, older references stay descriptive instead of leaking file paths.
-          </p>
+          <p className="cb-kicker">A book of moments</p>
+          <h2 className="mt-2 font-serif text-4xl text-[var(--cb-text)]">Moments we kept close</h2>
+          <p className="cb-body-copy mt-3 max-w-2xl text-sm leading-7">Browse by chapter, open a memory for its full story, or let the dates guide you through the collection.</p>
         </div>
-        <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
-          <ContentCard>
-            <p className="text-3xl font-bold text-[var(--cb-text)]">{model.summary.totalMemories}</p>
-            <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[var(--cb-text-muted)]">Moments with media</p>
-          </ContentCard>
-          <ContentCard>
-            <p className="text-3xl font-bold text-[var(--cb-text)]">{model.summary.photos}</p>
-            <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[var(--cb-text-muted)]">Photos</p>
-          </ContentCard>
-          <ContentCard>
-            <p className="text-3xl font-bold text-[var(--cb-text)]">{model.summary.videos}</p>
-            <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[var(--cb-text-muted)]">Videos</p>
-          </ContentCard>
+        <div className="grid grid-cols-3 gap-3 self-end">
+          {[['Photos', model.summary.photos], ['Videos', model.summary.videos], ['Chapters', grouped.length]].map(([label, value]) => (
+            <div className="rounded-2xl bg-[var(--cb-accent-soft)] p-4 text-center" key={label}>
+              <p className="text-2xl font-bold text-[var(--cb-text)]">{value}</p>
+              <p className="mt-1 text-[0.68rem] font-bold uppercase tracking-[0.12em] text-[var(--cb-text-muted)]">{label}</p>
+            </div>
+          ))}
         </div>
-      </Surface>
+      </section>
 
       <Surface>
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(12rem,0.45fr)_minmax(0,1fr)]">
@@ -480,8 +467,8 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
         </div>
       </Surface>
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(18rem,0.72fr)_minmax(0,1.28fr)]">
-        <LiveAlbumTile />
+      <LiveAlbumTile />
+      {manageUploadsOpen ? <div className="grid gap-5" aria-label="Album management tools">
         <Surface aria-label="Upload queue" tone="soft">
           <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Upload queue</p>
           <h3 className="mt-2 font-serif text-2xl text-[var(--cb-text)]">Protected imports</h3>
@@ -534,7 +521,7 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
             )}
           </div>
         </Surface>
-      </div>
+      </div> : null}
 
       <div className="space-y-6">
         {grouped.length > 0 ? grouped.map((group) => (

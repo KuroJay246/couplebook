@@ -17,7 +17,7 @@ const COPY = {
   birthday: {
     badge: 'Birthday',
     title: 'Birthday Chapter',
-    fallback: 'A private birthday chapter from the legacy book.',
+      fallback: 'A private birthday chapter for the two of you.',
     returnLabel: 'Return to Home',
     kicker: 'A day to celebrate',
     accent: 'radial-gradient(circle at 18% 18%, rgba(255, 214, 102, 0.2), transparent 30%), radial-gradient(circle at 88% 12%, rgba(255, 74, 107, 0.18), transparent 28%), linear-gradient(180deg, rgba(33, 15, 48, 0.98) 0%, rgba(20, 9, 38, 0.98) 100%)',
@@ -26,7 +26,7 @@ const COPY = {
   valentine: {
     badge: 'Valentine',
     title: 'Valentine Letter',
-    fallback: 'A private Valentine chapter from the legacy book.',
+      fallback: 'A private Valentine chapter for the two of you.',
     returnLabel: 'Return to Home',
     kicker: 'A kept love note',
     accent: 'radial-gradient(circle at 18% 18%, rgba(255, 122, 162, 0.18), transparent 32%), radial-gradient(circle at 84% 16%, rgba(255, 213, 226, 0.12), transparent 24%), linear-gradient(180deg, rgba(54, 14, 34, 0.98) 0%, rgba(33, 10, 24, 0.98) 100%)',
@@ -35,7 +35,7 @@ const COPY = {
   confession: {
     badge: 'Confession',
     title: 'Private Confession',
-    fallback: 'A private confession chapter from the legacy book.',
+      fallback: 'A private confession chapter for the two of you.',
     returnLabel: 'Return to Home',
     kicker: 'Private reading',
     accent: 'radial-gradient(circle at 16% 18%, rgba(227, 138, 174, 0.14), transparent 30%), radial-gradient(circle at 86% 14%, rgba(201, 154, 255, 0.12), transparent 24%), linear-gradient(180deg, rgba(36, 14, 26, 0.98) 0%, rgba(22, 8, 16, 0.98) 100%)',

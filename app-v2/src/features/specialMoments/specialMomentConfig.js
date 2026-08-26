@@ -10,9 +10,9 @@ export const specialMomentConfig = Object.freeze({
     contentConnection: 'development-only',
     summary: 'A protected birthday chapter can now read runtime sections without putting private text in the React bundle.',
     runtimeSubtitle: 'This chapter appears only from an approved runtime source.',
-    unavailableTitle: 'The birthday message remains safely in the legacy book.',
-    unavailableDescription: 'This private chapter has not been connected on this origin yet.',
-    unavailableMediaNote: 'Birthday companion media remains private and is not rendered in this build.',
+      unavailableTitle: 'Your birthday message is being kept private.',
+      unavailableDescription: 'This private chapter is not available on this device right now.',
+      unavailableMediaNote: 'Private companion media will appear when it is available to your account.',
   }),
   valentine: Object.freeze({
     key: 'valentine',
@@ -25,9 +25,9 @@ export const specialMomentConfig = Object.freeze({
     contentConnection: 'development-only',
     summary: 'A protected Valentine chapter can now read runtime sections without putting private text in the React bundle.',
     runtimeSubtitle: 'This chapter appears only from an approved runtime source.',
-    unavailableTitle: 'The Valentine letter remains safely in the legacy book.',
-    unavailableDescription: 'This protected correspondence has not been connected on this origin yet.',
-    unavailableMediaNote: 'Valentine companion media remains private and is not rendered in this build.',
+      unavailableTitle: 'Your Valentine letter is being kept private.',
+      unavailableDescription: 'This protected correspondence is not available on this device right now.',
+      unavailableMediaNote: 'Private companion media will appear when it is available to your account.',
   }),
   confession: Object.freeze({
     key: 'confession',
@@ -40,9 +40,9 @@ export const specialMomentConfig = Object.freeze({
     contentConnection: 'development-only',
     summary: 'A protected confession chapter can now read runtime sections without putting private text in the React bundle.',
     runtimeSubtitle: 'This chapter appears only from an approved runtime source.',
-    unavailableTitle: 'The confession remains safely in the legacy book.',
-    unavailableDescription: 'This protected note has not been connected on this origin yet.',
-    unavailableMediaNote: 'Confession companion media remains private and is not rendered in this build.',
+      unavailableTitle: 'Your confession is being kept private.',
+      unavailableDescription: 'This protected note is not available on this device right now.',
+      unavailableMediaNote: 'Private companion media will appear when it is available to your account.',
   }),
 })
 

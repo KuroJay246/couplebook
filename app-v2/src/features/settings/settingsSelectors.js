@@ -210,12 +210,12 @@ export function selectSettingsPrivacy() {
       },
       {
         label: 'Private media stays outside app-v2',
-        description: 'Sensitive legacy media is not bundled into this routed shell during the current migration phase.',
+        description: 'Private media stays protected and appears only when it is available to your account.',
         meta: 'Protected',
       },
       {
-        label: 'No Firebase Storage rollout',
-        description: 'Firebase Storage is still disabled for this project, and app-v2 has not replaced the production Hosting baseline.',
+        label: 'Private media connection',
+        description: 'Private media access is kept separate from your relationship details and preferences.',
         meta: 'Current boundary',
       },
     ],
@@ -223,7 +223,7 @@ export function selectSettingsPrivacy() {
 }
 
 function getCompatibilityStatusLabel(key, source) {
-  if (key === 'memories') return 'Development only'
+  if (key === 'memories') return 'Private'
   if (source?.status === 'ready') return 'Available'
   if (source?.status === 'empty') return 'Awaiting migration'
   if (source?.status === 'unavailable') return 'Not connected'
@@ -263,12 +263,12 @@ function getCompatibilitySummary(key, source) {
   }
 
   if (key === 'memories') {
-    if (status === 'ready') return 'The local memory bridge is available only for approved local development work.'
-    if (status === 'invalid') return 'The local memory bridge needs review before it can be used safely in development.'
-    return 'The local memory bridge stays blocked outside approved development conditions and never replaces protected routed reads.'
+    if (status === 'ready') return 'Private memories are available for this approved account.'
+    if (status === 'invalid') return 'Some private memories need review before they can be shown safely.'
+    return 'Private memories will appear here when they are available to your account.'
   }
 
-  return 'This compatibility source is still awaiting migration.'
+  return 'This shared detail will appear here when it is available to your account.'
 }
 
 export function selectSettingsCompatibility(snapshot) {
@@ -327,7 +327,7 @@ export function selectSettingsAdvanced({ runtimeMode, compatibilitySnapshot }) {
         description:
           runtimeMode === 'production'
             ? 'This routed shell is running in a production-style build with the same read-only safety boundary.'
-            : 'This routed shell is running in local development for migration work and browser regression checks.',
+            : 'This account is using the protected local preview of Couple Book.',
         meta: runtimeMode === 'production' ? 'Production-safe' : 'Local only',
       },
       {

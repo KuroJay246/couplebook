@@ -362,7 +362,15 @@ export function SettingsView({ compatibilityError, compatibilityState, model, on
           </div>
         </Surface>
 
-        <div className="grid gap-5">
+        <details className="cb-advanced-panel">
+          <summary className="cb-advanced-summary">
+            <span>
+              <span className="cb-kicker">Advanced</span>
+              <span className="mt-1 block text-lg font-semibold" style={{ color: 'var(--cb-text)' }}>System health and account controls</span>
+            </span>
+            <span className="text-sm font-semibold" style={{ color: 'var(--cb-accent)' }}>Review</span>
+          </summary>
+          <div className="grid gap-5 pt-5">
           <Surface tone="soft">
             <div className="flex items-start gap-3">
               <MonitorCog className="mt-1 size-5" style={{ color: 'var(--cb-accent)' }} aria-hidden="true" />
@@ -400,7 +408,8 @@ export function SettingsView({ compatibilityError, compatibilityState, model, on
               <SecondaryButton onClick={confirmSignOut}><LogOut className="size-4" />Sign out</SecondaryButton>
             </div>
           </Surface>
-        </div>
+          </div>
+        </details>
       </div>
 
       <ConfirmDialog

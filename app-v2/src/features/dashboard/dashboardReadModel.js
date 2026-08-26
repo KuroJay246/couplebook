@@ -178,7 +178,7 @@ function buildHeroSection({ approvedUser, participants, recentMemories, sourceSt
 
   if (recentMemories.state === 'unavailable') {
     description =
-      'The editorial shell is ready, but the legacy archive still needs a narrow read-only bridge before recent memories can open here honestly.'
+      'Your recent memories will appear here when the shared archive is connected.'
   } else if (memoryCount > 0) {
     description = `${memoryCount} ${pluralize(
       memoryCount,
@@ -282,21 +282,21 @@ function buildRecentMemoriesSection(memorySource) {
   })
 
   let emptyTitle = 'This chapter is still waiting on its archive.'
-  let emptyDescription = 'Recent memories will appear here once the routed shell has a safe read-only path to them.'
+    let emptyDescription = 'Recent memories will appear here when the shared archive is connected.'
 
   if (state === 'empty') {
     emptyTitle = 'No recent memories are stored for this view yet.'
-    emptyDescription = 'The dashboard frame is ready, but the shared archive has not placed a latest chapter here yet.'
+      emptyDescription = 'Your latest chapter will appear here once a memory has been saved.'
   }
 
   if (state === 'invalid') {
     emptyTitle = 'Recent memory data needs attention before it can be shown.'
-    emptyDescription = 'The routed shell is refusing to trust malformed legacy memory data.'
+      emptyDescription = 'Some saved memories could not be read right now.'
   }
 
   if (state === 'ready' && items.length === 0) {
     emptyTitle = 'The archive responded, but no recent memory cards were available.'
-    emptyDescription = 'This route stays honest about the missing cards instead of inventing a story opening.'
+      emptyDescription = 'There are no recent memory cards to show yet.'
   }
 
   return {
@@ -412,7 +412,7 @@ function buildMilestonesSection({ participants, settingsSource, now }) {
     birthdayCards,
     hasContent: anniversaryCards.length > 0 || birthdayCards.length > 0,
     emptyState: {
-      title: 'Milestones are waiting on the profile migration.',
+        title: 'Milestones will appear here soon.',
       description: 'Joined dates and birthdays will appear once the shared profile read model is fully connected.',
     },
   }
@@ -453,10 +453,10 @@ function summarizeSourceState(key, source) {
   const status = source?.status || 'empty'
   const warningCount = Array.isArray(source?.warnings) ? source.warnings.length : 0
 
-  let summary = 'No legacy value is currently stored for this surface.'
+  let summary = 'Nothing is saved here yet.'
   if (status === 'ready') summary = 'Read-only compatibility data is available for this surface.'
-  if (status === 'unavailable') summary = 'This source remains intentionally disconnected until its read path is approved.'
-  if (status === 'invalid') summary = 'The routed shell refused malformed legacy data for this surface.'
+  if (status === 'unavailable') summary = 'These details are not available on this device right now.'
+  if (status === 'invalid') summary = 'Some saved details could not be read right now.'
 
   return {
     key,

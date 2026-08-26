@@ -113,6 +113,70 @@ h6 {
   overflow-x: clip;
 }
 
+.cb-album-intro {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--cb-accent-soft) 82%, var(--cb-surface)), var(--cb-surface) 58%),
+    var(--cb-surface);
+}
+
+.cb-advanced-panel {
+  overflow: hidden;
+  border: 1px solid var(--cb-border);
+  border-radius: 1.25rem;
+  background: color-mix(in srgb, var(--cb-surface) 92%, var(--cb-bg));
+}
+
+.cb-advanced-summary {
+  display: flex;
+  min-height: 4.5rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  cursor: pointer;
+  padding: 1rem 1.25rem;
+  list-style: none;
+}
+
+.cb-advanced-summary::-webkit-details-marker {
+  display: none;
+}
+
+.cb-advanced-summary::after {
+  content: '+';
+  display: grid;
+  width: 1.75rem;
+  height: 1.75rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--cb-border);
+  border-radius: 999px;
+  color: var(--cb-accent);
+  font-size: 1.1rem;
+}
+
+.cb-advanced-panel[open] .cb-advanced-summary {
+  border-bottom: 1px solid var(--cb-border);
+}
+
+.cb-advanced-panel[open] .cb-advanced-summary::after {
+  content: '−';
+}
+
+@media (max-width: 640px) {
+  .cb-album-intro {
+    padding: 1.25rem;
+  }
+
+  .cb-album-intro h2 {
+    font-size: 2.35rem;
+    line-height: 1;
+  }
+
+  .cb-advanced-summary {
+    padding: 1rem;
+  }
+}
+
 .cb-brand-mark {
   display: inline-flex;
   align-items: center;
