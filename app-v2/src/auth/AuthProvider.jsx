@@ -9,6 +9,16 @@ import { AuthContext } from './AuthContext'
 const UNAPPROVED_ACCOUNT_MESSAGE = 'This account is not approved for Couple Book.'
 const PENDING_ACCOUNT_MESSAGE = 'This private book has not been opened for this account yet.'
 
+function reportDevAuthError(stage, error) {
+  if (!import.meta.env.DEV) return
+
+  console.error(`[AuthProvider:${stage}]`, {
+    code: error?.code || null,
+    message: error?.message || String(error || ''),
+    name: error?.name || null,
+  })
+}
+
 function getAuthorizationMessage(status) {
   if (status === 'pending') return PENDING_ACCOUNT_MESSAGE
   return UNAPPROVED_ACCOUNT_MESSAGE
@@ -102,6 +112,7 @@ export function AuthProvider({ children }) {
       } catch (error) {
         if (!active) return
 
+        reportDevAuthError('resolveApprovedUser', error)
         transitionAuthState(dispatchAuthState, {
           user: nextUser,
           approvedUser: null,
@@ -125,6 +136,7 @@ export function AuthProvider({ children }) {
           (error) => {
             if (!active) return
 
+            reportDevAuthError('observeAuthState', error)
             transitionAuthState(dispatchAuthState, {
               user: null,
               approvedUser: null,
@@ -145,6 +157,7 @@ export function AuthProvider({ children }) {
       } catch (error) {
         if (!active) return
 
+        reportDevAuthError('initializeAuth', error)
         transitionAuthState(dispatchAuthState, {
           user: null,
           approvedUser: null,
@@ -179,6 +192,7 @@ export function AuthProvider({ children }) {
 
       return result
     } catch (error) {
+      reportDevAuthError('signIn', error)
       transitionAuthState(dispatchAuthState, {
         user: null,
         approvedUser: null,

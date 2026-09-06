@@ -60,6 +60,12 @@ service cloud.firestore {
     //   subtitle: string, <=180
     //   date: string YYYY-MM-DD or empty
     //   sections: list <=8, validated structurally in app service
+    //
+    // couples/{coupleId}/auditEvents/{auditId}
+    //   schemaVersion: 1
+    //   operation: privacy-minimal write event
+    //   actorUid: auth uid
+    //   targetType/targetId/revision/result/details: redacted metadata only
     // ===============================================================
 
     function isSignedIn() {
@@ -99,6 +105,22 @@ service cloud.firestore {
 
     function isApprovedMomentType(momentType) {
       return momentType in ['birthday', 'valentine', 'confession'];
+    }
+
+    function isApprovedAuditOperation(operation) {
+      return operation in [
+        'profile.updated',
+        'favorites.updated',
+        'settings.updated',
+        'memory.updated',
+        'memory.archived',
+        'memory.restored',
+        'media.finalized',
+        'plan.updated',
+        'plan.completed',
+        'contract.accepted',
+        'special_moment.updated'
+      ];
     }
 
     function hasOnly(fields) {
@@ -382,6 +404,26 @@ service cloud.firestore {
         && request.resource.data.sections.size() <= 8;
     }
 
+    function isValidAuditEvent(coupleId) {
+      return hasOnly(['schemaVersion', 'operation', 'coupleId', 'actorUid', 'targetType', 'targetId', 'revision', 'result', 'details', 'createdAt'])
+        && hasAll(['schemaVersion', 'operation', 'coupleId', 'actorUid', 'targetType', 'targetId', 'revision', 'result', 'details', 'createdAt'])
+        && request.resource.data.schemaVersion == 1
+        && request.resource.data.coupleId == coupleId
+        && request.resource.data.actorUid == request.auth.uid
+        && isApprovedAuditOperation(request.resource.data.operation)
+        && request.resource.data.targetType in ['profile', 'favorites', 'settings', 'memory', 'plan', 'contract', 'specialMoment']
+        && isSafeString(request.resource.data.targetId, 120)
+        && request.resource.data.revision is int
+        && request.resource.data.revision >= 1
+        && request.resource.data.result == 'success'
+        && request.resource.data.details is map
+        && request.resource.data.details.keys().hasOnly(['category', 'convertedMemoryId', 'mediaId', 'mediaKind', 'mediaProvider', 'momentType', 'revision', 'status'])
+        && (!('mediaProvider' in request.resource.data.details) || request.resource.data.details.mediaProvider in ['google-drive', 'firebase-storage'])
+        && (!('mediaKind' in request.resource.data.details) || request.resource.data.details.mediaKind in ['image', 'video'])
+        && (!('status' in request.resource.data.details) || request.resource.data.details.status in ['active', 'archived', 'idea', 'planned', 'completed'])
+        && request.resource.data.createdAt is timestamp;
+    }
+
     match /users/{uid} {
       allow get: if isOwnUser(uid);
       allow list: if false;
@@ -447,6 +489,12 @@ service cloud.firestore {
         allow get: if isApprovedMomentType(momentType) && isActiveCoupleMember(coupleId);
         allow create, update: if isActiveCoupleMember(coupleId) && isValidSpecialMoment(momentType);
         allow list, delete: if false;
+      }
+
+      match /auditEvents/{auditId} {
+        allow get, list: if isActiveCoupleMember(coupleId);
+        allow create: if isActiveCoupleMember(coupleId) && isValidAuditEvent(coupleId);
+        allow update, delete: if false;
       }
 
       match /{document=**} {

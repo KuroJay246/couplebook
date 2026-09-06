@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { readRuntimeEnv } from '../../data/adapterUtils.js'
 import { createGoogleDriveMediaProvider, DRIVE_STATE } from '../../services/googleDriveMediaProvider.js'
 
@@ -21,68 +21,246 @@ function loadGoogleIdentityScript() {
   })
 }
 
-export function useGoogleDriveConnection() {
-  const env = readRuntimeEnv()
-  const provider = useMemo(() => createGoogleDriveMediaProvider({ clientId: env.VITE_GOOGLE_CLIENT_ID }), [env.VITE_GOOGLE_CLIENT_ID])
-  const [state, setState] = useState(() => provider.getConnectionState())
-  const [message, setMessage] = useState('')
-  const [files, setFiles] = useState([])
-  const [previews, setPreviews] = useState({})
-  const previewUrlsRef = useRef(new Set())
+function createRenderableState() {
+  return {
+    generation: 0,
+    state: DRIVE_STATE.disconnected,
+    message: '',
+    files: [],
+    previews: {},
+  }
+}
 
-  const refreshListing = useCallback(async () => {
-    const nextFiles = []
-    let pageToken = ''
-    for (let page = 0; page < 5; page += 1) {
-      const result = await provider.listFiles({ pageToken, pageSize: 100 })
-      nextFiles.push(...result.files)
-      pageToken = result.nextPageToken
-      if (!pageToken) break
-    }
-    setFiles(nextFiles)
-    return nextFiles
-  }, [provider])
+function isActiveGeneration(generationRef, generation) {
+  return generationRef.current === generation
+}
 
-  const connect = useCallback(async () => {
-    setState(DRIVE_STATE.connecting)
-    setMessage('')
+function readCurrentProvider(providerRef, renderRef) {
+  const provider = providerRef.current
+  if (!provider || renderRef.current.state !== DRIVE_STATE.connected) {
+    const error = new Error('Reconnect Google Drive before accessing private media.')
+    error.code = DRIVE_STATE.reconnectRequired
+    throw error
+  }
+  return provider
+}
+
+async function listAllFiles(provider) {
+  const nextFiles = []
+  let pageToken = ''
+  for (let page = 0; page < 5; page += 1) {
+    const result = await provider.listFiles({ pageToken, pageSize: 100 })
+    nextFiles.push(...result.files)
+    pageToken = result.nextPageToken
+    if (!pageToken) break
+  }
+  return nextFiles
+}
+
+export function createDriveConnectionController({
+  createProvider,
+  loadIdentityScript = loadGoogleIdentityScript,
+  revokeObjectUrl = (url) => URL.revokeObjectURL(url),
+} = {}) {
+  const providerRef = { current: null }
+  const generationRef = { current: 0 }
+  const previewUrlsRef = { current: new Set() }
+  const renderRef = { current: createRenderableState() }
+  let setRenderState = () => {}
+
+  function bindReact(setState) {
+    setRenderState = setState
+  }
+
+  function apply(update) {
+    const next = { ...renderRef.current, ...update }
+    renderRef.current = next
+    setRenderState(next)
+  }
+
+  function revokeSessionPreviews() {
+    for (const url of previewUrlsRef.current) revokeObjectUrl(url)
+    previewUrlsRef.current.clear()
+  }
+
+  function reset(nextGeneration) {
+    revokeSessionPreviews()
+    apply({
+      generation: nextGeneration,
+      files: [],
+      previews: {},
+    })
+  }
+
+  function beginSession(nextState) {
+    providerRef.current?.disconnect?.()
+    generationRef.current += 1
+    const generation = generationRef.current
+    providerRef.current = null
+    reset(generation)
+    apply({ state: nextState, message: '' })
+    return generation
+  }
+
+  async function connect() {
+    const generation = beginSession(DRIVE_STATE.connecting)
+    let provider = null
     try {
-      await loadGoogleIdentityScript()
+      await loadIdentityScript()
+      if (!isActiveGeneration(generationRef, generation)) {
+        const error = new Error('A newer Google Drive session replaced this authorization attempt.')
+        error.code = DRIVE_STATE.cancelled
+        throw error
+      }
+
+      provider = createProvider()
       const result = await provider.connect()
-      setState(result.state)
-      await refreshListing()
-      return result
+      const files = await listAllFiles(provider)
+      if (!isActiveGeneration(generationRef, generation)) {
+        provider.disconnect?.()
+        const error = new Error('A newer Google Drive session replaced this authorization attempt.')
+        error.code = DRIVE_STATE.cancelled
+        throw error
+      }
+
+      providerRef.current = provider
+      apply({
+        generation,
+        state: result.state,
+        message: '',
+        files,
+        previews: {},
+      })
+      return { ...result, generation, files }
     } catch (error) {
-      setState(error.code || DRIVE_STATE.temporaryFailure)
-      setMessage(error.message)
+      provider?.disconnect?.()
+      if (isActiveGeneration(generationRef, generation)) {
+        providerRef.current = null
+        apply({
+          generation,
+          state: error.code || DRIVE_STATE.temporaryFailure,
+          message: error.message || 'Google Drive is temporarily unavailable. Try again.',
+          files: [],
+          previews: {},
+        })
+      }
       throw error
     }
-  }, [provider, refreshListing])
+  }
 
-  const disconnect = useCallback(() => {
-    provider.disconnect()
-    for (const url of previewUrlsRef.current) URL.revokeObjectURL(url)
-    previewUrlsRef.current.clear()
-    setFiles([])
-    setPreviews({})
-    setState(DRIVE_STATE.disconnected)
-    setMessage('')
-  }, [provider])
+  async function refreshListing() {
+    const generation = generationRef.current
+    const provider = readCurrentProvider(providerRef, renderRef)
+    const files = await listAllFiles(provider)
+    if (!isActiveGeneration(generationRef, generation)) return renderRef.current.files
+    apply({ files })
+    return files
+  }
 
-  const retryAccess = useCallback(async () => connect(), [connect])
+  async function getPreview(fileId) {
+    const current = renderRef.current
+    if (current.previews[fileId]) return current.previews[fileId]
 
-  const getPreview = useCallback(async (fileId) => {
-    if (previews[fileId]) return previews[fileId]
+    const generation = generationRef.current
+    const provider = readCurrentProvider(providerRef, renderRef)
     const url = await provider.fetchPreview(fileId)
+    if (!isActiveGeneration(generationRef, generation)) {
+      revokeObjectUrl(url)
+      const error = new Error('A newer Google Drive session replaced this preview request.')
+      error.code = DRIVE_STATE.cancelled
+      throw error
+    }
+
     previewUrlsRef.current.add(url)
-    setPreviews((current) => ({ ...current, [fileId]: url }))
+    apply({
+      previews: {
+        ...renderRef.current.previews,
+        [fileId]: url,
+      },
+    })
     return url
-  }, [previews, provider])
+  }
 
-  useEffect(() => () => {
-    for (const url of previewUrlsRef.current) URL.revokeObjectURL(url)
-    previewUrlsRef.current.clear()
-  }, [])
+  function disconnect() {
+    const generation = beginSession(DRIVE_STATE.disconnected)
+    apply({
+      generation,
+      state: DRIVE_STATE.disconnected,
+      message: '',
+    })
+  }
 
-  return { connect, disconnect, files, getPreview, message, previews, provider, refreshListing, retryAccess, state }
+  async function retryAccess() {
+    return connect()
+  }
+
+  function getProvider() {
+    return providerRef.current
+  }
+
+  function openExternally(fileId) {
+    return readCurrentProvider(providerRef, renderRef).openExternally(fileId)
+  }
+
+  function getSnapshot() {
+    return renderRef.current
+  }
+
+  function cleanup() {
+    providerRef.current?.disconnect?.()
+    providerRef.current = null
+    generationRef.current += 1
+    revokeSessionPreviews()
+  }
+
+  return {
+    bindReact,
+    cleanup,
+    connect,
+    disconnect,
+    getPreview,
+    getProvider,
+    getSnapshot,
+    openExternally,
+    refreshListing,
+    retryAccess,
+  }
+}
+
+export function useGoogleDriveConnection() {
+  const env = readRuntimeEnv()
+  const controller = useMemo(
+    () => createDriveConnectionController({
+      createProvider: () => createGoogleDriveMediaProvider({ clientId: env.VITE_GOOGLE_CLIENT_ID }),
+    }),
+    [env.VITE_GOOGLE_CLIENT_ID],
+  )
+  const [renderState, setRenderState] = useState(() => controller.getSnapshot())
+
+  useEffect(() => {
+    controller.bindReact(setRenderState)
+    return () => controller.cleanup()
+  }, [controller])
+
+  const connect = useCallback(async () => controller.connect(), [controller])
+  const disconnect = useCallback(() => controller.disconnect(), [controller])
+  const refreshListing = useCallback(async () => controller.refreshListing(), [controller])
+  const retryAccess = useCallback(async () => controller.retryAccess(), [controller])
+  const getPreview = useCallback(async (fileId) => controller.getPreview(fileId), [controller])
+  const openExternally = useCallback((fileId) => controller.openExternally(fileId), [controller])
+
+  return {
+    connect,
+    disconnect,
+    files: renderState.files,
+    generation: renderState.generation,
+    getPreview,
+    message: renderState.message,
+    openExternally,
+    previews: renderState.previews,
+    provider: controller.getProvider(),
+    refreshListing,
+    retryAccess,
+    state: renderState.state,
+  }
 }

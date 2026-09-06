@@ -61,6 +61,14 @@ const context = Object.freeze({
   user: { uid: 'member_one' },
 })
 
+function dataWrites(firestore) {
+  return firestore.writes.filter((write) => !write.path.includes('/auditEvents/'))
+}
+
+function auditWrites(firestore) {
+  return firestore.writes.filter((write) => write.path.includes('/auditEvents/'))
+}
+
 test('write services reject production-disabled mode before writing', async () => {
   const firestore = createFirestoreStub()
   await assert.rejects(
@@ -77,8 +85,8 @@ test('write services allow explicit production Firestore write mode with active 
     { ...context, env: { MODE: 'production', VITE_WRITE_MODE: 'firestore-production-write' }, firestore, ...firestore },
   )
 
-  assert.equal(firestore.writes.length, 1)
-  assert.equal(firestore.writes[0].path, 'couples/couple_alpha/profiles/member_one')
+  assert.equal(dataWrites(firestore).length, 1)
+  assert.equal(dataWrites(firestore)[0].path, 'couples/couple_alpha/profiles/member_one')
 })
 
 test('write services reject inactive couple membership before writing', async () => {
@@ -100,21 +108,23 @@ test('write services validate text, categories, settings, memories, contract, an
   await acceptContract({ ...context, firestore, ...firestore })
   await saveSpecialMomentText('birthday', { title: 'Birthday', sections: [{ kind: 'paragraph', content: 'Safe text' }] }, { ...context, firestore, ...firestore })
 
-  assert.equal(firestore.writes.length, 9)
-  assert.equal(firestore.writes[0].data.revision, 1)
-  assert.deepEqual(firestore.writes[1].data.food, ['cake'])
-  assert.equal(firestore.writes[1].data.revision, 1)
-  assert.equal(firestore.writes[2].data.revision, 1)
-  assert.equal(firestore.writes[2].data.appearanceTheme, 'moonlit')
-  assert.equal(firestore.writes[3].data.mediaState, 'none')
-  assert.equal(firestore.writes[3].data.revision, 1)
-  assert.equal(firestore.writes[4].data.status, 'archived')
-  assert.equal(firestore.writes[4].data.revision, 2)
-  assert.equal(firestore.writes[5].data.status, 'active')
-  assert.equal(firestore.writes[5].data.revision, 3)
-  assert.equal(firestore.writes[6].data.category, 'Restaurant')
-  assert.equal(firestore.writes[7].data.signatureStatus, 'status-only')
-  assert.equal(firestore.writes[8].data.revision, 1)
+  const writes = dataWrites(firestore)
+  assert.equal(writes.length, 9)
+  assert.equal(auditWrites(firestore).length, 9)
+  assert.equal(writes[0].data.revision, 1)
+  assert.deepEqual(writes[1].data.food, ['cake'])
+  assert.equal(writes[1].data.revision, 1)
+  assert.equal(writes[2].data.revision, 1)
+  assert.equal(writes[2].data.appearanceTheme, 'moonlit')
+  assert.equal(writes[3].data.mediaState, 'none')
+  assert.equal(writes[3].data.revision, 1)
+  assert.equal(writes[4].data.status, 'archived')
+  assert.equal(writes[4].data.revision, 2)
+  assert.equal(writes[5].data.status, 'active')
+  assert.equal(writes[5].data.revision, 3)
+  assert.equal(writes[6].data.category, 'Restaurant')
+  assert.equal(writes[7].data.signatureStatus, 'status-only')
+  assert.equal(writes[8].data.revision, 1)
 })
 
 test('verified media memory writes preserve private storage metadata without local paths', async () => {
@@ -136,10 +146,11 @@ test('verified media memory writes preserve private storage metadata without loc
     { ...context, firestore, ...firestore },
   )
 
-  assert.equal(firestore.writes[0].data.mediaState, 'storage-verified')
-  assert.equal(firestore.writes[0].data.media.storagePath, 'couples/couple_alpha/media/media_001/original')
-  assert.equal(firestore.writes[0].data.media.checksum, 'a'.repeat(64))
-  assert.equal(JSON.stringify(firestore.writes[0].data).includes('C:\\Users'), false)
+  const write = dataWrites(firestore)[0]
+  assert.equal(write.data.mediaState, 'storage-verified')
+  assert.equal(write.data.media.storagePath, 'couples/couple_alpha/media/media_001/original')
+  assert.equal(write.data.media.checksum, 'a'.repeat(64))
+  assert.equal(JSON.stringify(write.data).includes('C:\\Users'), false)
 })
 
 test('verified Drive media writes preserve stable IDs without temporary URLs', async () => {
@@ -160,11 +171,12 @@ test('verified Drive media writes preserve stable IDs without temporary URLs', a
     { ...context, firestore, ...firestore },
   )
 
-  assert.equal(firestore.writes[0].data.mediaState, 'drive-verified')
-  assert.equal(firestore.writes[0].data.media.provider, 'google-drive')
-  assert.equal(firestore.writes[0].data.media.driveFileId, 'drive-file-001')
-  assert.equal(firestore.writes[0].data.media.storagePath, '')
-  assert.equal(JSON.stringify(firestore.writes[0].data).includes('blob:'), false)
+  const write = dataWrites(firestore)[0]
+  assert.equal(write.data.mediaState, 'drive-verified')
+  assert.equal(write.data.media.provider, 'google-drive')
+  assert.equal(write.data.media.driveFileId, 'drive-file-001')
+  assert.equal(write.data.media.storagePath, '')
+  assert.equal(JSON.stringify(write.data).includes('blob:'), false)
 })
 
 test('full-document v1 writes replace legacy extra fields instead of merging them forward', async () => {
@@ -181,8 +193,9 @@ test('full-document v1 writes replace legacy extra fields instead of merging the
     { ...context, firestore, ...firestore },
   )
 
-  assert.equal(firestore.writes[0].options, undefined)
-  assert.deepEqual(Object.keys(firestore.writes[0].data).sort(), [
+  const write = dataWrites(firestore)[0]
+  assert.equal(write.options, undefined)
+  assert.deepEqual(Object.keys(write.data).sort(), [
     'food',
     'memories',
     'movies',
@@ -192,7 +205,7 @@ test('full-document v1 writes replace legacy extra fields instead of merging the
     'schemaVersion',
     'songs',
   ])
-  assert.equal(firestore.writes[0].data.hobbies, undefined)
+  assert.equal(write.data.hobbies, undefined)
 })
 
 test('write services reject unsupported and unsafe payloads', async () => {
@@ -226,10 +239,11 @@ test('plan-to-memory creates one deterministic memory and blocks duplicate conve
     convertedMemoryId: '',
   }
   const memoryId = await convertPlanToMemory('plan_one', plan, { ...context, firestore, ...firestore })
+  const writes = dataWrites(firestore)
   assert.equal(memoryId, 'memory_from_plan_plan_one')
-  assert.equal(firestore.writes[0].path, 'couples/couple_alpha/memories/memory_from_plan_plan_one')
-  assert.equal(firestore.writes[1].path, 'couples/couple_alpha/plans/plan_one')
-  assert.equal(firestore.writes[1].data.convertedMemoryId, memoryId)
+  assert.equal(writes[0].path, 'couples/couple_alpha/memories/memory_from_plan_plan_one')
+  assert.equal(writes[1].path, 'couples/couple_alpha/plans/plan_one')
+  assert.equal(writes[1].data.convertedMemoryId, memoryId)
 
   await assert.rejects(
     convertPlanToMemory('plan_one', { ...plan, convertedMemoryId: memoryId }, { ...context, firestore, ...firestore }),
@@ -265,10 +279,50 @@ test('plan-to-memory retry reuses an existing deterministic memory before finali
     { ...context, firestore, ...firestore },
   )
 
+  const writes = dataWrites(firestore)
   assert.equal(memoryId, 'memory_from_plan_plan_one')
-  assert.equal(firestore.writes.length, 1)
-  assert.equal(firestore.writes[0].path, 'couples/couple_alpha/plans/plan_one')
-  assert.equal(firestore.writes[0].data.convertedMemoryId, memoryId)
+  assert.equal(writes.length, 1)
+  assert.equal(writes[0].path, 'couples/couple_alpha/plans/plan_one')
+  assert.equal(writes[0].data.convertedMemoryId, memoryId)
+})
+
+test('write services add privacy-minimal audit events without intimate content or temporary media URLs', async () => {
+  const firestore = createFirestoreStub()
+  await saveMemoryWithVerifiedMedia(
+    'memory_drive',
+    {
+      title: 'Private title that must stay out of audit',
+      description: 'Private description that must stay out of audit',
+      date: '2026-02-15',
+      kindLabel: 'Photo Memory',
+      mediaNote: 'Private media note',
+    },
+    {
+      provider: 'google-drive',
+      id: 'media_drive_001',
+      kind: 'image',
+      driveFileId: 'drive-file-001',
+      driveFolderId: 'drive-folder-001',
+      contentType: 'image/jpeg',
+      sizeBytes: 2048,
+      checksum: 'b'.repeat(64),
+    },
+    { ...context, firestore, ...firestore },
+  )
+
+  const audit = auditWrites(firestore)[0]
+  const serializedAudit = JSON.stringify(audit.data)
+  assert.equal(audit.data.operation, 'media.finalized')
+  assert.equal(audit.data.coupleId, 'couple_alpha')
+  assert.equal(audit.data.actorUid, 'member_one')
+  assert.equal(audit.data.targetId, 'memory_drive')
+  assert.equal(audit.data.details.mediaProvider, 'google-drive')
+  assert.equal(serializedAudit.includes('Private title'), false)
+  assert.equal(serializedAudit.includes('Private description'), false)
+  assert.equal(serializedAudit.includes('Private media note'), false)
+  assert.equal(serializedAudit.includes('drive-file-001'), false)
+  assert.equal(serializedAudit.includes('blob:'), false)
+  assert.equal(serializedAudit.includes('C:\\Users'), false)
 })
 
 test('write services reject stale revisions before overwriting newer data', async () => {

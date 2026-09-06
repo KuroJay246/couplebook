@@ -56,10 +56,6 @@ export function ThemeProvider({ children }) {
     pendingLoadRef.current = loadId
     let timeoutId
 
-    const initializationStateId = window.setTimeout(() => {
-      setInitialization(authInitialized && isAuthorized ? 'loading' : 'ready')
-    }, 0)
-
     async function loadUserTheme() {
       if (!isAuthorized || !approvedUser?.coupleId || !approvedUser?.uid) {
         const fallback = readStoredTheme()
@@ -92,7 +88,6 @@ export function ThemeProvider({ children }) {
 
     void loadUserTheme()
     return () => {
-      window.clearTimeout(initializationStateId)
       if (timeoutId) window.clearTimeout(timeoutId)
     }
   }, [approvedUser?.coupleId, approvedUser?.uid, authInitialized, isAuthorized])

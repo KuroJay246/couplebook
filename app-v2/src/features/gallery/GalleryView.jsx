@@ -381,7 +381,7 @@ function DriveMediaGrid({ drive }) {
             return (
               <article className="cb-card overflow-hidden" key={file.id}>
                 <div className="aspect-[4/3] bg-[var(--cb-surface-raised)]">
-                  {preview && !isVideo ? <img alt={file.name} className="h-full w-full object-cover" src={preview} /> : (
+                  {preview && !isVideo ? <img alt={file.name} className="h-full w-full object-cover" src={preview} /> : preview && isVideo ? <video aria-label={file.name} className="h-full w-full object-contain" controls preload="metadata" src={preview} /> : (
                     <button className="grid h-full w-full place-items-center p-5 text-center" onClick={() => void showPreview(file)} type="button">
                       <span className="text-sm font-semibold text-[var(--cb-text)]">{loadingId === file.id ? 'Loading preview...' : isVideo ? 'Open video preview' : 'Load image preview'}</span>
                     </button>
@@ -390,7 +390,7 @@ function DriveMediaGrid({ drive }) {
                 <div className="p-4">
                   <p className="truncate text-sm font-semibold text-[var(--cb-text)]">{file.name}</p>
                   <p className="mt-1 text-xs text-[var(--cb-text-muted)]">{isVideo ? 'Video' : 'Image'} · Drive file</p>
-                  {isVideo ? <SecondaryButton className="mt-3" onClick={() => drive.provider.openExternally(file.id)}>Open in Drive</SecondaryButton> : null}
+                  {isVideo ? <SecondaryButton className="mt-3" onClick={() => drive.openExternally(file.id)}>Open in Drive</SecondaryButton> : null}
                 </div>
               </article>
             )

@@ -29,6 +29,40 @@ function requireToken(token) {
   return token
 }
 
+async function readDriveErrorPayload(response) {
+  try {
+    return await response.clone().json()
+  } catch {
+    return null
+  }
+}
+
+function classifyDriveError(response, payload) {
+  const reason = String(
+    payload?.error?.errors?.[0]?.reason
+    || payload?.error?.details?.find((detail) => detail?.['@type'] === 'type.googleapis.com/google.rpc.ErrorInfo')?.reason
+    || '',
+  ).trim()
+
+  if (response.status === 401) {
+    return driveError(DRIVE_STATE.tokenExpired, 'Google Drive authorization expired. Reconnect to continue.', response)
+  }
+
+  if (response.status === 403) {
+    if (reason === 'insufficientPermissions') {
+      return driveError(DRIVE_STATE.insufficientScope, 'Google Drive authorization is missing the required access scope. Reconnect and approve Drive access.', response)
+    }
+
+    if (reason === 'accessNotConfigured' || reason === 'SERVICE_DISABLED') {
+      return driveError(DRIVE_STATE.temporaryFailure, 'Google Drive API is not available for this project yet. Enable drive.googleapis.com and retry after propagation.', response)
+    }
+
+    return driveError(DRIVE_STATE.folderInaccessible, 'This Google account cannot open the Couple Book media folder.', response)
+  }
+
+  return driveError(DRIVE_STATE.temporaryFailure, 'Google Drive is temporarily unavailable. Try again.', response)
+}
+
 async function driveFetch(fetchImpl, url, token, init = {}) {
   const response = await fetchImpl(url, {
     ...init,
@@ -39,9 +73,8 @@ async function driveFetch(fetchImpl, url, token, init = {}) {
   })
 
   if (response.ok) return response
-  if (response.status === 401) throw driveError(DRIVE_STATE.tokenExpired, 'Google Drive authorization expired. Reconnect to continue.', response)
-  if (response.status === 403) throw driveError(DRIVE_STATE.folderInaccessible, 'This Google account cannot open the Couple Book media folder.', response)
-  throw driveError(DRIVE_STATE.temporaryFailure, 'Google Drive is temporarily unavailable. Try again.', response)
+  const payload = await readDriveErrorPayload(response)
+  throw classifyDriveError(response, payload)
 }
 
 export function createGoogleDriveMediaProvider({ clientId, fetchImpl = globalThis.fetch, google = globalThis.google, folderId = COUPLE_BOOK_DRIVE_FOLDER_ID } = {}) {

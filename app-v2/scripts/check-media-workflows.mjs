@@ -143,8 +143,18 @@ async function launchBrowser() {
   }
 }
 
-async function createServer() {
+async function createServer({ projectId, storageBucket }) {
   process.env.VITE_ENABLE_LOCAL_UPLOAD_TEST_HOOKS = 'true'
+  process.env.VITE_FIREBASE_USE_EMULATORS = 'true'
+  process.env.VITE_FIREBASE_API_KEY = process.env.VITE_FIREBASE_API_KEY || 'fake-api-key'
+  process.env.VITE_FIREBASE_AUTH_DOMAIN = process.env.VITE_FIREBASE_AUTH_DOMAIN || `${projectId}.firebaseapp.com`
+  process.env.VITE_FIREBASE_PROJECT_ID = projectId
+  process.env.VITE_FIREBASE_STORAGE_BUCKET = storageBucket
+  process.env.VITE_FIREBASE_MESSAGING_SENDER_ID = process.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '000000000000'
+  process.env.VITE_FIREBASE_APP_ID = process.env.VITE_FIREBASE_APP_ID || '1:000000000000:web:couplebookemulator'
+  process.env.VITE_DATA_SOURCE_MODE = 'firestore'
+  process.env.VITE_WRITE_MODE = 'firestore-emulator-write'
+  process.env.VITE_MEDIA_PROVIDER = 'firebase-storage'
   const server = await createViteServer({
     root: APP_ROOT,
     server: {
@@ -216,12 +226,18 @@ async function signIn(page, baseUrl, email, password) {
   await page.locator('input[type="password"]').fill(password)
   await page.getByRole('button', { name: /Enter Couple Book/i }).click()
   await page.waitForURL((url) => url.pathname === '/dashboard', { timeout: 20000 })
-  await page.getByRole('heading', { name: 'Pick up where your story left off.' }).waitFor({ state: 'visible', timeout: 15000 })
+  await page.getByRole('heading', { name: /Our memories, plans, and special moments/i }).waitFor({ state: 'visible', timeout: 15000 })
 }
 
 async function openGallery(page, baseUrl) {
   await page.goto(`${baseUrl}/gallery`, { waitUntil: 'domcontentloaded' })
   await page.getByRole('heading', { name: 'Our Shared Gallery' }).waitFor({ state: 'visible', timeout: 15000 })
+}
+
+async function openUploadTools(page) {
+  if (await page.getByLabel('Album management tools').count()) return
+  await page.getByRole('button', { name: /Manage uploads/i }).click()
+  await page.getByLabel('Album management tools').waitFor({ state: 'visible', timeout: 10000 })
 }
 
 async function setFiles(page, filePaths) {
@@ -394,7 +410,7 @@ async function run() {
     scenarios: {},
   }
 
-  const { server, baseUrl } = await createServer()
+  const { server, baseUrl } = await createServer({ projectId, storageBucket })
   const browser = await launchBrowser()
   const networkController = createNetworkController()
   const context = await createContext(browser, networkController)
@@ -403,6 +419,7 @@ async function run() {
   try {
     await signIn(page, baseUrl, ownerEmail, ownerPassword)
     await openGallery(page, baseUrl)
+    await openUploadTools(page)
 
     const initialStorageObjects = await listStorageObjects(bucket, storagePrefix)
     assert.equal(initialStorageObjects.length, 0, 'Expected emulator storage to start empty.')

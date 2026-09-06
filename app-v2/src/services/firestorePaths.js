@@ -55,6 +55,14 @@ export function memoriesPath(coupleId) {
   return [...couplePath(coupleId), 'memories']
 }
 
+export function auditEventsPath(coupleId) {
+  return [...couplePath(coupleId), 'auditEvents']
+}
+
+export function auditEventPath(coupleId, auditId) {
+  return [...auditEventsPath(coupleId), assertSafeId(auditId, 'auditId')]
+}
+
 export function memoryPath(coupleId, memoryId) {
   return [...memoriesPath(coupleId), assertSafeId(memoryId, 'memoryId')]
 }

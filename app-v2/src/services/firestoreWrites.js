@@ -3,6 +3,7 @@ import { isFirestoreWriteMode } from '../data/writeMode.js'
 import { db } from '../lib/firebase.js'
 import { DEFAULT_THEME_ID, isSupportedThemeInput, normalizeThemeId, THEME_REGISTRY } from '../theme/themeRegistry.js'
 import {
+  auditEventPath,
   currentContractPath,
   favoritesPath,
   memberPath,
@@ -43,6 +44,16 @@ export const PLAN_CATEGORIES = Object.freeze([
 export const SPECIAL_SECTION_KINDS = Object.freeze(['paragraph', 'note', 'quote', 'list'])
 const SAFE_STORAGE_PATH = /^couples\/[A-Za-z0-9_-]{1,120}\/media\/[A-Za-z0-9_-]{1,120}\/(original|thumbnail|poster)$/
 const SAFE_DRIVE_ID = /^[A-Za-z0-9_-]{10,200}$/
+const SAFE_AUDIT_DETAIL_KEYS = Object.freeze([
+  'category',
+  'convertedMemoryId',
+  'mediaId',
+  'mediaKind',
+  'mediaProvider',
+  'momentType',
+  'revision',
+  'status',
+])
 const MEDIA_CONTENT_TYPES = Object.freeze([
   'image/jpeg',
   'image/png',
@@ -158,6 +169,64 @@ function docRef(firestore, path, createDoc = doc) {
   return createDoc(firestore, ...path)
 }
 
+function createSafeAuditId(operation, targetId) {
+  const safeOperation = String(operation || 'write').replace(/[^A-Za-z0-9_-]+/g, '_').slice(0, 40) || 'write'
+  const safeTarget = String(targetId || 'target').replace(/[^A-Za-z0-9_-]+/g, '_').slice(0, 40) || 'target'
+  const unique = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+    ? crypto.randomUUID().replaceAll('-', '_')
+    : `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`
+  return `audit_${safeOperation}_${safeTarget}_${unique}`
+}
+
+function cleanAuditDetails(details = {}) {
+  const result = {}
+  for (const key of SAFE_AUDIT_DETAIL_KEYS) {
+    const value = details[key]
+    if (value === undefined || value === null || value === '') continue
+    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+      result[key] = value
+    }
+  }
+  return result
+}
+
+function buildAuditEvent({ coupleId, details, operation, revision, targetId, targetType, uid }) {
+  return {
+    schemaVersion: 1,
+    operation,
+    coupleId,
+    actorUid: uid,
+    targetType,
+    targetId,
+    revision,
+    result: 'success',
+    details: cleanAuditDetails({ ...details, revision }),
+    createdAt: serverTimestamp(),
+  }
+}
+
+async function writePrivacySafeAudit({ context, coupleId, createDoc, details, firestore, operation, revision, targetId, targetType, uid }) {
+  const writeAudit = context.setAuditDocument || context.setDocument || setDoc
+  const reference = docRef(firestore, auditEventPath(coupleId, createSafeAuditId(operation, targetId)), createDoc)
+  const auditEvent = buildAuditEvent({ coupleId, details, operation, revision, targetId, targetType, uid })
+  await writeAudit(reference, auditEvent)
+  return auditEvent
+}
+
+async function writeDocumentWithAudit(reference, data, options, auditOptions, context) {
+  const writeDocument = context.setDocument || setDoc
+  await writeDocument(reference, data, options)
+  await writePrivacySafeAudit({ ...auditOptions, context })
+  return data
+}
+
+async function patchDocumentWithAudit(reference, data, auditOptions, context) {
+  const patchDocument = context.updateDocument || updateDoc
+  await patchDocument(reference, data)
+  await writePrivacySafeAudit({ ...auditOptions, context })
+  return data
+}
+
 function resolveCoupleId(approvedUser) {
   return approvedUser?.coupleId || approvedUser?.raw?.coupleId || ''
 }
@@ -223,7 +292,6 @@ function buildMemoryDocument(payload, nextRevision, uid, verifiedMedia = null) {
 
 export async function saveOwnProfile(payload, context) {
   const { coupleId, createDoc, firestore, getDocument, uid } = await assertWriteContext(context)
-  const writeDocument = context.setDocument || setDoc
   const reference = docRef(firestore, profilePath(coupleId, uid), createDoc)
   const nextRevision = await resolveNextRevision(reference, payload.revision, getDocument, 'Profile')
   const next = {
@@ -235,26 +303,40 @@ export async function saveOwnProfile(payload, context) {
     joinedDate: payload.joinedDate ? cleanDate(payload.joinedDate) : '',
     birthday: payload.birthday ? cleanDate(payload.birthday) : '',
   }
-  await writeDocument(reference, next)
-  return next
+  return writeDocumentWithAudit(reference, next, undefined, {
+    coupleId,
+    createDoc,
+    firestore,
+    operation: 'profile.updated',
+    revision: nextRevision,
+    targetId: uid,
+    targetType: 'profile',
+    uid,
+  }, context)
 }
 
 export async function saveOwnFavorites(payload, context) {
   const { coupleId, createDoc, firestore, getDocument, uid } = await assertWriteContext(context)
-  const writeDocument = context.setDocument || setDoc
   const reference = docRef(firestore, favoritesPath(coupleId, uid), createDoc)
   const nextRevision = await resolveNextRevision(reference, payload.revision, getDocument, 'Favorites')
   const next = { schemaVersion: 1, revision: nextRevision }
   for (const category of FAVORITE_WRITE_CATEGORIES) {
     next[category] = cleanStringList(payload[category], { label: category, maxItems: 50, maxLength: 120 })
   }
-  await writeDocument(reference, next)
-  return next
+  return writeDocumentWithAudit(reference, next, undefined, {
+    coupleId,
+    createDoc,
+    firestore,
+    operation: 'favorites.updated',
+    revision: nextRevision,
+    targetId: uid,
+    targetType: 'favorites',
+    uid,
+  }, context)
 }
 
 export async function saveOwnSettings(payload, context) {
   const { coupleId, createDoc, firestore, getDocument, uid } = await assertWriteContext(context)
-  const writeDocument = context.setDocument || setDoc
   const reference = docRef(firestore, privateSettingsPath(coupleId, uid), createDoc)
   const nextRevision = await resolveNextRevision(reference, payload.revision, getDocument, 'Settings')
   const rawTheme = cleanText(payload.appearanceTheme ?? payload.theme, 40, 'Appearance theme') || DEFAULT_THEME_ID
@@ -272,28 +354,57 @@ export async function saveOwnSettings(payload, context) {
       reducedMotion: payload.reducedMotion === true,
     },
   }
-  await writeDocument(reference, next)
-  return next
+  return writeDocumentWithAudit(reference, next, undefined, {
+    coupleId,
+    createDoc,
+    firestore,
+    operation: 'settings.updated',
+    revision: nextRevision,
+    targetId: uid,
+    targetType: 'settings',
+    uid,
+  }, context)
 }
 
 export async function saveMemory(memoryId, payload, context) {
   const { coupleId, createDoc, firestore, getDocument, uid } = await assertWriteContext(context)
-  const writeDocument = context.setDocument || setDoc
   const reference = docRef(firestore, memoryPath(coupleId, memoryId), createDoc)
   const nextRevision = await resolveNextRevision(reference, payload.revision, getDocument, 'Memory')
   const next = buildMemoryDocument(payload, nextRevision, uid)
-  await writeDocument(reference, next)
-  return next
+  return writeDocumentWithAudit(reference, next, undefined, {
+    coupleId,
+    createDoc,
+    details: { status: next.status },
+    firestore,
+    operation: payload.status === 'archived' ? 'memory.archived' : 'memory.updated',
+    revision: nextRevision,
+    targetId: memoryId,
+    targetType: 'memory',
+    uid,
+  }, context)
 }
 
 export async function saveMemoryWithVerifiedMedia(memoryId, payload, verifiedMedia, context) {
   const { coupleId, createDoc, firestore, getDocument, uid } = await assertWriteContext(context)
-  const writeDocument = context.setDocument || setDoc
   const reference = docRef(firestore, memoryPath(coupleId, memoryId), createDoc)
   const nextRevision = await resolveNextRevision(reference, payload.revision, getDocument, 'Memory')
   const next = buildMemoryDocument(payload, nextRevision, uid, verifiedMedia)
-  await writeDocument(reference, next)
-  return next
+  return writeDocumentWithAudit(reference, next, undefined, {
+    coupleId,
+    createDoc,
+    details: {
+      mediaId: next.media.id,
+      mediaKind: next.media.kind,
+      mediaProvider: next.media.provider,
+      status: next.status,
+    },
+    firestore,
+    operation: 'media.finalized',
+    revision: nextRevision,
+    targetId: memoryId,
+    targetType: 'memory',
+    uid,
+  }, context)
 }
 
 export async function findExistingMediaDuplicate(payload, context) {
@@ -332,7 +443,6 @@ export async function findExistingMediaDuplicate(payload, context) {
 
 export async function removeVerifiedMediaFromMemory(memoryId, revision, context) {
   const { coupleId, createDoc, firestore, getDocument, uid } = await assertWriteContext(context)
-  const writeDocument = context.setDocument || setDoc
   const reference = docRef(firestore, memoryPath(coupleId, memoryId), createDoc)
   const snapshot = await getDocument(reference)
   if (!snapshot.exists()) throw new Error('Memory could not be found.')
@@ -361,26 +471,42 @@ export async function removeVerifiedMediaFromMemory(memoryId, revision, context)
   next.mediaState = 'none'
   delete next.media
 
-  await writeDocument(reference, next)
-  return next
+  return writeDocumentWithAudit(reference, next, undefined, {
+    coupleId,
+    createDoc,
+    details: { status: 'archived' },
+    firestore,
+    operation: 'memory.archived',
+    revision: nextRevision,
+    targetId: memoryId,
+    targetType: 'memory',
+    uid,
+  }, context)
 }
 
 export async function restoreMemory(memoryId, revision, context) {
   const { coupleId, createDoc, firestore, getDocument, uid } = await assertWriteContext(context)
-  const patchDocument = context.updateDocument || updateDoc
   const reference = docRef(firestore, memoryPath(coupleId, memoryId), createDoc)
   const snapshot = await getDocument(reference)
   if (!snapshot.exists()) throw new Error('Memory could not be found.')
   if (snapshot.data()?.status !== 'archived') throw new Error('Only archived memories can be restored.')
   const nextRevision = await resolveNextRevision(reference, revision, getDocument, 'Memory')
   const next = { status: 'active', updatedBy: uid, schemaVersion: 1, revision: nextRevision }
-  await patchDocument(reference, next)
-  return next
+  return patchDocumentWithAudit(reference, next, {
+    coupleId,
+    createDoc,
+    details: { status: 'active' },
+    firestore,
+    operation: 'memory.restored',
+    revision: nextRevision,
+    targetId: memoryId,
+    targetType: 'memory',
+    uid,
+  }, context)
 }
 
 export async function savePlan(planId, payload, context) {
   const { coupleId, createDoc, firestore, getDocument, uid } = await assertWriteContext(context)
-  const writeDocument = context.setDocument || setDoc
   const reference = docRef(firestore, planPath(coupleId, planId), createDoc)
   const snapshot = await getDocument(reference)
   const existing = snapshot.exists() ? snapshot.data() : null
@@ -404,8 +530,21 @@ export async function savePlan(planId, payload, context) {
     updatedAt: serverTimestamp(),
     convertedMemoryId,
   }
-  await writeDocument(reference, next)
-  return next
+  return writeDocumentWithAudit(reference, next, undefined, {
+    coupleId,
+    createDoc,
+    details: {
+      category,
+      convertedMemoryId,
+      status,
+    },
+    firestore,
+    operation: status === 'completed' ? 'plan.completed' : 'plan.updated',
+    revision: nextRevision,
+    targetId: planId,
+    targetType: 'plan',
+    uid,
+  }, context)
 }
 
 export async function convertPlanToMemory(planId, plan, context) {
@@ -438,7 +577,6 @@ export async function convertPlanToMemory(planId, plan, context) {
 
 export async function acceptContract(context) {
   const { coupleId, createDoc, firestore, getDocument, uid } = await assertWriteContext(context)
-  const writeDocument = context.setDocument || setDoc
   const reference = docRef(firestore, currentContractPath(coupleId), createDoc)
   const snapshot = await getDocument(reference)
   const acceptedBy = new Set(snapshot.exists() && Array.isArray(snapshot.data().acceptedBy) ? snapshot.data().acceptedBy : [])
@@ -448,13 +586,20 @@ export async function acceptContract(context) {
     signatureStatus: 'status-only',
     schemaVersion: 1,
   }
-  await writeDocument(reference, next, { merge: true })
-  return next
+  return writeDocumentWithAudit(reference, next, { merge: true }, {
+    coupleId,
+    createDoc,
+    firestore,
+    operation: 'contract.accepted',
+    revision: 1,
+    targetId: 'current',
+    targetType: 'contract',
+    uid,
+  }, context)
 }
 
 export async function saveSpecialMomentText(momentType, payload, context) {
-  const { coupleId, createDoc, firestore, getDocument } = await assertWriteContext(context)
-  const writeDocument = context.setDocument || setDoc
+  const { coupleId, createDoc, firestore, getDocument, uid } = await assertWriteContext(context)
   const reference = docRef(firestore, specialMomentPath(coupleId, momentType), createDoc)
   const nextRevision = await resolveNextRevision(reference, payload.revision, getDocument, 'Special page')
   const sections = Array.isArray(payload.sections) ? payload.sections : []
@@ -473,16 +618,33 @@ export async function saveSpecialMomentText(momentType, payload, context) {
       }
     }),
   }
-  await writeDocument(reference, next)
-  return next
+  return writeDocumentWithAudit(reference, next, undefined, {
+    coupleId,
+    createDoc,
+    details: { momentType },
+    firestore,
+    operation: 'special_moment.updated',
+    revision: nextRevision,
+    targetId: momentType,
+    targetType: 'specialMoment',
+    uid,
+  }, context)
 }
 
 export async function archiveMemory(memoryId, revision, context) {
   const { coupleId, createDoc, firestore, getDocument, uid } = await assertWriteContext(context)
-  const patchDocument = context.updateDocument || updateDoc
   const reference = docRef(firestore, memoryPath(coupleId, memoryId), createDoc)
   const nextRevision = await resolveNextRevision(reference, revision, getDocument, 'Memory')
   const next = { status: 'archived', updatedBy: uid, schemaVersion: 1, revision: nextRevision }
-  await patchDocument(reference, next)
-  return next
+  return patchDocumentWithAudit(reference, next, {
+    coupleId,
+    createDoc,
+    details: { status: 'archived' },
+    firestore,
+    operation: 'memory.archived',
+    revision: nextRevision,
+    targetId: memoryId,
+    targetType: 'memory',
+    uid,
+  }, context)
 }

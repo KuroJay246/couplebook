@@ -595,6 +595,63 @@ test('shared settings writes stay couple-scoped', { skip: !hasEmulator }, async 
   }))
 })
 
+test('audit events are couple-scoped, append-only, and privacy-minimal', { skip: !hasEmulator }, async () => {
+  const memberOneDb = authed(ids.memberOne)
+  const otherMemberDb = authed(ids.otherMember)
+  const auditRef = doc(memberOneDb, 'couples', ids.couple, 'auditEvents', 'audit_memory_1')
+
+  await assertSucceeds(setDoc(auditRef, {
+    schemaVersion: 1,
+    operation: 'media.finalized',
+    coupleId: ids.couple,
+    actorUid: ids.memberOne,
+    targetType: 'memory',
+    targetId: 'memory_one',
+    revision: 2,
+    result: 'success',
+    details: {
+      mediaId: 'media_001',
+      mediaKind: 'image',
+      mediaProvider: 'google-drive',
+      revision: 2,
+      status: 'active',
+    },
+    createdAt: serverTimestamp(),
+  }))
+  await assertSucceeds(getDoc(auditRef))
+  await assertSucceeds(getDocs(collection(memberOneDb, 'couples', ids.couple, 'auditEvents')))
+  await assertFails(updateDoc(auditRef, { result: 'changed' }))
+  await assertFails(deleteDoc(auditRef))
+  await assertFails(setDoc(doc(otherMemberDb, 'couples', ids.couple, 'auditEvents', 'audit_cross_couple'), {
+    schemaVersion: 1,
+    operation: 'memory.updated',
+    coupleId: ids.couple,
+    actorUid: ids.otherMember,
+    targetType: 'memory',
+    targetId: 'memory_one',
+    revision: 2,
+    result: 'success',
+    details: { revision: 2 },
+    createdAt: serverTimestamp(),
+  }))
+  await assertFails(setDoc(doc(memberOneDb, 'couples', ids.couple, 'auditEvents', 'audit_leaky'), {
+    schemaVersion: 1,
+    operation: 'media.finalized',
+    coupleId: ids.couple,
+    actorUid: ids.memberOne,
+    targetType: 'memory',
+    targetId: 'memory_one',
+    revision: 2,
+    result: 'success',
+    details: {
+      title: 'Private memory title',
+      driveFileId: 'drive-file-001',
+      temporaryUrl: 'blob:private',
+    },
+    createdAt: serverTimestamp(),
+  }))
+})
+
 test('authorized members can archive verified media memories, but invalid removal payloads fail closed', { skip: !hasEmulator }, async () => {
   const memberOneDb = authed(ids.memberOne)
   const pendingDb = authed(ids.pendingPartner)
