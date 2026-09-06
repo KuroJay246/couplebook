@@ -172,6 +172,7 @@ function LiveAlbumTile() {
 function GalleryLightbox({ item, items, onClose, onNext, onPrevious, onRemove }) {
   const dialogRef = useRef(null)
   const titleId = useId()
+  const hasVerifiedPrivateMedia = ['storage-verified', 'drive-verified'].includes(item?.media?.status)
 
   useEffect(() => {
     if (!item) return undefined
@@ -237,15 +238,15 @@ function GalleryLightbox({ item, items, onClose, onNext, onPrevious, onRemove })
             <InlineAlert
               tone="info"
               title="Private media boundary"
-              description={item.media.status === 'storage-verified'
-                ? 'This item has verified private Storage metadata. The viewer stays metadata-first and does not expose the original object URL here.'
+              description={hasVerifiedPrivateMedia
+                ? 'This item has verified private media metadata. The viewer stays metadata-first and does not expose the original object URL here.'
                 : 'This item is still shown through protected story metadata only.'}
             />
             <div className="mt-auto flex flex-wrap gap-2">
               {canStep ? <SecondaryButton className="border-white/20 bg-transparent text-white hover:bg-[var(--cb-surface)]/10" onClick={onPrevious}>Previous</SecondaryButton> : null}
               {canStep ? <SecondaryButton className="border-white/20 bg-transparent text-white hover:bg-[var(--cb-surface)]/10" onClick={onNext}>Next</SecondaryButton> : null}
               <SecondaryButton as={Link} className="border-white/20 bg-transparent text-white hover:bg-[var(--cb-surface)]/10" to="/timeline">Open Story</SecondaryButton>
-              {item.media.status === 'storage-verified' ? <DangerButton onClick={() => onRemove(item)}>Remove from Album</DangerButton> : null}
+              {hasVerifiedPrivateMedia ? <DangerButton onClick={() => onRemove(item)}>Remove from Album</DangerButton> : null}
             </div>
           </div>
         </div>

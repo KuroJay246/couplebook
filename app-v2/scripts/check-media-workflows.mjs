@@ -14,6 +14,7 @@ import { createServer as createViteServer } from 'vite'
 import { initializeApp, getApps } from 'firebase-admin/app'
 import { getFirestore } from 'firebase-admin/firestore'
 import { getStorage } from 'firebase-admin/storage'
+import { COUPLE_BOOK_DRIVE_FOLDER_ID } from '../src/services/googleDriveMediaProvider.js'
 
 const execFile = promisify(execFileCallback)
 
@@ -95,13 +96,13 @@ async function copyFixture(sourcePath, targetDir, name) {
 
 async function createPngFixture(targetDir, name) {
   const targetPath = path.join(targetDir, name)
-  await fsp.writeFile(targetPath, pngBuffer())
+  await fsp.writeFile(targetPath, Buffer.concat([pngBuffer(), Buffer.from(`\n${name}`)]))
   return targetPath
 }
 
 async function createGifFixture(targetDir, name) {
   const targetPath = path.join(targetDir, name)
-  await fsp.writeFile(targetPath, gifBuffer())
+  await fsp.writeFile(targetPath, Buffer.concat([gifBuffer(), Buffer.from(`\n${name}`)]))
   return targetPath
 }
 
@@ -154,7 +155,7 @@ async function createServer({ projectId, storageBucket }) {
   process.env.VITE_FIREBASE_APP_ID = process.env.VITE_FIREBASE_APP_ID || '1:000000000000:web:couplebookemulator'
   process.env.VITE_DATA_SOURCE_MODE = 'firestore'
   process.env.VITE_WRITE_MODE = 'firestore-emulator-write'
-  process.env.VITE_MEDIA_PROVIDER = 'firebase-storage'
+  process.env.VITE_MEDIA_PROVIDER = 'google-drive'
   const server = await createViteServer({
     root: APP_ROOT,
     server: {
@@ -185,8 +186,14 @@ async function createContext(browser, networkController) {
       phaseDelayMs: {
         validating: 180,
         hashing: 180,
+        uploading: 180,
         finalizing: 180,
       },
+    }
+    globalThis.__COUPLEBOOK_DRIVE_TEST__ = {
+      enabled: true,
+      failUploadsRemaining: 0,
+      uploadDelayMs: 0,
     }
 
     const originalDigest = SubtleCrypto.prototype.digest
@@ -238,6 +245,13 @@ async function openUploadTools(page) {
   if (await page.getByLabel('Album management tools').count()) return
   await page.getByRole('button', { name: /Manage uploads/i }).click()
   await page.getByLabel('Album management tools').waitFor({ state: 'visible', timeout: 10000 })
+}
+
+async function ensureDriveConnected(page) {
+  await openUploadTools(page)
+  if (await page.getByText('Connected', { exact: true }).count()) return
+  await page.getByRole('button', { name: 'Connect Google Drive' }).click()
+  await page.getByText('Connected', { exact: true }).waitFor({ state: 'visible', timeout: 10000 })
 }
 
 async function setFiles(page, filePaths) {
@@ -311,6 +325,19 @@ async function listStorageObjects(bucket, prefix) {
   return files.map((file) => file.name).sort()
 }
 
+function assertDriveVerifiedMedia(memory, kind) {
+  assert.equal(memory.mediaState, 'drive-verified')
+  assert.equal(memory.media?.provider, 'google-drive')
+  assert.equal(memory.media?.kind, kind)
+  assert.match(memory.media?.driveFileId || '', /^drive_test_[A-Za-z0-9_-]{10,}$/)
+  assert.equal(memory.media?.driveFolderId, COUPLE_BOOK_DRIVE_FOLDER_ID)
+  assert.equal(memory.media?.storagePath || '', '')
+  return {
+    driveFileId: memory.media.driveFileId,
+    driveFolderId: memory.media.driveFolderId,
+  }
+}
+
 async function saveScreenshot(page, fileName) {
   const filePath = path.join(OUTPUT_ROOT, 'screenshots', fileName)
   await page.screenshot({ path: filePath, fullPage: true })
@@ -371,6 +398,18 @@ async function removeAlbumItem(page, title, confirm = true) {
   }
 }
 
+async function saveFailureEvidence(page, error) {
+  if (page.isClosed()) return
+  await saveScreenshot(page, 'failure.png').catch(() => {})
+  const failureReport = {
+    message: error?.message || String(error),
+    stack: error?.stack || '',
+    url: page.url(),
+  }
+  await fsp.writeFile(path.join(OUTPUT_ROOT, 'failure.json'), JSON.stringify(failureReport, null, 2)).catch(() => {})
+  await fsp.writeFile(path.join(OUTPUT_ROOT, 'failure.html'), await page.content()).catch(() => {})
+}
+
 async function run() {
   await ensureOutputFolders()
 
@@ -419,7 +458,7 @@ async function run() {
   try {
     await signIn(page, baseUrl, ownerEmail, ownerPassword)
     await openGallery(page, baseUrl)
-    await openUploadTools(page)
+    await ensureDriveConnected(page)
 
     const initialStorageObjects = await listStorageObjects(bucket, storagePrefix)
     assert.equal(initialStorageObjects.length, 0, 'Expected emulator storage to start empty.')
@@ -452,16 +491,17 @@ async function run() {
     await assertTileVisible(page, imageTitle)
     const imageDocs = await getMemoryDocsByTitle(db, coupleId, imageTitle)
     assert.equal(imageDocs.length, 1, 'Expected one saved image memory.')
-    assert.equal(imageDocs[0].data.media?.kind, 'image')
+    const imageDrive = assertDriveVerifiedMedia(imageDocs[0].data, 'image')
     const imageStorageAfterSave = await listStorageObjects(bucket, storagePrefix)
-    assert.equal(imageStorageAfterSave.length, 1, 'Expected one stored image object after save.')
-    assert.equal(imageStorageAfterSave.includes(imageDocs[0].data.media.storagePath), true)
+    assert.equal(imageStorageAfterSave.length, 0, 'Drive-first save must not create Firebase Storage objects.')
     report.scenarios.imageSuccess = {
       statuses: imageStatuses,
       memoryId: imageDocs[0].id,
-      storagePath: imageDocs[0].data.media.storagePath,
+      ...imageDrive,
+      storageObjectCountAfter: imageStorageAfterSave.length,
     }
 
+    await ensureDriveConnected(page)
     const imageCountBeforeCoverage = (await page.locator('article').count())
     await setFiles(page, fixtures.imageWebp)
     const webpCard = queueCard(page, path.basename(fixtures.imageWebp))
@@ -489,12 +529,18 @@ async function run() {
     await cancelCard.waitFor({ state: 'visible', timeout: 10000 })
     await fillQueueTitle(cancelCard, cancelTitle)
     networkController.delayMs = 2000
+    await page.evaluate(() => {
+      globalThis.__COUPLEBOOK_DRIVE_TEST__.uploadDelayMs = 1200
+    })
     const cancelStatusesPromise = collectStatusHistory(cancelCard, ['Cancelled'])
     await startUploads(page)
     await cancelCard.getByText('Uploading', { exact: true }).waitFor({ state: 'visible', timeout: 15000 })
-    await cancelCard.getByRole('button', { name: new RegExp(`Cancel upload for ${path.basename(fixtures.imageCancel).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`) }).click()
+    await cancelCard.getByRole('button', { name: /Cancel upload for/i }).evaluate((button) => button.click())
     const cancelStatuses = await cancelStatusesPromise
     networkController.delayMs = 0
+    await page.evaluate(() => {
+      globalThis.__COUPLEBOOK_DRIVE_TEST__.uploadDelayMs = 0
+    })
     await waitForNotice(page, /Upload cancelled/i)
     const cancelDocs = await getMemoryDocsByTitle(db, coupleId, cancelTitle)
     assert.equal(cancelDocs.length, 0, 'Cancelled upload should not create a memory.')
@@ -514,7 +560,7 @@ async function run() {
     await retryCard.waitFor({ state: 'visible', timeout: 10000 })
     await fillQueueTitle(retryCard, retryTitle)
     await page.evaluate(() => {
-      globalThis.__COUPLEBOOK_UPLOAD_TEST__.failUploadsRemaining = 1
+      globalThis.__COUPLEBOOK_DRIVE_TEST__.failUploadsRemaining = 1
     })
     const retryFailureStatusesPromise = collectStatusHistory(retryCard, ['Needs review'])
     await startUploads(page)
@@ -522,22 +568,22 @@ async function run() {
     await retryCard.getByRole('button', { name: new RegExp(`Retry upload for ${path.basename(fixtures.imageRetry).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`) }).waitFor({ state: 'visible', timeout: 10000 })
     await saveScreenshot(page, 'image-retry-failed.png')
     await page.evaluate(() => {
-      globalThis.__COUPLEBOOK_UPLOAD_TEST__.failUploadsRemaining = 0
+      globalThis.__COUPLEBOOK_DRIVE_TEST__.failUploadsRemaining = 0
     })
     const retrySuccessStatusesPromise = collectStatusHistory(retryCard, ['Saved'])
     await retryCard.getByRole('button', { name: new RegExp(`Retry upload for ${path.basename(fixtures.imageRetry).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`) }).click()
     const retrySuccessStatuses = await retrySuccessStatusesPromise
     const retryDocs = await getMemoryDocsByTitle(db, coupleId, retryTitle)
     assert.equal(retryDocs.length, 1, 'Retry flow should end with exactly one memory.')
+    const retryDrive = assertDriveVerifiedMedia(retryDocs[0].data, 'image')
     const storageAfterRetry = await listStorageObjects(bucket, storagePrefix)
-    assert.equal(storageAfterRetry.length, storageBeforeRetry.length + 1, 'Retry flow should create exactly one storage object.')
-    assert.equal(storageAfterRetry.includes(retryDocs[0].data.media.storagePath), true)
+    assert.deepEqual(storageAfterRetry, storageBeforeRetry, 'Drive retry flow must not create Firebase Storage objects.')
     await saveScreenshot(page, 'image-retry-saved.png')
     report.scenarios.retry = {
       failedStatuses: retryFailureStatuses,
       successStatuses: retrySuccessStatuses,
       memoryId: retryDocs[0].id,
-      storagePath: retryDocs[0].data.media.storagePath,
+      ...retryDrive,
     }
 
     const duplicateTitle = 'QA Browser Image Duplicate'
@@ -582,14 +628,15 @@ async function run() {
     await assertTileVisible(page, videoTitle)
     const videoDocs = await getMemoryDocsByTitle(db, coupleId, videoTitle)
     assert.equal(videoDocs.length, 1, 'Expected one saved video memory.')
-    assert.equal(videoDocs[0].data.media?.kind, 'video')
+    const videoDrive = assertDriveVerifiedMedia(videoDocs[0].data, 'video')
     await saveScreenshot(page, 'video-saved.png')
     report.scenarios.videoSuccess = {
       statuses: videoStatuses,
       memoryId: videoDocs[0].id,
-      storagePath: videoDocs[0].data.media.storagePath,
+      ...videoDrive,
     }
 
+    await ensureDriveConnected(page)
     await setFiles(page, fixtures.videoWebm)
     const webmCard = queueCard(page, path.basename(fixtures.videoWebm))
     await webmCard.waitFor({ state: 'visible', timeout: 10000 })
@@ -613,14 +660,16 @@ async function run() {
     assert.equal(removedImageDoc.data.mediaState, 'none')
     assert.equal('media' in removedImageDoc.data, false)
     const storageAfterImageRemoval = await listStorageObjects(bucket, storagePrefix)
-    assert.equal(storageAfterImageRemoval.includes(report.scenarios.imageSuccess.storagePath), false)
+    assert.equal(storageAfterImageRemoval.length, 0, 'Drive-first image removal must not use Firebase Storage.')
     await saveScreenshot(page, 'image-removed.png')
     await clearGallerySearch(page)
     report.scenarios.imageRemoval = {
       memoryId: removedImageDoc.id,
       status: removedImageDoc.data.status,
+      removedDriveFileId: report.scenarios.imageSuccess.driveFileId,
     }
 
+    await ensureDriveConnected(page)
     const removeVideoTitle = 'QA Browser Video Removed'
     await setFiles(page, fixtures.videoRemove)
     const removeVideoCard = queueCard(page, path.basename(fixtures.videoRemove))
@@ -645,7 +694,7 @@ async function run() {
     assert.equal(removedVideoDoc.data.mediaState, 'none')
     assert.equal('media' in removedVideoDoc.data, false)
     const storageAfterVideoRemoval = await listStorageObjects(bucket, storagePrefix)
-    assert.equal(storageAfterVideoRemoval.includes(removeVideoDocs[0].data.media.storagePath), false)
+    assert.equal(storageAfterVideoRemoval.length, 0, 'Drive-first video removal must not use Firebase Storage.')
     await saveScreenshot(page, 'video-removed.png')
     report.scenarios.videoRemoval = {
       memoryId: removedVideoDoc.id,
@@ -655,6 +704,9 @@ async function run() {
     await clearGallerySearch(page)
     fs.writeFileSync(path.join(OUTPUT_ROOT, 'media-workflow-report.json'), JSON.stringify(report, null, 2))
     log(`Media workflow proof passed. Report: ${path.join(OUTPUT_ROOT, 'media-workflow-report.json')}`)
+  } catch (error) {
+    await saveFailureEvidence(page, error)
+    throw error
   } finally {
     await context.close().catch(() => {})
     await browser.close().catch(() => {})

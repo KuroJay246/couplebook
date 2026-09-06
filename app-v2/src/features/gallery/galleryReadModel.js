@@ -56,7 +56,7 @@ export function buildGalleryReadModel({ compatibilitySnapshot = null } = {}) {
   const unavailableMedia = items.filter((item) =>
     ['private-legacy-reference', 'unavailable', 'invalid'].includes(item.media.status),
   )
-  const verifiedMedia = items.filter((item) => item.media.status === 'storage-verified')
+  const verifiedMedia = items.filter((item) => ['storage-verified', 'drive-verified'].includes(item.media.status))
 
   return freezeClone({
     status: deriveGalleryStatus(memorySource, items),

@@ -135,6 +135,42 @@ test('gallery read model exposes verified storage media without raw local refere
   assert.doesNotMatch(JSON.stringify(model), /C:\\\\|OUR MEMORIES|\/assets\/videos/)
 })
 
+test('gallery read model exposes verified Drive media for Album removal', () => {
+  const model = buildGalleryReadModel({
+    compatibilitySnapshot: createSnapshot({
+      status: 'ready',
+      source: 'firestore',
+      data: {
+        hasBaseDataset: true,
+        memories: [
+          createMemoryRecord({
+            id: 'verified-drive-image',
+            revision: 4,
+            mediaPath: '',
+            mediaKind: 'image',
+            media: {
+              provider: 'google-drive',
+              kind: 'image',
+              driveFileId: 'drive_test_1234567890',
+              driveFolderId: '17Ar4UK5_puORz9TE1dijIk2-qHgh7oIa',
+              contentType: 'image/png',
+              sizeBytes: 100,
+            },
+          }),
+        ],
+      },
+      warnings: [],
+    }),
+  })
+
+  assert.equal(model.verifiedMedia.length, 1)
+  assert.equal(model.photos[0].memoryRevision, 4)
+  assert.equal(model.photos[0].media.status, 'drive-verified')
+  assert.equal(model.photos[0].media.driveFileId, 'drive_test_1234567890')
+  assert.equal(model.photos[0].media.driveFolderId, '17Ar4UK5_puORz9TE1dijIk2-qHgh7oIa')
+  assert.doesNotMatch(JSON.stringify(model), /C:\\\\|OUR MEMORIES|\/assets\/photos/)
+})
+
 test('gallery read model excludes archived memories from active collections', () => {
   const model = buildGalleryReadModel({
     compatibilitySnapshot: createSnapshot({

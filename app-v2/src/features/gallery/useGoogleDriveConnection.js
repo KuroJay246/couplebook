@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { readRuntimeEnv } from '../../data/adapterUtils.js'
+import { isLocalHostname, readRuntimeEnv } from '../../data/adapterUtils.js'
 import { createGoogleDriveMediaProvider, DRIVE_STATE } from '../../services/googleDriveMediaProvider.js'
+import { createLocalGoogleDriveTestProvider } from './localGoogleDriveTestProvider.js'
 
 function loadGoogleIdentityScript() {
   if (typeof window === 'undefined') return Promise.reject(new Error('Google Drive authorization requires a browser.'))
@@ -19,6 +20,13 @@ function loadGoogleIdentityScript() {
     script.onerror = () => reject(new Error('Google Drive authorization could not load.'))
     document.head.appendChild(script)
   })
+}
+
+function shouldUseLocalDriveTestProvider(localUploadTestHooksEnabled) {
+  if (typeof window === 'undefined') return false
+  if (localUploadTestHooksEnabled !== 'true') return false
+  if (window.__COUPLEBOOK_DRIVE_TEST__?.enabled !== true) return false
+  return isLocalHostname(window.location?.hostname || '')
 }
 
 function createRenderableState() {
@@ -229,11 +237,16 @@ export function createDriveConnectionController({
 
 export function useGoogleDriveConnection() {
   const env = readRuntimeEnv()
+  const googleClientId = env.VITE_GOOGLE_CLIENT_ID
+  const localUploadTestHooksEnabled = env.VITE_ENABLE_LOCAL_UPLOAD_TEST_HOOKS
   const controller = useMemo(
     () => createDriveConnectionController({
-      createProvider: () => createGoogleDriveMediaProvider({ clientId: env.VITE_GOOGLE_CLIENT_ID }),
+      createProvider: () => (shouldUseLocalDriveTestProvider(localUploadTestHooksEnabled)
+        ? createLocalGoogleDriveTestProvider()
+        : createGoogleDriveMediaProvider({ clientId: googleClientId })),
+      loadIdentityScript: () => (shouldUseLocalDriveTestProvider(localUploadTestHooksEnabled) ? Promise.resolve() : loadGoogleIdentityScript()),
     }),
-    [env.VITE_GOOGLE_CLIENT_ID],
+    [googleClientId, localUploadTestHooksEnabled],
   )
   const [renderState, setRenderState] = useState(() => controller.getSnapshot())
 

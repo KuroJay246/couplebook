@@ -26,6 +26,7 @@ function createMonthLabel(date) {
 
 export function classifyGalleryMediaStatus(media) {
   if (media?.status === 'storage-verified') return 'storage-verified'
+  if (media?.status === 'drive-verified') return 'drive-verified'
   if (media?.isAvailableInApp === true) return 'available-local-reference'
   if (media?.status === 'private-legacy-reference') return 'private-legacy-reference'
   if (media?.status === 'special-route-only') return 'special-route-only'
@@ -59,6 +60,8 @@ function buildGalleryItem(memory, index) {
       storagePath: memory.media.storagePath || '',
       thumbnailPath: memory.media.thumbnailPath || '',
       posterPath: memory.media.posterPath || '',
+      driveFileId: memory.media.driveFileId || '',
+      driveFolderId: memory.media.driveFolderId || '',
       contentType: memory.media.contentType || '',
     },
     specialMoment: {

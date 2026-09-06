@@ -1,7 +1,8 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { createDriveConnectionController } from '../features/gallery/useGoogleDriveConnection.js'
-import { DRIVE_STATE } from '../services/googleDriveMediaProvider.js'
+import { createLocalGoogleDriveTestProvider } from '../features/gallery/localGoogleDriveTestProvider.js'
+import { COUPLE_BOOK_DRIVE_FOLDER_ID, DRIVE_STATE } from '../services/googleDriveMediaProvider.js'
 
 function makeProvider(id, events, previewDelay = 0) {
   return {
@@ -71,4 +72,32 @@ test('an in-flight preview from an old session is revoked and rejected', async (
   controller.disconnect()
   await assert.rejects(previewPromise, (error) => error.code === DRIVE_STATE.cancelled)
   assert.ok(events.includes('revoke:blob:slow:slow-image'))
+})
+
+test('local Drive test provider requires an explicit local browser hook', async () => {
+  const originalWindow = globalThis.window
+  globalThis.window = {
+    location: { hostname: 'preview.example.com' },
+    __COUPLEBOOK_DRIVE_TEST__: { enabled: true },
+    sessionStorage: {
+      getItem: () => null,
+      setItem: () => {},
+    },
+  }
+
+  try {
+    const provider = createLocalGoogleDriveTestProvider()
+    await assert.rejects(provider.connect(), (error) => error.code === DRIVE_STATE.temporaryFailure)
+
+    globalThis.window.location.hostname = '127.0.0.1'
+    const connected = await provider.connect()
+    assert.equal(connected.state, DRIVE_STATE.connected)
+    assert.equal(connected.folderId, COUPLE_BOOK_DRIVE_FOLDER_ID)
+  } finally {
+    if (originalWindow === undefined) {
+      delete globalThis.window
+    } else {
+      globalThis.window = originalWindow
+    }
+  }
 })
