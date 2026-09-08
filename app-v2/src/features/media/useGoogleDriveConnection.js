@@ -22,6 +22,23 @@ function loadGoogleIdentityScript() {
   })
 }
 
+export function getGoogleDriveOAuthOriginIssue(location = typeof window === 'undefined' ? null : window.location) {
+  const origin = String(location?.origin || '').trim()
+  const hostname = String(location?.hostname || '').trim().toLowerCase()
+  const port = String(location?.port || '').trim()
+
+  if (hostname === '127.0.0.1' || hostname === '[::1]' || hostname === '::1') {
+    const suggestedOrigin = port ? `http://localhost:${port}` : 'http://localhost'
+    return {
+      origin,
+      suggestedOrigin,
+      message: `Google Drive sign-in is blocked from ${origin}. Open Couple Book at ${suggestedOrigin} or add ${origin} as an authorized JavaScript origin for this Google OAuth client.`,
+    }
+  }
+
+  return null
+}
+
 export function shouldUseLocalDriveTestProvider(localUploadTestHooksEnabled) {
   if (typeof window === 'undefined') return false
   if (localUploadTestHooksEnabled !== 'true') return false
@@ -114,6 +131,11 @@ export function createDriveConnectionController({
     const generation = beginSession(DRIVE_STATE.connecting)
     let provider = null
     try {
+      const originIssue = getGoogleDriveOAuthOriginIssue()
+      if (originIssue) {
+        throw Object.assign(new Error(originIssue.message), { code: DRIVE_STATE.temporaryFailure })
+      }
+
       await loadIdentityScript()
       if (!isActiveGeneration(generationRef, generation)) {
         const error = new Error('A newer Google Drive session replaced this authorization attempt.')

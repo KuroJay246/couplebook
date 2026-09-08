@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { createDriveConnectionController, shouldUseLocalDriveTestProvider } from '../features/media/useGoogleDriveConnection.js'
+import { createDriveConnectionController, getGoogleDriveOAuthOriginIssue, shouldUseLocalDriveTestProvider } from '../features/media/useGoogleDriveConnection.js'
 import { createLocalGoogleDriveTestProvider } from '../features/media/localGoogleDriveTestProvider.js'
 import { COUPLE_BOOK_DRIVE_FOLDER_ID, DRIVE_STATE } from '../services/googleDriveMediaProvider.js'
 
@@ -129,4 +129,20 @@ test('local Drive provider selection stays disabled without every local test bou
       globalThis.window = originalWindow
     }
   }
+})
+
+test('Google Drive OAuth preflight explains local IP origin mismatches before opening Google sign-in', () => {
+  const ipIssue = getGoogleDriveOAuthOriginIssue({
+    origin: 'http://127.0.0.1:5173',
+    hostname: '127.0.0.1',
+    port: '5173',
+  })
+
+  assert.equal(ipIssue.suggestedOrigin, 'http://localhost:5173')
+  assert.match(ipIssue.message, /authorized JavaScript origin/)
+  assert.equal(getGoogleDriveOAuthOriginIssue({
+    origin: 'http://localhost:5173',
+    hostname: 'localhost',
+    port: '5173',
+  }), null)
 })
