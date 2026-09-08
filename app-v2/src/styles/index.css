@@ -294,6 +294,20 @@ a[href="/timeline"].cb-button-pill {
   padding: 1rem;
 }
 
+.cb-media-preview {
+  position: relative;
+  display: grid;
+  min-height: 12rem;
+  overflow: hidden;
+  place-items: center;
+  background:
+    linear-gradient(160deg, color-mix(in srgb, var(--cb-accent-soft) 72%, var(--cb-surface)), var(--cb-surface-raised));
+}
+
+.cb-media-preview-empty {
+  border: 1px dashed color-mix(in srgb, var(--cb-border-strong) 90%, transparent);
+}
+
 .cb-owner-hidden {
   display: none !important;
 }

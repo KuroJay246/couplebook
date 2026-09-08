@@ -361,12 +361,36 @@ test('gallery selectors own Album filtering, search, and year grouping', () => {
   assert.equal(Object.isFrozen(grouped), true)
 })
 
+test('gallery read model can consume memory source directly without the full compatibility snapshot', () => {
+  const memorySource = {
+    status: 'ready',
+    source: 'firestore',
+    data: {
+      hasBaseDataset: true,
+      memories: [
+        createMemoryRecord({ id: 'direct-memory-source', title: 'Direct memory source', dateLabel: '2026-03-01', mediaKind: 'image', mediaPath: '/assets/photos/direct.jpg' }),
+      ],
+    },
+    warnings: [],
+  }
+
+  const model = buildGalleryReadModel({ memorySource })
+
+  assert.equal(model.status, 'ready')
+  assert.equal(model.items.length, 1)
+  assert.equal(model.items[0].title, 'Direct memory source')
+  assert.equal(model.sourceStatus.memoryArchive.count, 1)
+})
+
 test('gallery architecture stays read-only and routes Storage through the media service only', async () => {
   const selectorsSource = await readFile(new URL('../features/gallery/gallerySelectors.js', import.meta.url), 'utf8')
   const readModelSource = await readFile(new URL('../features/gallery/galleryReadModel.js', import.meta.url), 'utf8')
   const hookSource = await readFile(new URL('../features/gallery/useGalleryData.js', import.meta.url), 'utf8')
   const combined = `${selectorsSource}\n${readModelSource}\n${hookSource}`
 
+  assert.match(readModelSource, /memorySource = null/)
+  assert.match(hookSource, /memorySource: snapshot\?\.sources\?\.memories/)
+  assert.doesNotMatch(hookSource, /compatibilitySnapshot: snapshot/)
   assert.doesNotMatch(combined, /fetch\(|XMLHttpRequest|new Image|createObjectURL|getDownloadURL|firebase\/storage/)
   assert.doesNotMatch(combined, /\bsetItem\s*\(|\bupdateDoc\s*\(|\baddDoc\s*\(|\bdeleteDoc\s*\(|\bsetDoc\s*\(/)
   assert.doesNotMatch(combined, /collection\([^)]*users|documents\/users(?:[/?#]|\b)/)

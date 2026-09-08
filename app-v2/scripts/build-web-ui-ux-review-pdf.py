@@ -66,7 +66,7 @@ Status: READY FOR OWNER REVIEW after preview deployment.
 | Open Home and understand the relationship at a glance | PASS | Home desktop/mobile captures |
 | Read Story in chronological order | PASS | Story desktop/mobile captures |
 | Browse Album visually | PASS | Album desktop/mobile captures |
-| Reveal Album management intentionally | PASS | Manage uploads control and UX boundary test |
+| Reveal Album management intentionally | PASS | Add details control and UX boundary test |
 | Open Plans and understand shared intent | PASS | Plans desktop capture |
 | Open Us and review the relationship profile | PASS | Us desktop capture |
 | Open Settings without diagnostic overload | PASS | Advanced panel and Settings captures |

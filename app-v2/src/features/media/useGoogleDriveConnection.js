@@ -86,6 +86,7 @@ export function createDriveConnectionController({
   createProvider,
   loadIdentityScript = loadGoogleIdentityScript,
   revokeObjectUrl = (url) => URL.revokeObjectURL(url),
+  skipOAuthOriginPreflight = false,
 } = {}) {
   const providerRef = { current: null }
   const generationRef = { current: 0 }
@@ -131,7 +132,7 @@ export function createDriveConnectionController({
     const generation = beginSession(DRIVE_STATE.connecting)
     let provider = null
     try {
-      const originIssue = getGoogleDriveOAuthOriginIssue()
+      const originIssue = skipOAuthOriginPreflight ? null : getGoogleDriveOAuthOriginIssue()
       if (originIssue) {
         throw Object.assign(new Error(originIssue.message), { code: DRIVE_STATE.temporaryFailure })
       }
@@ -261,14 +262,16 @@ export function useGoogleDriveConnection() {
   const env = readRuntimeEnv()
   const googleClientId = env.VITE_GOOGLE_CLIENT_ID
   const localUploadTestHooksEnabled = env.VITE_ENABLE_LOCAL_UPLOAD_TEST_HOOKS
+  const useLocalDriveProvider = shouldUseLocalDriveTestProvider(localUploadTestHooksEnabled)
   const controller = useMemo(
     () => createDriveConnectionController({
-      createProvider: () => (shouldUseLocalDriveTestProvider(localUploadTestHooksEnabled)
+      createProvider: () => (useLocalDriveProvider
         ? createLocalGoogleDriveTestProvider()
         : createGoogleDriveMediaProvider({ clientId: googleClientId })),
-      loadIdentityScript: () => (shouldUseLocalDriveTestProvider(localUploadTestHooksEnabled) ? Promise.resolve() : loadGoogleIdentityScript()),
+      loadIdentityScript: () => (useLocalDriveProvider ? Promise.resolve() : loadGoogleIdentityScript()),
+      skipOAuthOriginPreflight: useLocalDriveProvider,
     }),
-    [googleClientId, localUploadTestHooksEnabled],
+    [googleClientId, useLocalDriveProvider],
   )
   const [renderState, setRenderState] = useState(() => controller.getSnapshot())
 

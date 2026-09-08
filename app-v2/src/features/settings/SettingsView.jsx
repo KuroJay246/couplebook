@@ -1,6 +1,7 @@
 import {
   Gift,
   Heart,
+  Images,
   LockKeyhole,
   LogOut,
   MonitorCog,
@@ -383,6 +384,39 @@ export function SettingsView({ compatibilityError, compatibilityState, model, on
                 </div>
               </ContentCard>
             ))}
+          </div>
+        </Surface>
+
+        <Surface tone="soft">
+          <div className="flex items-start gap-3">
+            <span
+              className="grid size-11 shrink-0 place-items-center rounded-2xl"
+              style={{
+                background: 'color-mix(in srgb, var(--cb-accent-soft) 88%, transparent)',
+                color: 'var(--cb-accent)',
+              }}
+            >
+              <Images className="size-5" aria-hidden="true" />
+            </span>
+            <div>
+              <p className="cb-kicker">Media</p>
+              <h3 className="cb-page-title mt-2 text-2xl">{model.media?.title}</h3>
+              <p className="cb-body-copy mt-2 text-sm">{model.media?.description}</p>
+            </div>
+          </div>
+          <div className="mt-5 grid gap-3">
+            {(model.media?.items || []).map((item) => (
+              <ContentCard key={item.label}>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold" style={{ color: 'var(--cb-text)' }}>{item.label}</p>
+                    <p className="cb-body-copy mt-2 text-sm">{item.description}</p>
+                  </div>
+                  <StatusBadge tone="info">{item.meta}</StatusBadge>
+                </div>
+              </ContentCard>
+            ))}
+            <SecondaryButton as={Link} to="/gallery">Open Album</SecondaryButton>
           </div>
         </Surface>
 

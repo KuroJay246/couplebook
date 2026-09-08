@@ -31,7 +31,7 @@ const ROUTES = Object.freeze([
   { path: '/login', heading: 'Open the shared journal kept between the two of you.', mode: 'signed-out' },
   { path: '/dashboard', heading: /Our memories, plans, and special moments/, mode: 'authorized' },
   { path: '/timeline', heading: /Our Story/, mode: 'authorized' },
-  { path: '/gallery', heading: /Moments we kept close/, mode: 'authorized' },
+  { path: '/gallery', heading: /Browse, open, remember/, mode: 'authorized' },
   { path: '/profile', heading: /Us/, mode: 'authorized' },
   { path: '/favorites', heading: /Favorite Things/, mode: 'authorized' },
   { path: '/plans', heading: /Things we want to do together/, mode: 'authorized' },
@@ -171,6 +171,7 @@ async function run() {
   const server = await createViteServer({
     root: APP_ROOT,
     server: {
+      hmr: false,
       host: '127.0.0.1',
       port: 0,
     },

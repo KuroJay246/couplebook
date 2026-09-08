@@ -882,7 +882,7 @@ async function runGalleryWorkflows(summary, page, baseUrl, fixtures, networkCont
   const cancelTitle = `Owner Review Cancel Upload ${uniqueSuffix()}`
   await openRoute(page, baseUrl, DEFAULT_ROUTE_SET.find((route) => route.path === '/gallery'))
   await ensureDriveConnected(page)
-  await page.getByRole('button', { name: /Manage uploads/i }).click()
+  await page.getByRole('button', { name: /Add details/i }).click()
   await page.getByRole('region', { name: 'Upload queue' }).waitFor({ state: 'visible', timeout: 5000 })
   await recordControl(summary, { controlName: 'Upload queue disabled state', route: '/gallery', action: 'Check empty queue', expectedResult: 'Start uploads stays disabled without queued files.' }, async () => {
     assert.equal(await page.getByRole('button', { name: /Start uploads/i }).isDisabled(), true)

@@ -7,10 +7,11 @@ const settingsSource = await readFile(new URL('../features/settings/SettingsView
 const styleSource = await readFile(new URL('../styles/index.css', import.meta.url), 'utf8')
 
 test('Album keeps management controls behind an explicit secondary action', () => {
-  assert.match(gallerySource, /Manage uploads/)
+  assert.match(gallerySource, /Add details/)
   assert.match(gallerySource, /manageUploadsOpen/)
   assert.match(gallerySource, /aria-label="Album management tools"/)
   assert.doesNotMatch(gallerySource, /Metadata-first private album/)
+  assert.doesNotMatch(gallerySource, /Google Drive connection/)
 })
 
 test('Settings keeps technical health behind Advanced', () => {

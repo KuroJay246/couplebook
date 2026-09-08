@@ -238,20 +238,20 @@ async function signIn(page, baseUrl, email, password) {
 
 async function openGallery(page, baseUrl) {
   await page.goto(`${baseUrl}/gallery`, { waitUntil: 'domcontentloaded' })
-  await page.getByRole('heading', { name: 'Our Shared Gallery' }).waitFor({ state: 'visible', timeout: 15000 })
+  await page.getByRole('heading', { name: 'Our Memories' }).waitFor({ state: 'visible', timeout: 15000 })
 }
 
 async function openUploadTools(page) {
   if (await page.getByLabel('Album management tools').count()) return
-  await page.getByRole('button', { name: /Manage uploads/i }).click()
+  await page.getByRole('button', { name: /Add details/i }).click()
   await page.getByLabel('Album management tools').waitFor({ state: 'visible', timeout: 10000 })
 }
 
 async function ensureDriveConnected(page) {
   await openUploadTools(page)
-  if (await page.getByText('Connected', { exact: true }).count()) return
-  await page.getByRole('button', { name: 'Connect Google Drive' }).click()
-  await page.getByText('Connected', { exact: true }).waitFor({ state: 'visible', timeout: 10000 })
+  if (await page.getByText('Private folder ready', { exact: true }).count()) return
+  await page.getByRole('button', { name: 'Connect to add files' }).click()
+  await page.getByText('Private folder ready', { exact: true }).waitFor({ state: 'visible', timeout: 10000 })
 }
 
 async function setFiles(page, filePaths) {
@@ -475,7 +475,7 @@ async function run() {
     const imageStatuses = await imageStatusesPromise
     networkController.delayMs = 0
     assert.deepEqual(
-      ['Ready', 'Validating', 'Hashing', 'Uploading', 'Finalizing', 'Saved'].every((label) => imageStatuses.includes(label)),
+      ['Validating', 'Hashing', 'Uploading', 'Finalizing', 'Saved'].every((label) => imageStatuses.includes(label)),
       true,
       `Image upload should show every queue phase. Got: ${imageStatuses.join(', ')}`,
     )
@@ -487,7 +487,7 @@ async function run() {
     await saveScreenshot(page, 'image-opened.png')
     await closeGalleryItem(page)
     await page.reload({ waitUntil: 'domcontentloaded' })
-    await page.getByRole('heading', { name: 'Our Shared Gallery' }).waitFor({ state: 'visible', timeout: 15000 })
+    await page.getByRole('heading', { name: 'Our Memories' }).waitFor({ state: 'visible', timeout: 15000 })
     await assertTileVisible(page, imageTitle)
     const imageDocs = await getMemoryDocsByTitle(db, coupleId, imageTitle)
     assert.equal(imageDocs.length, 1, 'Expected one saved image memory.')
@@ -507,7 +507,6 @@ async function run() {
     const webpCard = queueCard(page, path.basename(fixtures.imageWebp))
     await webpCard.waitFor({ state: 'visible', timeout: 10000 })
     await assertPreviewExists(webpCard, 'image')
-    await webpCard.getByText('Ready', { exact: true }).waitFor({ state: 'visible', timeout: 5000 })
     await webpCard.getByText('Remove', { exact: true }).click()
     await waitForNotice(page, /ready for private upload|file is ready/i)
     await setFiles(page, fixtures.imageUnsupported)
@@ -619,12 +618,12 @@ async function run() {
     const videoStatuses = await videoStatusesPromise
     networkController.delayMs = 0
     assert.deepEqual(
-      ['Ready', 'Validating', 'Hashing', 'Uploading', 'Finalizing', 'Saved'].every((label) => videoStatuses.includes(label)),
+      ['Validating', 'Hashing', 'Uploading', 'Finalizing', 'Saved'].every((label) => videoStatuses.includes(label)),
       true,
       `Video upload should show every queue phase. Got: ${videoStatuses.join(', ')}`,
     )
     await page.reload({ waitUntil: 'domcontentloaded' })
-    await page.getByRole('heading', { name: 'Our Shared Gallery' }).waitFor({ state: 'visible', timeout: 15000 })
+    await page.getByRole('heading', { name: 'Our Memories' }).waitFor({ state: 'visible', timeout: 15000 })
     await assertTileVisible(page, videoTitle)
     const videoDocs = await getMemoryDocsByTitle(db, coupleId, videoTitle)
     assert.equal(videoDocs.length, 1, 'Expected one saved video memory.')
@@ -641,7 +640,6 @@ async function run() {
     const webmCard = queueCard(page, path.basename(fixtures.videoWebm))
     await webmCard.waitFor({ state: 'visible', timeout: 10000 })
     await assertPreviewExists(webmCard, 'video')
-    await webmCard.getByText('Ready', { exact: true }).waitFor({ state: 'visible', timeout: 5000 })
     await webmCard.getByText('Remove', { exact: true }).click()
     report.scenarios.webm = { accepted: true }
 
@@ -652,7 +650,7 @@ async function run() {
     await removeAlbumItem(page, imageTitle, true)
     await waitForNotice(page, /was removed from Album|was removed, but Album refresh still needs attention/i, 15000)
     await page.reload({ waitUntil: 'domcontentloaded' })
-    await page.getByRole('heading', { name: 'Our Shared Gallery' }).waitFor({ state: 'visible', timeout: 15000 })
+    await page.getByRole('heading', { name: 'Our Memories' }).waitFor({ state: 'visible', timeout: 15000 })
     await searchGallery(page, imageTitle)
     await assertTileAbsent(page, imageTitle)
     const removedImageDoc = (await getMemoryDocsByTitle(db, coupleId, imageTitle))[0]
@@ -686,7 +684,7 @@ async function run() {
     await removeAlbumItem(page, removeVideoTitle, true)
     await waitForNotice(page, /was removed from Album|was removed, but Album refresh still needs attention/i, 15000)
     await page.reload({ waitUntil: 'domcontentloaded' })
-    await page.getByRole('heading', { name: 'Our Shared Gallery' }).waitFor({ state: 'visible', timeout: 15000 })
+    await page.getByRole('heading', { name: 'Our Memories' }).waitFor({ state: 'visible', timeout: 15000 })
     await searchGallery(page, removeVideoTitle)
     await assertTileAbsent(page, removeVideoTitle)
     const removedVideoDoc = (await getMemoryDocsByTitle(db, coupleId, removeVideoTitle))[0]

@@ -386,13 +386,13 @@ async function runAuthenticatedDesktopCoverage(browser) {
     await waitForRouteContent(page, '/timeline', 'Our Story')
 
     await page.goto(`${getBaseUrl()}/gallery`, { waitUntil: 'domcontentloaded' })
-    await waitForRouteContent(page, '/gallery', 'Moments we kept close')
-    await page.getByRole('heading', { name: 'Moments we kept close' }).waitFor({ state: 'visible', timeout: 5000 })
+    await waitForRouteContent(page, '/gallery', 'Browse, open, remember')
+    await page.getByRole('heading', { name: 'Browse, open, remember' }).waitFor({ state: 'visible', timeout: 5000 })
     assert.equal(await page.getByRole('button', { name: 'Open item' }).count() > 0, true, 'Gallery should render item actions.')
     await page.getByRole('button', { name: /Videos/ }).click()
     assert.equal(await page.getByText('Video memory').count() > 0, true, 'Gallery video filter should keep video entries visible.')
     await page.getByRole('button', { name: /All media/i }).click()
-    assert.equal(await page.getByRole('heading', { name: 'Google Drive connection' }).count(), 1, 'Gallery should keep the real Drive connection available.')
+    assert.equal(await page.getByRole('region', { name: 'Album media access' }).count(), 1, 'Gallery should keep contextual media access available.')
     assert.equal(await page.getByRole('link', { name: /Our Live Album|iCloud/i }).count(), 0, 'Gallery should not expose unsupported iCloud pseudo-integrations.')
 
     for (const [route, heading] of [
@@ -426,7 +426,7 @@ async function runAuthenticatedDesktopCoverage(browser) {
 
     await page.goto(`${getBaseUrl()}/gallery`, { waitUntil: 'domcontentloaded' })
     await page.reload({ waitUntil: 'domcontentloaded' })
-    await waitForRouteContent(page, '/gallery', 'Moments we kept close')
+    await waitForRouteContent(page, '/gallery', 'Browse, open, remember')
 
     await page.getByRole('button', { name: /Sign out/i }).first().click()
     const dialog = page.getByRole('dialog', { name: 'Sign out of Couple Book?' })
@@ -483,7 +483,7 @@ async function runAuthenticatedMobileCoverage(browser) {
     assert.equal(await page.getByRole('button', { name: 'Add plan' }).count() > 0, true, 'Plans mobile should keep the add-plan entry point visible.')
 
     await page.goto(`${getBaseUrl()}/gallery`, { waitUntil: 'domcontentloaded' })
-    await waitForRouteContent(page, '/gallery', 'Moments we kept close')
+    await waitForRouteContent(page, '/gallery', 'Browse, open, remember')
     await page.getByRole('button', { name: /Videos/ }).click()
     assert.equal(await page.getByText('Video memory').count() > 0, true, 'Gallery mobile should keep video filtering available.')
 

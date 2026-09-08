@@ -7,7 +7,7 @@ export function useGalleryData() {
 
   return {
     model: buildGalleryReadModel({
-      compatibilitySnapshot: snapshot,
+      memorySource: snapshot?.sources?.memories,
     }),
     compatibilityError: error ? toUserFacingError(error, 'We could not load your Album right now. Try again.') : null,
     compatibilityState: state,

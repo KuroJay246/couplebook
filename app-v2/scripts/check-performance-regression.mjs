@@ -18,7 +18,7 @@ const OUTPUT_ROOT = path.join(REPO_ROOT, '.visual-audit', 'performance-current')
 const ROUTES = Object.freeze([
   { path: '/dashboard', heading: /Our memories, plans, and special moments/ },
   { path: '/timeline', heading: /Our Story/ },
-  { path: '/gallery', heading: /Moments we kept close/ },
+  { path: '/gallery', heading: /Browse, open, remember/ },
   { path: '/profile', heading: /Us/ },
   { path: '/favorites', heading: /Favorite Things/ },
   { path: '/plans', heading: /Things we want to do together/ },
@@ -315,6 +315,7 @@ async function run() {
   const server = await createViteServer({
     root: APP_ROOT,
     server: {
+      hmr: false,
       host: '127.0.0.1',
       port: 0,
     },

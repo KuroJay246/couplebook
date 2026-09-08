@@ -2,13 +2,12 @@ import { freezeClone } from '../../data/adapterUtils.js'
 import { normalizeTimelineMemories } from '../memories/memoryNormalizer.js'
 import { buildGalleryCollections, buildGalleryFilters, buildGallerySummary, selectGalleryItems } from './gallerySelectors.js'
 
-function createEmptySnapshot() {
-  return {
-    status: 'empty',
-    sources: {},
-    warnings: [],
-  }
-}
+const EMPTY_MEMORY_SOURCE = Object.freeze({
+  status: 'empty',
+  source: 'legacy-local-dev',
+  data: null,
+  warnings: [],
+})
 
 function deriveGalleryStatus(memorySource, items) {
   if (memorySource?.status === 'invalid') return 'invalid'
@@ -41,15 +40,9 @@ function buildSourceStatus(memorySource) {
   })
 }
 
-export function buildGalleryReadModel({ compatibilitySnapshot = null } = {}) {
-  const snapshot = compatibilitySnapshot || createEmptySnapshot()
-  const memorySource = snapshot.sources?.memories || {
-    status: 'empty',
-    source: 'legacy-local-dev',
-    data: null,
-    warnings: [],
-  }
-  const normalizedMemories = normalizeTimelineMemories(memorySource?.data?.memories || [])
+export function buildGalleryReadModel({ compatibilitySnapshot = null, memorySource = null } = {}) {
+  const resolvedMemorySource = memorySource || compatibilitySnapshot?.sources?.memories || EMPTY_MEMORY_SOURCE
+  const normalizedMemories = normalizeTimelineMemories(resolvedMemorySource?.data?.memories || [])
   const items = selectGalleryItems(normalizedMemories)
   const photos = items.filter((item) => item.media.kind === 'image')
   const videos = items.filter((item) => item.media.kind === 'video')
@@ -59,7 +52,7 @@ export function buildGalleryReadModel({ compatibilitySnapshot = null } = {}) {
   const verifiedMedia = items.filter((item) => ['storage-verified', 'drive-verified'].includes(item.media.status))
 
   return freezeClone({
-    status: deriveGalleryStatus(memorySource, items),
+    status: deriveGalleryStatus(resolvedMemorySource, items),
     items,
     summary: buildGallerySummary(items),
     collections: buildGalleryCollections(items),
@@ -68,7 +61,7 @@ export function buildGalleryReadModel({ compatibilitySnapshot = null } = {}) {
     verifiedMedia,
     unavailableMedia,
     filters: buildGalleryFilters(items),
-    sourceStatus: buildSourceStatus(memorySource),
-    warnings: Array.isArray(memorySource?.warnings) ? [...memorySource.warnings] : [],
+    sourceStatus: buildSourceStatus(resolvedMemorySource),
+    warnings: Array.isArray(resolvedMemorySource?.warnings) ? [...resolvedMemorySource.warnings] : [],
   })
 }

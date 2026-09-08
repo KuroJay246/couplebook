@@ -222,6 +222,30 @@ export function selectSettingsPrivacy() {
   }
 }
 
+export function selectSettingsMedia() {
+  return {
+    title: 'Photos and videos',
+    description: 'Media connection details belong here, while Album stays focused on browsing, opening, and adding memories.',
+    items: [
+      {
+        label: 'Private folder',
+        description: 'Original photos and videos are expected to remain in the Couple Book Google Drive folder.',
+        meta: 'Owner managed',
+      },
+      {
+        label: 'Temporary previews',
+        description: 'Preview links are session-only and must not be saved into Firestore or audit events.',
+        meta: 'Not persisted',
+      },
+      {
+        label: 'Album access',
+        description: 'Album may ask for a connection only when adding files or opening private previews.',
+        meta: 'Contextual',
+      },
+    ],
+  }
+}
+
 function getCompatibilityStatusLabel(key, source) {
   if (key === 'memories') return 'Private'
   if (source?.status === 'ready') return 'Available'

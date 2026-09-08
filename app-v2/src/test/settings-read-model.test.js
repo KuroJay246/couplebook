@@ -119,6 +119,8 @@ test('settings read model keeps approved identity, appearance notes, and migrati
   assert.equal(model.appearance.preservedTheme.label, 'Warm sunset')
   assert.equal(model.appearance.preservedTheme.origin, 'Scoped legacy preference')
   assert.equal(model.appearance.anniversaryView.label, 'Both perspectives')
+  assert.equal(model.media.title, 'Photos and videos')
+  assert.equal(model.media.items[1].label, 'Temporary previews')
   assert.equal(model.privacy.items[2].label, 'Browser storage is not authentication')
   assert.equal(model.compatibility.items[0].statusLabel, 'Available')
   assert.equal(model.compatibility.items[4].statusLabel, 'Private')
@@ -308,6 +310,7 @@ test('settings read model returns frozen data and leaves compatibility inputs un
 
   assert.equal(Object.isFrozen(model), true)
   assert.equal(Object.isFrozen(model.account.details), true)
+  assert.equal(Object.isFrozen(model.media.items), true)
   assert.equal(Object.isFrozen(model.compatibility.items), true)
   assert.deepEqual(snapshot, before)
 })

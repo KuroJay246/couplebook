@@ -10,6 +10,7 @@ import { FormField, SelectField, TextAreaField, TextField } from '../../componen
 import { InlineAlert } from '../../components/ui/InlineAlert.jsx'
 import { LoadingSkeleton } from '../../components/ui/LoadingSkeleton.jsx'
 import { LoadingState } from '../../components/ui/LoadingState.jsx'
+import { MediaPreview } from '../../components/ui/MediaPreview.jsx'
 import { PageHeader } from '../../components/ui/PageHeader.jsx'
 import { SearchField } from '../../components/ui/SearchField.jsx'
 import { SegmentedControl } from '../../components/ui/SegmentedControl.jsx'
@@ -139,18 +140,14 @@ function GalleryLightbox({ item, items, onClose, onNext, onPrevious, onRemove })
       >
         <div className="grid min-h-[min(32rem,calc(100vh-4rem))] lg:grid-cols-[minmax(0,1.3fr)_minmax(22rem,0.7fr)]">
           <div className="flex items-center justify-center bg-[linear-gradient(180deg,#24131d_0%,#140d12_100%)] p-6">
-            <div className="flex h-full min-h-80 w-full items-center justify-center rounded-[24px] border border-white/10 bg-[var(--cb-surface)]/[0.04] p-8 text-center">
-              <div>
-                {isVideo ? <Film className="mx-auto size-12 text-[#f4d8e6]" aria-hidden="true" /> : <ImageIcon className="mx-auto size-12 text-[#f4d8e6]" aria-hidden="true" />}
-                <p className="mt-4 text-sm font-bold uppercase tracking-[0.18em] text-[#f4d8e6]">{mediaStatus(item)}</p>
-                <h3 className="mt-3 font-serif text-3xl">{item.title}</h3>
-                <p className="mt-3 max-w-lg text-sm leading-6 text-white/75">
-                  {isVideo
-                    ? 'This video remains protected. Couple Book shows the story and metadata without copying the private source into public assets.'
-                    : 'This image remains protected. Couple Book preserves the story, caption, and reference without shipping the original file in the client bundle.'}
-                </p>
-              </div>
-            </div>
+            <MediaPreview
+              alt={item.title}
+              className="min-h-80 w-full rounded-[24px] border border-white/10 bg-white/[0.04]"
+              description="The original is available through the private media session; temporary preview links are never saved here."
+              kind={isVideo ? 'video' : 'image'}
+              objectFit="contain"
+              title={mediaStatus(item)}
+            />
           </div>
           <div className="flex flex-col gap-5 p-6">
             <div className="flex items-start justify-between gap-3">
@@ -167,10 +164,10 @@ function GalleryLightbox({ item, items, onClose, onNext, onPrevious, onRemove })
             </div>
             <InlineAlert
               tone="info"
-              title="Private media boundary"
+              title="Private original"
               description={hasVerifiedPrivateMedia
-                ? 'This item has verified private media metadata. The viewer stays metadata-first and does not expose the original object URL here.'
-                : 'This item is still shown through protected story metadata only.'}
+                ? 'The saved original stays protected. Couple Book shows the memory record here and opens temporary previews only when the media session is available.'
+                : 'This item is shown through protected story details until its private media is available here.'}
             />
             <div className="mt-auto flex flex-wrap gap-2">
               {canStep ? <SecondaryButton className="border-white/20 bg-transparent text-white hover:bg-[var(--cb-surface)]/10" onClick={onPrevious}>Previous</SecondaryButton> : null}
@@ -236,23 +233,13 @@ function UploadQueueCard({ item, onCancel, onChange, onRemove, onRetry }) {
 
       {hasPreview ? (
         <div className="overflow-hidden rounded-[20px] border border-[var(--cb-border)] bg-[var(--cb-accent-soft)]">
-          {item.kind === 'video' ? (
-            <video
-              aria-label={`Preview for ${item.fileName}`}
-              className="aspect-video w-full bg-[#140d12] object-contain"
-              controls
-              muted
-              playsInline
-              preload="metadata"
-              src={item.previewUrl}
-            />
-          ) : (
-            <img
-              alt={`Preview for ${item.fileName}`}
-              className="aspect-[4/3] w-full bg-[#140d12] object-cover"
-              src={item.previewUrl}
-            />
-          )}
+          <MediaPreview
+            alt={`Preview for ${item.fileName}`}
+            className={item.kind === 'video' ? 'aspect-video w-full' : 'aspect-[4/3] w-full'}
+            kind={item.kind}
+            objectFit={item.kind === 'video' ? 'contain' : 'cover'}
+            src={item.previewUrl}
+          />
         </div>
       ) : null}
 
@@ -295,33 +282,37 @@ function DriveMediaGrid({ drive }) {
 
   if (drive.state !== 'connected') return null
   return (
-    <Surface aria-label="Google Drive media" tone="soft">
+    <Surface aria-label="Private folder previews" tone="soft">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="cb-kicker">Drive media</p>
-          <h2 className="mt-2 font-serif text-2xl text-[var(--cb-text)]">Originals from the private folder</h2>
+          <p className="cb-kicker">Our photos and videos</p>
+          <h2 className="mt-2 font-serif text-2xl text-[var(--cb-text)]">Private folder previews</h2>
         </div>
-        <SecondaryButton onClick={() => void drive.refreshListing()}>Refresh media</SecondaryButton>
+        <SecondaryButton onClick={() => void drive.refreshListing()}>Refresh previews</SecondaryButton>
       </div>
       {error ? <InlineAlert className="mt-4" tone="error" title="Preview unavailable" description={error} /> : null}
-      {drive.files.length === 0 ? <p className="mt-5 text-sm text-[var(--cb-text-secondary)]">Drive access is confirmed and the folder contains no supported images or videos.</p> : (
+      {drive.files.length === 0 ? <p className="mt-5 text-sm text-[var(--cb-text-secondary)]">The private folder is connected and there are no supported images or videos to preview yet.</p> : (
         <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {drive.files.map((file) => {
             const preview = drive.previews[file.id]
             const isVideo = file.mimeType?.startsWith('video/')
             return (
               <article className="cb-card overflow-hidden" key={file.id}>
-                <div className="aspect-[4/3] bg-[var(--cb-surface-raised)]">
-                  {preview && !isVideo ? <img alt={file.name} className="h-full w-full object-cover" src={preview} /> : preview && isVideo ? <video aria-label={file.name} className="h-full w-full object-contain" controls preload="metadata" src={preview} /> : (
-                    <button className="grid h-full w-full place-items-center p-5 text-center" onClick={() => void showPreview(file)} type="button">
-                      <span className="text-sm font-semibold text-[var(--cb-text)]">{loadingId === file.id ? 'Loading preview...' : isVideo ? 'Open video preview' : 'Load image preview'}</span>
-                    </button>
-                  )}
-                </div>
+                <MediaPreview
+                  alt={file.name}
+                  className="aspect-[4/3] bg-[var(--cb-surface-raised)]"
+                  kind={isVideo ? 'video' : 'image'}
+                  loading={loadingId === file.id}
+                  objectFit={isVideo ? 'contain' : 'cover'}
+                  onLoadRequest={() => void showPreview(file)}
+                  openOriginal={isVideo ? () => drive.openExternally(file.id) : undefined}
+                  src={preview || ''}
+                  title={file.name}
+                />
                 <div className="p-4">
                   <p className="truncate text-sm font-semibold text-[var(--cb-text)]">{file.name}</p>
-                  <p className="mt-1 text-xs text-[var(--cb-text-muted)]">{isVideo ? 'Video' : 'Image'} · Drive file</p>
-                  {isVideo ? <SecondaryButton className="mt-3" onClick={() => drive.openExternally(file.id)}>Open in Drive</SecondaryButton> : null}
+                  <p className="mt-1 text-xs text-[var(--cb-text-muted)]">{isVideo ? 'Video' : 'Photo'} from the private folder</p>
+                  {isVideo ? <SecondaryButton className="mt-3" onClick={() => drive.openExternally(file.id)}>Open original</SecondaryButton> : null}
                 </div>
               </article>
             )
@@ -397,12 +388,12 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
       />
       <PageHeader
         eyebrow="Album"
-        title="Our Shared Gallery"
-        description="A visual record of the days, places, and little moments you have chosen to keep."
+        title="Our Memories"
+        description="Photos, videos, and the stories attached to them, kept together as one private book."
         actions={(
           <>
             <StatusBadge tone="info">{model.summary.totalMemories} items</StatusBadge>
-            <SecondaryButton aria-expanded={manageUploadsOpen} onClick={() => setManageUploadsOpen((value) => !value)}><SlidersHorizontal className="size-4" />{manageUploadsOpen ? 'Close tools' : 'Manage uploads'}</SecondaryButton>
+            <SecondaryButton aria-expanded={manageUploadsOpen} onClick={() => setManageUploadsOpen((value) => !value)}><SlidersHorizontal className="size-4" />{manageUploadsOpen ? 'Close add flow' : 'Add details'}</SecondaryButton>
             <PrimaryButton disabled={!uploadQueue.canUpload} onClick={() => fileInputRef.current?.click()}><Upload className="size-4" />Add files</PrimaryButton>
           </>
         )}
@@ -413,8 +404,8 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
       <section className="cb-album-intro grid gap-5 rounded-[28px] border border-[var(--cb-border)] bg-[var(--cb-surface)] p-6 shadow-[var(--cb-shadow-card)] lg:grid-cols-[minmax(0,1.1fr)_minmax(18rem,0.9fr)]">
         <div>
           <p className="cb-kicker">A book of moments</p>
-          <h2 className="mt-2 font-serif text-4xl text-[var(--cb-text)]">Moments we kept close</h2>
-          <p className="cb-body-copy mt-3 max-w-2xl text-sm leading-7">Browse by chapter, open a memory for its full story, or let the dates guide you through the collection.</p>
+          <h2 className="mt-2 font-serif text-4xl text-[var(--cb-text)]">Browse, open, remember</h2>
+          <p className="cb-body-copy mt-3 max-w-2xl text-sm leading-7">Move through the collection by photo, video, year, or memory. Add new files when you want them saved into the book.</p>
         </div>
         <div className="grid grid-cols-3 gap-3 self-end">
           {[['Photos', model.summary.photos], ['Videos', model.summary.videos], ['Chapters', grouped.length]].map(([label, value]) => (
@@ -444,36 +435,38 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
         </div>
         <div className="mt-4 rounded-2xl border border-[var(--cb-border)] bg-[var(--cb-surface-soft)] p-4">
           <p className="text-sm text-[var(--cb-text-secondary)]">
-            {filtered.length} {filtered.length === 1 ? 'result' : 'results'} across photos, videos, and protected memory references.
+            {filtered.length} {filtered.length === 1 ? 'memory' : 'memories'} across our photos, videos, and saved chapters.
           </p>
         </div>
       </Surface>
 
-      <Surface tone="soft" aria-label="Google Drive media connection">
+      <Surface tone="soft" aria-label="Album media access">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="cb-kicker">Private media provider</p>
-            <h2 className="mt-2 font-serif text-2xl text-[var(--cb-text)]">Google Drive connection</h2>
+            <p className="cb-kicker">Add to Album</p>
+            <h2 className="mt-2 font-serif text-2xl text-[var(--cb-text)]">Photos and videos save through the private folder</h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--cb-text-secondary)]">
-              Album media is intended to come from the private Couple Book Drive folder. Temporary previews stay in memory and are never saved to Firestore.
+              Connect when you are adding or previewing originals. Everyday browsing stays focused on the memories, not the storage details.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            {drive.state === 'connected' ? <StatusBadge tone="success">Connected</StatusBadge> : <StatusBadge tone="warning">{drive.state === 'disconnected' ? 'Not connected' : drive.state}</StatusBadge>}
-            {drive.state === 'connected' ? <SecondaryButton onClick={drive.disconnect}>Disconnect</SecondaryButton> : <PrimaryButton loading={drive.state === 'connecting'} onClick={() => void drive.connect()}>{drive.state === 'connecting' ? 'Connecting' : 'Connect Google Drive'}</PrimaryButton>}
-            {drive.state !== 'connected' && drive.state !== 'connecting' ? <SecondaryButton onClick={() => void drive.retryAccess()}>Retry access</SecondaryButton> : null}
+            {drive.state === 'connected' ? <StatusBadge tone="success">Private folder ready</StatusBadge> : <StatusBadge tone="warning">{drive.state === 'disconnected' ? 'Connection needed to add files' : drive.state}</StatusBadge>}
+            {drive.state === 'connected'
+              ? <SecondaryButton as={Link} to="/settings">Media settings</SecondaryButton>
+              : <PrimaryButton loading={drive.state === 'connecting'} onClick={() => void drive.connect()}>{drive.state === 'connecting' ? 'Connecting' : 'Connect to add files'}</PrimaryButton>}
+            {drive.state !== 'connected' && drive.state !== 'connecting' && drive.state !== 'disconnected' ? <SecondaryButton onClick={() => void drive.retryAccess()}>Try again</SecondaryButton> : null}
           </div>
         </div>
-        {drive.message ? <InlineAlert className="mt-4" tone={drive.state === 'wrong-account' || drive.state === 'folder-inaccessible' ? 'warning' : 'error'} title="Drive access needs attention" description={drive.message} /> : null}
-        {drive.state === 'wrong-account' || drive.state === 'folder-inaccessible' ? <p className="mt-3 text-sm text-[var(--cb-text-secondary)]">This Google account cannot access the Couple Book media folder. Reconnect using the account that owns the folder or has permission to open it.</p> : null}
+        {drive.message ? <InlineAlert className="mt-4" tone={drive.state === 'wrong-account' || drive.state === 'folder-inaccessible' ? 'warning' : 'error'} title="Media access needs attention" description={drive.message} /> : null}
+        {drive.state === 'wrong-account' || drive.state === 'folder-inaccessible' ? <p className="mt-3 text-sm text-[var(--cb-text-secondary)]">Reconnect from Settings using the Google account that owns or can open the private media folder.</p> : null}
       </Surface>
       <DriveMediaGrid drive={drive} />
       {manageUploadsOpen ? <div className="grid gap-5" aria-label="Album management tools">
         <Surface aria-label="Upload queue" tone="soft">
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Upload queue</p>
-          <h3 className="mt-2 font-serif text-2xl text-[var(--cb-text)]">Protected imports</h3>
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Add memories</p>
+          <h3 className="mt-2 font-serif text-2xl text-[var(--cb-text)]">Prepare photos and videos</h3>
           <p className="mt-2 text-sm leading-6 text-[var(--cb-text-secondary)]">
-            Add private image and video files, confirm the memory details, and save them through Google Drive plus the active-member Firestore metadata boundary.
+            Choose private image and video files, write the memory details, and save them into the shared Album.
           </p>
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
             <ContentCard>
@@ -516,7 +509,7 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
               <InlineAlert
                 tone="info"
                 title="Queue is empty"
-                description="Choose JPG, PNG, WEBP, GIF, MP4, or WEBM files to prepare private Album uploads."
+                description="Choose JPG, PNG, WEBP, GIF, MP4, or WEBM files to prepare private Album memories."
               />
             )}
           </div>
@@ -559,7 +552,7 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
       />
       <ConfirmDialog
         confirmLabel="Remove from Album"
-        message="This removes the verified private media through its current provider and archives the linked memory so it no longer appears in the active Album."
+        message="This removes the item from the active Album by archiving the linked memory. It does not delete the original file from the private folder."
         onCancel={() => setRemoveState({ item: null, pending: false })}
         onConfirm={confirmRemoval}
         open={Boolean(removeState.item)}

@@ -8,6 +8,7 @@ import {
   selectSettingsAppearance,
   selectSettingsCompatibility,
   selectSettingsDangerZone,
+  selectSettingsMedia,
   selectSettingsMigrationProgress,
   selectSettingsPrivacy,
 } from './settingsSelectors.js'
@@ -31,6 +32,7 @@ export function buildSettingsReadModel({
     status: deriveSettingsStatus(settingsSource),
     account: selectSettingsAccount({ approvedUser, authUser }),
     appearance: selectSettingsAppearance(settingsSource),
+    media: selectSettingsMedia(),
     privacy: selectSettingsPrivacy(),
     compatibility: selectSettingsCompatibility(snapshot),
     migration: selectSettingsMigrationProgress(migrationStatus, smokeGate),
