@@ -24,6 +24,27 @@ function createMonthLabel(date) {
   })
 }
 
+function matchesGalleryFilter(item, filter) {
+  if (filter === 'photos') return item.media.kind === 'image'
+  if (filter === 'videos') return item.media.kind === 'video'
+  return true
+}
+
+function matchesGalleryYear(item, year) {
+  if (year === 'all') return true
+  return String(item.date?.year || '') === year
+}
+
+function matchesGallerySearch(item, search) {
+  const normalizedSearch = String(search || '').trim().toLowerCase()
+  if (!normalizedSearch) return true
+
+  return [item.title, item.description, item.displayDate, ...(item.tags || []).map((tag) => tag.label)]
+    .join(' ')
+    .toLowerCase()
+    .includes(normalizedSearch)
+}
+
 export function classifyGalleryMediaStatus(media) {
   if (media?.status === 'storage-verified') return 'storage-verified'
   if (media?.status === 'drive-verified') return 'drive-verified'
@@ -94,6 +115,36 @@ function buildGalleryItem(memory, index) {
   })
 
   return galleryItem
+}
+
+export function selectFilteredGalleryItems(items = [], { filter = 'all', search = '', year = 'all' } = {}) {
+  return deepFreeze((Array.isArray(items) ? items : []).filter((item) => (
+    matchesGalleryFilter(item, filter)
+    && matchesGalleryYear(item, year)
+    && matchesGallerySearch(item, search)
+  )))
+}
+
+export function groupGalleryItemsByYear(items = []) {
+  const map = new Map()
+  for (const item of Array.isArray(items) ? items : []) {
+    const key = item.date?.year ? String(item.date.year) : 'Date review'
+    if (!map.has(key)) map.set(key, [])
+    map.get(key).push(item)
+  }
+
+  return freezeClone([...map.entries()]
+    .sort(([left], [right]) => {
+      if (left === 'Date review') return 1
+      if (right === 'Date review') return -1
+      return Number(right) - Number(left)
+    })
+    .map(([yearLabel, yearItems]) => ({
+      id: `album-${yearLabel}`,
+      yearLabel,
+      featured: yearItems[0],
+      items: yearItems,
+    })))
 }
 
 export function selectGalleryItems(memories = []) {

@@ -17,7 +17,8 @@ import { StatusBadge } from '../../components/ui/StatusBadge.jsx'
 import { ContentCard, Surface } from '../../components/ui/Surface.jsx'
 import { Toast } from '../../components/ui/Toast.jsx'
 import { formatBytes } from '../../services/mediaUploadService.js'
-import { QUEUE_STATUS } from './useMediaUploadQueue.js'
+import { groupGalleryItemsByYear, selectFilteredGalleryItems } from './gallerySelectors.js'
+import { QUEUE_STATUS, queueStatusLabel, queueStatusTone } from './useMediaUploadQueue.js'
 import { useMediaUploadQueue } from './useMediaUploadQueue.js'
 import { useGoogleDriveConnection } from '../media/useGoogleDriveConnection.js'
 
@@ -26,17 +27,6 @@ const FILTERS = [
   { key: 'photos', label: 'Photos' },
   { key: 'videos', label: 'Videos' },
 ]
-
-function matchesFilter(item, filter) {
-  if (filter === 'photos') return item.media.kind === 'image'
-  if (filter === 'videos') return item.media.kind === 'video'
-  return true
-}
-
-function matchesYear(item, year) {
-  if (year === 'all') return true
-  return String(item.date?.year || '') === year
-}
 
 function mediaStatus(item) {
   if (item.media.status === 'drive-verified') return item.media.kind === 'video' ? 'Verified Drive video' : 'Verified Drive photo'
@@ -58,58 +48,11 @@ function galleryTileLabel(item) {
     .join(', ')
 }
 
-function groupByYear(items) {
-  const map = new Map()
-  for (const item of items) {
-    const key = item.date?.year ? String(item.date.year) : 'Date review'
-    if (!map.has(key)) map.set(key, [])
-    map.get(key).push(item)
-  }
-  return [...map.entries()]
-    .sort(([left], [right]) => {
-      if (left === 'Date review') return 1
-      if (right === 'Date review') return -1
-      return Number(right) - Number(left)
-    })
-    .map(([yearLabel, yearItems]) => ({
-      id: `album-${yearLabel}`,
-      yearLabel,
-      featured: yearItems[0],
-      items: yearItems,
-    }))
-}
-
 function toneFor(item) {
   if (item.media.kind === 'video') return 'info'
   if (item.media.kind === 'image') return 'success'
   if (item.specialMoment.isSpecial) return 'warning'
   return 'default'
-}
-
-function queueStatusLabel(status) {
-  if (status === QUEUE_STATUS.validating) return 'Validating'
-  if (status === QUEUE_STATUS.hashing) return 'Hashing'
-  if (status === QUEUE_STATUS.duplicate) return 'Duplicate blocked'
-  if (status === QUEUE_STATUS.possibleDuplicate) return 'Possible duplicate'
-  if (status === QUEUE_STATUS.ready) return 'Ready'
-  if (status === QUEUE_STATUS.uploading) return 'Uploading'
-  if (status === QUEUE_STATUS.finalizing) return 'Finalizing'
-  if (status === QUEUE_STATUS.orphanedUpload) return 'Finalize upload'
-  if (status === QUEUE_STATUS.reconnectRequired) return 'Reconnect Drive'
-  if (status === QUEUE_STATUS.cancelling) return 'Cancelling'
-  if (status === QUEUE_STATUS.cancelled) return 'Cancelled'
-  if (status === QUEUE_STATUS.failed) return 'Needs review'
-  if (status === QUEUE_STATUS.saved) return 'Saved'
-  return 'Ready'
-}
-
-function queueStatusTone(status) {
-  if (status === QUEUE_STATUS.saved) return 'success'
-  if ([QUEUE_STATUS.failed, QUEUE_STATUS.duplicate].includes(status)) return 'error'
-  if ([QUEUE_STATUS.orphanedUpload, QUEUE_STATUS.reconnectRequired, QUEUE_STATUS.possibleDuplicate].includes(status)) return 'warning'
-  if (status === QUEUE_STATUS.cancelled) return 'warning'
-  if ([QUEUE_STATUS.uploading, QUEUE_STATUS.finalizing, QUEUE_STATUS.hashing].includes(status)) return 'info'
-  return 'warning'
 }
 
 function GalleryTile({ item, onSelect }) {
@@ -402,20 +345,8 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
   const items = useMemo(() => (Array.isArray(model.items) ? model.items : []), [model])
   const years = model.filters?.availableYears || []
 
-  const filtered = useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase()
-    return items.filter((item) => {
-      if (!matchesFilter(item, filter)) return false
-      if (!matchesYear(item, year)) return false
-      if (!normalizedSearch) return true
-      return [item.title, item.description, item.displayDate, ...(item.tags || []).map((tag) => tag.label)]
-        .join(' ')
-        .toLowerCase()
-        .includes(normalizedSearch)
-    })
-  }, [filter, items, search, year])
-
-  const grouped = useMemo(() => groupByYear(filtered), [filtered])
+  const filtered = useMemo(() => selectFilteredGalleryItems(items, { filter, search, year }), [filter, items, search, year])
+  const grouped = useMemo(() => groupGalleryItemsByYear(filtered), [filtered])
 
   function showNeighbor(direction) {
     if (!selectedItem || filtered.length <= 1) return

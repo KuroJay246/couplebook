@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 import { buildGalleryReadModel } from '../features/gallery/galleryReadModel.js'
+import { groupGalleryItemsByYear, selectFilteredGalleryItems } from '../features/gallery/gallerySelectors.js'
 
 function createMemoryRecord(overrides = {}) {
   return {
@@ -328,6 +329,36 @@ test('gallery read model counts Firestore private media references with the same
   assert.equal(model.items.length, 2)
   assert.equal(model.photos[0].media.status, 'private-legacy-reference')
   assert.equal(model.videos[0].media.status, 'private-legacy-reference')
+})
+
+test('gallery selectors own Album filtering, search, and year grouping', () => {
+  const model = buildGalleryReadModel({
+    compatibilitySnapshot: createSnapshot({
+      status: 'ready',
+      source: 'firestore',
+      data: {
+        hasBaseDataset: true,
+        memories: [
+          createMemoryRecord({ id: 'photo-2026', title: 'Fictional rose garden', dateLabel: '2026-02-14', mediaKind: 'image', mediaPath: '/assets/photos/rose.jpg', tags: ['garden'] }),
+          createMemoryRecord({ id: 'video-2025', title: 'Fictional boardwalk clip', dateLabel: '2025-07-01', mediaKind: 'video', mediaPath: '/assets/videos/boardwalk.mp4', tags: ['summer'] }),
+          createMemoryRecord({ id: 'photo-2025', title: 'Fictional quiet dinner', dateLabel: '2025-01-15', mediaKind: 'image', mediaPath: '/assets/photos/dinner.jpg', tags: ['dinner'] }),
+        ],
+      },
+      warnings: [],
+    }),
+  })
+
+  const videos = selectFilteredGalleryItems(model.items, { filter: 'videos' })
+  const searchedPhotos = selectFilteredGalleryItems(model.items, { filter: 'photos', search: 'quiet', year: '2025' })
+  const grouped = groupGalleryItemsByYear(model.items)
+
+  assert.equal(videos.length, 1)
+  assert.equal(videos[0].title, 'Fictional boardwalk clip')
+  assert.equal(searchedPhotos.length, 1)
+  assert.equal(searchedPhotos[0].title, 'Fictional quiet dinner')
+  assert.deepEqual(grouped.map((group) => group.yearLabel), ['2026', '2025'])
+  assert.equal(Object.isFrozen(videos), true)
+  assert.equal(Object.isFrozen(grouped), true)
 })
 
 test('gallery architecture stays read-only and routes Storage through the media service only', async () => {

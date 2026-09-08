@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { QUEUE_STATUS, isRetryableFailurePhase, summarizeQueueItems } from '../features/gallery/mediaUploadQueueDomain.js'
+import {
+  QUEUE_STATUS,
+  isRetryableFailurePhase,
+  queueStatusLabel,
+  queueStatusTone,
+  summarizeQueueItems,
+} from '../features/gallery/mediaUploadQueueDomain.js'
 
 test('hashing, uploading, and finalizing failures remain retryable', () => {
   assert.equal(isRetryableFailurePhase(QUEUE_STATUS.validating), false)
@@ -30,4 +36,20 @@ test('queue summary counts queued, active, cancelled, failed, and saved items co
     saved: 1,
     total: 5,
   })
+})
+
+test('queue domain owns stable user-facing status labels and tones', () => {
+  assert.equal(queueStatusLabel(QUEUE_STATUS.queued), 'Queued')
+  assert.equal(queueStatusLabel(QUEUE_STATUS.duplicate), 'Duplicate blocked')
+  assert.equal(queueStatusLabel(QUEUE_STATUS.orphanedUpload), 'Finalize upload')
+  assert.equal(queueStatusLabel(QUEUE_STATUS.reconnectRequired), 'Reconnect Drive')
+  assert.equal(queueStatusLabel(QUEUE_STATUS.failed), 'Needs review')
+  assert.equal(queueStatusLabel(QUEUE_STATUS.saved), 'Saved')
+
+  assert.equal(queueStatusTone(QUEUE_STATUS.saved), 'success')
+  assert.equal(queueStatusTone(QUEUE_STATUS.failed), 'error')
+  assert.equal(queueStatusTone(QUEUE_STATUS.duplicate), 'error')
+  assert.equal(queueStatusTone(QUEUE_STATUS.reconnectRequired), 'warning')
+  assert.equal(queueStatusTone(QUEUE_STATUS.uploading), 'info')
+  assert.equal(queueStatusTone(QUEUE_STATUS.queued), 'neutral')
 })

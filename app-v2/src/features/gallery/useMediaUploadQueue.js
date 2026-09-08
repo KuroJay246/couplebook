@@ -13,7 +13,7 @@ import {
 } from '../../services/mediaUploadService.js'
 import { ACTIVE_STATUSES, isRetryableFailurePhase, QUEUE_STATUS, summarizeQueueItems } from './mediaUploadQueueDomain.js'
 
-export { QUEUE_STATUS, summarizeQueueItems, isRetryableFailurePhase } from './mediaUploadQueueDomain.js'
+export { QUEUE_STATUS, summarizeQueueItems, isRetryableFailurePhase, queueStatusLabel, queueStatusTone } from './mediaUploadQueueDomain.js'
 
 const RETRYABLE_STATUSES = new Set([
   QUEUE_STATUS.failed,
