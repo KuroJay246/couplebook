@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { mergeLegacyMemorySources } from '../features/timeline/memorySourceMerge.js'
-import { legacySpecialMomentRoutes, normalizeTimelineMemories } from '../features/timeline/memoryNormalizer.js'
+import { legacySpecialMomentRoutes, normalizeTimelineMemories } from '../features/memories/memoryNormalizer.js'
 import {
   buildTimelineChapters,
   buildTimelineFilters,
@@ -10,7 +10,7 @@ import {
   selectTimelineDisplayDescription,
   selectTimelineDisplayMemories,
   selectTimelineDisplayTitle,
-} from '../features/timeline/memorySelectors.js'
+} from '../features/memories/memorySelectors.js'
 
 function createLegacyMemoryRecord(overrides = {}) {
   return {

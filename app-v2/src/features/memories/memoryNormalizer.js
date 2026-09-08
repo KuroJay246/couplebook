@@ -229,8 +229,6 @@ function normalizeMediaAsset({
     type: normalizedKind,
     hasReference,
     isAvailableInApp,
-    displayUrl: null,
-    runtimeUrl: null,
     providerFileId: normalizedProvider === 'google-drive' ? normalizedDriveFileId : normalizedStoragePath,
     driveFileId: normalizedDriveFileId,
     driveFolderId: toTrimmedString(driveFolderId),

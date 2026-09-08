@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { normalizeTimelineMemories } from '../features/timeline/memoryNormalizer.js'
-import { selectTimelineDisplayMemories } from '../features/timeline/memorySelectors.js'
+import { normalizeTimelineMemories } from '../features/memories/memoryNormalizer.js'
+import { selectTimelineDisplayMemories } from '../features/memories/memorySelectors.js'
 import { selectOnThisDayMemory } from '../features/timeline/onThisDay.js'
 
 function display(records) {

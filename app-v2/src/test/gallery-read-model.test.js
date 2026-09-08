@@ -213,8 +213,6 @@ test('gallery read model preserves the shared normalized media asset shape', () 
       type: media.type,
       mimeType: media.mimeType,
       sizeBytes: media.sizeBytes,
-      displayUrl: media.displayUrl,
-      runtimeUrl: media.runtimeUrl,
     },
     {
       id: 'media_stable_001',
@@ -223,8 +221,6 @@ test('gallery read model preserves the shared normalized media asset shape', () 
       type: 'image',
       mimeType: 'image/webp',
       sizeBytes: 2048,
-      displayUrl: null,
-      runtimeUrl: null,
     },
   )
 })

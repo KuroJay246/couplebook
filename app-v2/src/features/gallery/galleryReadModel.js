@@ -1,5 +1,5 @@
 import { freezeClone } from '../../data/adapterUtils.js'
-import { normalizeTimelineMemories } from '../timeline/memoryNormalizer.js'
+import { normalizeTimelineMemories } from '../memories/memoryNormalizer.js'
 import { buildGalleryCollections, buildGalleryFilters, buildGallerySummary, selectGalleryItems } from './gallerySelectors.js'
 
 function createEmptySnapshot() {

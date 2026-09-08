@@ -1,5 +1,5 @@
-import { normalizeTimelineMemories } from '../timeline/memoryNormalizer.js'
-import { selectTimelineDisplayMemories } from '../timeline/memorySelectors.js'
+import { normalizeTimelineMemories } from '../memories/memoryNormalizer.js'
+import { selectTimelineDisplayMemories } from '../memories/memorySelectors.js'
 import { selectOnThisDayMemory } from '../timeline/onThisDay.js'
 import { calculateBirthdayCountdown } from '../../../../packages/core/src/dates.js'
 

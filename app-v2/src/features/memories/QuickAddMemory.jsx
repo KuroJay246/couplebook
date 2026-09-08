@@ -148,7 +148,7 @@ export function QuickAddMemory({ onClose, open }) {
                 <TextField onChange={(event) => update('tags', event.target.value)} placeholder="date night, trip, first" value={form.tags} />
               </FormField>
               <FormField label="Related media note">
-                <TextField onChange={(event) => update('mediaNote', event.target.value)} placeholder="Photo is in iCloud album..." value={form.mediaNote} />
+                <TextField onChange={(event) => update('mediaNote', event.target.value)} placeholder="Private media note..." value={form.mediaNote} />
               </FormField>
             </>
           ) : null}

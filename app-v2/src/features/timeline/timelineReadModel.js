@@ -1,5 +1,5 @@
 import { freezeClone } from '../../data/adapterUtils.js'
-import { normalizeTimelineMemories } from './memoryNormalizer.js'
+import { normalizeTimelineMemories } from '../memories/memoryNormalizer.js'
 import {
   buildTimelineChapters,
   buildTimelineFilters,
@@ -8,7 +8,7 @@ import {
   selectTimelineDisplayDescription,
   selectTimelineDisplayTitle,
   selectTimelineTypeLabel,
-} from './memorySelectors.js'
+} from '../memories/memorySelectors.js'
 
 function createEmptySnapshot() {
   return {

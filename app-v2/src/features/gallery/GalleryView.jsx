@@ -19,9 +19,8 @@ import { Toast } from '../../components/ui/Toast.jsx'
 import { formatBytes } from '../../services/mediaUploadService.js'
 import { QUEUE_STATUS } from './useMediaUploadQueue.js'
 import { useMediaUploadQueue } from './useMediaUploadQueue.js'
-import { useGoogleDriveConnection } from './useGoogleDriveConnection.js'
+import { useGoogleDriveConnection } from '../media/useGoogleDriveConnection.js'
 
-const LIVE_SHARED_ALBUM_URL = 'https://www.icloud.com/photos/#/sa,20BC8532-D41C-4AB3-9C83-B05458C10B78/'
 const FILTERS = [
   { key: 'all', label: 'All media' },
   { key: 'photos', label: 'Photos' },
@@ -145,28 +144,6 @@ function GalleryTile({ item, onSelect }) {
         </div>
       </div>
     </article>
-  )
-}
-
-function LiveAlbumTile() {
-  return (
-    <a className="block" href={LIVE_SHARED_ALBUM_URL} rel="noopener noreferrer" target="_blank">
-      <Surface className="h-full">
-        <div className="flex h-full flex-col justify-between gap-5">
-          <div>
-            <StatusBadge tone="info">Live album</StatusBadge>
-            <h3 className="mt-3 font-serif text-3xl text-[var(--cb-text)]">Our Live Album</h3>
-            <p className="mt-3 text-sm leading-6 text-[var(--cb-text-secondary)]">
-              Open the shared iCloud album for the newest photos and videos added outside Couple Book.
-            </p>
-          </div>
-          <div className="rounded-2xl border border-[var(--cb-border)] bg-[var(--cb-accent-soft)] p-4">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Boundary</p>
-            <p className="mt-2 text-sm leading-6 text-[var(--cb-text-secondary)]">This remains a separate private iCloud destination. Couple Book only links to it and does not expose those files as public assets.</p>
-          </div>
-        </div>
-      </Surface>
-    </a>
   )
 }
 
@@ -560,7 +537,6 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
         {drive.state === 'wrong-account' || drive.state === 'folder-inaccessible' ? <p className="mt-3 text-sm text-[var(--cb-text-secondary)]">This Google account cannot access the Couple Book media folder. Reconnect using the account that owns the folder or has permission to open it.</p> : null}
       </Surface>
       <DriveMediaGrid drive={drive} />
-      <LiveAlbumTile />
       {manageUploadsOpen ? <div className="grid gap-5" aria-label="Album management tools">
         <Surface aria-label="Upload queue" tone="soft">
           <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Upload queue</p>
@@ -637,7 +613,7 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
           <EmptyState
             icon={Images}
             title="No gallery entries match this view."
-            description="Try another filter, open the live album, or return to all media to reopen the full collection."
+            description="Try another filter, add private photos or videos, or return to all media to reopen the full collection."
           />
         )}
       </div>

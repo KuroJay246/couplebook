@@ -392,7 +392,8 @@ async function runAuthenticatedDesktopCoverage(browser) {
     await page.getByRole('button', { name: /Videos/ }).click()
     assert.equal(await page.getByText('Video memory').count() > 0, true, 'Gallery video filter should keep video entries visible.')
     await page.getByRole('button', { name: /All media/i }).click()
-    assert.equal(await page.getByRole('link', { name: /Our Live Album/ }).count(), 1, 'Gallery should include the integrated live album tile.')
+    assert.equal(await page.getByRole('heading', { name: 'Google Drive connection' }).count(), 1, 'Gallery should keep the real Drive connection available.')
+    assert.equal(await page.getByRole('link', { name: /Our Live Album|iCloud/i }).count(), 0, 'Gallery should not expose unsupported iCloud pseudo-integrations.')
 
     for (const [route, heading] of [
       ['/birthday', /Birthday/],

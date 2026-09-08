@@ -1,5 +1,5 @@
 import { deepFreeze, freezeClone } from '../../data/adapterUtils.js'
-import { selectTimelineDisplayMemories } from '../timeline/memorySelectors.js'
+import { selectTimelineDisplayMemories } from '../memories/memorySelectors.js'
 
 function sortByNewest(items = []) {
   return items.toSorted((left, right) => {
@@ -62,8 +62,6 @@ function buildGalleryItem(memory, index) {
       providerFileId: media.providerFileId || '',
       hasReference: media.hasReference,
       isAvailableInApp: media.isAvailableInApp === true,
-      displayUrl: media.displayUrl || null,
-      runtimeUrl: media.runtimeUrl || null,
       storagePath: media.storagePath || '',
       thumbnailPath: media.thumbnailPath || '',
       posterPath: media.posterPath || '',

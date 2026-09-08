@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { createDriveConnectionController, shouldUseLocalDriveTestProvider } from '../features/gallery/useGoogleDriveConnection.js'
-import { createLocalGoogleDriveTestProvider } from '../features/gallery/localGoogleDriveTestProvider.js'
+import { createDriveConnectionController, shouldUseLocalDriveTestProvider } from '../features/media/useGoogleDriveConnection.js'
+import { createLocalGoogleDriveTestProvider } from '../features/media/localGoogleDriveTestProvider.js'
 import { COUPLE_BOOK_DRIVE_FOLDER_ID, DRIVE_STATE } from '../services/googleDriveMediaProvider.js'
 
 function makeProvider(id, events, previewDelay = 0) {
