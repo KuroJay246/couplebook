@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { createDriveConnectionController } from '../features/gallery/useGoogleDriveConnection.js'
+import { createDriveConnectionController, shouldUseLocalDriveTestProvider } from '../features/gallery/useGoogleDriveConnection.js'
 import { createLocalGoogleDriveTestProvider } from '../features/gallery/localGoogleDriveTestProvider.js'
 import { COUPLE_BOOK_DRIVE_FOLDER_ID, DRIVE_STATE } from '../services/googleDriveMediaProvider.js'
 
@@ -93,6 +93,35 @@ test('local Drive test provider requires an explicit local browser hook', async 
     const connected = await provider.connect()
     assert.equal(connected.state, DRIVE_STATE.connected)
     assert.equal(connected.folderId, COUPLE_BOOK_DRIVE_FOLDER_ID)
+  } finally {
+    if (originalWindow === undefined) {
+      delete globalThis.window
+    } else {
+      globalThis.window = originalWindow
+    }
+  }
+})
+
+test('local Drive provider selection stays disabled without every local test boundary', () => {
+  const originalWindow = globalThis.window
+  globalThis.window = {
+    location: { hostname: 'localhost' },
+    __COUPLEBOOK_DRIVE_TEST__: { enabled: true },
+  }
+
+  try {
+    assert.equal(shouldUseLocalDriveTestProvider(''), false)
+    assert.equal(shouldUseLocalDriveTestProvider('false'), false)
+
+    globalThis.window.__COUPLEBOOK_DRIVE_TEST__.enabled = false
+    assert.equal(shouldUseLocalDriveTestProvider('true'), false)
+
+    globalThis.window.__COUPLEBOOK_DRIVE_TEST__.enabled = true
+    globalThis.window.location.hostname = 'couplebook.web.app'
+    assert.equal(shouldUseLocalDriveTestProvider('true'), false)
+
+    globalThis.window.location.hostname = '127.0.0.1'
+    assert.equal(shouldUseLocalDriveTestProvider('true'), true)
   } finally {
     if (originalWindow === undefined) {
       delete globalThis.window

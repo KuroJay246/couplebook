@@ -22,7 +22,7 @@ function loadGoogleIdentityScript() {
   })
 }
 
-function shouldUseLocalDriveTestProvider(localUploadTestHooksEnabled) {
+export function shouldUseLocalDriveTestProvider(localUploadTestHooksEnabled) {
   if (typeof window === 'undefined') return false
   if (localUploadTestHooksEnabled !== 'true') return false
   if (window.__COUPLEBOOK_DRIVE_TEST__?.enabled !== true) return false

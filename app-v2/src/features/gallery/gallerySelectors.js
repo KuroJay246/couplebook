@@ -38,7 +38,8 @@ export function classifyGalleryMediaStatus(media) {
 
 function buildGalleryItem(memory, index) {
   const mediaStatus = classifyGalleryMediaStatus(memory.media)
-  const mediaKind = memory.media.kind === 'image' || memory.media.kind === 'video' ? memory.media.kind : 'none'
+  const media = memory.media || {}
+  const mediaKind = media.kind === 'image' || media.kind === 'video' ? media.kind : 'none'
 
   const galleryItem = {
     key: `gallery-item-${String(index + 1).padStart(4, '0')}`,
@@ -53,16 +54,24 @@ function buildGalleryItem(memory, index) {
     monthLabel: createMonthLabel(memory.date),
     typeLabel: memory.specialMoment.isSpecial ? 'Special moment' : mediaKind === 'video' ? 'Video memory' : mediaKind === 'image' ? 'Photo memory' : 'Saved memory',
     media: {
+      id: media.id || '',
       kind: mediaKind,
+      type: media.type || mediaKind,
       status: mediaStatus,
-      hasReference: memory.media.hasReference,
-      isAvailableInApp: memory.media.isAvailableInApp === true,
-      storagePath: memory.media.storagePath || '',
-      thumbnailPath: memory.media.thumbnailPath || '',
-      posterPath: memory.media.posterPath || '',
-      driveFileId: memory.media.driveFileId || '',
-      driveFolderId: memory.media.driveFolderId || '',
-      contentType: memory.media.contentType || '',
+      provider: media.provider || '',
+      providerFileId: media.providerFileId || '',
+      hasReference: media.hasReference,
+      isAvailableInApp: media.isAvailableInApp === true,
+      displayUrl: media.displayUrl || null,
+      runtimeUrl: media.runtimeUrl || null,
+      storagePath: media.storagePath || '',
+      thumbnailPath: media.thumbnailPath || '',
+      posterPath: media.posterPath || '',
+      driveFileId: media.driveFileId || '',
+      driveFolderId: media.driveFolderId || '',
+      contentType: media.contentType || '',
+      mimeType: media.mimeType || media.contentType || '',
+      sizeBytes: media.sizeBytes || 0,
     },
     specialMoment: {
       isSpecial: memory.specialMoment.isSpecial,

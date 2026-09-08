@@ -237,11 +237,11 @@ function DetailModal({ memory, onArchive, onClose, onEdit, status }) {
                 <p className="mt-3 text-sm leading-6 text-[var(--cb-text-secondary)]">{memory.displayDescription}</p>
               </div>
               <InlineAlert
-                tone={memory.media.status === 'storage-verified' ? 'success' : 'info'}
-                title={memory.media.status === 'storage-verified' ? 'Private media verified' : 'Private media stays protected'}
+                tone={['storage-verified', 'drive-verified'].includes(memory.media.status) ? 'success' : 'info'}
+                title={['storage-verified', 'drive-verified'].includes(memory.media.status) ? 'Private media verified' : 'Private media stays protected'}
                 description={
-                  memory.media.status === 'storage-verified'
-                    ? 'Album can safely reference the private Storage object without exposing the original file in public assets.'
+                  ['storage-verified', 'drive-verified'].includes(memory.media.status)
+                    ? 'Album can safely reference the private media provider metadata without exposing the original file in public assets.'
                     : 'This entry preserves the story and metadata even when the original private file is not available in the current device view.'
                 }
               />

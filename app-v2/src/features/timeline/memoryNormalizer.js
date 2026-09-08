@@ -7,6 +7,7 @@ const AUTO_IMPORT_DESCRIPTION = /^Auto-imported from your (videos|photos) folder
 const LOCAL_FILE_PATH = /^(?:[a-zA-Z]:\\|\\\\|file:\/\/)/i
 const LEGACY_ASSET_PATH = /^(?:\/assets\/|assets\/|\.\.\/assets\/|\.\/assets\/)/i
 const SAFE_DRIVE_ID = /^[A-Za-z0-9_-]{10,200}$/
+const SAFE_MEDIA_ID = /^[A-Za-z0-9_-]{1,120}$/
 
 export const legacySpecialMomentRoutes = Object.freeze({
   'confession/index.html': '/confession',
@@ -193,106 +194,150 @@ function inferReferencedMediaKind(record) {
   return 'image'
 }
 
+function normalizeMediaAsset({
+  contentType = '',
+  driveFileId = '',
+  driveFolderId = '',
+  hasReference = false,
+  id = '',
+  isAvailableInApp = false,
+  kind = 'none',
+  posterPath = '',
+  provider = '',
+  sizeBytes = 0,
+  status = 'none',
+  storagePath = '',
+  thumbnailPath = '',
+} = {}) {
+  const normalizedKind = kind === 'image' || kind === 'video' ? kind : 'none'
+  const normalizedProvider = provider || (
+    status === 'drive-verified'
+      ? 'google-drive'
+      : status === 'storage-verified'
+        ? 'firebase-storage'
+        : ''
+  )
+  const normalizedContentType = toTrimmedString(contentType)
+  const normalizedStoragePath = toTrimmedString(storagePath)
+  const normalizedDriveFileId = toTrimmedString(driveFileId)
+
+  return {
+    id: SAFE_MEDIA_ID.test(toTrimmedString(id)) ? toTrimmedString(id) : '',
+    status,
+    provider: normalizedProvider,
+    kind: normalizedKind,
+    type: normalizedKind,
+    hasReference,
+    isAvailableInApp,
+    displayUrl: null,
+    runtimeUrl: null,
+    providerFileId: normalizedProvider === 'google-drive' ? normalizedDriveFileId : normalizedStoragePath,
+    driveFileId: normalizedDriveFileId,
+    driveFolderId: toTrimmedString(driveFolderId),
+    storagePath: normalizedStoragePath,
+    thumbnailPath: toTrimmedString(thumbnailPath),
+    posterPath: toTrimmedString(posterPath),
+    contentType: normalizedContentType,
+    mimeType: normalizedContentType,
+    sizeBytes: Number.isSafeInteger(sizeBytes) && sizeBytes >= 0 ? sizeBytes : 0,
+  }
+}
+
 function normalizeMediaReference(record, specialMoment) {
   if (record?.media && typeof record.media === 'object') {
+    const id = toTrimmedString(record.media.id)
     const kind = toTrimmedString(record.media.kind)
     const provider = toTrimmedString(record.media.provider)
     const driveFileId = toTrimmedString(record.media.driveFileId)
     const driveFolderId = toTrimmedString(record.media.driveFolderId)
     if (provider === 'google-drive' && (kind === 'image' || kind === 'video') && SAFE_DRIVE_ID.test(driveFileId) && SAFE_DRIVE_ID.test(driveFolderId)) {
-      return {
+      return normalizeMediaAsset({
+        id,
         status: 'drive-verified',
         provider,
         kind,
         hasReference: true,
         isAvailableInApp: true,
-        displayUrl: null,
         driveFileId,
         driveFolderId,
         contentType: toTrimmedString(record.media.contentType),
         sizeBytes: Number.isSafeInteger(record.media.sizeBytes) ? record.media.sizeBytes : 0,
-      }
+      })
     }
     const storagePath = toTrimmedString(record.media.storagePath)
     const thumbnailPath = toTrimmedString(record.media.thumbnailPath)
     const posterPath = toTrimmedString(record.media.posterPath)
     if ((kind === 'image' || kind === 'video') && /^couples\/[A-Za-z0-9_-]{1,120}\/media\/[A-Za-z0-9_-]{1,120}\/(original|thumbnail|poster)$/.test(storagePath)) {
-      return {
+      return normalizeMediaAsset({
+        id,
         status: 'storage-verified',
         kind,
         hasReference: true,
         isAvailableInApp: true,
-        displayUrl: null,
         storagePath,
         thumbnailPath,
         posterPath,
         contentType: toTrimmedString(record.media.contentType),
         sizeBytes: Number.isSafeInteger(record.media.sizeBytes) ? record.media.sizeBytes : 0,
-      }
+      })
     }
   }
 
   const firestoreMediaState = toTrimmedString(record?.mediaState)
   if (firestoreMediaState === 'private-legacy-reference') {
-    return {
+    return normalizeMediaAsset({
       status: 'private-legacy-reference',
       kind: inferReferencedMediaKind(record),
       hasReference: true,
       isAvailableInApp: false,
-      displayUrl: null,
-    }
+    })
   }
 
   const mediaPath = toTrimmedString(record?.mediaPath)
   const mediaKind = toTrimmedString(record?.mediaKind) || 'unknown'
 
   if (!mediaPath) {
-    return {
+    return normalizeMediaAsset({
       status: specialMoment.isSpecial ? 'special-route-only' : 'none',
       kind: 'none',
       hasReference: false,
       isAvailableInApp: false,
-      displayUrl: null,
-    }
+    })
   }
 
   if (LOCAL_FILE_PATH.test(mediaPath) || mediaPath.includes('\\')) {
-    return {
+    return normalizeMediaAsset({
       status: 'invalid-reference',
       kind: mediaKind,
       hasReference: true,
       isAvailableInApp: false,
-      displayUrl: null,
-    }
+    })
   }
 
   if (LEGACY_ASSET_PATH.test(mediaPath)) {
-    return {
+    return normalizeMediaAsset({
       status: 'private-legacy-reference',
       kind: mediaKind,
       hasReference: true,
       isAvailableInApp: false,
-      displayUrl: null,
-    }
+    })
   }
 
   if (/^https?:\/\//i.test(mediaPath)) {
-    return {
+    return normalizeMediaAsset({
       status: 'invalid-reference',
       kind: mediaKind,
       hasReference: true,
       isAvailableInApp: false,
-      displayUrl: null,
-    }
+    })
   }
 
-  return {
+  return normalizeMediaAsset({
     status: 'invalid-reference',
     kind: mediaKind,
     hasReference: true,
     isAvailableInApp: false,
-    displayUrl: null,
-  }
+  })
 }
 
 export function normalizeTimelineMemory(record, options = {}) {

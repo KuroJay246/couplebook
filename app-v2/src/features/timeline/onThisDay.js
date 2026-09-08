@@ -28,8 +28,8 @@ export function selectOnThisDayMemory(memories = [], now = new Date()) {
   }
 
   const matches = memories
-    .filter((memory) => memory.status !== 'archived')
     .filter((memory) => {
+      if (memory.status === 'archived') return false
       const parts = dateParts(memory)
       return parts && parts.year < todayParts.year && matchesToday(parts, todayParts)
     })

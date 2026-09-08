@@ -81,6 +81,18 @@ export function createGoogleDriveMediaProvider({ clientId, fetchImpl = globalThi
   let accessToken = ''
   let state = DRIVE_STATE.disconnected
   let tokenClient = null
+  const previewUrls = new Set()
+
+  function revokePreviewUrls() {
+    for (const url of previewUrls) {
+      try {
+        URL.revokeObjectURL(url)
+      } catch {
+        // Best-effort cleanup only.
+      }
+    }
+    previewUrls.clear()
+  }
 
   function getConnectionState() {
     return state
@@ -89,6 +101,7 @@ export function createGoogleDriveMediaProvider({ clientId, fetchImpl = globalThi
   function disconnect() {
     accessToken = ''
     tokenClient = null
+    revokePreviewUrls()
     state = DRIVE_STATE.disconnected
   }
 
@@ -148,7 +161,9 @@ export function createGoogleDriveMediaProvider({ clientId, fetchImpl = globalThi
   async function fetchPreview(fileId) {
     const response = await driveFetch(fetchImpl, `${DRIVE_API}/files/${encodeURIComponent(fileId)}?alt=media`, accessToken)
     const blob = await response.blob()
-    return URL.createObjectURL(blob)
+    const url = URL.createObjectURL(blob)
+    previewUrls.add(url)
+    return url
   }
 
   async function getFile(fileId) {

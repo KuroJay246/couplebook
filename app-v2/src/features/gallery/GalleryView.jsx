@@ -40,6 +40,7 @@ function matchesYear(item, year) {
 }
 
 function mediaStatus(item) {
+  if (item.media.status === 'drive-verified') return item.media.kind === 'video' ? 'Verified Drive video' : 'Verified Drive photo'
   if (item.media.status === 'storage-verified') return item.media.kind === 'video' ? 'Verified private video' : 'Verified private photo'
   if (item.media.kind === 'video') return 'Private video stored safely'
   if (item.media.kind === 'image') return 'Private image stored safely'
@@ -172,20 +173,29 @@ function LiveAlbumTile() {
 function GalleryLightbox({ item, items, onClose, onNext, onPrevious, onRemove }) {
   const dialogRef = useRef(null)
   const titleId = useId()
+  const onCloseRef = useRef(onClose)
+  const onNextRef = useRef(onNext)
+  const onPreviousRef = useRef(onPrevious)
   const hasVerifiedPrivateMedia = ['storage-verified', 'drive-verified'].includes(item?.media?.status)
+
+  useEffect(() => {
+    onCloseRef.current = onClose
+    onNextRef.current = onNext
+    onPreviousRef.current = onPrevious
+  }, [onClose, onNext, onPrevious])
 
   useEffect(() => {
     if (!item) return undefined
 
     function handleKeyDown(event) {
-      if (event.key === 'Escape') onClose()
-      if (event.key === 'ArrowRight') onNext()
-      if (event.key === 'ArrowLeft') onPrevious()
+      if (event.key === 'Escape') onCloseRef.current()
+      if (event.key === 'ArrowRight') onNextRef.current()
+      if (event.key === 'ArrowLeft') onPreviousRef.current()
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [item, onClose, onNext, onPrevious])
+  }, [item])
 
   useEffect(() => {
     if (!item) return
@@ -642,7 +652,7 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
       />
       <ConfirmDialog
         confirmLabel="Remove from Album"
-        message="This removes the private Storage object and archives the linked memory so it no longer appears in the active Album."
+        message="This removes the verified private media through its current provider and archives the linked memory so it no longer appears in the active Album."
         onCancel={() => setRemoveState({ item: null, pending: false })}
         onConfirm={confirmRemoval}
         open={Boolean(removeState.item)}

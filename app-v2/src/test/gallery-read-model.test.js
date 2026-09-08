@@ -166,9 +166,67 @@ test('gallery read model exposes verified Drive media for Album removal', () => 
   assert.equal(model.verifiedMedia.length, 1)
   assert.equal(model.photos[0].memoryRevision, 4)
   assert.equal(model.photos[0].media.status, 'drive-verified')
+  assert.equal(model.photos[0].media.id, '')
+  assert.equal(model.photos[0].media.provider, 'google-drive')
+  assert.equal(model.photos[0].media.providerFileId, 'drive_test_1234567890')
+  assert.equal(model.photos[0].media.type, 'image')
+  assert.equal(model.photos[0].media.mimeType, 'image/png')
   assert.equal(model.photos[0].media.driveFileId, 'drive_test_1234567890')
   assert.equal(model.photos[0].media.driveFolderId, '17Ar4UK5_puORz9TE1dijIk2-qHgh7oIa')
   assert.doesNotMatch(JSON.stringify(model), /C:\\\\|OUR MEMORIES|\/assets\/photos/)
+})
+
+test('gallery read model preserves the shared normalized media asset shape', () => {
+  const model = buildGalleryReadModel({
+    compatibilitySnapshot: createSnapshot({
+      status: 'ready',
+      source: 'firestore',
+      data: {
+        hasBaseDataset: true,
+        memories: [
+          createMemoryRecord({
+            id: 'stable-drive-memory',
+            mediaPath: '',
+            mediaKind: 'image',
+            media: {
+              id: 'media_stable_001',
+              provider: 'google-drive',
+              kind: 'image',
+              driveFileId: 'drive_test_stable_001',
+              driveFolderId: '17Ar4UK5_puORz9TE1dijIk2-qHgh7oIa',
+              contentType: 'image/webp',
+              sizeBytes: 2048,
+            },
+          }),
+        ],
+      },
+      warnings: [],
+    }),
+  })
+
+  const media = model.items[0].media
+  assert.deepEqual(
+    {
+      id: media.id,
+      provider: media.provider,
+      providerFileId: media.providerFileId,
+      type: media.type,
+      mimeType: media.mimeType,
+      sizeBytes: media.sizeBytes,
+      displayUrl: media.displayUrl,
+      runtimeUrl: media.runtimeUrl,
+    },
+    {
+      id: 'media_stable_001',
+      provider: 'google-drive',
+      providerFileId: 'drive_test_stable_001',
+      type: 'image',
+      mimeType: 'image/webp',
+      sizeBytes: 2048,
+      displayUrl: null,
+      runtimeUrl: null,
+    },
+  )
 })
 
 test('gallery read model excludes archived memories from active collections', () => {

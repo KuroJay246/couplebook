@@ -1,5 +1,5 @@
 function sortPlans(plans) {
-  return [...plans].sort((left, right) => {
+  return plans.toSorted((left, right) => {
     const leftDate = left.targetDate || '9999-12-31'
     const rightDate = right.targetDate || '9999-12-31'
     if (left.status === 'completed' && right.status !== 'completed') return 1

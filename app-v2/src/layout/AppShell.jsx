@@ -58,13 +58,13 @@ function surfaceDisplayName(value) {
 }
 
 function getRouteItems(paths) {
-  return paths
-    .map((path) => protectedRouteMeta.find((route) => route.path === path))
-    .filter(Boolean)
-    .map((route) => ({
+  return paths.flatMap((path) => {
+    const route = protectedRouteMeta.find((entry) => entry.path === path)
+    return route ? [{
       ...route,
       iconComponent: NAV_ICON_BY_NAME[route.icon] || Sparkles,
-    }))
+    }] : []
+  })
 }
 
 function SidebarContent({ collapsed = false, groups, onNavigate, onRequestSignOut, onToggleCollapsed }) {

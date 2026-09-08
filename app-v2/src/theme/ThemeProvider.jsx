@@ -54,39 +54,40 @@ export function ThemeProvider({ children }) {
 
     const loadId = pendingLoadRef.current + 1
     pendingLoadRef.current = loadId
+    const coupleId = approvedUser?.coupleId || ''
+    const uid = approvedUser?.uid || ''
     let timeoutId
 
-    async function loadUserTheme() {
-      if (!isAuthorized || !approvedUser?.coupleId || !approvedUser?.uid) {
-        const fallback = readStoredTheme()
-        if (pendingLoadRef.current !== loadId) return
-        setSavedTheme(fallback)
-        setActiveTheme(fallback)
-        setInitialization('ready')
-        return
-      }
+    if (!isAuthorized || !coupleId || !uid) {
+      const fallback = readStoredTheme()
+      if (pendingLoadRef.current !== loadId) return
+      setSavedTheme(fallback)
+      setActiveTheme(fallback)
+      setInitialization('ready')
+      return
+    }
 
-      try {
-        timeoutId = window.setTimeout(() => {
-          if (pendingLoadRef.current !== loadId) return
-          setInitialization('failure')
-        }, THEME_LOAD_TIMEOUT_MS)
-        const result = await getFirestorePrivateSettings(approvedUser.coupleId, approvedUser.uid)
+    timeoutId = window.setTimeout(() => {
+      if (pendingLoadRef.current !== loadId) return
+      setInitialization('failure')
+    }, THEME_LOAD_TIMEOUT_MS)
+
+    getFirestorePrivateSettings(coupleId, uid)
+      .then((result) => {
         if (pendingLoadRef.current !== loadId) return
         const loaded = normalizeThemeId(result?.data?.appearanceTheme || result?.data?.theme)
         setSavedTheme(loaded)
         setActiveTheme(loaded)
         setInitialization('ready')
-      } catch {
+      })
+      .catch(() => {
         if (pendingLoadRef.current !== loadId) return
-        const fallback = readStoredTheme(approvedUser.uid)
+        const fallback = readStoredTheme(uid)
         setSavedTheme(fallback)
         setActiveTheme(fallback)
         setInitialization('failure')
-      }
-    }
+      })
 
-    void loadUserTheme()
     return () => {
       if (timeoutId) window.clearTimeout(timeoutId)
     }

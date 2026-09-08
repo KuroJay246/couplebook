@@ -77,7 +77,7 @@ export function ConfessionPage() {
   const [activeSlotAction, setActiveSlotAction] = useState('')
 
   const letterText = model.moment?.sections?.length
-    ? splitRuntimeParagraphs(model.moment.sections.map((section) => section.content).filter(Boolean).join('\n\n'))
+    ? splitRuntimeParagraphs(model.moment.sections.flatMap((section) => (section.content ? [section.content] : [])).join('\n\n'))
     : []
   const slotMap = Object.fromEntries((model.mediaSlots || []).map((slot) => [slot.id, slot]))
   const ownerSlots = ownerState?.slots || []

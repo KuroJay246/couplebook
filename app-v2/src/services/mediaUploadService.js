@@ -363,8 +363,6 @@ export async function deleteUploadedMedia(storagePath, storageInstance = storage
 
 export async function deleteUploadedMediaSet(paths = [], storageInstance = storage) {
   const uniquePaths = [...new Set((Array.isArray(paths) ? paths : []).filter((path) => SAFE_STORAGE_PATH.test(String(path || ''))))]
-  for (const path of uniquePaths) {
-    await deleteUploadedMedia(path, storageInstance)
-  }
+  await Promise.all(uniquePaths.map((path) => deleteUploadedMedia(path, storageInstance)))
   return uniquePaths.length
 }

@@ -102,9 +102,7 @@ export function buildTimelineReadModel({ compatibilitySnapshot = null } = {}) {
     warnings: [],
   }
   const normalizedMemories = normalizeTimelineMemories(memorySource?.data?.memories || [])
-  const archivedMemories = normalizedMemories
-    .filter((memory) => memory.status === 'archived')
-    .map((memory) => ({
+  const archivedMemories = normalizedMemories.flatMap((memory) => (memory.status === 'archived' ? [{
       id: memory.id,
       status: memory.status,
       revision: memory.revision,
@@ -117,7 +115,7 @@ export function buildTimelineReadModel({ compatibilitySnapshot = null } = {}) {
       tags: memory.tags,
       date: memory.date,
       sort: memory.sort,
-    }))
+    }] : []))
 
   return freezeClone({
     status: deriveTimelineStatus(memorySource, normalizedMemories),

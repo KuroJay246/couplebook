@@ -267,10 +267,13 @@ export function useMediaUploadQueue(onRefresh, drive) {
     }
 
     if (item.media.status === 'drive-verified') {
-      await driveProvider?.remove?.(item.media.driveFileId)
+      if (!driveProvider || driveState !== 'connected' || !item.media.driveFileId) {
+        throw new Error('Reconnect Google Drive before removing this Album item.')
+      }
+      await driveProvider.remove(item.media.driveFileId)
     }
     return writer.removeMemoryMedia(memoryId, memoryRevision)
-  }, [driveProvider, writer])
+  }, [driveProvider, driveState, writer])
 
   const handleProcessingFailure = useCallback(async (itemId, error, fallbackMessage, retryable = true) => {
     const item = findItem(itemId)
@@ -582,9 +585,7 @@ export function useMediaUploadQueue(onRefresh, drive) {
       return
     }
 
-    const pendingIds = stateRef.current.items
-      .filter((item) => canStartItem(item))
-      .map((item) => item.id)
+    const pendingIds = stateRef.current.items.flatMap((item) => (canStartItem(item) ? [item.id] : []))
 
     if (pendingIds.length === 0) {
       setNotice({ kind: 'info', message: 'Add files to the queue before starting uploads.' })
@@ -592,21 +593,29 @@ export function useMediaUploadQueue(onRefresh, drive) {
     }
 
     setNotice({ kind: 'info', message: 'Uploading private media and saving memory records…' })
-    for (const itemId of pendingIds) {
+    await pendingIds.reduce((previous, itemId) => previous.then(() => {
       if (!mountedRef.current) return
-      await processItem(itemId)
-    }
+      return processItem(itemId)
+    }), Promise.resolve())
   }, [processItem, setNotice, writer])
 
   const removeSavedItem = useCallback(async (item) => {
     setNotice({ kind: 'info', message: `Removing ${item.title} from Album…` })
-    const result = await removeSavedAlbumItem(item)
-    setNotice({
-      kind: result?.refreshError ? 'info' : 'success',
-      message: result?.refreshError
-        ? `${item.title} was removed, but Album refresh still needs attention.`
-        : `${item.title} was removed from Album.`,
-    })
+    try {
+      const result = await removeSavedAlbumItem(item)
+      setNotice({
+        kind: result?.refreshError ? 'info' : 'success',
+        message: result?.refreshError
+          ? `${item.title} was removed, but Album refresh still needs attention.`
+          : `${item.title} was removed from Album.`,
+      })
+    } catch (error) {
+      setNotice({
+        kind: 'error',
+        message: error?.message || `${item.title} could not be removed from Album.`,
+      })
+      throw error
+    }
   }, [removeSavedAlbumItem, setNotice])
 
   const summary = useMemo(() => summarizeQueueItems(state.items), [state.items])

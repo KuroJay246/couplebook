@@ -16,7 +16,12 @@ export function ConfirmDialog({
   const titleId = useId()
   const messageId = useId()
   const confirmRef = useRef(null)
+  const onCancelRef = useRef(onCancel)
   const previousFocusRef = useRef(null)
+
+  useEffect(() => {
+    onCancelRef.current = onCancel
+  }, [onCancel])
 
   useEffect(() => {
     if (!open) return undefined
@@ -28,14 +33,14 @@ export function ConfirmDialog({
   useEffect(() => {
     if (!open) return undefined
     function handleKeyDown(event) {
-      if (event.key === 'Escape' && !pending) onCancel?.()
+      if (event.key === 'Escape' && !pending) onCancelRef.current?.()
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => {
       window.removeEventListener('keydown', handleKeyDown)
       if (previousFocusRef.current instanceof HTMLElement) previousFocusRef.current.focus()
     }
-  }, [onCancel, open, pending])
+  }, [open, pending])
 
   if (!open) return null
 

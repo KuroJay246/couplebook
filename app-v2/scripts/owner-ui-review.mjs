@@ -19,7 +19,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const APP_ROOT = path.resolve(__dirname, '..')
 const REVIEW_ROOT = process.env.COUPLEBOOK_OWNER_UI_REVIEW_ROOT || 'C:\\Users\\Jaylan\\Documents\\couplebook.visual-review\\distinct-product-identity\\owner-ui-review'
-const PREVIEW_URL = process.env.COUPLEBOOK_OWNER_UI_REVIEW_PREVIEW_URL || 'https://couplebook-97830--couplebook-distinct-identity-9d6i5xu0.web.app'
+const PREVIEW_URL = String(process.env.COUPLEBOOK_OWNER_UI_REVIEW_PREVIEW_URL || '').trim()
 const PDF_PATH = path.join(REVIEW_ROOT, 'COUPLE_BOOK_OWNER_UI_REVIEW.pdf')
 const SUMMARY_JSON_PATH = path.join(REVIEW_ROOT, 'owner-ui-review-summary.json')
 const SUMMARY_MD_PATH = path.join(REVIEW_ROOT, 'owner-ui-review-summary.md')
@@ -27,7 +27,13 @@ const CONTACT_SHEET_PATH = path.join(REVIEW_ROOT, 'contact-sheets', 'owner-ui-re
 const PAYLOAD_PATH = path.join(REVIEW_ROOT, 'owner-ui-review-pdf-payload.json')
 const PYTHON_HELPER_PATH = path.join(APP_ROOT, 'scripts', 'build-owner-ui-review-pdf.py')
 const PYTHON_COMMAND = process.env.PYTHON || 'python'
-const REVIEW_DATE_LABEL = 'Saturday, August 22, 2026'
+const REVIEW_DATE_LABEL = new Intl.DateTimeFormat('en-US', {
+  day: 'numeric',
+  month: 'long',
+  timeZone: 'America/Halifax',
+  weekday: 'long',
+  year: 'numeric',
+}).format(new Date())
 const EMULATOR_ENV_PATH = path.join(APP_ROOT, '.env.emulator.local')
 const FIXTURE_ROOT = path.join(APP_ROOT, 'output', 'qa-fixtures')
 const STORAGE_BUCKET = 'couplebook-97830.appspot.com'
@@ -57,12 +63,12 @@ const VIEWPORTS = Object.freeze([
 ])
 
 const DEFAULT_ROUTE_SET = Object.freeze([
-  { path: '/dashboard', slug: 'dashboard', heading: 'Pick up right where the relationship feels most alive.' },
+  { path: '/dashboard', slug: 'dashboard', heading: 'Our memories, plans, and special moments in one place.' },
   { path: '/timeline', slug: 'timeline', heading: /Our Story/ },
   { path: '/gallery', slug: 'gallery', heading: /Our Shared Gallery/ },
   { path: '/profile', slug: 'profile', heading: /^Us$/ },
   { path: '/favorites', slug: 'favorites', heading: /Favorite Things/ },
-  { path: '/plans', slug: 'plans', heading: /Ideas worth doing together\./ },
+  { path: '/plans', slug: 'plans', heading: 'Things we want to do together' },
   { path: '/settings', slug: 'settings', heading: /Settings/ },
   { path: '/contract', slug: 'contract', heading: /Shared Relationship Contract/ },
   { path: '/birthday', slug: 'birthday', heading: 'Birthday chapter' },
@@ -71,7 +77,7 @@ const DEFAULT_ROUTE_SET = Object.freeze([
 ])
 
 const THEME_ROUTES = Object.freeze([
-  { path: '/dashboard', slug: 'dashboard', heading: 'Pick up right where the relationship feels most alive.' },
+  { path: '/dashboard', slug: 'dashboard', heading: 'Our memories, plans, and special moments in one place.' },
   { path: '/gallery', slug: 'gallery', heading: /Our Shared Gallery/ },
   { path: '/settings', slug: 'settings', heading: /Settings/ },
 ])
@@ -194,6 +200,7 @@ function configureRuntimeEnv(emulatorEnv) {
   process.env.VITE_LEGACY_LOCAL_BASE_URL = ''
   process.env.VITE_DATA_SOURCE_MODE = 'firestore'
   process.env.VITE_WRITE_MODE = 'firestore-emulator-write'
+  process.env.VITE_MEDIA_PROVIDER = 'google-drive'
   return { projectId }
 }
 
@@ -230,6 +237,7 @@ async function createReviewContext(browser, viewport, networkController) {
   const context = await browser.newContext({ viewport: { width: viewport.width, height: viewport.height } })
   await context.addInitScript(() => {
     globalThis.__COUPLEBOOK_UPLOAD_TEST__ = { enabled: true, failUploadsRemaining: 0, phaseDelayMs: { validating: 180, hashing: 180, finalizing: 180 } }
+    globalThis.__COUPLEBOOK_DRIVE_TEST__ = { enabled: true, failUploadsRemaining: 0, uploadDelayMs: 0 }
     const originalDigest = SubtleCrypto.prototype.digest
     SubtleCrypto.prototype.digest = async function patchedDigest(...args) {
       await new Promise((resolve) => setTimeout(resolve, 120))
@@ -363,7 +371,7 @@ async function signIn(page, baseUrl, email, password) {
   await page.locator('input[type="password"]').fill(password)
   await page.getByRole('button', { name: /Enter Couple Book/i }).click()
   await page.waitForURL((url) => url.pathname === '/dashboard', { timeout: 20000 })
-  await page.getByRole('heading', { name: 'Pick up right where the relationship feels most alive.' }).waitFor({ state: 'visible', timeout: 15000 })
+  await page.getByRole('heading', { name: DEFAULT_ROUTE_SET[0].heading }).waitFor({ state: 'visible', timeout: 15000 })
 }
 
 async function waitForRoute(page, route) {
@@ -520,6 +528,12 @@ function galleryTile(page, title) {
   return page.locator('.gallery-item').filter({ has: page.getByText(title) }).first()
 }
 
+async function ensureDriveConnected(page) {
+  if (await page.getByText('Connected', { exact: true }).first().isVisible().catch(() => false)) return
+  await page.getByRole('button', { name: 'Connect Google Drive' }).click()
+  await page.getByText('Connected', { exact: true }).first().waitFor({ state: 'visible', timeout: 15000 })
+}
+
 async function setFiles(page, filePaths) {
   await page.locator('input[type="file"]').first().setInputFiles(filePaths)
 }
@@ -559,6 +573,18 @@ async function waitForMemoryStatus(db, title, expectedStatus, timeoutMs = 15000)
 async function listStorageObjects(bucket, prefix) {
   const [files] = await bucket.getFiles({ prefix })
   return files.map((file) => file.name).sort()
+}
+
+async function listLocalDriveFileIds(page) {
+  return page.evaluate(() => {
+    try {
+      return JSON.parse(window.sessionStorage.getItem('__couplebook_drive_test_files__') || '[]')
+        .map((file) => file.id)
+        .sort()
+    } catch {
+      return []
+    }
+  })
 }
 
 async function inspectCard(locator) {
@@ -645,6 +671,21 @@ function buildSummaryShape(baseUrl, issueNotes) {
 }
 
 async function capturePreviewSmoke(browser, summary) {
+  if (!PREVIEW_URL) {
+    summary.previewSmoke.push({
+      captureType: 'preview',
+      group: 'preview',
+      label: 'Preview smoke',
+      output: '',
+      route: '',
+      routeSlug: 'preview-login',
+      status: 'SKIPPED',
+      themeId: 'signed-out',
+      viewport: 'all',
+    })
+    return
+  }
+
   for (const viewport of VIEWPORTS) {
     const context = await browser.newContext({ viewport: { width: viewport.width, height: viewport.height } })
     const observed = createObserved(`preview:${viewport.slug}`)
@@ -840,6 +881,9 @@ async function runGalleryWorkflows(summary, page, baseUrl, fixtures, networkCont
   const savedTitle = `Owner Review Photo Memory ${uniqueSuffix()}`
   const cancelTitle = `Owner Review Cancel Upload ${uniqueSuffix()}`
   await openRoute(page, baseUrl, DEFAULT_ROUTE_SET.find((route) => route.path === '/gallery'))
+  await ensureDriveConnected(page)
+  await page.getByRole('button', { name: /Manage uploads/i }).click()
+  await page.getByRole('region', { name: 'Upload queue' }).waitFor({ state: 'visible', timeout: 5000 })
   await recordControl(summary, { controlName: 'Upload queue disabled state', route: '/gallery', action: 'Check empty queue', expectedResult: 'Start uploads stays disabled without queued files.' }, async () => {
     assert.equal(await page.getByRole('button', { name: /Start uploads/i }).isDisabled(), true)
     await captureShot(summary, page, { captureType: 'disabled', group: 'buttons', label: 'Start uploads disabled', locator: page.getByRole('button', { name: /Start uploads/i }), route: '/gallery', routeSlug: 'start-uploads-disabled', themeId: 'midnight-rose', viewport: VIEWPORTS[0] })
@@ -849,17 +893,18 @@ async function runGalleryWorkflows(summary, page, baseUrl, fixtures, networkCont
     const card = queueCard(page, path.basename(fixtures.imageCancel))
     await card.waitFor({ state: 'visible', timeout: 10000 })
     await card.getByRole('textbox', { name: 'Memory title' }).fill(cancelTitle)
-    networkController.delayMs = 1800
+    await page.evaluate(() => { globalThis.__COUPLEBOOK_DRIVE_TEST__.uploadDelayMs = 1800 })
     const historyPromise = collectStatusHistory(card, ['Cancelled'])
     await page.getByRole('button', { name: /^Start uploads$/ }).click()
     await card.getByText('Uploading', { exact: true }).waitFor({ state: 'visible', timeout: 20000 })
     await captureShot(summary, page, { captureType: 'loading', group: 'media', label: 'Upload queue loading', route: '/gallery', routeSlug: 'upload-loading', themeId: 'midnight-rose', viewport: VIEWPORTS[0] })
     await card.getByRole('button', { name: new RegExp(`Cancel upload for ${path.basename(fixtures.imageCancel).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`) }).click()
     await historyPromise
-    networkController.delayMs = 0
+    await page.evaluate(() => { globalThis.__COUPLEBOOK_DRIVE_TEST__.uploadDelayMs = 0 })
     assert.deepEqual(await getMemoryDocsByTitle(db, cancelTitle), [])
   })
   await recordControl(summary, { controlName: 'Failed upload retry', route: '/gallery', action: 'Force one failure and retry to success', expectedResult: 'Retry saves one Album item after Needs review.' }, async () => {
+    const storageBeforeRetry = await listStorageObjects(bucket, STORAGE_PREFIX)
     await setFiles(page, fixtures.imageRetry)
     const card = queueCard(page, path.basename(fixtures.imageRetry))
     await card.waitFor({ state: 'visible', timeout: 10000 })
@@ -867,26 +912,33 @@ async function runGalleryWorkflows(summary, page, baseUrl, fixtures, networkCont
     await card.getByRole('textbox', { name: 'Description' }).fill('Owner review photo memory used for Album, Story, and card inspection proof.')
     await card.getByRole('textbox', { name: 'Tags' }).fill('album, owner review, photo')
     await card.getByRole('textbox', { name: 'Media note' }).fill('Private gallery proof item for owner UI review.')
-    await page.evaluate(() => { globalThis.__COUPLEBOOK_UPLOAD_TEST__.failUploadsRemaining = 1 })
+    await page.evaluate(() => { globalThis.__COUPLEBOOK_DRIVE_TEST__.failUploadsRemaining = 1 })
     const failedPromise = collectStatusHistory(card, ['Needs review'])
     await page.getByRole('button', { name: /^Start uploads$/ }).click()
     await failedPromise
     await captureShot(summary, page, { captureType: 'failed', group: 'media', label: 'Retryable upload failure', route: '/gallery', routeSlug: 'upload-failed', themeId: 'midnight-rose', viewport: VIEWPORTS[0] })
     await captureCard(summary, page, { label: 'Upload queue item', locator: card, route: '/gallery', themeId: 'midnight-rose', viewport: VIEWPORTS[0] })
-    await page.evaluate(() => { globalThis.__COUPLEBOOK_UPLOAD_TEST__.failUploadsRemaining = 0 })
+    await page.evaluate(() => { globalThis.__COUPLEBOOK_DRIVE_TEST__.failUploadsRemaining = 0 })
     const savedPromise = collectStatusHistory(card, ['Saved'])
     await card.getByRole('button', { name: new RegExp(`Retry upload for ${path.basename(fixtures.imageRetry).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`) }).click()
     await savedPromise
     await captureShot(summary, page, { captureType: 'success', group: 'media', label: 'Upload queue saved', route: '/gallery', routeSlug: 'upload-saved', themeId: 'midnight-rose', viewport: VIEWPORTS[0], locator: card })
     const docs = await getMemoryDocsByTitle(db, savedTitle)
     assert.equal(docs.length, 1)
+    const memory = docs[0].data
+    assert.equal(memory.mediaState, 'drive-verified')
+    assert.equal(memory.media?.provider, 'google-drive')
+    assert.match(memory.media?.driveFileId || '', /^drive_test_[A-Za-z0-9_-]{10,}$/)
+    assert.equal(memory.media?.storagePath || '', '')
     const storageObjects = await listStorageObjects(bucket, STORAGE_PREFIX)
-    assert.equal(storageObjects.includes(docs[0].data.media.storagePath), true)
-    summary.savedMedia = { title: savedTitle, storagePath: docs[0].data.media.storagePath }
+    assert.deepEqual(storageObjects, storageBeforeRetry, 'Drive upload must not create Firebase Storage objects.')
+    assert.equal((await listLocalDriveFileIds(page)).includes(memory.media.driveFileId), true)
+    summary.savedMedia = { title: savedTitle, driveFileId: memory.media.driveFileId, storageObjectsBefore: storageBeforeRetry }
     await openRoute(page, baseUrl, DEFAULT_ROUTE_SET.find((route) => route.path === '/timeline'))
     await page.getByRole('searchbox', { name: 'Search memories' }).fill(savedTitle)
     await captureCard(summary, page, { label: 'Story photo memory', locator: storyCard(page, savedTitle), route: '/timeline', themeId: 'midnight-rose', viewport: VIEWPORTS[0] })
     await openRoute(page, baseUrl, DEFAULT_ROUTE_SET.find((route) => route.path === '/gallery'))
+    await ensureDriveConnected(page)
   })
   await recordControl(summary, { controlName: 'Gallery viewer', route: '/gallery', action: 'Open the saved Album item and close the viewer', expectedResult: 'The viewer opens and closes cleanly.' }, async () => {
     await page.getByRole('searchbox', { name: 'Search Album' }).fill(savedTitle)
@@ -911,7 +963,7 @@ async function runGalleryWorkflows(summary, page, baseUrl, fixtures, networkCont
     await dialog.waitFor({ state: 'hidden', timeout: 5000 })
     await page.getByText(savedTitle).first().waitFor({ state: 'visible', timeout: 5000 })
   })
-  await recordControl(summary, { controlName: 'Media removal confirm', route: '/gallery', action: 'Confirm Remove from Album', expectedResult: 'The Storage object is deleted and the item leaves Album.' }, async () => {
+  await recordControl(summary, { controlName: 'Media removal confirm', route: '/gallery', action: 'Confirm Remove from Album', expectedResult: 'The Drive test file is removed and the item leaves Album.' }, async () => {
     await galleryTile(page, savedTitle).getByRole('button', { name: 'Open item', exact: true }).click()
     const dialog = page.getByRole('dialog')
     await dialog.waitFor({ state: 'visible', timeout: 5000 })
@@ -921,7 +973,11 @@ async function runGalleryWorkflows(summary, page, baseUrl, fixtures, networkCont
     await confirmDialog.getByRole('button', { name: 'Remove from Album' }).click()
     await page.locator('[role="status"], [role="alert"]').filter({ hasText: /was removed from Album|was removed, but Album refresh still needs attention/i }).first().waitFor({ state: 'visible', timeout: 15000 })
     const storageObjects = await listStorageObjects(bucket, STORAGE_PREFIX)
-    assert.equal(storageObjects.includes(summary.savedMedia.storagePath), false)
+    assert.deepEqual(storageObjects, summary.savedMedia.storageObjectsBefore)
+    assert.equal((await listLocalDriveFileIds(page)).includes(summary.savedMedia.driveFileId), false)
+    const docs = await getMemoryDocsByTitle(db, savedTitle)
+    assert.equal(docs[0].data.status, 'archived')
+    assert.equal(docs[0].data.mediaState, 'none')
     await captureShot(summary, page, { captureType: 'success', group: 'media', label: 'Media removal confirm', route: '/gallery', routeSlug: 'remove-confirm', themeId: 'midnight-rose', viewport: VIEWPORTS[0] })
   })
   return { savedTitle }
@@ -977,8 +1033,17 @@ async function runMobileChecks(summary, browser, baseUrl, ownerEmail, ownerPassw
 }
 
 async function runSignOutChecks(summary, page, baseUrl) {
+  async function openAdvancedAccountControls() {
+    const button = routeButton(page, 'settings', /^Sign out$/)
+    if (!(await button.isVisible().catch(() => false))) {
+      await page.getByText('System health and account controls').click()
+    }
+    await button.waitFor({ state: 'visible', timeout: 5000 })
+  }
+
   await recordControl(summary, { controlName: 'Sign-out confirmation cancel', route: '/settings', action: 'Open sign-out dialog and cancel it', expectedResult: 'The current route remains active.' }, async () => {
     await openRoute(page, baseUrl, DEFAULT_ROUTE_SET.find((route) => route.path === '/settings'))
+    await openAdvancedAccountControls()
     await routeButton(page, 'settings', /^Sign out$/).click()
     const dialog = page.getByRole('dialog', { name: 'Sign out of Couple Book?' })
     await dialog.waitFor({ state: 'visible', timeout: 5000 })
@@ -987,6 +1052,7 @@ async function runSignOutChecks(summary, page, baseUrl) {
     await dialog.waitFor({ state: 'hidden', timeout: 5000 })
   })
   await recordControl(summary, { controlName: 'Sign-out confirmation confirm', route: '/settings', action: 'Confirm sign out', expectedResult: 'The app returns to the login screen.' }, async () => {
+    await openAdvancedAccountControls()
     await routeButton(page, 'settings', /^Sign out$/).click()
     const dialog = page.getByRole('dialog', { name: 'Sign out of Couple Book?' })
     await dialog.waitFor({ state: 'visible', timeout: 5000 })
@@ -1005,11 +1071,11 @@ async function captureCards(summary, browser, baseUrl, ownerEmail, ownerPassword
     await signIn(desktopPage, baseUrl, ownerEmail, ownerPassword)
     await signIn(mobilePage, baseUrl, ownerEmail, ownerPassword)
     const targets = [
-      ['Home relationship hero', '/dashboard', async (page) => page.locator('.cb-shell-hero').first()],
+      ['Home relationship hero', '/dashboard', async (page) => page.locator('.cb-editorial-hero').first()],
       ['Featured memory', '/dashboard', async (page) => page.locator('article').filter({ has: page.getByText('Featured memory') }).first()],
       ['Story text memory', '/timeline', async (page) => page.locator('article').filter({ has: page.getByText('First harbor walk') }).first()],
       ['Album tile', '/gallery', async (page) => page.locator('.gallery-item').first()],
-      ['Us profile section', '/profile', async (page) => page.locator('section').filter({ has: page.getByRole('heading', { name: /^Us$/ }) }).first()],
+      ['Us profile section', '/profile', async (page) => page.locator('[data-route="profile"] .cb-surface').first()],
       ['Plan card', '/plans', async (page) => page.locator('article').filter({ has: page.getByText('Bookstore date') }).first()],
       ['Theme tile', '/settings', async (page) => themeTile(page, 'paper-hearts')],
       ['Contract section', '/contract', async (page) => page.locator('article').first()],
@@ -1118,7 +1184,7 @@ async function run() {
   const fixtures = await buildUploadFixtures()
 
   try {
-    log(`Running Couple Book owner UI review against local ${baseUrl} and preview ${PREVIEW_URL}`)
+    log(`Running Couple Book owner UI review against local ${baseUrl}${PREVIEW_URL ? ` and preview ${PREVIEW_URL}` : '; preview smoke skipped because COUPLEBOOK_OWNER_UI_REVIEW_PREVIEW_URL is not set'}`)
     await capturePreviewSmoke(browser, summary)
     const context = await createReviewContext(browser, VIEWPORTS[0], networkController)
     const page = await context.newPage()

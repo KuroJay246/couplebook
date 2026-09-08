@@ -64,13 +64,14 @@ function sharedMatchesForPeople(people) {
     for (const category of person.categories || []) {
       const key = category.key
       if (!categoryMap.has(key)) categoryMap.set(key, new Map())
+      const values = categoryMap.get(key)
       for (const item of category.items || []) {
         const comparable = comparableItem(item)
         if (!comparable) continue
-        if (!categoryMap.get(key).has(comparable)) {
-          categoryMap.get(key).set(comparable, { label: normalizeItem(item), owners: new Set() })
+        if (!values.has(comparable)) {
+          values.set(comparable, { label: normalizeItem(item), owners: new Set() })
         }
-        categoryMap.get(key).get(comparable).owners.add(person.displayName)
+        values.get(comparable).owners.add(person.displayName)
       }
     }
   }
@@ -133,8 +134,10 @@ function AddFavoriteDialog({ category, onClose, onSave, status }) {
 
 function FavoriteSection({ canEdit, category, onAdd, onRemove, ownerId, search }) {
   const filteredItems = []
-  for (const item of category.items || []) {
-    if (search && !comparableItem(item).includes(search)) continue
+  const categoryItems = Array.isArray(category.items) ? category.items : []
+  for (const item of categoryItems) {
+    const comparable = comparableItem(item)
+    if (search && !comparable.includes(search)) continue
     filteredItems.push(item)
   }
 

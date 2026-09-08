@@ -35,3 +35,37 @@ test('Google Drive provider lists only supported media and preserves pagination'
   assert.equal(list.nextPageToken, 'next')
   assert.match(calls.find((url) => url.includes('/files?')), /pageSize=100/)
 })
+
+test('Google Drive provider revokes Drive preview object URLs on disconnect', async () => {
+  const originalUrl = globalThis.URL
+  const revoked = []
+  globalThis.URL = {
+    ...originalUrl,
+    createObjectURL() {
+      return 'blob:drive-preview'
+    },
+    revokeObjectURL(url) {
+      revoked.push(url)
+    },
+  }
+
+  const provider = createGoogleDriveMediaProvider({
+    clientId: 'test-client',
+    fetchImpl: async (url) => {
+      if (String(url).includes('alt=media')) {
+        return new Response(new Blob(['preview']), { status: 200 })
+      }
+      return new Response(JSON.stringify({ id: COUPLE_BOOK_DRIVE_FOLDER_ID, mimeType: 'application/vnd.google-apps.folder', trashed: false }), { status: 200 })
+    },
+    google: { accounts: { oauth2: { initTokenClient: ({ callback }) => ({ requestAccessToken() { void callback({ access_token: 'test-token' }) } }) } } },
+  })
+
+  try {
+    await provider.connect()
+    assert.equal(await provider.fetchPreview('image-1'), 'blob:drive-preview')
+    provider.disconnect()
+    assert.deepEqual(revoked, ['blob:drive-preview'])
+  } finally {
+    globalThis.URL = originalUrl
+  }
+})
