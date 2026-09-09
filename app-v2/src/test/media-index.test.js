@@ -8,6 +8,7 @@ import {
   buildMediaIndexRecordsFromDriveFiles,
   buildMediaSyncStateDocumentPath,
   driveFileToMediaIndexRecord,
+  getFirestoreMediaIndexForCouple,
   normalizeMediaIndexRecord,
   normalizeMediaSyncState,
   reconcileDriveMediaIndex,
@@ -41,6 +42,32 @@ test('media index paths are couple-scoped and safe', () => {
   )
   assert.equal(buildMediaSyncStateDocumentPath('couple_alpha'), 'couples/couple_alpha/mediaSync/google-drive')
   assert.throws(() => buildMediaIndexCollectionPath('bad/couple'))
+})
+
+test('Firestore media index reader uses the couple-scoped mediaItems collection', async () => {
+  const collectionCalls = []
+  const result = await getFirestoreMediaIndexForCouple('couple_alpha', {
+    readCollection: async ({ path, normalizeEntry }) => {
+      collectionCalls.push(path.join('/'))
+      const warnings = []
+      const normalized = normalizeEntry(
+        'drive_1F_USpYY9Qi2sIoftCWVjp_uYPdZAnRaa',
+        driveFileToMediaIndexRecord(driveFile(), { coupleId: 'couple_alpha' }),
+        warnings,
+      )
+      return {
+        status: 'ready',
+        source: 'firestore',
+        data: { entries: [normalized] },
+        warnings,
+      }
+    },
+  })
+
+  assert.deepEqual(collectionCalls, ['couples/couple_alpha/mediaItems'])
+  assert.equal(result.status, 'ready')
+  assert.equal(result.data.entries.length, 1)
+  assert.equal(result.data.entries[0].driveFileId, '1F_USpYY9Qi2sIoftCWVjp_uYPdZAnRaa')
 })
 
 test('Drive files become stable media index records without temporary URLs', () => {

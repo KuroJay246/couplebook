@@ -490,12 +490,17 @@ test('gallery architecture stays read-only and routes Storage through the media 
   const selectorsSource = await readFile(new URL('../features/gallery/gallerySelectors.js', import.meta.url), 'utf8')
   const readModelSource = await readFile(new URL('../features/gallery/galleryReadModel.js', import.meta.url), 'utf8')
   const hookSource = await readFile(new URL('../features/gallery/useGalleryData.js', import.meta.url), 'utf8')
-  const combined = `${selectorsSource}\n${readModelSource}\n${hookSource}`
+  const mediaIndexHookSource = await readFile(new URL('../features/gallery/useMediaIndexSource.js', import.meta.url), 'utf8')
+  const combined = `${selectorsSource}\n${readModelSource}\n${hookSource}\n${mediaIndexHookSource}`
 
   assert.match(readModelSource, /memorySource = null/)
+  assert.match(readModelSource, /mediaIndexSource = null/)
   assert.match(hookSource, /useMemorySource/)
-  assert.match(hookSource, /memorySource: source/)
+  assert.match(hookSource, /useMediaIndexSource/)
+  assert.match(hookSource, /memorySource: memory\.source/)
+  assert.match(hookSource, /mediaIndexSource: mediaIndex\.source/)
   assert.doesNotMatch(hookSource, /compatibilitySnapshot: snapshot/)
+  assert.match(mediaIndexHookSource, /getFirestoreMediaIndexForCouple/)
   assert.doesNotMatch(combined, /fetch\(|XMLHttpRequest|new Image|createObjectURL|getDownloadURL|firebase\/storage/)
   assert.doesNotMatch(combined, /\bsetItem\s*\(|\bupdateDoc\s*\(|\baddDoc\s*\(|\bdeleteDoc\s*\(|\bsetDoc\s*\(/)
   assert.doesNotMatch(combined, /collection\([^)]*users|documents\/users(?:[/?#]|\b)/)

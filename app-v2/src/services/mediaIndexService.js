@@ -1,6 +1,7 @@
 import { COUPLE_BOOK_DRIVE_FOLDER_ID } from './googleDriveMediaProvider.js'
+import { db } from '../lib/firebase.js'
 import { mediaItemPath, mediaItemsPath, mediaSyncStatePath, pathToString } from './firestorePaths.js'
-import { safeString } from './firestoreReaders.js'
+import { readCollection, safeString } from './firestoreReaders.js'
 
 export const MEDIA_INDEX_PROVIDER = 'google-drive'
 export const MEDIA_INDEX_SCHEMA_VERSION = 1
@@ -181,6 +182,16 @@ export function normalizeMediaIndexRecord(id, data, warnings = []) {
     syncStatus: safeString(data.syncStatus, 40) || 'indexed',
     deleted: data.deleted === true,
   }
+}
+
+export async function getFirestoreMediaIndexForCouple(coupleId, options = {}) {
+  const read = options.readCollection || readCollection
+  return read({
+    firestore: options.firestore || db,
+    path: mediaItemsPath(coupleId),
+    getCollection: options.getCollection,
+    normalizeEntry: normalizeMediaIndexRecord,
+  })
 }
 
 function comparable(record) {

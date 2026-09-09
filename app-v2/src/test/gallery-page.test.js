@@ -9,9 +9,15 @@ async function readSource(relativePath) {
 test('gallery route uses the read-only feature hook and archive view', async () => {
   const galleryPageSource = await readSource('../pages/GalleryPage.jsx')
   const galleryViewSource = await readSource('../features/gallery/GalleryView.jsx')
+  const galleryDataSource = await readSource('../features/gallery/useGalleryData.js')
+  const mediaIndexSource = await readSource('../features/gallery/useMediaIndexSource.js')
 
   assert.match(galleryPageSource, /useGalleryData/)
   assert.match(galleryPageSource, /GalleryView/)
+  assert.match(galleryDataSource, /useMediaIndexSource/)
+  assert.match(galleryDataSource, /buildGalleryReadModelWithMediaIndex/)
+  assert.match(mediaIndexSource, /getFirestoreMediaIndexForCouple/)
+  assert.match(mediaIndexSource, /DATA_SOURCE_MODES\.firestore/)
   assert.doesNotMatch(galleryPageSource, /PlaceholderPage/)
   assert.match(galleryViewSource, /Our Memories/)
   assert.match(galleryViewSource, /Browse, open, remember/)
