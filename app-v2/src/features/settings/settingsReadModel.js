@@ -1,5 +1,6 @@
 import { getRuntimeMode, freezeClone } from '../../data/adapterUtils.js'
 import { approvedAccountMigrationGate, routeMigrationStatus } from '../../app/migrationStatus.js'
+import { getMediaSyncArchitectureContract } from '../../services/syncService.js'
 import {
   deriveSettingsStatus,
   describeSettingsOpening,
@@ -37,16 +38,17 @@ export function buildSettingsReadModel({
       settings: resolvedSettingsSource,
     },
   }
+  const mediaSync = getMediaSyncArchitectureContract(approvedUser?.coupleId || approvedUser?.raw?.coupleId || 'couple')
 
   const model = {
     status: deriveSettingsStatus(resolvedSettingsSource),
     account: selectSettingsAccount({ approvedUser, authUser }),
     appearance: selectSettingsAppearance(resolvedSettingsSource),
-    media: selectSettingsMedia(),
+    media: selectSettingsMedia(mediaSync),
     privacy: selectSettingsPrivacy(),
     compatibility: selectSettingsCompatibility(resolvedSnapshot),
     migration: selectSettingsMigrationProgress(migrationStatus, smokeGate),
-    advanced: selectSettingsAdvanced({ runtimeMode, compatibilitySnapshot: resolvedSnapshot }),
+    advanced: selectSettingsAdvanced({ runtimeMode, compatibilitySnapshot: resolvedSnapshot, mediaSync }),
     danger: selectSettingsDangerZone(),
   }
 

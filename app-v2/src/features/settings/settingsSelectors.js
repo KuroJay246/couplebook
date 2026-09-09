@@ -221,7 +221,7 @@ export function selectSettingsPrivacy() {
   }
 }
 
-export function selectSettingsMedia() {
+export function selectSettingsMedia(mediaSync = null) {
   return {
     title: 'Photos and videos',
     description: 'Media connection details belong here, while Album stays focused on browsing, opening, and adding memories.',
@@ -235,6 +235,18 @@ export function selectSettingsMedia() {
         label: 'Temporary previews',
         description: 'Preview links are session-only and must not be saved into Firestore or audit events.',
         meta: 'Not persisted',
+      },
+      {
+        label: 'Fast Album index',
+        description: mediaSync?.mediaIndexPath
+          ? `Stable Drive media metadata is read from ${mediaSync.mediaIndexPath}; original files stay in Google Drive.`
+          : 'Stable Drive media metadata is read from a couple-scoped Firestore media index when available.',
+        meta: 'Metadata only',
+      },
+      {
+        label: 'Continuous Drive sync',
+        description: 'Background Drive Changes sync, token refresh, and webhook processing require an approved trusted backend before they can run persistently.',
+        meta: mediaSync?.deploymentStatus === 'owner-approval-required' ? 'Owner approval required' : 'Backend required',
       },
       {
         label: 'Album access',
@@ -333,7 +345,7 @@ export function selectSettingsMigrationProgress(migrationStatus, smokeGate) {
   }
 }
 
-export function selectSettingsAdvanced({ runtimeMode, compatibilitySnapshot }) {
+export function selectSettingsAdvanced({ runtimeMode, compatibilitySnapshot, mediaSync = null }) {
   const settingsWarnings = compatibilitySnapshot?.sources?.settings?.warnings?.length || 0
 
   return {
@@ -355,6 +367,13 @@ export function selectSettingsAdvanced({ runtimeMode, compatibilitySnapshot }) {
         label: 'Sync boundary',
         description: 'Device and session management stay separate from these display preferences.',
         meta: 'Protected',
+      },
+      {
+        label: 'Drive media index',
+        description: mediaSync?.syncStatePath
+          ? `The browser can read indexed media and sync health from ${mediaSync.syncStatePath}, but cannot write backend-owned sync state.`
+          : 'The browser can read indexed media when available, but cannot write backend-owned Drive sync state.',
+        meta: 'Read-only',
       },
     ],
   }
