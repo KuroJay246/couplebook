@@ -16,6 +16,7 @@ export const DRIVE_STATE = Object.freeze({
 
 const DRIVE_API = 'https://www.googleapis.com/drive/v3'
 const UPLOAD_API = 'https://www.googleapis.com/upload/drive/v3/files'
+const DRIVE_FILE_FIELDS = 'id,name,mimeType,size,createdTime,modifiedTime,parents,md5Checksum,thumbnailLink,hasThumbnail,webViewLink,imageMediaMetadata,videoMediaMetadata'
 
 function driveError(state, message, cause) {
   const error = new Error(message)
@@ -150,7 +151,7 @@ export function createGoogleDriveMediaProvider({ clientId, fetchImpl = globalThi
 
   async function listFiles({ pageToken = '', pageSize = 100, includeUnsupported = false } = {}) {
     const query = [`'${folderId}' in parents`, 'trashed = false'].join(' and ')
-    const params = new URLSearchParams({ q: query, pageSize: String(Math.min(Math.max(pageSize, 1), 1000)), fields: 'nextPageToken,files(id,name,mimeType,size,createdTime,modifiedTime,parents,md5Checksum,imageMediaMetadata,videoMediaMetadata)', orderBy: 'createdTime desc' })
+    const params = new URLSearchParams({ q: query, pageSize: String(Math.min(Math.max(pageSize, 1), 1000)), fields: `nextPageToken,files(${DRIVE_FILE_FIELDS})`, orderBy: 'createdTime desc' })
     if (pageToken) params.set('pageToken', pageToken)
     const response = await driveFetch(fetchImpl, `${DRIVE_API}/files?${params}`, accessToken)
     const data = await response.json()
@@ -168,7 +169,7 @@ export function createGoogleDriveMediaProvider({ clientId, fetchImpl = globalThi
 
   async function getFile(fileId) {
     const params = new URLSearchParams({
-      fields: 'id,name,mimeType,size,parents,md5Checksum,createdTime,modifiedTime,imageMediaMetadata,videoMediaMetadata,trashed',
+      fields: `${DRIVE_FILE_FIELDS},trashed`,
     })
     const response = await driveFetch(fetchImpl, `${DRIVE_API}/files/${encodeURIComponent(fileId)}?${params}`, accessToken)
     return response.json()

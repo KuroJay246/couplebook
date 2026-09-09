@@ -61,14 +61,44 @@ function isActiveGeneration(generationRef, generation) {
   return generationRef.current === generation
 }
 
-function readCurrentProvider(providerRef, renderRef) {
+function createReconnectRequiredError() {
+  const error = new Error('Reconnect Google Drive before accessing private media.')
+  error.code = DRIVE_STATE.reconnectRequired
+  return error
+}
+
+function readCurrentProvider(providerRef, renderRef, apply) {
   const provider = providerRef.current
   if (!provider || renderRef.current.state !== DRIVE_STATE.connected) {
-    const error = new Error('Reconnect Google Drive before accessing private media.')
-    error.code = DRIVE_STATE.reconnectRequired
+    const error = createReconnectRequiredError()
+    apply?.({
+      state: DRIVE_STATE.reconnectRequired,
+      message: error.message,
+      files: [],
+      previews: {},
+    })
     throw error
   }
   return provider
+}
+
+function createAuthorizationTimeoutError() {
+  const error = new Error('Google Drive authorization did not finish. Check for a blocked Google popup, allow popups for localhost, then try again.')
+  error.code = DRIVE_STATE.temporaryFailure
+  return error
+}
+
+function withTimeout(promise, timeoutMs, createTimeoutError = createAuthorizationTimeoutError) {
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) return promise
+
+  let timeoutId = null
+  const timeoutPromise = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => reject(createTimeoutError()), timeoutMs)
+  })
+
+  return Promise.race([promise, timeoutPromise]).finally(() => {
+    if (timeoutId !== null) clearTimeout(timeoutId)
+  })
 }
 
 async function listAllFiles(provider) {
@@ -85,6 +115,7 @@ async function listAllFiles(provider) {
 
 export function createDriveConnectionController({
   createProvider,
+  connectTimeoutMs = 20000,
   loadIdentityScript = loadGoogleIdentityScript,
   revokeObjectUrl = (url) => URL.revokeObjectURL(url),
   skipOAuthOriginPreflight = false,
@@ -138,7 +169,7 @@ export function createDriveConnectionController({
         throw Object.assign(new Error(originIssue.message), { code: DRIVE_STATE.temporaryFailure })
       }
 
-      await loadIdentityScript()
+      await withTimeout(loadIdentityScript(), connectTimeoutMs)
       if (!isActiveGeneration(generationRef, generation)) {
         const error = new Error('A newer Google Drive session replaced this authorization attempt.')
         error.code = DRIVE_STATE.cancelled
@@ -146,8 +177,8 @@ export function createDriveConnectionController({
       }
 
       provider = createProvider()
-      const result = await provider.connect()
-      const files = await listAllFiles(provider)
+      const result = await withTimeout(provider.connect(), connectTimeoutMs)
+      const files = await withTimeout(listAllFiles(provider), connectTimeoutMs)
       if (!isActiveGeneration(generationRef, generation)) {
         provider.disconnect?.()
         const error = new Error('A newer Google Drive session replaced this authorization attempt.')
@@ -182,7 +213,7 @@ export function createDriveConnectionController({
 
   async function refreshListing() {
     const generation = generationRef.current
-    const provider = readCurrentProvider(providerRef, renderRef)
+    const provider = readCurrentProvider(providerRef, renderRef, apply)
     const files = await listAllFiles(provider)
     if (!isActiveGeneration(generationRef, generation)) return renderRef.current.files
     apply({ files })
@@ -194,7 +225,7 @@ export function createDriveConnectionController({
     if (current.previews[fileId]) return current.previews[fileId]
 
     const generation = generationRef.current
-    const provider = readCurrentProvider(providerRef, renderRef)
+    const provider = readCurrentProvider(providerRef, renderRef, apply)
     const url = await provider.fetchPreview(fileId)
     if (!isActiveGeneration(generationRef, generation)) {
       revokeObjectUrl(url)
@@ -231,7 +262,7 @@ export function createDriveConnectionController({
   }
 
   function openExternally(fileId) {
-    return readCurrentProvider(providerRef, renderRef).openExternally(fileId)
+    return readCurrentProvider(providerRef, renderRef, apply).openExternally(fileId)
   }
 
   function getSnapshot() {

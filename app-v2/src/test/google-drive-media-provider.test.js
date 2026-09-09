@@ -33,7 +33,10 @@ test('Google Drive provider lists only supported media and preserves pagination'
   const list = await provider.listFiles()
   assert.deepEqual(list.files.map((file) => file.id), ['image-1'])
   assert.equal(list.nextPageToken, 'next')
-  assert.match(calls.find((url) => url.includes('/files?')), /pageSize=100/)
+  const listCall = calls.find((url) => url.includes('/files?'))
+  assert.match(listCall, /pageSize=100/)
+  assert.match(decodeURIComponent(listCall), /thumbnailLink/)
+  assert.match(decodeURIComponent(listCall), /webViewLink/)
 })
 
 test('Google Drive provider revokes Drive preview object URLs on disconnect', async () => {

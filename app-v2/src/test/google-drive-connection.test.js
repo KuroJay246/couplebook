@@ -74,6 +74,51 @@ test('an in-flight preview from an old session is revoked and rejected', async (
   assert.ok(events.includes('revoke:blob:slow:slow-image'))
 })
 
+test('Drive authorization times out instead of staying stuck connecting', async () => {
+  const states = []
+  const controller = createDriveConnectionController({
+    connectTimeoutMs: 5,
+    createProvider: () => ({
+      async connect() {
+        return new Promise(() => {})
+      },
+      disconnect() {},
+    }),
+    loadIdentityScript: async () => {},
+  })
+  controller.bindReact((state) => states.push(state))
+
+  await assert.rejects(controller.connect(), (error) => {
+    assert.equal(error.code, DRIVE_STATE.temporaryFailure)
+    assert.match(error.message, /authorization did not finish/i)
+    return true
+  })
+  assert.equal(controller.getSnapshot().state, DRIVE_STATE.temporaryFailure)
+  assert.match(controller.getSnapshot().message, /blocked Google popup/i)
+  assert.equal(states.at(-1).state, DRIVE_STATE.temporaryFailure)
+})
+
+test('stale connected render state is downgraded when the provider is unavailable', async () => {
+  const events = []
+  const controller = createDriveConnectionController({
+    createProvider: () => makeProvider('provider-1', events),
+    loadIdentityScript: async () => {},
+  })
+  await controller.connect()
+  assert.equal(controller.getSnapshot().state, DRIVE_STATE.connected)
+
+  controller.cleanup()
+
+  await assert.rejects(controller.getPreview('provider-1-image'), (error) => {
+    assert.equal(error.code, DRIVE_STATE.reconnectRequired)
+    return true
+  })
+  assert.equal(controller.getSnapshot().state, DRIVE_STATE.reconnectRequired)
+  assert.match(controller.getSnapshot().message, /Reconnect Google Drive/i)
+  assert.deepEqual(controller.getSnapshot().files, [])
+  assert.deepEqual(controller.getSnapshot().previews, {})
+})
+
 test('local Drive test provider requires an explicit local browser hook', async () => {
   const originalWindow = globalThis.window
   globalThis.window = {

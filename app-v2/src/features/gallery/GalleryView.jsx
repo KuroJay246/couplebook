@@ -282,6 +282,7 @@ function UploadQueueCard({ item, onCancel, onChange, onRemove, onRetry }) {
 function DriveMediaGrid({ drive }) {
   const [loadingId, setLoadingId] = useState('')
   const [error, setError] = useState('')
+  const [visibleLimit, setVisibleLimit] = useState(24)
 
   async function showPreview(file) {
     setLoadingId(file.id)
@@ -296,6 +297,9 @@ function DriveMediaGrid({ drive }) {
   }
 
   if (drive.state !== 'connected') return null
+  const visibleFiles = drive.files.slice(0, visibleLimit)
+  const hiddenCount = Math.max(0, drive.files.length - visibleFiles.length)
+
   return (
     <Surface aria-label="Private folder previews" tone="soft">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
@@ -307,10 +311,15 @@ function DriveMediaGrid({ drive }) {
       </div>
       {error ? <InlineAlert className="mt-4" tone="error" title="Preview unavailable" description={error} /> : null}
       {drive.files.length === 0 ? <p className="mt-5 text-sm text-[var(--cb-text-secondary)]">The private folder is connected and there are no supported images or videos to preview yet.</p> : (
-        <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {drive.files.map((file) => {
+        <>
+          <p className="mt-4 text-sm text-[var(--cb-text-secondary)]">
+            Showing {visibleFiles.length} of {drive.files.length} Drive media files. Thumbnails are temporary session previews and are not saved to Firestore.
+          </p>
+          <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {visibleFiles.map((file) => {
             const preview = drive.previews[file.id]
             const isVideo = file.mimeType?.startsWith('video/')
+            const runtimeThumbnail = file.thumbnailLink || ''
             return (
               <article className="cb-card overflow-hidden" key={file.id}>
                 <MediaPreview
@@ -321,18 +330,26 @@ function DriveMediaGrid({ drive }) {
                   objectFit={isVideo ? 'contain' : 'cover'}
                   onLoadRequest={() => void showPreview(file)}
                   openOriginal={isVideo ? () => drive.openExternally(file.id) : undefined}
-                  src={preview || ''}
+                  poster={isVideo ? runtimeThumbnail : ''}
+                  src={preview || (isVideo ? '' : runtimeThumbnail)}
                   title={file.name}
                 />
                 <div className="p-4">
                   <p className="truncate text-sm font-semibold text-[var(--cb-text)]">{file.name}</p>
                   <p className="mt-1 text-xs text-[var(--cb-text-muted)]">{isVideo ? 'Video' : 'Photo'} from the private folder</p>
+                  {!isVideo && !preview ? <SecondaryButton className="mt-3" disabled={loadingId === file.id} onClick={() => void showPreview(file)}>{loadingId === file.id ? 'Loading...' : 'Open full preview'}</SecondaryButton> : null}
                   {isVideo ? <SecondaryButton className="mt-3" onClick={() => drive.openExternally(file.id)}>Open original</SecondaryButton> : null}
                 </div>
               </article>
             )
           })}
-        </div>
+          </div>
+          {hiddenCount > 0 ? (
+            <div className="mt-5 flex justify-center">
+              <SecondaryButton onClick={() => setVisibleLimit((current) => current + 24)}>Show {Math.min(24, hiddenCount)} more</SecondaryButton>
+            </div>
+          ) : null}
+        </>
       )}
     </Surface>
   )
