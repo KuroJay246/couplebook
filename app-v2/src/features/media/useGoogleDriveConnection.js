@@ -29,10 +29,12 @@ export function getGoogleDriveOAuthOriginIssue(location = typeof window === 'und
 
   if (hostname === '127.0.0.1' || hostname === '[::1]' || hostname === '::1') {
     const suggestedOrigin = port ? `http://localhost:${port}` : 'http://localhost'
+    const requiredOrigins = [origin, suggestedOrigin].filter(Boolean).join(' and ')
     return {
       origin,
       suggestedOrigin,
-      message: `Google Drive sign-in is blocked from ${origin}. Open Couple Book at ${suggestedOrigin} or add ${origin} as an authorized JavaScript origin for this Google OAuth client.`,
+      requiredOrigins,
+      message: `Google Drive sign-in is blocked from ${origin} unless that exact origin is registered for this Google OAuth client. Register ${requiredOrigins} as authorized JavaScript origins, then reopen Couple Book from the same origin shown in the browser address bar.`,
     }
   }
 

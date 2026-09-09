@@ -424,14 +424,14 @@ test('compatibility snapshot keeps bridge-owned source identities and aggregated
   assert.ok(Array.isArray(snapshot.warnings))
 })
 
-test('routes keep the compatibility provider inside the protected shell', async () => {
+test('routes keep normal protected data out of the legacy compatibility provider', async () => {
   const routesSource = await readFile(new URL('../app/routes.jsx', import.meta.url), 'utf8')
   const providerSource = await readFile(
     new URL('../features/compatibility/CompatibilityProvider.jsx', import.meta.url),
     'utf8',
   )
 
-  assert.match(routesSource, /<CompatibilityProvider>/)
+  assert.doesNotMatch(routesSource, /CompatibilityProvider/)
   assert.match(providerSource, /loadCompatibilitySnapshot/)
   assert.doesNotMatch(providerSource, /setItem\(/)
   assert.doesNotMatch(providerSource, /updateDoc\(/)

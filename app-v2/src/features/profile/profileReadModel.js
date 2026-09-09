@@ -11,7 +11,13 @@ import {
   selectSharedHighlights,
 } from './profileSelectors.js'
 
-export function buildProfileReadModel({ approvedUser = null, compatibilitySnapshot = null, profileSource = null } = {}) {
+export function buildProfileReadModel({
+  approvedUser = null,
+  compatibilitySnapshot = null,
+  contractSource = null,
+  favoritesSource = null,
+  profileSource = null,
+} = {}) {
   const snapshot = compatibilitySnapshot || {
     status: 'empty',
     sources: {},
@@ -21,6 +27,8 @@ export function buildProfileReadModel({ approvedUser = null, compatibilitySnapsh
     ...snapshot,
     sources: {
       ...(snapshot.sources || {}),
+      contract: contractSource || snapshot.sources?.contract,
+      favorites: favoritesSource || snapshot.sources?.favorites,
       profile: profileSource || snapshot.sources?.profile,
     },
   }

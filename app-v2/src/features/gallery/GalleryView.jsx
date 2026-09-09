@@ -17,6 +17,7 @@ import { SegmentedControl } from '../../components/ui/SegmentedControl.jsx'
 import { StatusBadge } from '../../components/ui/StatusBadge.jsx'
 import { ContentCard, Surface } from '../../components/ui/Surface.jsx'
 import { Toast } from '../../components/ui/Toast.jsx'
+import { useDialogAccessibility } from '../../components/ui/useDialogAccessibility.js'
 import { formatBytes } from '../../services/mediaUploadService.js'
 import { groupGalleryItemsByYear, selectFilteredGalleryItems } from './gallerySelectors.js'
 import { QUEUE_STATUS, queueStatusLabel, queueStatusTone } from './useMediaUploadQueue.js'
@@ -58,18 +59,35 @@ function toneFor(item) {
 
 function GalleryTile({ item, onSelect }) {
   const isVideo = item.media.kind === 'video'
+  const previewUrl = item.media.previewUrl || item.media.thumbnailUrl || ''
 
   return (
     <article className="cb-photo-book-tile gallery-item flex h-full flex-col overflow-hidden">
       <button
         aria-label={galleryTileLabel(item)}
-        className="cb-photo-book-tile-inner gallery-media-frame flex min-h-56 w-full flex-col justify-between bg-[linear-gradient(180deg,#fff9fb_0%,#fdf4f8_100%)] p-5 text-left"
+        className={`cb-photo-book-tile-inner gallery-media-frame ${isVideo ? 'is-video' : item.media.kind === 'image' ? 'is-photo' : item.specialMoment.isSpecial ? 'is-special' : 'is-memory'} flex min-h-72 w-full flex-col justify-between p-5 text-left`}
         onClick={() => onSelect(item)}
         type="button"
       >
         <div className="flex items-start justify-between gap-3">
           <StatusBadge tone={toneFor(item)}>{mediaStatus(item)}</StatusBadge>
           {isVideo ? <Film className="size-5 text-[var(--cb-accent)]" aria-hidden="true" /> : <ImageIcon className="size-5 text-[var(--cb-accent)]" aria-hidden="true" />}
+        </div>
+        <div className="gallery-tile-art" aria-hidden="true">
+          {previewUrl ? (
+            <MediaPreview
+              alt=""
+              className="h-full w-full"
+              controls={false}
+              kind={isVideo ? 'video' : 'image'}
+              objectFit="cover"
+              src={previewUrl}
+            />
+          ) : (
+            <div className="gallery-tile-art-empty">
+              {isVideo ? <Film className="size-8" /> : <ImageIcon className="size-8" />}
+            </div>
+          )}
         </div>
         <div>
           <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">{item.displayDate || 'Date review'}</p>
@@ -92,35 +110,32 @@ function GalleryTile({ item, onSelect }) {
 }
 
 function GalleryLightbox({ item, items, onClose, onNext, onPrevious, onRemove }) {
-  const dialogRef = useRef(null)
   const titleId = useId()
-  const onCloseRef = useRef(onClose)
   const onNextRef = useRef(onNext)
   const onPreviousRef = useRef(onPrevious)
+  const closeButtonRef = useRef(null)
+  const dialogRef = useDialogAccessibility({
+    active: Boolean(item),
+    initialFocusRef: closeButtonRef,
+    onClose,
+  })
   const hasVerifiedPrivateMedia = ['storage-verified', 'drive-verified'].includes(item?.media?.status)
 
   useEffect(() => {
-    onCloseRef.current = onClose
     onNextRef.current = onNext
     onPreviousRef.current = onPrevious
-  }, [onClose, onNext, onPrevious])
+  }, [onNext, onPrevious])
 
   useEffect(() => {
     if (!item) return undefined
 
     function handleKeyDown(event) {
-      if (event.key === 'Escape') onCloseRef.current()
       if (event.key === 'ArrowRight') onNextRef.current()
       if (event.key === 'ArrowLeft') onPreviousRef.current()
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [item])
-
-  useEffect(() => {
-    if (!item) return
-    dialogRef.current?.querySelector('button')?.focus()
   }, [item])
 
   if (!item) return null
@@ -156,7 +171,7 @@ function GalleryLightbox({ item, items, onClose, onNext, onPrevious, onRemove })
                 <h3 id={titleId} className="mt-3 text-2xl font-bold">{item.title}</h3>
                 <p className="mt-2 text-sm text-white/72">{item.displayDate || 'Date review'}</p>
               </div>
-              <TextButton aria-label="Close" className="text-white hover:bg-[var(--cb-surface)]/10" onClick={onClose}>Close</TextButton>
+              <TextButton aria-label="Close" className="text-white hover:bg-[var(--cb-surface)]/10" onClick={onClose} ref={closeButtonRef}>Close</TextButton>
             </div>
             <p className="text-sm leading-6 text-white/78">{item.description}</p>
             <div className="flex flex-wrap gap-2">
@@ -450,10 +465,10 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            {drive.state === 'connected' ? <StatusBadge tone="success">Private folder ready</StatusBadge> : <StatusBadge tone="warning">{drive.state === 'disconnected' ? 'Connection needed to add files' : drive.state}</StatusBadge>}
+            {drive.state === 'connected' ? <StatusBadge tone="success">Connected</StatusBadge> : <StatusBadge tone="warning">{drive.state === 'disconnected' ? 'Connection needed to add files' : drive.state}</StatusBadge>}
             {drive.state === 'connected'
               ? <SecondaryButton as={Link} to="/settings">Media settings</SecondaryButton>
-              : <PrimaryButton loading={drive.state === 'connecting'} onClick={() => void drive.connect()}>{drive.state === 'connecting' ? 'Connecting' : 'Connect to add files'}</PrimaryButton>}
+              : <PrimaryButton aria-label="Connect Google Drive" loading={drive.state === 'connecting'} onClick={() => void drive.connect()}>{drive.state === 'connecting' ? 'Connecting' : 'Connect to add files'}</PrimaryButton>}
             {drive.state !== 'connected' && drive.state !== 'connecting' && drive.state !== 'disconnected' ? <SecondaryButton onClick={() => void drive.retryAccess()}>Try again</SecondaryButton> : null}
           </div>
         </div>

@@ -1,7 +1,7 @@
 import { useAuth } from '../../auth/useAuth.js'
-import { useCompatibilityData } from '../compatibility/useCompatibilityData.js'
 import { useProfileSource } from '../profile/useProfileSource.js'
 import { buildContractReadModel } from './contractReadModel.js'
+import { useContractSource } from './useContractSource.js'
 
 function combineState(states) {
   if (states.includes('error')) return 'error'
@@ -12,7 +12,7 @@ function combineState(states) {
 
 export function useContractData() {
   const { approvedUser } = useAuth()
-  const { error, refresh, snapshot, state } = useCompatibilityData()
+  const { error, refresh, source: contractSource, state } = useContractSource()
   const { error: profileError, refresh: refreshProfile, source: profileSource, state: profileState } = useProfileSource()
 
   function refreshAll() {
@@ -23,7 +23,7 @@ export function useContractData() {
   return {
     model: buildContractReadModel({
       approvedUser,
-      compatibilitySnapshot: snapshot,
+      contractSource,
       profileSource,
     }),
     compatibilityError: error || profileError,

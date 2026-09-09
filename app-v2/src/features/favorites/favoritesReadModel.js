@@ -8,31 +8,47 @@ import {
   selectSharedFavorites,
 } from './favoritesSelectors.js'
 
-export function buildFavoritesReadModel({ approvedUser = null, compatibilitySnapshot = null, profileSource = null } = {}) {
+export function buildFavoritesReadModel({
+  approvedUser = null,
+  compatibilitySnapshot = null,
+  contractSource = null,
+  favoritesSource = null,
+  profileSource = null,
+} = {}) {
   const snapshot = compatibilitySnapshot || {
     status: 'empty',
     sources: {},
     warnings: [],
   }
+  const resolvedContractSource = contractSource || snapshot.sources?.contract
+  const resolvedFavoritesSource = favoritesSource || snapshot.sources?.favorites
   const resolvedProfileSource = profileSource || snapshot.sources?.profile
 
   const people = selectFavoritePeople({
     approvedUser,
-    favoritesSource: snapshot.sources?.favorites,
+    favoritesSource: resolvedFavoritesSource,
     profileSource: resolvedProfileSource,
   })
   const shared = selectSharedFavorites(people)
   const categoryIndex = selectCategoryIndex(people)
   const entries = selectFavoritesEntries({
-    contractSource: snapshot.sources?.contract,
+    contractSource: resolvedContractSource,
     profileSource: resolvedProfileSource,
     people,
   })
-  const sourceStatus = selectFavoritesSourceStatus(snapshot, people, shared)
+  const sourceStatus = selectFavoritesSourceStatus({
+    ...snapshot,
+    sources: {
+      ...(snapshot.sources || {}),
+      contract: resolvedContractSource,
+      favorites: resolvedFavoritesSource,
+      profile: resolvedProfileSource,
+    },
+  }, people, shared)
 
   return freezeClone({
     status: deriveFavoritesStatus({
-      favoritesSource: snapshot.sources?.favorites,
+      favoritesSource: resolvedFavoritesSource,
       people,
       profileSource: resolvedProfileSource,
     }),

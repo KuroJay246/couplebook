@@ -49,38 +49,35 @@ export function useCoupleScopedSource({ domainKey, emptySource, fixtureSource = 
     }
 
     let active = true
+    const requestOwnerKey = ownerKey
 
-    async function loadCurrentSource() {
-      try {
-        const source = await loadSource({
-          approvedUser,
-          coupleId: getApprovedUserCoupleId(approvedUser),
-          forceRefresh: refreshKey > 0,
-          refreshKey,
-          sourceMode,
-          uid: getApprovedUserUid(approvedUser),
-          username: approvedUser.username,
-        })
-
+    loadSource({
+      approvedUser,
+      coupleId: getApprovedUserCoupleId(approvedUser),
+      forceRefresh: refreshKey > 0,
+      refreshKey,
+      sourceMode,
+      uid: getApprovedUserUid(approvedUser),
+      username: approvedUser.username,
+    })
+      .then((source) => {
         if (!active) return
         setState({
           status: getHookStateFromSource(source),
           source,
           error: '',
-          ownerKey,
+          ownerKey: requestOwnerKey,
         })
-      } catch (error) {
+      })
+      .catch((error) => {
         if (!active) return
         setState({
           status: 'error',
           source: emptySource,
           error: error?.message || `${domainKey} could not be loaded.`,
-          ownerKey,
+          ownerKey: requestOwnerKey,
         })
-      }
-    }
-
-    void loadCurrentSource()
+      })
 
     return () => {
       active = false

@@ -24,11 +24,12 @@ import { buildContractReadModel } from '../features/contract/contractReadModel.j
 import { buildDashboardReadModel } from '../features/dashboard/dashboardReadModel.js'
 import { buildFavoritesReadModel } from '../features/favorites/favoritesReadModel.js'
 import { buildGalleryReadModel } from '../features/gallery/galleryReadModel.js'
-import { loadFirestoreCompatibilitySnapshot } from '../features/compatibility/firestoreCompatibilityService.js'
 import { buildProfileReadModel } from '../features/profile/profileReadModel.js'
 import { buildSettingsReadModel } from '../features/settings/settingsReadModel.js'
 import { buildSpecialMomentContentModel } from '../features/specialMoments/specialMomentContentModel.js'
 import { buildTimelineReadModel } from '../features/timeline/timelineReadModel.js'
+import { getContractSourceForApprovedUser } from '../services/contractService.js'
+import { getFavoritesSourceForApprovedUser } from '../services/favoritesService.js'
 import { getFirestoreMemoriesForCouple } from '../services/memoryService.js'
 import { getFirestoreProfileSourceForCouple } from '../services/profileService.js'
 import { getSettingsSourceForApprovedUser } from '../services/settingsService.js'
@@ -739,17 +740,18 @@ test('authorized members can archive verified media memories, but invalid remova
 test('app-v2 Firestore source mode reads seeded fictional data through read models', { skip: !hasEmulator }, async () => {
   const db = authed(ids.memberOne)
   const approvedUser = { uid: ids.memberOne, username: 'Member One', displayName: 'Member One', coupleId: ids.couple }
-  const snapshot = await loadFirestoreCompatibilitySnapshot({ approvedUser, firestore: db })
   const memorySource = await getFirestoreMemoriesForCouple(ids.couple, { firestore: db })
   const profileSource = await getFirestoreProfileSourceForCouple(ids.couple, { firestore: db })
+  const favoritesSource = await getFavoritesSourceForApprovedUser({ approvedUser, firestore: db, sourceMode: 'firestore' })
+  const contractSource = await getContractSourceForApprovedUser({ approvedUser, firestore: db, sourceMode: 'firestore' })
   const settingsSource = await getSettingsSourceForApprovedUser({ approvedUser, firestore: db, sourceMode: 'firestore' })
   const birthdaySource = await getFirestoreSpecialMoment(ids.couple, 'birthday', { firestore: db })
 
-  const dashboard = buildDashboardReadModel({ approvedUser, compatibilitySnapshot: snapshot, memorySource, profileSource, settingsSource, routeMeta: protectedRouteMeta })
-  const profile = buildProfileReadModel({ approvedUser, compatibilitySnapshot: snapshot, profileSource })
-  const favorites = buildFavoritesReadModel({ approvedUser, compatibilitySnapshot: snapshot, profileSource })
-  const settings = buildSettingsReadModel({ approvedUser, compatibilitySnapshot: snapshot, profileSource, settingsSource })
-  const contract = buildContractReadModel({ approvedUser, compatibilitySnapshot: snapshot, profileSource })
+  const dashboard = buildDashboardReadModel({ approvedUser, memorySource, profileSource, settingsSource, routeMeta: protectedRouteMeta })
+  const profile = buildProfileReadModel({ approvedUser, contractSource, favoritesSource, profileSource })
+  const favorites = buildFavoritesReadModel({ approvedUser, contractSource, favoritesSource, profileSource })
+  const settings = buildSettingsReadModel({ approvedUser, profileSource, settingsSource })
+  const contract = buildContractReadModel({ approvedUser, contractSource, profileSource })
   const timeline = buildTimelineReadModel({ memorySource })
   const gallery = buildGalleryReadModel({ memorySource })
   const birthday = buildSpecialMomentContentModel({
@@ -758,7 +760,11 @@ test('app-v2 Firestore source mode reads seeded fictional data through read mode
     contentState: birthdaySource.status,
   })
 
-  assert.equal(snapshot.status, 'ready')
+  assert.ok(['ready', 'partial'].includes(memorySource.status))
+  assert.ok(['ready', 'partial'].includes(profileSource.status))
+  assert.ok(['ready', 'partial'].includes(favoritesSource.status))
+  assert.ok(['ready', 'partial'].includes(contractSource.status))
+  assert.ok(['ready', 'partial'].includes(settingsSource.status))
   assert.ok(['ready', 'partial'].includes(profile.status))
   assert.ok(['ready', 'partial'].includes(favorites.status))
   assert.ok(['ready', 'partial'].includes(settings.status))

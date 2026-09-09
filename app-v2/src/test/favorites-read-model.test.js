@@ -408,5 +408,7 @@ test('favorites feature sources stay read-only and avoid local auth shortcuts', 
   assert.doesNotMatch(readModelSource, /localStorage|setItem|updateDoc|addDoc|deleteDoc|console\.log/)
   assert.doesNotMatch(selectorsSource, /localStorage|setItem|updateDoc|addDoc|deleteDoc|console\.log/)
   assert.doesNotMatch(hookSource, /setItem|signIn|signOut/)
-  assert.match(hookSource, /useCompatibilityData/)
+  assert.match(hookSource, /useFavoritesSource/)
+  assert.match(hookSource, /useContractSource/)
+  assert.doesNotMatch(hookSource, /useCompatibilityData/)
 })

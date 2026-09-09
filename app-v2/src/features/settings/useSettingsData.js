@@ -1,5 +1,4 @@
 import { useAuth } from '../../auth/useAuth.js'
-import { useCompatibilityData } from '../compatibility/useCompatibilityData.js'
 import { useProfileSource } from '../profile/useProfileSource.js'
 import { buildSettingsReadModel } from './settingsReadModel.js'
 import { useSettingsSource } from './useSettingsSource.js'
@@ -14,7 +13,6 @@ function combineState(states) {
 
 export function useSettingsData() {
   const { approvedUser, user } = useAuth()
-  const { error, refresh, snapshot, state } = useCompatibilityData()
   const { error: profileError, refresh: refreshProfile, source: profileSource, state: profileState } = useProfileSource()
   const { error: settingsError, refresh: refreshSettings, source: settingsSource, state: settingsState } = useSettingsSource()
 
@@ -22,14 +20,12 @@ export function useSettingsData() {
     model: buildSettingsReadModel({
       approvedUser,
       authUser: user,
-      compatibilitySnapshot: snapshot,
       profileSource,
       settingsSource,
     }),
-    compatibilityError: error || profileError || settingsError ? toUserFacingError(error || profileError || settingsError, 'We could not load Settings right now. Try again.') : null,
-    compatibilityState: combineState([state, profileState, settingsState]),
+    compatibilityError: profileError || settingsError ? toUserFacingError(profileError || settingsError, 'We could not load Settings right now. Try again.') : null,
+    compatibilityState: combineState([profileState, settingsState]),
     refreshCompatibility: () => {
-      refresh()
       refreshProfile()
       refreshSettings()
     },

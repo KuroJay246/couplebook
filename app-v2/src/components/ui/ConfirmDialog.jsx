@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { AlertTriangle, Trash2 } from 'lucide-react'
+import { useDialogAccessibility } from './useDialogAccessibility.js'
 
 export function ConfirmDialog({
   open,
@@ -17,30 +18,17 @@ export function ConfirmDialog({
   const messageId = useId()
   const confirmRef = useRef(null)
   const onCancelRef = useRef(onCancel)
-  const previousFocusRef = useRef(null)
+  const dialogRef = useDialogAccessibility({
+    active: open,
+    initialFocusRef: confirmRef,
+    onClose: () => {
+      if (!pending) onCancelRef.current?.()
+    },
+  })
 
   useEffect(() => {
     onCancelRef.current = onCancel
   }, [onCancel])
-
-  useEffect(() => {
-    if (!open) return undefined
-    previousFocusRef.current = document.activeElement
-    const timer = window.setTimeout(() => confirmRef.current?.focus(), 0)
-    return () => window.clearTimeout(timer)
-  }, [open])
-
-  useEffect(() => {
-    if (!open) return undefined
-    function handleKeyDown(event) {
-      if (event.key === 'Escape' && !pending) onCancelRef.current?.()
-    }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown)
-      if (previousFocusRef.current instanceof HTMLElement) previousFocusRef.current.focus()
-    }
-  }, [open, pending])
 
   if (!open) return null
 
@@ -53,6 +41,7 @@ export function ConfirmDialog({
         onClick={!pending ? onCancel : undefined}
       />
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
