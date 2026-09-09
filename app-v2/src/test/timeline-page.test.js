@@ -8,9 +8,13 @@ async function readSource(relativePath) {
 
 test('timeline route uses the read-only feature hook and story view', async () => {
   const timelinePageSource = await readSource('../pages/TimelinePage.jsx')
+  const timelineHookSource = await readSource('../features/timeline/useTimelineData.js')
   const timelineViewSource = await readSource('../features/timeline/TimelineView.jsx')
 
   assert.match(timelinePageSource, /useTimelineData/)
+  assert.match(timelineHookSource, /useMemorySource/)
+  assert.doesNotMatch(timelineHookSource, /useCompatibilityData/)
+  assert.match(timelineHookSource, /memorySource: source/)
   assert.match(timelinePageSource, /TimelineView/)
   assert.doesNotMatch(timelinePageSource, /PlaceholderPage/)
   assert.match(timelineViewSource, /Our Story/)

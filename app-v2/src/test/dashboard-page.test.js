@@ -16,6 +16,8 @@ test('dashboard page uses the dedicated feature slice instead of the migration p
   assert.match(pageSource, /useDashboardModel/)
   assert.doesNotMatch(pageSource, /PlaceholderPage/)
   assert.match(hookSource, /useCompatibilityData/)
+  assert.match(hookSource, /useMemorySource/)
+  assert.match(hookSource, /memorySource/)
   assert.match(hookSource, /buildDashboardReadModel/)
   assert.match(viewSource, /model\.recentMemories/)
   assert.match(viewSource, /model\.milestones/)

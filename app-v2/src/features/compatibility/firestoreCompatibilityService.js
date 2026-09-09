@@ -2,7 +2,6 @@ import { createCompatibilityResult, FIRESTORE_SOURCE, freezeClone, normalizePers
 import { getCoupleDocumentSnapshot, getCoupleMembership } from '../../services/coupleService.js'
 import { getFirestoreContract } from '../../services/contractService.js'
 import { getFirestoreFavoritesForCouple } from '../../services/favoritesService.js'
-import { getFirestoreMemoriesForCouple } from '../../services/memoryService.js'
 import { getFirestoreProfilesForCouple } from '../../services/profileService.js'
 import { getFirestorePrivateSettings, getFirestoreSharedSettings } from '../../services/settingsService.js'
 import { getFirestoreSpecialMoment } from '../../services/specialMomentService.js'
@@ -146,7 +145,6 @@ export async function loadFirestoreCompatibilitySnapshot(options = {}) {
         profile: unavailable('Firestore mode requires an approved user document with a coupleId.'),
         settings: unavailable('Firestore mode requires an approved user document with a coupleId.'),
         contract: unavailable('Firestore mode requires an approved user document with a coupleId.'),
-        memories: unavailable('Firestore mode requires an approved user document with a coupleId.'),
         specialMoments: {
           birthday: unavailable('Firestore mode requires an approved user document with a coupleId.'),
           valentine: unavailable('Firestore mode requires an approved user document with a coupleId.'),
@@ -166,7 +164,6 @@ export async function loadFirestoreCompatibilitySnapshot(options = {}) {
     sharedSettings,
     privateSettings,
     contract,
-    memories,
     birthday,
     valentine,
     confession,
@@ -178,7 +175,6 @@ export async function loadFirestoreCompatibilitySnapshot(options = {}) {
     getFirestoreSharedSettings(coupleId, serviceOptions),
     getFirestorePrivateSettings(coupleId, uid, serviceOptions),
     getFirestoreContract(coupleId, serviceOptions),
-    getFirestoreMemoriesForCouple(coupleId, serviceOptions),
     getFirestoreSpecialMoment(coupleId, 'birthday', serviceOptions),
     getFirestoreSpecialMoment(coupleId, 'valentine', serviceOptions),
     getFirestoreSpecialMoment(coupleId, 'confession', serviceOptions),
@@ -189,7 +185,7 @@ export async function loadFirestoreCompatibilitySnapshot(options = {}) {
   const settings = settingsToCompatibility({ shared: sharedSettings, privateResult: privateSettings, username })
   const contractSource = contractToCompatibility(contract, username)
   const specialMoments = Object.freeze({ birthday, valentine, confession })
-  const sources = { favorites, profile, settings, contract: contractSource, memories, specialMoments }
+  const sources = { favorites, profile, settings, contract: contractSource, specialMoments }
   const results = [couple, membership, ...Object.values(sources), birthday, valentine, confession]
 
   return Object.freeze({

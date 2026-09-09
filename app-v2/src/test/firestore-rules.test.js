@@ -29,6 +29,7 @@ import { buildProfileReadModel } from '../features/profile/profileReadModel.js'
 import { buildSettingsReadModel } from '../features/settings/settingsReadModel.js'
 import { buildSpecialMomentContentModel } from '../features/specialMoments/specialMomentContentModel.js'
 import { buildTimelineReadModel } from '../features/timeline/timelineReadModel.js'
+import { getFirestoreMemoriesForCouple } from '../services/memoryService.js'
 
 const projectId = 'demo-couplebook-app-v2'
 const rules = readFileSync(new URL('../../../firestore.rules', import.meta.url), 'utf8')
@@ -736,14 +737,15 @@ test('app-v2 Firestore source mode reads seeded fictional data through read mode
   const db = authed(ids.memberOne)
   const approvedUser = { uid: ids.memberOne, username: 'Member One', displayName: 'Member One', coupleId: ids.couple }
   const snapshot = await loadFirestoreCompatibilitySnapshot({ approvedUser, firestore: db })
+  const memorySource = await getFirestoreMemoriesForCouple(ids.couple, { firestore: db })
 
-  const dashboard = buildDashboardReadModel({ approvedUser, compatibilitySnapshot: snapshot, routeMeta: protectedRouteMeta })
+  const dashboard = buildDashboardReadModel({ approvedUser, compatibilitySnapshot: snapshot, memorySource, routeMeta: protectedRouteMeta })
   const profile = buildProfileReadModel({ approvedUser, compatibilitySnapshot: snapshot })
   const favorites = buildFavoritesReadModel({ approvedUser, compatibilitySnapshot: snapshot })
   const settings = buildSettingsReadModel({ approvedUser, compatibilitySnapshot: snapshot })
   const contract = buildContractReadModel({ approvedUser, compatibilitySnapshot: snapshot })
-  const timeline = buildTimelineReadModel({ compatibilitySnapshot: snapshot })
-  const gallery = buildGalleryReadModel({ compatibilitySnapshot: snapshot })
+  const timeline = buildTimelineReadModel({ memorySource })
+  const gallery = buildGalleryReadModel({ memorySource })
   const birthday = buildSpecialMomentContentModel({
     momentKey: 'birthday',
     contentSource: snapshot.sources.specialMoments.birthday,
@@ -759,7 +761,7 @@ test('app-v2 Firestore source mode reads seeded fictional data through read mode
   assert.ok(['ready', 'partial'].includes(gallery.status))
   assert.equal(birthday.status, 'ready')
   assert.equal(dashboard.recentMemories.totalCount, 1)
-  assert.equal(snapshot.sources.memories.data.memories[0].mediaState, 'none')
+  assert.equal(memorySource.data.memories[0].mediaState, 'none')
 })
 
 test('rules source has no public reads, hardcoded real UIDs, email authority, or broad writes', () => {

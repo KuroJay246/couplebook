@@ -1,13 +1,13 @@
-import { useCompatibilityData } from '../compatibility/useCompatibilityData.js'
+import { useMemorySource } from '../memories/useMemorySource.js'
 import { buildTimelineReadModel } from './timelineReadModel.js'
 import { toUserFacingError } from '../../services/userFacingError.js'
 
 export function useTimelineData() {
-  const { error, refresh, snapshot, state } = useCompatibilityData()
+  const { error, refresh, source, state } = useMemorySource()
 
   return {
     model: buildTimelineReadModel({
-      compatibilitySnapshot: snapshot,
+      memorySource: source,
     }),
     compatibilityError: error ? toUserFacingError(error, 'We could not load your story right now. Try again.') : null,
     compatibilityState: state,

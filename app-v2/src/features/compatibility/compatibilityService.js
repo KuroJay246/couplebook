@@ -1,6 +1,5 @@
 import { getLegacyContract } from '../../services/contractService.js'
 import { getLegacyFavorites } from '../../services/favoritesService.js'
-import { getLegacyMemories } from '../../services/memoryService.js'
 import { getLegacyProfile } from '../../services/profileService.js'
 import { getLegacySettings } from '../../services/settingsService.js'
 import { getLegacySpecialMoment } from '../../services/specialMomentService.js'
@@ -38,25 +37,23 @@ export async function loadCompatibilitySnapshot(options = {}) {
         profile: null,
         settings: null,
         contract: null,
-        memories: null,
       },
       warnings: ['Compatibility data requires an approved username.'],
     }
   }
 
-  const [favorites, profile, settings, contract, memories, birthday, valentine, confession] = await Promise.all([
+  const [favorites, profile, settings, contract, birthday, valentine, confession] = await Promise.all([
     getLegacyFavorites(options),
     getLegacyProfile(options),
     getLegacySettings(options),
     getLegacyContract(options),
-    getLegacyMemories(options),
     getLegacySpecialMoment('birthday', options),
     getLegacySpecialMoment('valentine', options),
     getLegacySpecialMoment('confession', options),
   ])
 
   const specialMoments = Object.freeze({ birthday, valentine, confession })
-  const sources = { favorites, profile, settings, contract, memories, specialMoments }
+  const sources = { favorites, profile, settings, contract, specialMoments }
   const results = Object.values(sources)
 
   return Object.freeze({

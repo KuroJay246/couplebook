@@ -1,13 +1,13 @@
-import { useCompatibilityData } from '../compatibility/useCompatibilityData.js'
+import { useMemorySource } from '../memories/useMemorySource.js'
 import { buildGalleryReadModel } from './galleryReadModel.js'
 import { toUserFacingError } from '../../services/userFacingError.js'
 
 export function useGalleryData() {
-  const { error, refresh, snapshot, state } = useCompatibilityData()
+  const { error, refresh, source, state } = useMemorySource()
 
   return {
     model: buildGalleryReadModel({
-      memorySource: snapshot?.sources?.memories,
+      memorySource: source,
     }),
     compatibilityError: error ? toUserFacingError(error, 'We could not load your Album right now. Try again.') : null,
     compatibilityState: state,

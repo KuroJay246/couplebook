@@ -123,7 +123,8 @@ test('settings read model keeps approved identity, appearance notes, and migrati
   assert.equal(model.media.items[1].label, 'Temporary previews')
   assert.equal(model.privacy.items[2].label, 'Browser storage is not authentication')
   assert.equal(model.compatibility.items[0].statusLabel, 'Available')
-  assert.equal(model.compatibility.items[4].statusLabel, 'Private')
+  assert.equal(model.compatibility.items.length, 4)
+  assert.equal(model.compatibility.items.some((item) => item.key === 'memories'), false)
   assert.ok(model.migration.completed.some((entry) => entry.label === 'Home'))
   assert.ok(model.migration.completed.some((entry) => entry.label === 'Settings'))
   assert.deepEqual(model.migration.smokeGate, {

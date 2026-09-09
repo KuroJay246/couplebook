@@ -93,15 +93,17 @@ function deriveTimelineStatus(memorySource, normalizedMemories) {
   return hasQuarantinedRoutes ? 'partial' : 'ready'
 }
 
-export function buildTimelineReadModel({ compatibilitySnapshot = null } = {}) {
+const EMPTY_MEMORY_SOURCE = Object.freeze({
+  status: 'empty',
+  source: 'memory-domain',
+  data: null,
+  warnings: [],
+})
+
+export function buildTimelineReadModel({ compatibilitySnapshot = null, memorySource = null } = {}) {
   const snapshot = compatibilitySnapshot || createEmptySnapshot()
-  const memorySource = snapshot.sources?.memories || {
-    status: 'empty',
-    source: 'legacy-local-dev',
-    data: null,
-    warnings: [],
-  }
-  const normalizedMemories = normalizeTimelineMemories(memorySource?.data?.memories || [])
+  const resolvedMemorySource = memorySource || snapshot.sources?.memories || EMPTY_MEMORY_SOURCE
+  const normalizedMemories = normalizeTimelineMemories(resolvedMemorySource?.data?.memories || [])
   const archivedMemories = normalizedMemories.flatMap((memory) => (memory.status === 'archived' ? [{
       id: memory.id,
       status: memory.status,
@@ -118,13 +120,13 @@ export function buildTimelineReadModel({ compatibilitySnapshot = null } = {}) {
     }] : []))
 
   return freezeClone({
-    status: deriveTimelineStatus(memorySource, normalizedMemories),
+    status: deriveTimelineStatus(resolvedMemorySource, normalizedMemories),
     summary: buildTimelineSummary(normalizedMemories),
     featured: null,
     chapters: buildTimelineChapters(normalizedMemories),
     archivedMemories,
     filters: buildTimelineFilters(normalizedMemories),
-    sourceStatus: buildSourceStatus(memorySource),
-    warnings: Array.isArray(memorySource?.warnings) ? [...memorySource.warnings] : [],
+    sourceStatus: buildSourceStatus(resolvedMemorySource),
+    warnings: Array.isArray(resolvedMemorySource?.warnings) ? [...resolvedMemorySource.warnings] : [],
   })
 }

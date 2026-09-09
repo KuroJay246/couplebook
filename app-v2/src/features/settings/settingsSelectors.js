@@ -1,4 +1,4 @@
-import { LEGACY_LOCAL_DEV_SOURCE, toTrimmedString } from '../../data/adapterUtils.js'
+import { toTrimmedString } from '../../data/adapterUtils.js'
 import { findTheme, normalizeThemeId } from '../../theme/themeRegistry.js'
 
 const LEGACY_THEME_LABELS = Object.freeze({
@@ -22,7 +22,6 @@ const COMPATIBILITY_ITEM_LABELS = Object.freeze({
   profile: 'Shared profile context',
   favorites: 'Shared favorites context',
   contract: 'Contract context',
-  memories: 'Local memory bridge',
 })
 
 const MIGRATION_PROGRESS_LABELS = Object.freeze({
@@ -247,7 +246,6 @@ export function selectSettingsMedia() {
 }
 
 function getCompatibilityStatusLabel(key, source) {
-  if (key === 'memories') return 'Private'
   if (source?.status === 'ready') return 'Available'
   if (source?.status === 'empty') return 'Awaiting migration'
   if (source?.status === 'unavailable') return 'Not connected'
@@ -286,17 +284,11 @@ function getCompatibilitySummary(key, source) {
     if (status === 'invalid') return 'Protected contract context needs review before it can be summarized here safely.'
   }
 
-  if (key === 'memories') {
-    if (status === 'ready') return 'Private memories are available for this approved account.'
-    if (status === 'invalid') return 'Some private memories need review before they can be shown safely.'
-    return 'Private memories will appear here when they are available to your account.'
-  }
-
   return 'This shared detail will appear here when it is available to your account.'
 }
 
 export function selectSettingsCompatibility(snapshot) {
-  const sourceOrder = ['settings', 'profile', 'favorites', 'contract', 'memories']
+  const sourceOrder = ['settings', 'profile', 'favorites', 'contract']
   const items = sourceOrder.map((key) => {
     const source = snapshot?.sources?.[key] || null
     const sourceName = source?.source || ''
@@ -307,7 +299,7 @@ export function selectSettingsCompatibility(snapshot) {
       status: source?.status || 'empty',
       statusLabel: getCompatibilityStatusLabel(key, source),
       summary: getCompatibilitySummary(key, source),
-      sourceName: key === 'memories' && sourceName === LEGACY_LOCAL_DEV_SOURCE ? 'Local development only' : '',
+      sourceName,
     }
   })
 

@@ -65,7 +65,7 @@ const VIEWPORTS = Object.freeze([
 const DEFAULT_ROUTE_SET = Object.freeze([
   { path: '/dashboard', slug: 'dashboard', heading: 'Our memories, plans, and special moments in one place.' },
   { path: '/timeline', slug: 'timeline', heading: /Our Story/ },
-  { path: '/gallery', slug: 'gallery', heading: /Our Shared Gallery/ },
+  { path: '/gallery', slug: 'gallery', heading: /Our Memories/ },
   { path: '/profile', slug: 'profile', heading: /^Us$/ },
   { path: '/favorites', slug: 'favorites', heading: /Favorite Things/ },
   { path: '/plans', slug: 'plans', heading: 'Things we want to do together' },
@@ -78,7 +78,7 @@ const DEFAULT_ROUTE_SET = Object.freeze([
 
 const THEME_ROUTES = Object.freeze([
   { path: '/dashboard', slug: 'dashboard', heading: 'Our memories, plans, and special moments in one place.' },
-  { path: '/gallery', slug: 'gallery', heading: /Our Shared Gallery/ },
+  { path: '/gallery', slug: 'gallery', heading: /Our Memories/ },
   { path: '/settings', slug: 'settings', heading: /Settings/ },
 ])
 

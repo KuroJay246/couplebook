@@ -389,7 +389,8 @@ test('gallery architecture stays read-only and routes Storage through the media 
   const combined = `${selectorsSource}\n${readModelSource}\n${hookSource}`
 
   assert.match(readModelSource, /memorySource = null/)
-  assert.match(hookSource, /memorySource: snapshot\?\.sources\?\.memories/)
+  assert.match(hookSource, /useMemorySource/)
+  assert.match(hookSource, /memorySource: source/)
   assert.doesNotMatch(hookSource, /compatibilitySnapshot: snapshot/)
   assert.doesNotMatch(combined, /fetch\(|XMLHttpRequest|new Image|createObjectURL|getDownloadURL|firebase\/storage/)
   assert.doesNotMatch(combined, /\bsetItem\s*\(|\bupdateDoc\s*\(|\baddDoc\s*\(|\bdeleteDoc\s*\(|\bsetDoc\s*\(/)
