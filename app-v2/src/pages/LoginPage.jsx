@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Heart, LockKeyhole, Sparkles } from 'lucide-react'
+import { Heart, KeyRound, LockKeyhole, Sparkles } from 'lucide-react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { ErrorState } from '../components/ErrorState'
 import { LoadingState } from '../components/LoadingState'
@@ -9,12 +9,13 @@ import { getRequestedReturnPath } from '../utils/navigation'
 import { toAuthError } from '../services/userFacingError.js'
 
 export function LoginPage() {
-  const { authError, authInitialized, isAuthorized, isConfigured, loading, signIn, signOut, user } = useAuth()
+  const { authError, authInitialized, isAuthorized, isConfigured, loading, signIn, signInWithGoogle, signOut, user } = useAuth()
   const location = useLocation()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [submitError, setSubmitError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [googleSubmitting, setGoogleSubmitting] = useState(false)
 
   if (loading && !authInitialized) {
     return (
@@ -44,6 +45,19 @@ export function LoginPage() {
       setSubmitError(toAuthError(error))
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  async function handleGoogleSignIn() {
+    setSubmitError('')
+    setGoogleSubmitting(true)
+
+    try {
+      await signInWithGoogle()
+    } catch (error) {
+      setSubmitError(toAuthError(error, 'Google sign-in could not open Couple Book. If this is your first time, sign in with email and link Google from Settings.'))
+    } finally {
+      setGoogleSubmitting(false)
     }
   }
 
@@ -123,6 +137,22 @@ export function LoginPage() {
               {submitting || loading ? 'Verifying private access...' : 'Enter Couple Book'}
             </button>
           </form>
+
+          <div className="my-6 flex items-center gap-3" aria-hidden="true">
+            <span className="h-px flex-1" style={{ background: 'var(--cb-border)' }} />
+            <span className="cb-kicker">or</span>
+            <span className="h-px flex-1" style={{ background: 'var(--cb-border)' }} />
+          </div>
+
+          <button
+            className="cb-button cb-button-secondary inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl px-5 text-sm font-bold disabled:opacity-50"
+            disabled={!isConfigured || loading || submitting || googleSubmitting}
+            onClick={handleGoogleSignIn}
+            type="button"
+          >
+            <KeyRound className="size-4" aria-hidden="true" />
+            {googleSubmitting || loading ? 'Opening Google...' : 'Continue with Google'}
+          </button>
 
           {(submitError || authError) ? (
             <p aria-live="polite" className="mt-4 text-sm" style={{ color: 'var(--cb-error-text)' }}>

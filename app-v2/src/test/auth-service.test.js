@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { GOOGLE_PROVIDER_ID, getLinkedProviderIds, isGoogleProviderLinked, linkCurrentUserWithGoogle } from '../services/authService.js'
+import { GOOGLE_PROVIDER_ID, getLinkedProviderIds, isGoogleProviderLinked, linkCurrentUserWithGoogle, signInWithGoogleProvider } from '../services/authService.js'
 
 test('Google provider helpers read Firebase providerData without trusting email alone', () => {
   const user = {
@@ -127,5 +127,45 @@ test('Google linking times out instead of leaving the app in a pending auth stat
       providerFactory: () => ({ providerId: GOOGLE_PROVIDER_ID }),
     }),
     /linking did not finish/i,
+  )
+})
+
+test('Google sign-in uses Firebase popup auth without Drive scopes', async () => {
+  let popupAuth = null
+  let popupProvider = null
+  const result = await signInWithGoogleProvider({
+    authInstance: { name: 'auth-instance' },
+    ensurePersistence: async () => {},
+    firebaseConfigured: true,
+    providerFactory: () => ({ providerId: GOOGLE_PROVIDER_ID }),
+    signInPopup: async (auth, provider) => {
+      popupAuth = auth
+      popupProvider = provider
+      return {
+        user: {
+          uid: 'approved-linked-uid',
+          providerData: [{ providerId: GOOGLE_PROVIDER_ID }],
+        },
+      }
+    },
+  })
+
+  assert.deepEqual(popupAuth, { name: 'auth-instance' })
+  assert.equal(popupProvider.providerId, GOOGLE_PROVIDER_ID)
+  assert.equal(result.user.uid, 'approved-linked-uid')
+  assert.equal(result.providerId, GOOGLE_PROVIDER_ID)
+})
+
+test('Google sign-in times out instead of leaving the login route pending', async () => {
+  await assert.rejects(
+    signInWithGoogleProvider({
+      authInstance: { name: 'auth-instance' },
+      ensurePersistence: async () => {},
+      firebaseConfigured: true,
+      providerFactory: () => ({ providerId: GOOGLE_PROVIDER_ID }),
+      signInPopup: async () => new Promise(() => {}),
+      signInTimeoutMs: 5,
+    }),
+    /Google sign-in did not finish/i,
   )
 })

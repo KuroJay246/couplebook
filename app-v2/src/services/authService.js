@@ -4,6 +4,7 @@ import {
   linkWithPopup,
   onAuthStateChanged,
   setPersistence,
+  signInWithPopup,
   signInWithEmailAndPassword,
   signOut,
 } from 'firebase/auth'
@@ -70,6 +71,10 @@ function createGoogleLinkTimeoutError() {
   return new Error('Google sign-in linking did not finish. Check for a blocked Google popup, allow popups for localhost, then try again.')
 }
 
+function createGoogleSignInTimeoutError() {
+  return new Error('Google sign-in did not finish. Check for a blocked Google popup, allow popups for localhost, then try again.')
+}
+
 function createUidMismatchError() {
   const error = new Error('Google sign-in returned a different Firebase account. Sign back in with the approved Couple Book account, then link Google from Settings.')
   error.code = 'auth/google-link-uid-mismatch'
@@ -112,6 +117,23 @@ export async function linkCurrentUserWithGoogle({
   const result = await withTimeout(linkPopup(currentUser, providerFactory()), linkTimeoutMs, createGoogleLinkTimeoutError)
   if (result.user?.uid !== currentUser.uid) throw createUidMismatchError()
   return { user: result.user, alreadyLinked: false, providerId: GOOGLE_PROVIDER_ID }
+}
+
+export async function signInWithGoogleProvider({
+  authInstance = auth,
+  ensurePersistence = ensureAuthPersistence,
+  firebaseConfigured = isFirebaseConfigured,
+  providerFactory = createGoogleAuthProvider,
+  signInPopup = signInWithPopup,
+  signInTimeoutMs = 20000,
+} = {}) {
+  if (!authInstance || !firebaseConfigured) {
+    throw new Error(missingFirebaseConfigMessage || 'Firebase auth is not configured for app-v2.')
+  }
+
+  await ensurePersistence()
+  const result = await withTimeout(signInPopup(authInstance, providerFactory()), signInTimeoutMs, createGoogleSignInTimeoutError)
+  return { user: result.user, providerId: GOOGLE_PROVIDER_ID }
 }
 
 export async function signOutCurrentUser() {

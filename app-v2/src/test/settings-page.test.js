@@ -79,7 +79,6 @@ test('settings account controls preserve existing Firebase identity while linkin
   assert.match(authServiceSource, /linkWithPopup/)
   assert.match(authServiceSource, /currentUser/)
   assert.match(authServiceSource, /auth\/google-link-uid-mismatch/)
-  assert.doesNotMatch(authServiceSource, /signInWithPopup/)
   assert.match(authProviderSource, /signOutCurrentUser\(\)/)
   assert.match(authProviderSource, /resolveApprovedUser\(result\.user\)/)
   assert.match(settingsViewSource, /current Firebase UID, couple membership, and private book data stay intact/)

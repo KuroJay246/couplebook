@@ -1,7 +1,7 @@
 import { startTransition, useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { auth, isFirebaseConfigured, missingFirebaseConfigMessage } from '../lib/firebase.js'
 import { getBrowserTestAuthState } from '../lib/browserTestMode'
-import { ensureAuthPersistence, linkCurrentUserWithGoogle, observeAuthState, signInWithEmail, signOutCurrentUser } from '../services/authService'
+import { ensureAuthPersistence, linkCurrentUserWithGoogle, observeAuthState, signInWithEmail, signInWithGoogleProvider, signOutCurrentUser } from '../services/authService'
 import { resolveApprovedUser } from '../services/authorizationService'
 import { toAuthError, toUserFacingError } from '../services/userFacingError.js'
 import { AuthContext } from './AuthContext'
@@ -216,6 +216,34 @@ export function AuthProvider({ children }) {
     }
   }, [isBrowserTestMode])
 
+  const signInWithGoogle = useCallback(async () => {
+    if (isBrowserTestMode) {
+      throw new Error('Browser regression auth is injected locally and cannot be edited from Google sign-in.')
+    }
+
+    dispatchAuthState({ payload: { authError: '', loading: true } })
+
+    try {
+      const result = await signInWithGoogleProvider()
+      const resolution = await resolveApprovedUser(result.user)
+
+      transitionAuthState(dispatchAuthState, createResolvedAuthState(result.user, resolution))
+
+      return result
+    } catch (error) {
+      reportDevAuthError('signInWithGoogle', error)
+      transitionAuthState(dispatchAuthState, {
+        user: null,
+        approvedUser: null,
+        isAuthorized: false,
+        authError: toAuthError(error, 'Google sign-in could not open Couple Book. If this is your first time, sign in with email and link Google from Settings.'),
+        authInitialized: true,
+        loading: false,
+      })
+      throw error
+    }
+  }, [isBrowserTestMode])
+
   const signOut = useCallback(async () => {
     if (isBrowserTestMode) {
       applySignedOutState(dispatchAuthState)
@@ -272,10 +300,11 @@ export function AuthProvider({ children }) {
       isConfigured: isBrowserTestMode || isFirebaseConfigured,
       authError,
       signIn,
+      signInWithGoogle,
       linkGoogleProvider,
       signOut,
     }),
-    [approvedUser, authError, authInitialized, isAuthorized, isBrowserTestMode, linkGoogleProvider, loading, signIn, signOut, user],
+    [approvedUser, authError, authInitialized, isAuthorized, isBrowserTestMode, linkGoogleProvider, loading, signIn, signInWithGoogle, signOut, user],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
