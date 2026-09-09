@@ -54,6 +54,16 @@ service cloud.firestore {
     //   status: active|archived
     //   createdBy/updatedBy: uid strings
     //
+    // couples/{coupleId}/mediaItems/{mediaId}
+    //   backend-owned stable Google Drive media index
+    //   client reads require active couple membership
+    //   client writes are denied so driveFileId/coupleId cannot be spoofed
+    //
+    // couples/{coupleId}/mediaSync/google-drive
+    //   backend-owned privacy-safe Drive sync health/cursor state
+    //   client reads require active couple membership
+    //   client writes are denied until a trusted backend is approved
+    //
     // couples/{coupleId}/specialMoments/{birthday|valentine|confession}
     //   schemaVersion: 1
     //   title: string, 1..120
@@ -477,6 +487,16 @@ service cloud.firestore {
         allow get, list: if isActiveCoupleMember(coupleId);
         allow create, update: if isActiveCoupleMember(coupleId) && isValidMemory();
         allow delete: if false;
+      }
+
+      match /mediaItems/{mediaId} {
+        allow get, list: if isActiveCoupleMember(coupleId);
+        allow create, update, delete: if false;
+      }
+
+      match /mediaSync/{provider} {
+        allow get, list: if isActiveCoupleMember(coupleId) && provider == 'google-drive';
+        allow create, update, delete: if false;
       }
 
       match /plans/{planId} {

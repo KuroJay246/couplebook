@@ -10,7 +10,7 @@ import { getLegacyFavorites, getFirestoreFavoritesByUid, buildFavoritesDocumentP
 import { getLegacyMemories, getFirestoreMemories, buildMemoryCollectionPath } from '../services/memoryService.js'
 import { getLegacyProfile, getFirestoreProfileByUid, buildProfileDocumentPath } from '../services/profileService.js'
 import { getLegacySettings, getFirestoreSettingsByUid, buildSettingsDocumentPath } from '../services/settingsService.js'
-import { getDeferredCloudSyncStatus, getReadOnlySyncContract, refreshCompatibilityReadModel } from '../services/syncService.js'
+import { getDeferredCloudSyncStatus, getDeferredMediaSyncStatus, getMediaSyncArchitectureContract, getReadOnlySyncContract, refreshCompatibilityReadModel } from '../services/syncService.js'
 import { buildUserDocumentPath, getApprovedUserByUid } from '../services/userService.js'
 
 test('user service keeps approved-user reads targeted to users uid docs only', async () => {
@@ -163,6 +163,23 @@ test('sync service exposes a read-only orchestration contract', async () => {
   assert.equal(contract.broadUserQueries, false)
   assert.deepEqual(contract.sourceModel, ['legacy-local-storage', 'legacy-local-dev'])
   assert.equal(snapshot.status, 'ready')
+})
+
+test('sync service exposes the Google Drive media index architecture without pretending backend deployment exists', async () => {
+  const contract = getMediaSyncArchitectureContract('couple-alpha')
+  const status = await getDeferredMediaSyncStatus()
+
+  assert.equal(contract.provider, 'google-drive')
+  assert.equal(contract.driveFolderId, '17Ar4UK5_puORz9TE1dijIk2-qHgh7oIa')
+  assert.equal(contract.mediaIndexPath, 'couples/couple-alpha/mediaItems')
+  assert.equal(contract.syncStatePath, 'couples/couple-alpha/mediaSync/google-drive')
+  assert.ok(contract.frontendCan.includes('render-indexed-media'))
+  assert.ok(contract.backendRequiredFor.includes('refresh-token-storage'))
+  assert.equal(contract.deploymentStatus, 'owner-approval-required')
+  assert.match(contract.zeroCostBoundary, /Do not enable billing/)
+  assert.equal(status.status, 'partial')
+  assert.equal(status.data.persistentBackend, false)
+  assert.match(status.warnings.join(' '), /approved backend deployment/)
 })
 
 async function collectSourceFiles(directoryUrl) {

@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
-import { buildGalleryReadModel } from '../features/gallery/galleryReadModel.js'
-import { groupGalleryItemsByYear, selectFilteredGalleryItems } from '../features/gallery/gallerySelectors.js'
+import { buildGalleryReadModel, buildGalleryReadModelWithMediaIndex } from '../features/gallery/galleryReadModel.js'
+import { groupGalleryItemsByYear, selectFilteredGalleryItems, selectMediaIndexGalleryItems } from '../features/gallery/gallerySelectors.js'
 
 function createMemoryRecord(overrides = {}) {
   return {
@@ -380,6 +380,110 @@ test('gallery read model can consume memory source directly without the full com
   assert.equal(model.items.length, 1)
   assert.equal(model.items[0].title, 'Direct memory source')
   assert.equal(model.sourceStatus.memoryArchive.count, 1)
+})
+
+test('gallery read model can render Firestore media index records before Drive previews exist', () => {
+  const model = buildGalleryReadModelWithMediaIndex({
+    memorySource: {
+      status: 'empty',
+      source: 'firestore',
+      data: { hasBaseDataset: true, memories: [] },
+      warnings: [],
+    },
+    mediaIndexSource: {
+      status: 'ready',
+      source: 'firestore',
+      data: {
+        entries: [
+          {
+            schemaVersion: 1,
+            mediaId: 'drive_1F_USpYY9Qi2sIoftCWVjp_uYPdZAnRaa',
+            provider: 'google-drive',
+            driveFileId: '1F_USpYY9Qi2sIoftCWVjp_uYPdZAnRaa',
+            driveFolderId: '17Ar4UK5_puORz9TE1dijIk2-qHgh7oIa',
+            mimeType: 'image/jpeg',
+            mediaType: 'image',
+            fileName: 'CB_IMG_0075.jpg',
+            capturedAt: '2026-07-22T13:57:17.827Z',
+            width: 1280,
+            height: 960,
+            sizeBytes: 1099262,
+            favorite: true,
+            caption: 'Fictional indexed caption',
+          },
+          {
+            schemaVersion: 1,
+            mediaId: 'drive_1LE1Vc1ydOGOFD4j2JghZq_WHPjHsz5db',
+            provider: 'google-drive',
+            driveFileId: '1LE1Vc1ydOGOFD4j2JghZq_WHPjHsz5db',
+            driveFolderId: '17Ar4UK5_puORz9TE1dijIk2-qHgh7oIa',
+            mimeType: 'video/mp4',
+            mediaType: 'video',
+            fileName: 'CB_VID_0035.mp4',
+            capturedAt: '2026-07-22T14:03:02.056Z',
+            width: 720,
+            height: 1280,
+            durationMillis: 5000,
+            sizeBytes: 4193570,
+          },
+        ],
+      },
+      warnings: [],
+    },
+  })
+
+  assert.equal(model.status, 'ready')
+  assert.equal(model.items.length, 2)
+  assert.equal(model.indexedItems.length, 2)
+  assert.equal(model.summary.indexedDriveMedia, 2)
+  assert.equal(model.summary.photos, 1)
+  assert.equal(model.summary.videos, 1)
+  assert.equal(model.verifiedMedia.length, 2)
+  assert.equal(model.items[0].media.status, 'drive-indexed')
+  assert.equal(model.items[0].media.durationMillis, 5000)
+  assert.equal(model.items[1].media.favorite, true)
+  assert.equal(model.items[1].title, 'Fictional indexed caption')
+  assert.equal(model.sourceStatus.mediaInventory.count, 2)
+  assert.equal(model.sourceStatus.mediaInventory.status, 'ready')
+  assert.doesNotMatch(JSON.stringify(model), /thumbnailLink|previewUrl|objectUrl|accessToken|blob:/)
+})
+
+test('media index gallery selector filters tombstones and keeps newest Drive media first', () => {
+  const items = selectMediaIndexGalleryItems([
+    {
+      mediaId: 'drive_older',
+      provider: 'google-drive',
+      driveFileId: '1olderDriveFileId',
+      driveFolderId: '17Ar4UK5_puORz9TE1dijIk2-qHgh7oIa',
+      mimeType: 'image/heif',
+      mediaType: 'image',
+      fileName: 'CB_IMG_0073.heic',
+      capturedAt: '2026-07-20T00:00:00.000Z',
+    },
+    {
+      mediaId: 'drive_newer',
+      provider: 'google-drive',
+      driveFileId: '1newerDriveFileId',
+      driveFolderId: '17Ar4UK5_puORz9TE1dijIk2-qHgh7oIa',
+      mimeType: 'video/mp4',
+      mediaType: 'video',
+      fileName: 'CB_VID_0035.mp4',
+      capturedAt: '2026-07-22T00:00:00.000Z',
+    },
+    {
+      mediaId: 'drive_deleted',
+      provider: 'google-drive',
+      driveFileId: '1deletedDriveFileId',
+      mediaType: 'image',
+      deleted: true,
+    },
+  ])
+
+  assert.equal(items.length, 2)
+  assert.equal(items[0].title, 'CB_VID_0035.mp4')
+  assert.equal(items[0].media.kind, 'video')
+  assert.equal(items[1].media.mimeType, 'image/heif')
+  assert.equal(Object.isFrozen(items), true)
 })
 
 test('gallery architecture stays read-only and routes Storage through the media service only', async () => {

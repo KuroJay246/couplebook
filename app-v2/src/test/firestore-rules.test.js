@@ -101,6 +101,38 @@ test.beforeEach(async () => {
     await setDoc(doc(db, 'couples', ids.couple, 'settings', ids.memberTwo), { appearanceTheme: 'midnight-rose', privacy: { localOnlyMode: false, reducedMotion: false }, revision: 1, schemaVersion: 1 })
     await setDoc(doc(db, 'couples', ids.couple, 'contracts', 'current'), { title: 'Fictional contract', acceptedBy: [ids.memberOne], signatureStatus: 'status-only', schemaVersion: 1 })
     await setDoc(doc(db, 'couples', ids.couple, 'memories', 'memory_one'), { title: 'Fictional memory', date: '2026-01-01', mediaState: 'none', createdBy: ids.memberOne, updatedBy: ids.memberOne, revision: 1, schemaVersion: 1, status: 'active' })
+    await setDoc(doc(db, 'couples', ids.couple, 'mediaItems', 'drive_1F_USpYY9Qi2sIoftCWVjp_uYPdZAnRaa'), {
+      schemaVersion: 1,
+      mediaId: 'drive_1F_USpYY9Qi2sIoftCWVjp_uYPdZAnRaa',
+      provider: 'google-drive',
+      driveFileId: '1F_USpYY9Qi2sIoftCWVjp_uYPdZAnRaa',
+      driveFolderId: '17Ar4UK5_puORz9TE1dijIk2-qHgh7oIa',
+      mimeType: 'image/jpeg',
+      mediaType: 'image',
+      fileName: 'CB_IMG_0075.jpg',
+      createdTime: '2026-07-22T13:57:17.827Z',
+      modifiedTime: '2026-07-22T13:57:17.827Z',
+      capturedAt: '2026-07-22T13:57:17.827Z',
+      width: 1280,
+      height: 960,
+      sizeBytes: 1099262,
+      favorite: false,
+      caption: '',
+      syncStatus: 'indexed',
+      deleted: false,
+    })
+    await setDoc(doc(db, 'couples', ids.couple, 'mediaSync', 'google-drive'), {
+      schemaVersion: 1,
+      provider: 'google-drive',
+      status: 'current',
+      driveFolderId: '17Ar4UK5_puORz9TE1dijIk2-qHgh7oIa',
+      lastSyncAt: '2026-09-09T12:00:00.000Z',
+      lastSuccessfulSyncAt: '2026-09-09T12:00:00.000Z',
+      changePageToken: 'safe_cursor',
+      indexedCount: 1,
+      pendingChangeCount: 0,
+      orphanCount: 0,
+    })
     await setDoc(doc(db, 'couples', ids.couple, 'specialMoments', 'birthday'), { title: 'Fictional birthday', sections: [{ kind: 'paragraph', content: 'Fictional text' }], revision: 1, schemaVersion: 1 })
     await setDoc(doc(db, 'couples', ids.couple, 'specialMoments', 'valentine'), { title: 'Fictional valentine', sections: [{ kind: 'note', content: 'Fictional text' }], revision: 1, schemaVersion: 1 })
     await setDoc(doc(db, 'couples', ids.couple, 'specialMoments', 'confession'), { title: 'Fictional confession', sections: [{ kind: 'quote', content: 'Fictional text' }], revision: 1, schemaVersion: 1 })
@@ -126,6 +158,8 @@ function domainRefs(db, coupleId = ids.couple, uid = ids.memberOne) {
     doc(db, 'couples', coupleId, 'settings', 'shared'),
     doc(db, 'couples', coupleId, 'contracts', 'current'),
     doc(db, 'couples', coupleId, 'memories', 'memory_one'),
+    doc(db, 'couples', coupleId, 'mediaItems', 'drive_1F_USpYY9Qi2sIoftCWVjp_uYPdZAnRaa'),
+    doc(db, 'couples', coupleId, 'mediaSync', 'google-drive'),
     doc(db, 'couples', coupleId, 'plans', 'plan_one'),
     doc(db, 'couples', coupleId, 'specialMoments', 'birthday'),
   ]
@@ -155,6 +189,9 @@ test('active member one can read permitted targeted documents only', { skip: !ha
   await assertFails(getDoc(doc(db, 'couples', ids.couple, 'settings', ids.memberTwo)))
   await assertSucceeds(getDoc(doc(db, 'couples', ids.couple, 'contracts', 'current')))
   await assertSucceeds(getDocs(collection(db, 'couples', ids.couple, 'memories')))
+  await assertSucceeds(getDocs(collection(db, 'couples', ids.couple, 'mediaItems')))
+  await assertSucceeds(getDoc(doc(db, 'couples', ids.couple, 'mediaSync', 'google-drive')))
+  await assertFails(getDoc(doc(db, 'couples', ids.couple, 'mediaSync', 'other-provider')))
   await assertSucceeds(getDoc(doc(db, 'couples', ids.couple, 'specialMoments', 'birthday')))
   await assertSucceeds(getDoc(doc(db, 'couples', ids.couple, 'specialMoments', 'valentine')))
   await assertSucceeds(getDoc(doc(db, 'couples', ids.couple, 'specialMoments', 'confession')))
@@ -169,6 +206,7 @@ test('second active member receives same couple access but not private settings 
   await assertSucceeds(getDoc(doc(db, 'couples', ids.couple, 'favorites', ids.memberOne)))
   await assertFails(getDoc(doc(db, 'couples', ids.couple, 'settings', ids.memberOne)))
   await assertFails(getDoc(doc(db, 'couples', ids.otherCouple)))
+  await assertFails(getDocs(collection(db, 'couples', ids.otherCouple, 'mediaItems')))
   await assertFails(getDocs(collection(db, 'couples', ids.otherCouple, 'profiles')))
 })
 
@@ -182,6 +220,8 @@ test('pending, unauthorized, inactive, and cross-couple users fail closed', { sk
     await assertFails(getDoc(doc(db, 'couples', ids.couple, 'settings', 'shared')))
     await assertFails(getDoc(doc(db, 'couples', ids.couple, 'contracts', 'current')))
     await assertFails(getDoc(doc(db, 'couples', ids.couple, 'memories', 'memory_one')))
+    await assertFails(getDoc(doc(db, 'couples', ids.couple, 'mediaItems', 'drive_1F_USpYY9Qi2sIoftCWVjp_uYPdZAnRaa')))
+    await assertFails(getDoc(doc(db, 'couples', ids.couple, 'mediaSync', 'google-drive')))
     await assertFails(getDoc(doc(db, 'couples', ids.couple, 'specialMoments', 'birthday')))
   }
 })
@@ -464,6 +504,23 @@ test('write rules reject unauthorized, cross-couple, partner-private, and malfor
     updatedBy: ids.memberOne,
     updatedAt: serverTimestamp(),
     role: 'admin',
+  }))
+  await assertFails(setDoc(doc(db, 'couples', ids.couple, 'mediaItems', 'drive_spoofed'), {
+    schemaVersion: 1,
+    mediaId: 'drive_spoofed',
+    provider: 'google-drive',
+    driveFileId: '1SpoofedDriveFileId',
+    driveFolderId: '17Ar4UK5_puORz9TE1dijIk2-qHgh7oIa',
+    mimeType: 'image/jpeg',
+    mediaType: 'image',
+  }))
+  await assertFails(updateDoc(doc(db, 'couples', ids.couple, 'mediaItems', 'drive_1F_USpYY9Qi2sIoftCWVjp_uYPdZAnRaa'), {
+    caption: 'Client-side spoofed caption',
+  }))
+  await assertFails(setDoc(doc(db, 'couples', ids.couple, 'mediaSync', 'google-drive'), {
+    schemaVersion: 1,
+    provider: 'google-drive',
+    accessToken: 'unsafe',
   }))
 
   const batch = writeBatch(db)

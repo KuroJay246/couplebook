@@ -1,6 +1,6 @@
 import { freezeClone } from '../../data/adapterUtils.js'
 import { normalizeTimelineMemories } from '../memories/memoryNormalizer.js'
-import { buildGalleryCollections, buildGalleryFilters, buildGallerySummary, selectGalleryItems } from './gallerySelectors.js'
+import { buildGalleryCollections, buildGalleryFilters, buildGallerySummary, selectGalleryItems, selectMediaIndexGalleryItems } from './gallerySelectors.js'
 
 const EMPTY_MEMORY_SOURCE = Object.freeze({
   status: 'empty',
@@ -9,8 +9,17 @@ const EMPTY_MEMORY_SOURCE = Object.freeze({
   warnings: [],
 })
 
-function deriveGalleryStatus(memorySource, items) {
+const EMPTY_MEDIA_INDEX_SOURCE = Object.freeze({
+  status: 'empty',
+  source: 'firestore',
+  data: null,
+  warnings: [],
+})
+
+function deriveGalleryStatus(memorySource, mediaIndexSource, items) {
+  if (mediaIndexSource?.status === 'invalid') return 'invalid'
   if (memorySource?.status === 'invalid') return 'invalid'
+  if (items.length > 0 && mediaIndexSource?.status === 'ready') return 'ready'
   if (memorySource?.status === 'unavailable') return items.length > 0 ? 'partial' : 'unavailable'
   if (memorySource?.status === 'empty') return items.length > 0 ? 'partial' : 'empty'
   if (items.length === 0) return 'empty'
@@ -18,7 +27,7 @@ function deriveGalleryStatus(memorySource, items) {
   return 'ready'
 }
 
-function buildSourceStatus(memorySource) {
+function buildSourceStatus(memorySource, mediaIndexSource, indexedItems) {
   const totalMemories = Array.isArray(memorySource?.data?.memories) ? memorySource.data.memories.length : 0
   const hasBaseDataset = memorySource?.data?.hasBaseDataset === true
 
@@ -29,9 +38,9 @@ function buildSourceStatus(memorySource) {
       label: 'Private story archive',
     },
     mediaInventory: {
-      status: 'deferred',
-      count: 0,
-      label: 'Private media inventory',
+      status: mediaIndexSource?.status || 'empty',
+      count: indexedItems.length,
+      label: 'Firestore media index',
     },
     bridge: {
       status: memorySource?.status || 'empty',
@@ -41,19 +50,28 @@ function buildSourceStatus(memorySource) {
 }
 
 export function buildGalleryReadModel({ compatibilitySnapshot = null, memorySource = null } = {}) {
+  return buildGalleryReadModelWithMediaIndex({ compatibilitySnapshot, memorySource })
+}
+
+export function buildGalleryReadModelWithMediaIndex({ compatibilitySnapshot = null, memorySource = null, mediaIndexSource = null } = {}) {
   const resolvedMemorySource = memorySource || compatibilitySnapshot?.sources?.memories || EMPTY_MEMORY_SOURCE
+  const resolvedMediaIndexSource = mediaIndexSource || compatibilitySnapshot?.sources?.mediaIndex || EMPTY_MEDIA_INDEX_SOURCE
   const normalizedMemories = normalizeTimelineMemories(resolvedMemorySource?.data?.memories || [])
-  const items = selectGalleryItems(normalizedMemories)
+  const memoryItems = selectGalleryItems(normalizedMemories)
+  const indexedItems = selectMediaIndexGalleryItems(resolvedMediaIndexSource?.data?.entries || [])
+  const items = freezeClone([...indexedItems, ...memoryItems])
   const photos = items.filter((item) => item.media.kind === 'image')
   const videos = items.filter((item) => item.media.kind === 'video')
   const unavailableMedia = items.filter((item) =>
     ['private-legacy-reference', 'unavailable', 'invalid'].includes(item.media.status),
   )
-  const verifiedMedia = items.filter((item) => ['storage-verified', 'drive-verified'].includes(item.media.status))
+  const verifiedMedia = items.filter((item) => ['storage-verified', 'drive-verified', 'drive-indexed'].includes(item.media.status))
 
   return freezeClone({
-    status: deriveGalleryStatus(resolvedMemorySource, items),
+    status: deriveGalleryStatus(resolvedMemorySource, resolvedMediaIndexSource, items),
     items,
+    memoryItems,
+    indexedItems,
     summary: buildGallerySummary(items),
     collections: buildGalleryCollections(items),
     photos,
@@ -61,7 +79,10 @@ export function buildGalleryReadModel({ compatibilitySnapshot = null, memorySour
     verifiedMedia,
     unavailableMedia,
     filters: buildGalleryFilters(items),
-    sourceStatus: buildSourceStatus(resolvedMemorySource),
-    warnings: Array.isArray(resolvedMemorySource?.warnings) ? [...resolvedMemorySource.warnings] : [],
+    sourceStatus: buildSourceStatus(resolvedMemorySource, resolvedMediaIndexSource, indexedItems),
+    warnings: [
+      ...(Array.isArray(resolvedMemorySource?.warnings) ? resolvedMemorySource.warnings : []),
+      ...(Array.isArray(resolvedMediaIndexSource?.warnings) ? resolvedMediaIndexSource.warnings : []),
+    ],
   })
 }

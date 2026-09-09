@@ -24,6 +24,55 @@ function createMonthLabel(date) {
   })
 }
 
+function normalizeIndexedDate(value) {
+  const original = String(value || '').trim()
+  if (!original) {
+    return {
+      original: null,
+      status: 'missing',
+      precision: 'none',
+      timestamp: null,
+      year: null,
+      month: null,
+      day: null,
+    }
+  }
+
+  const timestamp = Date.parse(original)
+  if (Number.isNaN(timestamp)) {
+    return {
+      original,
+      status: 'invalid',
+      precision: 'invalid',
+      timestamp: null,
+      year: null,
+      month: null,
+      day: null,
+    }
+  }
+
+  const date = new Date(timestamp)
+  return {
+    original,
+    status: 'valid',
+    precision: original.length <= 10 ? 'date-only' : 'date-time',
+    timestamp,
+    year: date.getUTCFullYear(),
+    month: date.getUTCMonth() + 1,
+    day: date.getUTCDate(),
+  }
+}
+
+function formatIndexedDate(date) {
+  if (date.status !== 'valid') return ''
+  return new Intl.DateTimeFormat('en-US', {
+    day: 'numeric',
+    month: 'long',
+    timeZone: 'UTC',
+    year: 'numeric',
+  }).format(new Date(date.timestamp))
+}
+
 function matchesGalleryFilter(item, filter) {
   if (filter === 'photos') return item.media.kind === 'image'
   if (filter === 'videos') return item.media.kind === 'video'
@@ -48,6 +97,7 @@ function matchesGallerySearch(item, search) {
 export function classifyGalleryMediaStatus(media) {
   if (media?.status === 'storage-verified') return 'storage-verified'
   if (media?.status === 'drive-verified') return 'drive-verified'
+  if (media?.status === 'drive-indexed') return 'drive-indexed'
   if (media?.isAvailableInApp === true) return 'available-local-reference'
   if (media?.status === 'private-legacy-reference') return 'private-legacy-reference'
   if (media?.status === 'special-route-only') return 'special-route-only'
@@ -117,6 +167,82 @@ function buildGalleryItem(memory, index) {
   return galleryItem
 }
 
+function buildMediaIndexGalleryItem(record, index) {
+  const mediaType = record.mediaType === 'video' ? 'video' : 'image'
+  const date = normalizeIndexedDate(record.capturedAt || record.createdTime || record.modifiedTime)
+  const title = record.caption || record.fileName || (mediaType === 'video' ? 'Drive video' : 'Drive photo')
+  const description = record.caption
+    ? `Indexed from the private Google Drive folder as ${record.fileName || 'private media'}.`
+    : 'Indexed from the private Google Drive folder for fast Album browsing.'
+
+  const galleryItem = {
+    key: `media-index-${record.mediaId || String(index + 1).padStart(4, '0')}`,
+    title,
+    description,
+    displayDate: formatIndexedDate(date),
+    date,
+    monthLabel: createMonthLabel(date),
+    typeLabel: mediaType === 'video' ? 'Indexed video' : 'Indexed photo',
+    media: {
+      id: record.mediaId || '',
+      kind: mediaType,
+      type: mediaType,
+      status: 'drive-indexed',
+      provider: 'google-drive',
+      providerFileId: record.driveFileId || '',
+      hasReference: true,
+      isAvailableInApp: true,
+      storagePath: '',
+      thumbnailPath: '',
+      posterPath: '',
+      driveFileId: record.driveFileId || '',
+      driveFolderId: record.driveFolderId || '',
+      contentType: record.mimeType || '',
+      mimeType: record.mimeType || '',
+      sizeBytes: record.sizeBytes || 0,
+      width: record.width || null,
+      height: record.height || null,
+      durationMillis: record.durationMillis || null,
+      favorite: record.favorite === true,
+      caption: record.caption || '',
+      linkedMemoryId: record.linkedMemoryId || record.memoryId || '',
+    },
+    specialMoment: {
+      isSpecial: false,
+      route: null,
+      routeStatus: 'none',
+    },
+    tags: [
+      { key: mediaType, label: mediaType === 'video' ? 'Video' : 'Photo' },
+      record.favorite === true ? { key: 'favorite', label: 'Favorite' } : null,
+    ].filter(Boolean),
+    sort: {
+      ordinal: index,
+      timestamp: date.timestamp,
+    },
+  }
+
+  Object.defineProperties(galleryItem, {
+    mediaIndexId: {
+      value: record.mediaId || '',
+      enumerable: true,
+      writable: false,
+    },
+    memoryId: {
+      value: record.linkedMemoryId || record.memoryId || '',
+      enumerable: true,
+      writable: false,
+    },
+    memoryRevision: {
+      value: 0,
+      enumerable: true,
+      writable: false,
+    },
+  })
+
+  return galleryItem
+}
+
 export function selectFilteredGalleryItems(items = [], { filter = 'all', search = '', year = 'all' } = {}) {
   return deepFreeze((Array.isArray(items) ? items : []).filter((item) => (
     matchesGalleryFilter(item, filter)
@@ -152,6 +278,12 @@ export function selectGalleryItems(memories = []) {
   return deepFreeze(sortByNewest(displayMemories).map((memory, index) => buildGalleryItem(memory, index)))
 }
 
+export function selectMediaIndexGalleryItems(records = []) {
+  const activeRecords = (Array.isArray(records) ? records : [])
+    .filter((record) => record?.deleted !== true && record?.provider === 'google-drive' && (record.mediaType === 'image' || record.mediaType === 'video'))
+  return deepFreeze(sortByNewest(activeRecords.map((record, index) => buildMediaIndexGalleryItem(record, index))))
+}
+
 export function buildGallerySummary(items = []) {
   return freezeClone(
     items.reduce(
@@ -164,6 +296,7 @@ export function buildGallerySummary(items = []) {
         if (item.media.status === 'private-legacy-reference' || item.media.status === 'unavailable') summary.unavailableMedia += 1
         if (item.media.status === 'invalid') summary.invalidMedia += 1
         if (item.media.status === 'no-media' || item.media.status === 'special-route-only') summary.noMedia += 1
+        if (item.media.status === 'drive-indexed') summary.indexedDriveMedia += 1
         return summary
       },
       {
@@ -175,6 +308,7 @@ export function buildGallerySummary(items = []) {
         unavailableMedia: 0,
         invalidMedia: 0,
         noMedia: 0,
+        indexedDriveMedia: 0,
       },
     ),
   )
@@ -196,6 +330,7 @@ export function buildGalleryCollections(items = []) {
   const videos = visualItems.filter((item) => item.media.kind === 'video')
   const specialMoments = items.filter((item) => item.specialMoment.isSpecial)
   const unavailableMedia = items.filter((item) => item.media.status === 'private-legacy-reference' || item.media.status === 'unavailable' || item.media.status === 'invalid')
+  const indexedDriveMedia = items.filter((item) => item.media.status === 'drive-indexed')
   const yearMap = new Map()
 
   for (const item of visualItems) {
@@ -226,6 +361,7 @@ export function buildGalleryCollections(items = []) {
       collection('recent-visual-memories', 'Recent visual memories', 'Newest photo and video memories with safe metadata only.', visualItems.slice(0, 8)),
       collection('photos', 'Photos', 'Still visual memories without fetching image files.', photos),
       collection('videos', 'Video memories', 'Video memories without loading playback sources.', videos),
+      collection('indexed-drive-media', 'Indexed Drive media', 'Fast Firestore media index records without temporary preview URLs.', indexedDriveMedia),
       collection('special-moments', 'Special moments', 'Approved special routes represented without importing special-page content.', specialMoments),
       collection('private-media-references', 'Private media references', 'Media references that stay unavailable until a safe private inventory exists.', unavailableMedia),
     ],

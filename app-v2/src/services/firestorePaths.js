@@ -67,6 +67,18 @@ export function memoryPath(coupleId, memoryId) {
   return [...memoriesPath(coupleId), assertSafeId(memoryId, 'memoryId')]
 }
 
+export function mediaItemsPath(coupleId) {
+  return [...couplePath(coupleId), 'mediaItems']
+}
+
+export function mediaItemPath(coupleId, mediaId) {
+  return [...mediaItemsPath(coupleId), assertSafeId(mediaId, 'mediaId')]
+}
+
+export function mediaSyncStatePath(coupleId, provider = 'google-drive') {
+  return [...couplePath(coupleId), 'mediaSync', assertSafeId(provider, 'provider')]
+}
+
 export function plansPath(coupleId) {
   return [...couplePath(coupleId), 'plans']
 }

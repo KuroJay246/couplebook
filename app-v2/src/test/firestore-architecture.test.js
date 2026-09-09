@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 import { DATA_SOURCE_MODES, resolveDataSourceMode } from '../data/dataSourceMode.js'
-import { assertApprovedMomentType, memoryPath, pathToString, userPath } from '../services/firestorePaths.js'
+import { assertApprovedMomentType, mediaItemPath, mediaSyncStatePath, memoryPath, pathToString, userPath } from '../services/firestorePaths.js'
 import { normalizeFirestoreMemory } from '../services/memoryService.js'
 import { normalizeFirestoreSpecialMoment } from '../services/specialMomentService.js'
 
@@ -16,9 +16,12 @@ test('data source mode defaults to legacy and rejects unsafe test production mod
 test('Firestore path helpers reject slash injection and unapproved special moments', () => {
   assert.deepEqual(userPath('member_one'), ['users', 'member_one'])
   assert.equal(pathToString(memoryPath('couple_alpha', 'memory_one')), 'couples/couple_alpha/memories/memory_one')
+  assert.equal(pathToString(mediaItemPath('couple_alpha', 'media_one')), 'couples/couple_alpha/mediaItems/media_one')
+  assert.equal(pathToString(mediaSyncStatePath('couple_alpha')), 'couples/couple_alpha/mediaSync/google-drive')
   assert.equal(assertApprovedMomentType('Birthday'), 'birthday')
   assert.throws(() => userPath('bad/user'))
   assert.throws(() => memoryPath('couple_alpha', '../bad'))
+  assert.throws(() => mediaItemPath('couple_alpha', 'bad/media'))
   assert.throws(() => assertApprovedMomentType('anniversary'))
 })
 
@@ -112,6 +115,7 @@ test('app-v2 Firestore sources avoid broad users queries, writes, and arbitrary 
     '../services/specialMomentService.js',
     '../services/firestorePaths.js',
     '../services/firestoreReaders.js',
+    '../services/mediaIndexService.js',
   ]
   const sources = await Promise.all(serviceFiles.map((file) => readFile(new URL(file, import.meta.url), 'utf8')))
   const combined = sources.join('\n')
