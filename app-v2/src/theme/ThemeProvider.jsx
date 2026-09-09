@@ -1,10 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useAuth } from '../auth/useAuth.js'
-import { getFirestorePrivateSettings } from '../services/settingsService.js'
+import { useSettingsSource } from '../features/settings/useSettingsSource.js'
 import { ThemeContext } from './ThemeContext.js'
 import { DEFAULT_THEME_ID, findTheme, normalizeThemeId, THEME_STORAGE_KEY } from './themeRegistry.js'
-
-const THEME_LOAD_TIMEOUT_MS = 8000
 
 function getThemeStorageKey(uid = '') {
   return uid ? `${THEME_STORAGE_KEY}:${uid}` : THEME_STORAGE_KEY
@@ -35,11 +33,11 @@ function applyTheme(themeId) {
 
 export function ThemeProvider({ children }) {
   const { approvedUser, authInitialized, isAuthorized } = useAuth()
+  const { source: settingsSource, state: settingsState } = useSettingsSource()
   const userId = approvedUser?.uid || ''
   const [savedTheme, setSavedTheme] = useState(() => readStoredTheme())
   const [activeTheme, setActiveTheme] = useState(() => readStoredTheme())
   const [initialization, setInitialization] = useState('loading')
-  const pendingLoadRef = useRef(0)
 
   useEffect(() => {
     applyTheme(activeTheme)
@@ -52,46 +50,44 @@ export function ThemeProvider({ children }) {
   useEffect(() => {
     if (!authInitialized) return
 
-    const loadId = pendingLoadRef.current + 1
-    pendingLoadRef.current = loadId
-    const coupleId = approvedUser?.coupleId || ''
+    let active = true
     const uid = approvedUser?.uid || ''
-    let timeoutId
 
-    if (!isAuthorized || !coupleId || !uid) {
-      const fallback = readStoredTheme()
-      if (pendingLoadRef.current !== loadId) return
-      setSavedTheme(fallback)
-      setActiveTheme(fallback)
-      setInitialization('ready')
-      return
-    }
+    queueMicrotask(() => {
+      if (!active) return
 
-    timeoutId = window.setTimeout(() => {
-      if (pendingLoadRef.current !== loadId) return
-      setInitialization('failure')
-    }, THEME_LOAD_TIMEOUT_MS)
+      if (!isAuthorized) {
+        const fallback = readStoredTheme()
+        setSavedTheme(fallback)
+        setActiveTheme(fallback)
+        setInitialization('ready')
+        return
+      }
 
-    getFirestorePrivateSettings(coupleId, uid)
-      .then((result) => {
-        if (pendingLoadRef.current !== loadId) return
-        const loaded = normalizeThemeId(result?.data?.appearanceTheme || result?.data?.theme)
+      if (settingsState === 'loading') {
+        setInitialization('loading')
+        return
+      }
+
+      const loadedTheme = settingsSource?.data?.appearanceTheme || settingsSource?.data?.theme
+      if (loadedTheme) {
+        const loaded = normalizeThemeId(loadedTheme)
         setSavedTheme(loaded)
         setActiveTheme(loaded)
         setInitialization('ready')
-      })
-      .catch(() => {
-        if (pendingLoadRef.current !== loadId) return
-        const fallback = readStoredTheme(uid)
-        setSavedTheme(fallback)
-        setActiveTheme(fallback)
-        setInitialization('failure')
-      })
+        return
+      }
+
+      const fallback = readStoredTheme(uid)
+      setSavedTheme(fallback)
+      setActiveTheme(fallback)
+      setInitialization(settingsState === 'error' ? 'failure' : 'ready')
+    })
 
     return () => {
-      if (timeoutId) window.clearTimeout(timeoutId)
+      active = false
     }
-  }, [approvedUser?.coupleId, approvedUser?.uid, authInitialized, isAuthorized])
+  }, [approvedUser?.coupleId, approvedUser?.raw?.coupleId, approvedUser?.raw?.uid, approvedUser?.uid, authInitialized, isAuthorized, settingsSource, settingsState])
 
   const previewTheme = useCallback((themeId) => {
     setActiveTheme(normalizeThemeId(themeId))

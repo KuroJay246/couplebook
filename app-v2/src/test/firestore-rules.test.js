@@ -30,6 +30,9 @@ import { buildSettingsReadModel } from '../features/settings/settingsReadModel.j
 import { buildSpecialMomentContentModel } from '../features/specialMoments/specialMomentContentModel.js'
 import { buildTimelineReadModel } from '../features/timeline/timelineReadModel.js'
 import { getFirestoreMemoriesForCouple } from '../services/memoryService.js'
+import { getFirestoreProfileSourceForCouple } from '../services/profileService.js'
+import { getSettingsSourceForApprovedUser } from '../services/settingsService.js'
+import { getFirestoreSpecialMoment } from '../services/specialMomentService.js'
 
 const projectId = 'demo-couplebook-app-v2'
 const rules = readFileSync(new URL('../../../firestore.rules', import.meta.url), 'utf8')
@@ -738,18 +741,21 @@ test('app-v2 Firestore source mode reads seeded fictional data through read mode
   const approvedUser = { uid: ids.memberOne, username: 'Member One', displayName: 'Member One', coupleId: ids.couple }
   const snapshot = await loadFirestoreCompatibilitySnapshot({ approvedUser, firestore: db })
   const memorySource = await getFirestoreMemoriesForCouple(ids.couple, { firestore: db })
+  const profileSource = await getFirestoreProfileSourceForCouple(ids.couple, { firestore: db })
+  const settingsSource = await getSettingsSourceForApprovedUser({ approvedUser, firestore: db, sourceMode: 'firestore' })
+  const birthdaySource = await getFirestoreSpecialMoment(ids.couple, 'birthday', { firestore: db })
 
-  const dashboard = buildDashboardReadModel({ approvedUser, compatibilitySnapshot: snapshot, memorySource, routeMeta: protectedRouteMeta })
-  const profile = buildProfileReadModel({ approvedUser, compatibilitySnapshot: snapshot })
-  const favorites = buildFavoritesReadModel({ approvedUser, compatibilitySnapshot: snapshot })
-  const settings = buildSettingsReadModel({ approvedUser, compatibilitySnapshot: snapshot })
-  const contract = buildContractReadModel({ approvedUser, compatibilitySnapshot: snapshot })
+  const dashboard = buildDashboardReadModel({ approvedUser, compatibilitySnapshot: snapshot, memorySource, profileSource, settingsSource, routeMeta: protectedRouteMeta })
+  const profile = buildProfileReadModel({ approvedUser, compatibilitySnapshot: snapshot, profileSource })
+  const favorites = buildFavoritesReadModel({ approvedUser, compatibilitySnapshot: snapshot, profileSource })
+  const settings = buildSettingsReadModel({ approvedUser, compatibilitySnapshot: snapshot, profileSource, settingsSource })
+  const contract = buildContractReadModel({ approvedUser, compatibilitySnapshot: snapshot, profileSource })
   const timeline = buildTimelineReadModel({ memorySource })
   const gallery = buildGalleryReadModel({ memorySource })
   const birthday = buildSpecialMomentContentModel({
     momentKey: 'birthday',
-    contentSource: snapshot.sources.specialMoments.birthday,
-    contentState: snapshot.sources.specialMoments.birthday.status,
+    contentSource: birthdaySource,
+    contentState: birthdaySource.status,
   })
 
   assert.equal(snapshot.status, 'ready')

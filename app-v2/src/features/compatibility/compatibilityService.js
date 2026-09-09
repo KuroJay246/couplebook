@@ -1,8 +1,5 @@
 import { getLegacyContract } from '../../services/contractService.js'
 import { getLegacyFavorites } from '../../services/favoritesService.js'
-import { getLegacyProfile } from '../../services/profileService.js'
-import { getLegacySettings } from '../../services/settingsService.js'
-import { getLegacySpecialMoment } from '../../services/specialMomentService.js'
 import { DATA_SOURCE_MODES, resolveDataSourceMode } from '../../data/dataSourceMode.js'
 import { loadFirestoreCompatibilitySnapshot } from './firestoreCompatibilityService.js'
 
@@ -34,26 +31,18 @@ export async function loadCompatibilitySnapshot(options = {}) {
       status: 'empty',
       sources: {
         favorites: null,
-        profile: null,
-        settings: null,
         contract: null,
       },
       warnings: ['Compatibility data requires an approved username.'],
     }
   }
 
-  const [favorites, profile, settings, contract, birthday, valentine, confession] = await Promise.all([
+  const [favorites, contract] = await Promise.all([
     getLegacyFavorites(options),
-    getLegacyProfile(options),
-    getLegacySettings(options),
     getLegacyContract(options),
-    getLegacySpecialMoment('birthday', options),
-    getLegacySpecialMoment('valentine', options),
-    getLegacySpecialMoment('confession', options),
   ])
 
-  const specialMoments = Object.freeze({ birthday, valentine, confession })
-  const sources = { favorites, profile, settings, contract, specialMoments }
+  const sources = { favorites, contract }
   const results = Object.values(sources)
 
   return Object.freeze({

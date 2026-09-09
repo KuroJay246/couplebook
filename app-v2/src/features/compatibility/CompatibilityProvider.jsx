@@ -11,6 +11,19 @@ const EMPTY_COMPATIBILITY_STATE = Object.freeze({
   error: '',
 })
 
+function getApprovedUserUid(approvedUser) {
+  return approvedUser?.uid || approvedUser?.raw?.uid || ''
+}
+
+function getApprovedUserCoupleId(approvedUser) {
+  return approvedUser?.coupleId || approvedUser?.raw?.coupleId || ''
+}
+
+function getCompatibilityOwnerKey(approvedUser) {
+  if (!approvedUser?.username) return ''
+  return [getApprovedUserUid(approvedUser), getApprovedUserCoupleId(approvedUser), approvedUser.username].filter(Boolean).join(':')
+}
+
 export function CompatibilityProvider({ children }) {
   const { approvedUser, isAuthorized } = useAuth()
   const [browserTestCompatibility] = useState(() => getBrowserTestCompatibilityState())
@@ -24,44 +37,60 @@ export function CompatibilityProvider({ children }) {
   useEffect(() => {
     if (browserTestCompatibility) return undefined
 
-    if (!isAuthorized || !approvedUser?.username) {
+    const ownerKey = getCompatibilityOwnerKey(approvedUser)
+
+    if (!isAuthorized || !ownerKey) {
       return undefined
     }
 
     let active = true
+    queueMicrotask(() => {
+      if (!active) return
+      setCompatibilityState({
+        state: 'loading',
+        snapshot: null,
+        error: '',
+      })
+    })
 
-    async function loadSnapshot() {
-      try {
-        const snapshot = await loadCompatibilitySnapshot({
-          approvedUser,
-          sourceMode: resolveDataSourceMode(),
-          username: approvedUser.username,
-        })
-
-        if (!active) return
+    loadCompatibilitySnapshot({
+      approvedUser,
+      sourceMode: resolveDataSourceMode(),
+      username: approvedUser.username,
+    })
+      .then((snapshot) => {
+        if (!active || ownerKey !== getCompatibilityOwnerKey(approvedUser)) return
 
         setCompatibilityState({
           state: snapshot.status === 'empty' ? 'empty' : 'ready',
           snapshot,
           error: '',
         })
-      } catch (error) {
-        if (!active) return
+      })
+      .catch((error) => {
+        if (!active || ownerKey !== getCompatibilityOwnerKey(approvedUser)) return
 
         setCompatibilityState({
           state: 'error',
           snapshot: null,
           error: error?.message || 'Compatibility data could not be loaded.',
         })
-      }
-    }
-
-    void loadSnapshot()
+      })
 
     return () => {
       active = false
     }
-  }, [approvedUser, approvedUser?.username, browserTestCompatibility, isAuthorized, refreshKey])
+  }, [
+    approvedUser,
+    approvedUser?.coupleId,
+    approvedUser?.raw?.coupleId,
+    approvedUser?.raw?.uid,
+    approvedUser?.uid,
+    approvedUser?.username,
+    browserTestCompatibility,
+    isAuthorized,
+    refreshKey,
+  ])
 
   const resolvedState = browserTestCompatibility
     ? isAuthorized && approvedUser?.username

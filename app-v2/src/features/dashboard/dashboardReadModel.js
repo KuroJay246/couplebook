@@ -520,26 +520,38 @@ function buildTodayInUsSection({ milestones, recentMemories }) {
   }
 }
 
-export function buildDashboardReadModel({ approvedUser = null, compatibilitySnapshot = null, memorySource = null, now = new Date(), routeMeta = [] } = {}) {
+export function buildDashboardReadModel({
+  approvedUser = null,
+  compatibilitySnapshot = null,
+  memorySource = null,
+  profileSource = null,
+  settingsSource = null,
+  now = new Date(),
+  routeMeta = [],
+} = {}) {
   const snapshot = compatibilitySnapshot || {
     status: 'empty',
     sources: {},
     warnings: [],
   }
-  const participants = normalizeParticipants(snapshot.sources?.profile, approvedUser)
+  const resolvedProfileSource = profileSource || snapshot.sources?.profile
+  const resolvedSettingsSource = settingsSource || snapshot.sources?.settings
   const resolvedMemorySource = memorySource || snapshot.sources?.memories
-  const snapshotWithMemorySource = {
+  const snapshotWithDomainSources = {
     ...snapshot,
     sources: {
       ...(snapshot.sources || {}),
       memories: resolvedMemorySource,
+      profile: resolvedProfileSource,
+      settings: resolvedSettingsSource,
     },
   }
+  const participants = normalizeParticipants(resolvedProfileSource, approvedUser)
   const recentMemories = buildRecentMemoriesSection(resolvedMemorySource)
-  const sourceState = buildSourceStateSection(snapshotWithMemorySource)
+  const sourceState = buildSourceStateSection(snapshotWithDomainSources)
   const milestones = buildMilestonesSection({
     participants,
-    settingsSource: snapshot.sources?.settings,
+    settingsSource: resolvedSettingsSource,
     now,
   })
 

@@ -47,7 +47,7 @@ test('special routes use dedicated protected experiences instead of placeholders
     assert.doesNotMatch(source, /PlaceholderPage/)
   }
 
-  assert.match(hookSource, /useCompatibilityData/)
+  assert.match(hookSource, /useSpecialMomentSource/)
   assert.match(adapterSource, /VITE_ENABLE_LEGACY_LOCAL_BRIDGE/)
   assert.match(adapterSource, /createLocalApiPath\('special-moment', momentKey\)/)
   assert.match(mainSource, /import '\.\/styles\/pages\/special-moments\.css'/)

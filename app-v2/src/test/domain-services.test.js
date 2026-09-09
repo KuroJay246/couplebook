@@ -144,8 +144,8 @@ test('sync service exposes a read-only orchestration contract', async () => {
     username: 'Jaylan',
     storage: {
       getItem(key) {
-        if (key === 'memorybook_profiles') {
-          return JSON.stringify({ Jaylan: { name: 'Jaylan' } })
+        if (key === 'memorybook_favorites') {
+          return JSON.stringify({ Jaylan: { food: ['Ramen'] } })
         }
 
         return null

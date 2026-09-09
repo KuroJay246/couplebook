@@ -11,14 +11,21 @@ import {
   selectSharedHighlights,
 } from './profileSelectors.js'
 
-export function buildProfileReadModel({ approvedUser = null, compatibilitySnapshot = null } = {}) {
+export function buildProfileReadModel({ approvedUser = null, compatibilitySnapshot = null, profileSource = null } = {}) {
   const snapshot = compatibilitySnapshot || {
     status: 'empty',
     sources: {},
     warnings: [],
   }
+  const resolvedSnapshot = {
+    ...snapshot,
+    sources: {
+      ...(snapshot.sources || {}),
+      profile: profileSource || snapshot.sources?.profile,
+    },
+  }
 
-  const people = selectProfilePeople(snapshot.sources?.profile, approvedUser)
+  const people = selectProfilePeople(resolvedSnapshot.sources?.profile, approvedUser)
   const relationship = {
     title: selectRelationshipTitle(people),
     summary:
@@ -26,14 +33,14 @@ export function buildProfileReadModel({ approvedUser = null, compatibilitySnapsh
         ? 'The relationship remains the subject of this shared space, with individual details nested inside one quieter spread.'
         : 'The shared relationship frame is ready, but the paired profile details still need their read-only bridge.',
     anniversaries: selectRelationshipAnniversaries(people),
-    milestones: selectRelationshipMilestones(people, snapshot.sources?.contract),
+    milestones: selectRelationshipMilestones(people, resolvedSnapshot.sources?.contract),
   }
-  const sharedHighlights = selectSharedHighlights(snapshot.sources?.favorites)
+  const sharedHighlights = selectSharedHighlights(resolvedSnapshot.sources?.favorites)
   const entries = {
-    contract: selectContractEntry(snapshot.sources?.contract),
-    favorites: selectFavoritesEntry(snapshot.sources?.favorites, sharedHighlights),
+    contract: selectContractEntry(resolvedSnapshot.sources?.contract),
+    favorites: selectFavoritesEntry(resolvedSnapshot.sources?.favorites, sharedHighlights),
   }
-  const sourceStatus = selectProfileSourceStatus(snapshot)
+  const sourceStatus = selectProfileSourceStatus(resolvedSnapshot)
   const warnings = [...new Set(sourceStatus.warnings)]
 
   return freezeClone({

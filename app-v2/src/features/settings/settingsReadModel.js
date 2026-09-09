@@ -17,6 +17,8 @@ export function buildSettingsReadModel({
   approvedUser = null,
   authUser = null,
   compatibilitySnapshot = null,
+  profileSource = null,
+  settingsSource = null,
   runtimeMode = getRuntimeMode(),
   migrationStatus = routeMigrationStatus,
   smokeGate = approvedAccountMigrationGate,
@@ -26,17 +28,25 @@ export function buildSettingsReadModel({
     sources: {},
     warnings: [],
   }
-  const settingsSource = snapshot.sources?.settings || null
+  const resolvedSettingsSource = settingsSource || snapshot.sources?.settings || null
+  const resolvedSnapshot = {
+    ...snapshot,
+    sources: {
+      ...(snapshot.sources || {}),
+      profile: profileSource || snapshot.sources?.profile,
+      settings: resolvedSettingsSource,
+    },
+  }
 
   const model = {
-    status: deriveSettingsStatus(settingsSource),
+    status: deriveSettingsStatus(resolvedSettingsSource),
     account: selectSettingsAccount({ approvedUser, authUser }),
-    appearance: selectSettingsAppearance(settingsSource),
+    appearance: selectSettingsAppearance(resolvedSettingsSource),
     media: selectSettingsMedia(),
     privacy: selectSettingsPrivacy(),
-    compatibility: selectSettingsCompatibility(snapshot),
+    compatibility: selectSettingsCompatibility(resolvedSnapshot),
     migration: selectSettingsMigrationProgress(migrationStatus, smokeGate),
-    advanced: selectSettingsAdvanced({ runtimeMode, compatibilitySnapshot: snapshot }),
+    advanced: selectSettingsAdvanced({ runtimeMode, compatibilitySnapshot: resolvedSnapshot }),
     danger: selectSettingsDangerZone(),
   }
 

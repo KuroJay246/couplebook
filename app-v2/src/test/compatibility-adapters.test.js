@@ -400,9 +400,9 @@ test('legacy memory bridge flags malformed responses safely', async () => {
   assert.equal(result.status, 'invalid')
 })
 
-test('compatibility snapshot keeps non-memory source identities and aggregated warnings', async () => {
+test('compatibility snapshot keeps bridge-owned source identities and aggregated warnings', async () => {
   const storage = createStorage({
-    memorybook_profiles: JSON.stringify({ Jaylan: { name: 'Jaylan' } }),
+    memorybook_favorites: JSON.stringify({ Jaylan: { food: ['Ramen'] } }),
   })
 
   const snapshot = await loadCompatibilitySnapshot({
@@ -416,7 +416,10 @@ test('compatibility snapshot keeps non-memory source identities and aggregated w
   })
 
   assert.equal(snapshot.status, 'ready')
-  assert.equal(snapshot.sources.profile.source, 'legacy-local-storage')
+  assert.equal(snapshot.sources.favorites.source, 'legacy-local-storage')
+  assert.equal(snapshot.sources.profile, undefined)
+  assert.equal(snapshot.sources.settings, undefined)
+  assert.equal(snapshot.sources.specialMoments, undefined)
   assert.equal(snapshot.sources.memories, undefined)
   assert.ok(Array.isArray(snapshot.warnings))
 })

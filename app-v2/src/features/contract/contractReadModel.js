@@ -12,39 +12,45 @@ import {
   selectSignatureSummary,
 } from './contractSelectors.js'
 
-export function buildContractReadModel({ agreementSource = null, approvedUser = null, compatibilitySnapshot = null } = {}) {
+export function buildContractReadModel({
+  agreementSource = null,
+  approvedUser = null,
+  compatibilitySnapshot = null,
+  contractSource = null,
+  profileSource = null,
+} = {}) {
   const snapshot = compatibilitySnapshot || {
     status: 'empty',
     sources: {},
     warnings: [],
   }
 
-  const contractSource = snapshot.sources?.contract || null
-  const profileSource = snapshot.sources?.profile || null
+  const resolvedContractSource = contractSource || snapshot.sources?.contract || null
+  const resolvedProfileSource = profileSource || snapshot.sources?.profile || null
   const safeAgreementSource = cloneAgreementSource(agreementSource)
   const agreement = selectAgreementDocument({
     agreementSource: safeAgreementSource,
-    contractSource,
+    contractSource: resolvedContractSource,
   })
   const acceptance = selectAcceptanceSummary({
     approvedUser,
-    contractSource,
-    profileSource,
+    contractSource: resolvedContractSource,
+    profileSource: resolvedProfileSource,
   })
   const signatures = selectSignatureSummary({
     approvedUser,
-    contractSource,
-    profileSource,
+    contractSource: resolvedContractSource,
+    profileSource: resolvedProfileSource,
   })
   const history = selectContractHistory({
     approvedUser,
-    contractSource,
-    profileSource,
+    contractSource: resolvedContractSource,
+    profileSource: resolvedProfileSource,
   })
   const sourceStatus = selectContractSourceStatus({
     agreement,
-    contractSource,
-    profileSource,
+    contractSource: resolvedContractSource,
+    profileSource: resolvedProfileSource,
   })
   const privacy = selectContractPrivacy()
   const entries = selectContractEntries()
@@ -52,7 +58,7 @@ export function buildContractReadModel({ agreementSource = null, approvedUser = 
   return freezeClone({
     status: deriveContractStatus({
       agreement,
-      contractSource,
+      contractSource: resolvedContractSource,
       acceptance,
       signatures,
       history,

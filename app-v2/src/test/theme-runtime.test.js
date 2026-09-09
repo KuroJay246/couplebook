@@ -34,7 +34,7 @@ test('theme runtime sources keep personal scoped storage and root data-theme wir
 
   assert.equal(THEME_STORAGE_KEY, 'couplebook:appearance-theme')
   assert.match(providerSource, /document\.documentElement\.dataset\.theme/)
-  assert.match(providerSource, /getFirestorePrivateSettings/)
+  assert.match(providerSource, /useSettingsSource/)
   assert.match(providerSource, /appearanceTheme/)
   assert.doesNotMatch(providerSource, /initializationStateId/)
   assert.doesNotMatch(providerSource, /setTimeout\(\(\) => \{\s*setInitialization\(authInitialized && isAuthorized \? 'loading' : 'ready'\)/)

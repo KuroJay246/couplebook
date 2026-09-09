@@ -3,8 +3,6 @@ import { getCoupleDocumentSnapshot, getCoupleMembership } from '../../services/c
 import { getFirestoreContract } from '../../services/contractService.js'
 import { getFirestoreFavoritesForCouple } from '../../services/favoritesService.js'
 import { getFirestoreProfilesForCouple } from '../../services/profileService.js'
-import { getFirestorePrivateSettings, getFirestoreSharedSettings } from '../../services/settingsService.js'
-import { getFirestoreSpecialMoment } from '../../services/specialMomentService.js'
 
 function unavailable(message) {
   return createCompatibilityResult({
@@ -16,32 +14,6 @@ function unavailable(message) {
 
 function normalizeOwnerLabel(entry, fallback) {
   return normalizePersonKey(entry?.name || entry?.displayName || fallback)
-}
-
-function profilesToCompatibility(result) {
-  if (result.status !== 'ready' && result.status !== 'partial') return result
-  const profilesByUsername = {}
-  const participantOrder = []
-  for (const entry of result.data?.entries || []) {
-    const owner = normalizeOwnerLabel(entry, entry.uid)
-    participantOrder.push(owner)
-    profilesByUsername[owner] = {
-      name: entry.name || owner,
-      bio: entry.bio || '',
-      avatar: '',
-      anniversaryView: entry.anniversaryView || null,
-      joinedDate: entry.joinedDate || null,
-      birthday: entry.birthday || null,
-      revision: Number.isInteger(entry.revision) && entry.revision > 0 ? entry.revision : 0,
-      unknownFields: {},
-    }
-  }
-  return createCompatibilityResult({
-    status: participantOrder.length ? result.status : 'empty',
-    source: FIRESTORE_SOURCE,
-    data: { profilesByUsername, participantOrder, unknownTopLevelFields: {} },
-    warnings: result.warnings,
-  })
 }
 
 function favoritesToCompatibility(result, profiles) {
@@ -69,38 +41,6 @@ function favoritesToCompatibility(result, profiles) {
     source: FIRESTORE_SOURCE,
     data: { favoritesByOwner, participantOrder, unknownTopLevelFields: {} },
     warnings: result.warnings,
-  })
-}
-
-function settingsToCompatibility({ shared, privateResult, username }) {
-  if (![shared.status, privateResult.status].some((status) => status === 'ready' || status === 'partial')) {
-    return privateResult.status === 'invalid' ? privateResult : shared
-  }
-  const privateData = privateResult.data || {}
-  const sharedData = shared.data || {}
-  const privateAppearanceTheme = privateData.appearanceTheme || privateData.theme || null
-  const sharedAppearanceTheme = sharedData.appearanceTheme || sharedData.theme || null
-  return createCompatibilityResult({
-    status: 'ready',
-    source: FIRESTORE_SOURCE,
-    data: {
-      username,
-      appearanceTheme: privateAppearanceTheme || sharedAppearanceTheme || null,
-      theme: privateAppearanceTheme || sharedAppearanceTheme || null,
-      revision: Number.isInteger(privateData.revision) && privateData.revision > 0 ? privateData.revision : 0,
-      usedGlobalThemeFallback: !privateAppearanceTheme && Boolean(sharedAppearanceTheme),
-      settings: {
-        anniversaryConfig: privateData.anniversaryView || sharedData.anniversaryView || null,
-        privacyToggles: {
-          localOnlyMode: privateData.privacy?.localOnlyMode === true,
-          reducedMotion: privateData.privacy?.reducedMotion === true,
-          hideOfflineWarning: false,
-          unknownFields: {},
-        },
-        unknownFields: {},
-      },
-    },
-    warnings: [...(shared.warnings || []), ...(privateResult.warnings || [])],
   })
 }
 
@@ -138,18 +78,12 @@ export async function loadFirestoreCompatibilitySnapshot(options = {}) {
   const username = approvedUser?.username || approvedUser?.displayName || uid
 
   if (!uid || !coupleId) {
+    const missingUserSource = unavailable('Firestore mode requires an approved user document with a coupleId.')
     return {
       status: 'empty',
       sources: {
-        favorites: unavailable('Firestore mode requires an approved user document with a coupleId.'),
-        profile: unavailable('Firestore mode requires an approved user document with a coupleId.'),
-        settings: unavailable('Firestore mode requires an approved user document with a coupleId.'),
-        contract: unavailable('Firestore mode requires an approved user document with a coupleId.'),
-        specialMoments: {
-          birthday: unavailable('Firestore mode requires an approved user document with a coupleId.'),
-          valentine: unavailable('Firestore mode requires an approved user document with a coupleId.'),
-          confession: unavailable('Firestore mode requires an approved user document with a coupleId.'),
-        },
+        favorites: missingUserSource,
+        contract: missingUserSource,
       },
       warnings: ['Firestore mode requires targeted users/{uid}.coupleId before domain reads.'],
     }
@@ -161,32 +95,19 @@ export async function loadFirestoreCompatibilitySnapshot(options = {}) {
     membership,
     profilesRaw,
     favoritesRaw,
-    sharedSettings,
-    privateSettings,
     contract,
-    birthday,
-    valentine,
-    confession,
   ] = await Promise.all([
     getCoupleDocumentSnapshot(coupleId, serviceOptions),
     getCoupleMembership(coupleId, uid, serviceOptions),
     getFirestoreProfilesForCouple(coupleId, serviceOptions),
     getFirestoreFavoritesForCouple(coupleId, serviceOptions),
-    getFirestoreSharedSettings(coupleId, serviceOptions),
-    getFirestorePrivateSettings(coupleId, uid, serviceOptions),
     getFirestoreContract(coupleId, serviceOptions),
-    getFirestoreSpecialMoment(coupleId, 'birthday', serviceOptions),
-    getFirestoreSpecialMoment(coupleId, 'valentine', serviceOptions),
-    getFirestoreSpecialMoment(coupleId, 'confession', serviceOptions),
   ])
 
-  const profile = profilesToCompatibility(profilesRaw)
   const favorites = favoritesToCompatibility(favoritesRaw, profilesRaw)
-  const settings = settingsToCompatibility({ shared: sharedSettings, privateResult: privateSettings, username })
   const contractSource = contractToCompatibility(contract, username)
-  const specialMoments = Object.freeze({ birthday, valentine, confession })
-  const sources = { favorites, profile, settings, contract: contractSource, specialMoments }
-  const results = [couple, membership, ...Object.values(sources), birthday, valentine, confession]
+  const sources = { favorites, contract: contractSource }
+  const results = [couple, membership, profilesRaw, ...Object.values(sources)]
 
   return Object.freeze({
     status: deriveStatus(results),

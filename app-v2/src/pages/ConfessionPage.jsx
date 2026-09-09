@@ -1,13 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ErrorState } from '../components/ui/ErrorState.jsx'
 import { LoadingState } from '../components/ui/LoadingState.jsx'
-import { useAuth } from '../auth/useAuth.js'
-import { createLocalApiPath, readRuntimeEnv } from '../data/adapterUtils.js'
+import { useConfessionOwnerBridge } from '../features/specialMoments/useConfessionOwnerBridge.js'
 import { useSpecialMomentContent } from '../features/specialMoments/useSpecialMomentContent.js'
-
-const BRIDGE_BASE_URL = String(readRuntimeEnv().VITE_LEGACY_LOCAL_BASE_URL || '').trim()
-const OWNER_STATE_PATH = createLocalApiPath('private-media', 'confession', 'owner-state')
 
 function splitRuntimeParagraphs(text) {
   const normalized = String(text || '').trim()
@@ -42,18 +38,8 @@ function slotStatusCopy(slot) {
   return slot.status === 'mapped' ? 'Photo ready' : 'Photo awaiting restoration'
 }
 
-function resolveBridgeUrl(url) {
-  if (!url) return ''
-
-  try {
-    return new URL(url, BRIDGE_BASE_URL || window.location.origin).toString()
-  } catch {
-    return ''
-  }
-}
-
-function CandidatePreview({ candidate }) {
-  const previewUrl = resolveBridgeUrl(candidate.previewUrl)
+function CandidatePreview({ candidate, resolvePreviewUrl }) {
+  const previewUrl = resolvePreviewUrl(candidate.previewUrl)
   if (!previewUrl) return null
 
   if (candidate.kind === 'image') {
@@ -69,80 +55,23 @@ function CandidatePreview({ candidate }) {
 
 export function ConfessionPage() {
   const { model, refreshCompatibility } = useSpecialMomentContent('confession')
-  const { user } = useAuth()
   const [opened, setOpened] = useState(false)
-  const [ownerState, setOwnerState] = useState(null)
-  const [ownerStateStatus, setOwnerStateStatus] = useState(BRIDGE_BASE_URL ? 'loading' : 'unavailable')
-  const [ownerStateError, setOwnerStateError] = useState('')
-  const [activeSlotAction, setActiveSlotAction] = useState('')
+  const {
+    activeSlotAction,
+    ownerSlots,
+    ownerStateError,
+    ownerStateStatus,
+    refreshOwnerState,
+    resolvePreviewUrl,
+    showOwnerTools,
+    updateOwnerMapping,
+    user,
+  } = useConfessionOwnerBridge()
 
   const letterText = model.moment?.sections?.length
     ? splitRuntimeParagraphs(model.moment.sections.flatMap((section) => (section.content ? [section.content] : [])).join('\n\n'))
     : []
   const slotMap = Object.fromEntries((model.mediaSlots || []).map((slot) => [slot.id, slot]))
-  const ownerSlots = ownerState?.slots || []
-  const showOwnerTools = Boolean(BRIDGE_BASE_URL) && window.location.hostname === 'localhost'
-
-  useEffect(() => {
-    if (!BRIDGE_BASE_URL || !user?.uid) return
-
-    let active = true
-
-    async function loadOwnerState() {
-      setOwnerStateStatus('loading')
-      setOwnerStateError('')
-      try {
-        const response = await fetch(resolveBridgeUrl(OWNER_STATE_PATH))
-        if (!response.ok) {
-          throw new Error('Owner restoration state is unavailable.')
-        }
-
-        const payload = await response.json()
-        if (!active) return
-        setOwnerState(payload)
-        setOwnerStateStatus('ready')
-      } catch (error) {
-        if (!active) return
-        setOwnerState(null)
-        setOwnerStateStatus('error')
-        setOwnerStateError(error?.message || 'Owner restoration state is unavailable.')
-      }
-    }
-
-    void loadOwnerState()
-
-    return () => {
-      active = false
-    }
-  }, [user?.uid])
-
-  async function updateOwnerMapping(slotId, candidateId, clear = false) {
-    const requestId = `${slotId}:${clear ? 'clear' : candidateId}`
-    setActiveSlotAction(requestId)
-    setOwnerStateError('')
-
-    try {
-      const response = await fetch(resolveBridgeUrl(OWNER_STATE_PATH), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(clear ? { slotId, clear: true } : { slotId, candidateId }),
-      })
-
-      if (!response.ok) {
-        throw new Error('Owner mapping update failed.')
-      }
-
-      const payload = await response.json()
-      setOwnerState(payload)
-      setOwnerStateStatus('ready')
-    } catch (error) {
-      setOwnerStateStatus('error')
-      setOwnerStateError(error?.message || 'Owner mapping update failed.')
-    } finally {
-      setActiveSlotAction('')
-    }
-  }
-
   function renderVisualSlot(slotId, fallbackLabel) {
     const slot = slotMap[slotId]
     if (slot?.status === 'mapped' && slot.url && slot.kind === 'image') {
@@ -236,24 +165,7 @@ export function ConfessionPage() {
               <div className="confession-owner-toolbar">
                 <button
                   className="confession-owner-button"
-                  onClick={() => {
-                    setOwnerStateStatus('loading')
-                    setOwnerStateError('')
-                    fetch(resolveBridgeUrl(OWNER_STATE_PATH))
-                      .then((response) => {
-                        if (!response.ok) throw new Error('Owner restoration state is unavailable.')
-                        return response.json()
-                      })
-                      .then((payload) => {
-                        setOwnerState(payload)
-                        setOwnerStateStatus('ready')
-                      })
-                      .catch((error) => {
-                        setOwnerState(null)
-                        setOwnerStateStatus('error')
-                        setOwnerStateError(error?.message || 'Owner restoration state is unavailable.')
-                      })
-                  }}
+                  onClick={refreshOwnerState}
                   type="button"
                 >
                   Refresh local candidates
@@ -307,7 +219,7 @@ export function ConfessionPage() {
                         const requestId = `${slot.id}:${candidate.id}`
                         return (
                           <article className="confession-candidate" key={candidate.id}>
-                            <CandidatePreview candidate={candidate} />
+                            <CandidatePreview candidate={candidate} resolvePreviewUrl={resolvePreviewUrl} />
                             <div className="confession-candidate-copy">
                               <p className="confession-candidate-name">{candidate.filename}</p>
                               <p className="confession-candidate-note">{candidate.note}</p>
