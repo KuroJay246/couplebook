@@ -51,15 +51,16 @@ export function useCoupleScopedSource({ domainKey, emptySource, fixtureSource = 
     let active = true
     const requestOwnerKey = ownerKey
 
-    loadSource({
-      approvedUser,
-      coupleId: getApprovedUserCoupleId(approvedUser),
-      forceRefresh: refreshKey > 0,
-      refreshKey,
-      sourceMode,
-      uid: getApprovedUserUid(approvedUser),
-      username: approvedUser.username,
-    })
+    Promise.resolve()
+      .then(() => loadSource({
+        approvedUser,
+        coupleId: getApprovedUserCoupleId(approvedUser),
+        forceRefresh: refreshKey > 0,
+        refreshKey,
+        sourceMode,
+        uid: getApprovedUserUid(approvedUser),
+        username: approvedUser.username,
+      }))
       .then((source) => {
         if (!active) return
         setState({

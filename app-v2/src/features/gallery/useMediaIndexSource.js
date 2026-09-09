@@ -14,6 +14,15 @@ export const EMPTY_MEDIA_INDEX_SOURCE = Object.freeze({
   warnings: Object.freeze([]),
 })
 
+export const UNAVAILABLE_MEDIA_INDEX_SOURCE = Object.freeze({
+  status: 'unavailable',
+  source: FIRESTORE_SOURCE,
+  data: Object.freeze({
+    entries: Object.freeze([]),
+  }),
+  warnings: Object.freeze(['Firestore media index reads require an approved couple membership.']),
+})
+
 function fromBrowserFixture(fixture) {
   return fixture?.snapshot?.sources?.mediaIndex || fixture?.compatibility?.snapshot?.sources?.mediaIndex || null
 }
@@ -24,7 +33,7 @@ export function useMediaIndexSource() {
 
   const loadSource = useCallback(({ coupleId, sourceMode }) => {
     if (sourceMode !== DATA_SOURCE_MODES.firestore) return EMPTY_MEDIA_INDEX_SOURCE
-    if (!coupleId) throw new Error('Media index requires an approved couple membership.')
+    if (!coupleId) return UNAVAILABLE_MEDIA_INDEX_SOURCE
     return getFirestoreMediaIndexForCouple(coupleId)
   }, [])
 

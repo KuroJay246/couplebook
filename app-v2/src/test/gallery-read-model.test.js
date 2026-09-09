@@ -501,6 +501,8 @@ test('gallery architecture stays read-only and routes Storage through the media 
   assert.match(hookSource, /mediaIndexSource: mediaIndex\.source/)
   assert.doesNotMatch(hookSource, /compatibilitySnapshot: snapshot/)
   assert.match(mediaIndexHookSource, /getFirestoreMediaIndexForCouple/)
+  assert.match(mediaIndexHookSource, /Firestore media index reads require an approved couple membership/)
+  assert.doesNotMatch(mediaIndexHookSource, /throw new Error\('Media index requires/)
   assert.doesNotMatch(combined, /fetch\(|XMLHttpRequest|new Image|createObjectURL|getDownloadURL|firebase\/storage/)
   assert.doesNotMatch(combined, /\bsetItem\s*\(|\bupdateDoc\s*\(|\baddDoc\s*\(|\bdeleteDoc\s*\(|\bsetDoc\s*\(/)
   assert.doesNotMatch(combined, /collection\([^)]*users|documents\/users(?:[/?#]|\b)/)
