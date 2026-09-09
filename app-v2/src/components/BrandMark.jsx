@@ -9,12 +9,12 @@ function SymbolSvg({ className = '', title = 'Couple Book mark' }) {
     >
       {title ? <title>{title}</title> : null}
       <path
-        d="M13.5 11.5C13.5 9.84315 14.8431 8.5 16.5 8.5H24V35.5H17.5C15.2909 35.5 13.5 33.7091 13.5 31.5V11.5Z"
+        d="M13.5 11.5C13.5 9.84 14.84 8.5 16.5 8.5H24V35.5H17.5C15.29 35.5 13.5 33.71 13.5 31.5V11.5Z"
         fill="currentColor"
         fillOpacity="0.92"
       />
       <path
-        d="M34.5 11.5C34.5 9.84315 33.1569 8.5 31.5 8.5H24V35.5H30.5C32.7091 35.5 34.5 33.7091 34.5 31.5V11.5Z"
+        d="M34.5 11.5C34.5 9.84 33.16 8.5 31.5 8.5H24V35.5H30.5C32.71 35.5 34.5 33.71 34.5 31.5V11.5Z"
         fill="currentColor"
         fillOpacity="0.62"
       />

@@ -236,7 +236,10 @@ export function buildMediaManifest({ coupleId, derivedPosters = new Map(), local
     if (file.supportedUpload !== true || file.corrupt !== false || !file.sha256) continue
     if (!uploadCandidatesByChecksum.has(file.sha256)) uploadCandidatesByChecksum.set(file.sha256, file)
   }
-  const safeMatchedChecksums = new Set(records.filter((record) => record.safeToUpload).map((record) => record.original.sha256))
+  const safeMatchedChecksums = new Set()
+  for (const record of records) {
+    if (record.safeToUpload) safeMatchedChecksums.add(record.original.sha256)
+  }
   const summary = {
     localFiles: localMedia.length,
     references: references.length,

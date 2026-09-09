@@ -188,41 +188,61 @@ export function classifyDuplicates(inventory) {
     }
   }
 
-  const exactDuplicateGroups = [...byChecksum.values()]
-    .filter((items) => items.length > 1 && items.every((item) => item.readResult === 'readable'))
-    .map((items, groupIndex) => ({
-      groupId: `dup_${String(groupIndex + 1).padStart(4, '0')}`,
+  const exactDuplicateGroups = []
+  let exactDuplicateGroupIndex = 0
+  for (const items of byChecksum.values()) {
+    if (items.length <= 1 || !items.every((item) => item.readResult === 'readable')) continue
+    exactDuplicateGroupIndex += 1
+    exactDuplicateGroups.push({
+      groupId: `dup_${String(exactDuplicateGroupIndex).padStart(4, '0')}`,
       sha256: items[0].sha256,
       sizeBytes: items[0].sizeBytes,
       retainedInventoryId: selectCanonical(items).inventoryId,
       duplicateInventoryIds: items.map((item) => item.inventoryId),
       copies: items.length,
-    }))
+    })
+  }
 
-  const sameNameDifferentFiles = [...byName.values()]
-    .filter((items) => new Set(items.map((item) => item.sha256 || item.inventoryId)).size > 1)
-    .map((items, groupIndex) => ({
-      groupId: `same_name_${String(groupIndex + 1).padStart(4, '0')}`,
+  const sameNameDifferentFiles = []
+  let sameNameGroupIndex = 0
+  for (const items of byName.values()) {
+    const uniqueChecksums = new Set(items.map((item) => item.sha256 || item.inventoryId))
+    if (uniqueChecksums.size <= 1) continue
+    sameNameGroupIndex += 1
+    sameNameDifferentFiles.push({
+      groupId: `same_name_${String(sameNameGroupIndex).padStart(4, '0')}`,
       normalizedFilename: items[0].normalizedFilename,
       inventoryIds: items.map((item) => item.inventoryId),
-      uniqueChecksums: new Set(items.map((item) => item.sha256 || item.inventoryId)).size,
-    }))
+      uniqueChecksums: uniqueChecksums.size,
+    })
+  }
+
+  const corrupt = []
+  const empty = []
+  for (const item of inventory) {
+    if (item.corruptionResult === 'unreadable') corrupt.push(item.inventoryId)
+    if (item.corruptionResult === 'empty') empty.push(item.inventoryId)
+  }
 
   return {
     exactDuplicateGroups,
     sameNameDifferentFiles,
-    corrupt: inventory.filter((item) => item.corruptionResult === 'unreadable').map((item) => item.inventoryId),
-    empty: inventory.filter((item) => item.corruptionResult === 'empty').map((item) => item.inventoryId),
+    corrupt,
+    empty,
   }
 }
 
 export function selectCanonical(items) {
-  return [...items].sort((a, b) => {
-    const aScore = canonicalScore(a)
-    const bScore = canonicalScore(b)
-    if (bScore !== aScore) return bScore - aScore
-    return a.sourcePath.localeCompare(b.sourcePath)
-  })[0]
+  let selected = null
+  let selectedScore = -Infinity
+  for (const item of items) {
+    const score = canonicalScore(item)
+    if (!selected || score > selectedScore || (score === selectedScore && item.sourcePath.localeCompare(selected.sourcePath) < 0)) {
+      selected = item
+      selectedScore = score
+    }
+  }
+  return selected
 }
 
 function canonicalScore(item) {
@@ -235,20 +255,31 @@ function canonicalScore(item) {
 }
 
 export function summarizeInventory(inventory, duplicateSummary) {
-  return {
+  const summary = {
     filesScanned: inventory.length,
-    totalBytes: inventory.reduce((total, item) => total + item.sizeBytes, 0),
-    images: inventory.filter((item) => item.mediaCategory === 'image').length,
-    videos: inventory.filter((item) => item.mediaCategory === 'video').length,
-    audio: inventory.filter((item) => item.mediaCategory === 'audio').length,
-    uniqueChecksumCount: new Set(inventory.filter((item) => item.sha256).map((item) => item.sha256)).size,
+    totalBytes: 0,
+    images: 0,
+    videos: 0,
+    audio: 0,
+    uniqueChecksumCount: 0,
     exactDuplicateGroups: duplicateSummary.exactDuplicateGroups.length,
     exactDuplicateCopies: duplicateSummary.exactDuplicateGroups.reduce((total, group) => total + group.copies - 1, 0),
     sameNameDifferentFiles: duplicateSummary.sameNameDifferentFiles.length,
     corrupt: duplicateSummary.corrupt.length,
     empty: duplicateSummary.empty.length,
-    projectMediaFiles: inventory.filter((item) => item.insideProject).length,
+    projectMediaFiles: 0,
   }
+  const uniqueChecksums = new Set()
+  for (const item of inventory) {
+    summary.totalBytes += item.sizeBytes
+    if (item.mediaCategory === 'image') summary.images += 1
+    if (item.mediaCategory === 'video') summary.videos += 1
+    if (item.mediaCategory === 'audio') summary.audio += 1
+    if (item.sha256) uniqueChecksums.add(item.sha256)
+    if (item.insideProject) summary.projectMediaFiles += 1
+  }
+  summary.uniqueChecksumCount = uniqueChecksums.size
+  return summary
 }
 
 export function csvEscape(value) {
@@ -297,24 +328,24 @@ export function buildConsolidationPlan({ duplicateSummary, inventory, libraryRoo
   })
 
   const quarantineRoot = path.join(libraryRoot, 'quarantine', 'exact-duplicates', timestamp)
-  const quarantineMoves = duplicateSummary.exactDuplicateGroups.flatMap((group) => {
+  const quarantineMoves = []
+  for (const group of duplicateSummary.exactDuplicateGroups) {
     const retained = group.retainedInventoryId
-    return group.duplicateInventoryIds
-      .filter((inventoryId) => inventoryId !== retained)
-      .map((inventoryId) => {
-        const item = byInventoryId.get(inventoryId)
-        if (!item) throw new Error(`Missing inventory item ${inventoryId}.`)
-        return {
-          inventoryId,
-          sourcePath: item.sourcePath,
-          sha256: item.sha256,
-          sizeBytes: item.sizeBytes,
-          retainedInventoryId: retained,
-          retainedCanonicalChecksum: group.sha256,
-          quarantinePath: path.join(quarantineRoot, `${inventoryId}${item.extension}`),
-        }
+    for (const inventoryId of group.duplicateInventoryIds) {
+      if (inventoryId === retained) continue
+      const item = byInventoryId.get(inventoryId)
+      if (!item) throw new Error(`Missing inventory item ${inventoryId}.`)
+      quarantineMoves.push({
+        inventoryId,
+        sourcePath: item.sourcePath,
+        sha256: item.sha256,
+        sizeBytes: item.sizeBytes,
+        retainedInventoryId: retained,
+        retainedCanonicalChecksum: group.sha256,
+        quarantinePath: path.join(quarantineRoot, `${inventoryId}${item.extension}`),
       })
-  })
+    }
+  }
 
   return {
     libraryRoot,
