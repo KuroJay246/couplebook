@@ -1,6 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Film, ImageIcon, Images, RotateCcw, SlidersHorizontal, Upload, XCircle } from 'lucide-react'
+import { Film, Heart, ImageIcon, Images, RotateCcw, SlidersHorizontal, Upload, XCircle } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { DangerButton, PrimaryButton, SecondaryButton, TextButton } from '../../components/ui/Button.jsx'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx'
@@ -57,9 +57,54 @@ function toneFor(item) {
   return 'default'
 }
 
+function mediaTileAspectStyle(item) {
+  const width = Number(item.media.width)
+  const height = Number(item.media.height)
+  if (width > 0 && height > 0) {
+    return { aspectRatio: `${width} / ${height}` }
+  }
+  return { aspectRatio: item.media.kind === 'video' ? '16 / 9' : '4 / 3' }
+}
+
+function formatDuration(durationMillis) {
+  const totalSeconds = Math.round(Number(durationMillis || 0) / 1000)
+  if (!Number.isFinite(totalSeconds) || totalSeconds <= 0) return ''
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = String(totalSeconds % 60).padStart(2, '0')
+  return `${minutes}:${seconds}`
+}
+
 function GalleryTile({ item, onSelect }) {
   const isVideo = item.media.kind === 'video'
   const previewUrl = item.media.previewUrl || item.media.thumbnailUrl || ''
+  const isIndexedDriveMedia = item.media.status === 'drive-indexed'
+  const duration = formatDuration(item.media.durationMillis)
+
+  if (isIndexedDriveMedia) {
+    return (
+      <article className={`gallery-index-tile ${isVideo ? 'is-video' : 'is-photo'}`}>
+        <button
+          aria-label={galleryTileLabel(item)}
+          className="gallery-index-tile-button"
+          onClick={() => onSelect(item)}
+          style={mediaTileAspectStyle(item)}
+          type="button"
+        >
+          <span className="gallery-index-placeholder" aria-hidden="true">
+            {isVideo ? <Film className="size-7" /> : <ImageIcon className="size-7" />}
+          </span>
+          <span className="gallery-index-overlay">
+            <span className="gallery-index-title">{item.title}</span>
+            <span className="gallery-index-meta">
+              {isVideo ? 'Video' : 'Photo'}{duration ? ` / ${duration}` : ''}{item.displayDate ? ` / ${item.displayDate}` : ''}
+            </span>
+          </span>
+          {item.media.favorite ? <span className="gallery-index-favorite" aria-hidden="true"><Heart className="size-3.5" fill="currentColor" /></span> : null}
+          {isVideo ? <span className="gallery-index-play" aria-hidden="true"><Film className="size-4" /></span> : null}
+        </button>
+      </article>
+    )
+  }
 
   return (
     <article className="cb-photo-book-tile gallery-item flex h-full flex-col overflow-hidden">
@@ -559,7 +604,7 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
               </div>
               {group.featured ? <StatusBadge tone="info">Featured: {group.featured.title}</StatusBadge> : null}
             </div>
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className={group.items.some((item) => item.media.status === 'drive-indexed') ? 'gallery-media-library-grid' : 'grid gap-4 md:grid-cols-2 xl:grid-cols-3'}>
               {group.items.map((item) => (
                 <GalleryTile item={item} key={item.key} onSelect={setSelectedItem} />
               ))}
