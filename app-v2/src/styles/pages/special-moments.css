@@ -695,6 +695,10 @@
 }
 
 @media (max-width: 640px) {
+  .special-moment-page {
+    padding-bottom: calc(5.75rem + env(safe-area-inset-bottom));
+  }
+
   .birthday-canvas,
   .valentine-stage,
   .confession-shell {
@@ -716,10 +720,19 @@
   .birthday-cake-plate { width: 13rem; }
 
   .valentine-buttons {
-    height: 8rem;
+    display: grid;
+    height: auto;
+    gap: 0.8rem;
+    margin-top: 1.4rem;
   }
 
   .valentine-action {
+    position: static;
+    width: 100%;
     min-width: 7rem;
+  }
+
+  .valentine-action.no {
+    transform: none !important;
   }
 }

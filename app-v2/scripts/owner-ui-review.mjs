@@ -391,8 +391,18 @@ async function hashFile(filePath) {
 
 async function captureShot(summary, page, { captureType = 'viewport', fullPage = false, group = 'routes', label, locator = null, route = '', routeSlug = '', themeId = '', viewport }) {
   const filePath = path.join(REVIEW_ROOT, group, `${viewport.slug}-${routeSlug || slug(route || label)}-${themeId || 'current'}-${captureType}.png`)
-  if (locator) await locator.screenshot({ path: filePath })
-  else await page.screenshot({ path: filePath, fullPage })
+  if (locator) {
+    const mobileChromeStyle = viewport.mode === 'mobile'
+      ? await page.addStyleTag({ content: '.mobile-tab-bar { display: none !important; }' })
+      : null
+    try {
+      await locator.screenshot({ path: filePath })
+    } finally {
+      if (mobileChromeStyle) await mobileChromeStyle.evaluate((node) => node.remove())
+    }
+  } else {
+    await page.screenshot({ path: filePath, fullPage })
+  }
   const entry = { captureType, group, label, output: relativeToReviewRoot(filePath), route, themeId, themeName: themeId ? themeName(themeId) : '', viewport: viewport.slug }
   summary.captures.push(entry)
   return entry
@@ -1079,7 +1089,7 @@ async function captureCards(summary, browser, baseUrl, ownerEmail, ownerPassword
       ['Plan card', '/plans', async (page) => page.locator('article').filter({ has: page.getByText('Bookstore date') }).first()],
       ['Theme tile', '/settings', async (page) => themeTile(page, 'paper-hearts')],
       ['Contract section', '/contract', async (page) => page.locator('article').first()],
-      ['Special-moment section', '/settings', async (page) => page.locator('section, article').filter({ has: page.getByRole('heading', { name: 'Birthday, Valentine, and Confession' }) }).first()],
+      ['Special-moment section', '/settings', async (page) => page.locator('.cb-page-frame').filter({ has: page.getByRole('heading', { name: 'Birthday, Valentine, and Confession' }) }).first()],
     ]
     for (const [label, routePath, locatorFn] of targets) {
       const route = DEFAULT_ROUTE_SET.find((entry) => entry.path === routePath)
