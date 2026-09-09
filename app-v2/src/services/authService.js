@@ -1,5 +1,7 @@
 import {
   browserLocalPersistence,
+  GoogleAuthProvider,
+  linkWithPopup,
   onAuthStateChanged,
   setPersistence,
   signInWithEmailAndPassword,
@@ -8,6 +10,7 @@ import {
 import { auth, isFirebaseConfigured, missingFirebaseConfigMessage } from '../lib/firebase.js'
 
 let persistencePromise = null
+export const GOOGLE_PROVIDER_ID = 'google.com'
 
 export async function ensureAuthPersistence() {
   if (!isFirebaseConfigured || !auth) {
@@ -43,6 +46,72 @@ export async function signInWithEmail(email, password) {
 
   await ensureAuthPersistence()
   return signInWithEmailAndPassword(auth, email.trim(), password)
+}
+
+export function getLinkedProviderIds(user) {
+  return (user?.providerData || [])
+    .map((provider) => String(provider?.providerId || '').trim())
+    .filter(Boolean)
+}
+
+export function isGoogleProviderLinked(user) {
+  return getLinkedProviderIds(user).includes(GOOGLE_PROVIDER_ID)
+}
+
+export function createGoogleAuthProvider() {
+  const provider = new GoogleAuthProvider()
+  provider.addScope('profile')
+  provider.addScope('email')
+  provider.setCustomParameters({ prompt: 'select_account' })
+  return provider
+}
+
+function createGoogleLinkTimeoutError() {
+  return new Error('Google sign-in linking did not finish. Check for a blocked Google popup, allow popups for localhost, then try again.')
+}
+
+function createUidMismatchError() {
+  const error = new Error('Google sign-in returned a different Firebase account. Sign back in with the approved Couple Book account, then link Google from Settings.')
+  error.code = 'auth/google-link-uid-mismatch'
+  return error
+}
+
+function withTimeout(promise, timeoutMs, createTimeoutError) {
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) return promise
+
+  let timeoutId = null
+  const timeoutPromise = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => reject(createTimeoutError()), timeoutMs)
+  })
+
+  return Promise.race([promise, timeoutPromise]).finally(() => {
+    if (timeoutId !== null) clearTimeout(timeoutId)
+  })
+}
+
+export async function linkCurrentUserWithGoogle({
+  authInstance = auth,
+  ensurePersistence = ensureAuthPersistence,
+  firebaseConfigured = isFirebaseConfigured,
+  linkPopup = linkWithPopup,
+  linkTimeoutMs = 20000,
+  providerFactory = createGoogleAuthProvider,
+} = {}) {
+  if (!authInstance || !firebaseConfigured) {
+    throw new Error(missingFirebaseConfigMessage || 'Firebase auth is not configured for app-v2.')
+  }
+
+  const currentUser = authInstance.currentUser
+  if (!currentUser?.uid) throw new Error('Sign in with the existing Couple Book account before linking Google.')
+
+  if (isGoogleProviderLinked(currentUser)) {
+    return { user: currentUser, alreadyLinked: true, providerId: GOOGLE_PROVIDER_ID }
+  }
+
+  await ensurePersistence()
+  const result = await withTimeout(linkPopup(currentUser, providerFactory()), linkTimeoutMs, createGoogleLinkTimeoutError)
+  if (result.user?.uid !== currentUser.uid) throw createUidMismatchError()
+  return { user: result.user, alreadyLinked: false, providerId: GOOGLE_PROVIDER_ID }
 }
 
 export async function signOutCurrentUser() {

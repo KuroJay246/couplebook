@@ -1,5 +1,6 @@
 import {
   Gift,
+  KeyRound,
   Heart,
   Images,
   LockKeyhole,
@@ -25,6 +26,7 @@ import { useAuth } from '../../auth/useAuth.js'
 import { useTheme } from '../../theme/useTheme.js'
 import { DEFAULT_THEME_ID, THEME_REGISTRY } from '../../theme/themeRegistry.js'
 import { useOwnerWrite } from '../editing/useOwnerWrite.js'
+import { GOOGLE_PROVIDER_ID, isGoogleProviderLinked } from '../../services/authService.js'
 
 const MOMENT_LINKS = [
   {
@@ -178,16 +180,18 @@ function MediaSettingsSection({ media }) {
 
 export function SettingsView({ compatibilityError, compatibilityState, model, onRefresh }) {
   const writer = useOwnerWrite(onRefresh)
-  const { signOut } = useAuth()
+  const { linkGoogleProvider, signOut, user } = useAuth()
   const { activeTheme, previewTheme, commitTheme, resetTheme } = useTheme()
   const loadedForm = useMemo(() => buildFormState(model), [model])
   const [draft, setDraft] = useState({})
   const [signOutState, setSignOutState] = useState({ open: false, pending: false })
+  const [googleLinkState, setGoogleLinkState] = useState({ kind: '', message: '', pending: false })
   const [status, setStatus] = useState({ kind: '', message: '', saving: false })
   const [activeCategory, setActiveCategory] = useState('profiles')
   const form = useMemo(() => ({ ...loadedForm, ...draft, revision: loadedForm.revision }), [draft, loadedForm])
   const dirty = hasChanges(loadedForm, form)
   const agreementCards = [model.contract?.currentUser, model.contract?.partner].filter(Boolean)
+  const googleLinked = isGoogleProviderLinked(user)
 
   function updateField(key, value) {
     setDraft((current) => ({ ...current, [key]: value }))
@@ -231,6 +235,26 @@ export function SettingsView({ compatibilityError, compatibilityState, model, on
       await signOut()
     } finally {
       setSignOutState({ open: false, pending: false })
+    }
+  }
+
+  async function handleLinkGoogle() {
+    setGoogleLinkState({ kind: '', message: '', pending: true })
+    try {
+      const result = await linkGoogleProvider()
+      setGoogleLinkState({
+        kind: 'success',
+        message: result.alreadyLinked
+          ? 'Google sign-in is already linked to this approved Couple Book account.'
+          : 'Google sign-in is now linked to this approved Couple Book account.',
+        pending: false,
+      })
+    } catch (error) {
+      setGoogleLinkState({
+        kind: 'error',
+        message: error?.message || 'Google sign-in could not be linked. Try again.',
+        pending: false,
+      })
     }
   }
 
@@ -408,6 +432,31 @@ export function SettingsView({ compatibilityError, compatibilityState, model, on
                 <p className="mt-2 text-sm font-semibold" style={{ color: 'var(--cb-text)' }}>{detail.value}</p>
               </ContentCard>
             ))}
+          </div>
+          <div className="mt-5">
+            <ContentCard>
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="flex items-start gap-3">
+                  <KeyRound className="mt-0.5 size-4 shrink-0" style={{ color: 'var(--cb-accent)' }} aria-hidden="true" />
+                  <div>
+                    <p className="text-sm font-semibold" style={{ color: 'var(--cb-text)' }}>Google sign-in</p>
+                    <p className="cb-body-copy mt-2 text-sm">
+                      Link Google only while signed in with the existing approved account so the current Firebase UID, couple membership, and private book data stay intact.
+                    </p>
+                  </div>
+                </div>
+                <StatusBadge tone={googleLinked ? 'success' : 'warning'}>{googleLinked ? 'Linked' : 'Not linked'}</StatusBadge>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <SecondaryButton disabled={googleLinked || googleLinkState.pending} onClick={handleLinkGoogle}>
+                  {googleLinkState.pending ? 'Opening Google...' : 'Link Google sign-in'}
+                </SecondaryButton>
+                <StatusBadge>{GOOGLE_PROVIDER_ID}</StatusBadge>
+              </div>
+              {googleLinkState.message ? (
+                <InlineAlert className="mt-4" description={googleLinkState.message} tone={googleLinkState.kind === 'error' ? 'error' : 'success'} />
+              ) : null}
+            </ContentCard>
           </div>
           <div className="mt-5 grid gap-3">
             {(model.privacy?.items || []).map((item) => (

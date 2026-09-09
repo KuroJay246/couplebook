@@ -1,7 +1,7 @@
 import { startTransition, useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { auth, isFirebaseConfigured, missingFirebaseConfigMessage } from '../lib/firebase.js'
 import { getBrowserTestAuthState } from '../lib/browserTestMode'
-import { ensureAuthPersistence, observeAuthState, signInWithEmail, signOutCurrentUser } from '../services/authService'
+import { ensureAuthPersistence, linkCurrentUserWithGoogle, observeAuthState, signInWithEmail, signOutCurrentUser } from '../services/authService'
 import { resolveApprovedUser } from '../services/authorizationService'
 import { toAuthError, toUserFacingError } from '../services/userFacingError.js'
 import { AuthContext } from './AuthContext'
@@ -51,6 +51,17 @@ function applySignedOutState(dispatch) {
     approvedUser: null,
     isAuthorized: false,
     authError: '',
+    authInitialized: true,
+    loading: false,
+  })
+}
+
+function applySignedOutErrorState(dispatch, message) {
+  transitionAuthState(dispatch, {
+    user: null,
+    approvedUser: null,
+    isAuthorized: false,
+    authError: message,
     authInitialized: true,
     loading: false,
   })
@@ -220,6 +231,35 @@ export function AuthProvider({ children }) {
     }
   }, [isBrowserTestMode])
 
+  const linkGoogleProvider = useCallback(async () => {
+    if (isBrowserTestMode) {
+      throw new Error('Browser regression auth is injected locally and cannot be linked to Google.')
+    }
+
+    dispatchAuthState({ payload: { authError: '' } })
+
+    try {
+      const result = await linkCurrentUserWithGoogle()
+      const resolution = await resolveApprovedUser(result.user)
+      transitionAuthState(dispatchAuthState, createResolvedAuthState(result.user, resolution))
+      return result
+    } catch (error) {
+      reportDevAuthError('linkGoogleProvider', error)
+      if (error?.code === 'auth/google-link-uid-mismatch') {
+        await signOutCurrentUser()
+        applySignedOutErrorState(dispatchAuthState, error.message)
+        throw error
+      }
+
+      transitionAuthState(dispatchAuthState, {
+        authError: toAuthError(error, 'We could not link Google sign-in. Try again.'),
+        authInitialized: true,
+        loading: false,
+      })
+      throw error
+    }
+  }, [isBrowserTestMode])
+
   const { approvedUser, authError, authInitialized, isAuthorized, loading, user } = authState
 
   const value = useMemo(
@@ -232,9 +272,10 @@ export function AuthProvider({ children }) {
       isConfigured: isBrowserTestMode || isFirebaseConfigured,
       authError,
       signIn,
+      linkGoogleProvider,
       signOut,
     }),
-    [approvedUser, authError, authInitialized, isAuthorized, isBrowserTestMode, loading, signIn, signOut, user],
+    [approvedUser, authError, authInitialized, isAuthorized, isBrowserTestMode, linkGoogleProvider, loading, signIn, signOut, user],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
