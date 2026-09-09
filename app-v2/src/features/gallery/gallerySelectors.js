@@ -1,6 +1,13 @@
 import { deepFreeze, freezeClone } from '../../data/adapterUtils.js'
 import { selectTimelineDisplayMemories } from '../memories/memorySelectors.js'
 
+const INDEXED_DATE_FORMATTER = new Intl.DateTimeFormat('en-US', {
+  day: 'numeric',
+  month: 'long',
+  timeZone: 'UTC',
+  year: 'numeric',
+})
+
 function sortByNewest(items = []) {
   return items.toSorted((left, right) => {
     if (left.sort.timestamp !== null && right.sort.timestamp !== null && left.sort.timestamp !== right.sort.timestamp) {
@@ -65,12 +72,7 @@ function normalizeIndexedDate(value) {
 
 function formatIndexedDate(date) {
   if (date.status !== 'valid') return ''
-  return new Intl.DateTimeFormat('en-US', {
-    day: 'numeric',
-    month: 'long',
-    timeZone: 'UTC',
-    year: 'numeric',
-  }).format(new Date(date.timestamp))
+  return INDEXED_DATE_FORMATTER.format(new Date(date.timestamp))
 }
 
 function matchesGalleryFilter(item, filter) {

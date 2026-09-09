@@ -50,9 +50,12 @@ export async function signInWithEmail(email, password) {
 }
 
 export function getLinkedProviderIds(user) {
-  return (user?.providerData || [])
-    .map((provider) => String(provider?.providerId || '').trim())
-    .filter(Boolean)
+  const providerIds = []
+  for (const provider of user?.providerData || []) {
+    const providerId = String(provider?.providerId || '').trim()
+    if (providerId) providerIds.push(providerId)
+  }
+  return providerIds
 }
 
 export function isGoogleProviderLinked(user) {
