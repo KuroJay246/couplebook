@@ -247,6 +247,20 @@
   font-size: 1rem;
 }
 
+.birthday-message {
+  display: grid;
+  max-width: 42rem;
+  gap: 0.7rem;
+  margin-top: 0.5rem;
+}
+
+.birthday-message p {
+  margin: 0;
+  color: rgba(245, 243, 255, 0.86);
+  font-size: 0.95rem;
+  line-height: 1.75;
+}
+
 .birthday-confetti {
   position: absolute;
   inset: 0;

@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { PrimaryButton, SecondaryButton, TextButton } from '../../components/ui/Button.jsx'
@@ -9,6 +9,7 @@ import { LoadingState } from '../../components/ui/LoadingState.jsx'
 import { PageHeader } from '../../components/ui/PageHeader.jsx'
 import { StatusBadge } from '../../components/ui/StatusBadge.jsx'
 import { ContentCard, Surface } from '../../components/ui/Surface.jsx'
+import { useDialogAccessibility } from '../../components/ui/useDialogAccessibility.js'
 import { useOwnerWrite } from '../editing/useOwnerWrite.js'
 import { getSpecialMomentConfig } from './specialMomentConfig.js'
 import { useSpecialMomentContent } from './useSpecialMomentContent.js'
@@ -89,6 +90,7 @@ function normalizeSections(moment) {
 function SpecialMomentEditDialog({ copy, model, momentKey, onClose, onSave, status }) {
   const firstFieldRef = useRef(null)
   const titleId = useId()
+  const dialogRef = useDialogAccessibility({ initialFocusRef: firstFieldRef, onClose })
   const [form, setForm] = useState(() => ({
     title: model.moment?.title || model.config?.title || copy.title,
     subtitle: model.moment?.subtitle || '',
@@ -96,10 +98,6 @@ function SpecialMomentEditDialog({ copy, model, momentKey, onClose, onSave, stat
     revision: model.moment?.revision || 0,
     sections: normalizeSections(model.moment),
   }))
-
-  useEffect(() => {
-    firstFieldRef.current?.focus()
-  }, [])
 
   function updateField(key, value) {
     setForm((current) => ({ ...current, [key]: value }))
@@ -121,6 +119,7 @@ function SpecialMomentEditDialog({ copy, model, momentKey, onClose, onSave, stat
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <button type="button" className="absolute inset-0 bg-[#24131d]/40 backdrop-blur-sm" onClick={onClose} aria-label="Close special page form" />
       <form
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}

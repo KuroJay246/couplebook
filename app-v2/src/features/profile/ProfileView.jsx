@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useId, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { CalendarDays, HeartHandshake, ScrollText, Sparkles, Star } from 'lucide-react'
 import { Link } from 'react-router-dom'
@@ -13,6 +13,7 @@ import { PageHeader } from '../../components/ui/PageHeader.jsx'
 import { PageTabs } from '../../components/ui/PageTabs.jsx'
 import { StatusBadge } from '../../components/ui/StatusBadge.jsx'
 import { ContentCard, Surface } from '../../components/ui/Surface.jsx'
+import { useDialogAccessibility } from '../../components/ui/useDialogAccessibility.js'
 import { useOwnerWrite } from '../editing/useOwnerWrite.js'
 
 function personTone(index) {
@@ -52,6 +53,8 @@ function daysTogether(value) {
 
 function ProfileEditDialog({ onClose, onSave, person, status }) {
   const firstFieldRef = useRef(null)
+  const titleId = useId()
+  const dialogRef = useDialogAccessibility({ initialFocusRef: firstFieldRef, onClose })
   const [form, setForm] = useState(() => ({
     name: person?.displayName || '',
     bio: person?.bio || '',
@@ -60,10 +63,6 @@ function ProfileEditDialog({ onClose, onSave, person, status }) {
     birthday: person?.birthday || '',
     revision: person?.revision || 0,
   }))
-
-  useEffect(() => {
-    firstFieldRef.current?.focus()
-  }, [])
 
   function updateField(key, value) {
     setForm((current) => ({ ...current, [key]: value }))
@@ -77,11 +76,18 @@ function ProfileEditDialog({ onClose, onSave, person, status }) {
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <button type="button" className="absolute inset-0 bg-[var(--cb-bg-soft)]/40 backdrop-blur-sm" onClick={onClose} aria-label="Close profile form" />
-      <form className="relative w-full max-w-2xl rounded-[28px] border border-[var(--cb-border)] bg-[var(--cb-surface)] p-6 shadow-[0_24px_80px_rgba(36,19,29,0.18)] sm:p-8" onSubmit={handleSubmit}>
+      <form
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="relative w-full max-w-2xl rounded-[28px] border border-[var(--cb-border)] bg-[var(--cb-surface)] p-6 shadow-[0_24px_80px_rgba(36,19,29,0.18)] sm:p-8"
+        onSubmit={handleSubmit}
+      >
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--cb-accent)]">Edit profile</p>
-            <h3 className="mt-2 font-serif text-3xl text-[var(--cb-text)]">Update your section of Us</h3>
+            <h3 id={titleId} className="mt-2 font-serif text-3xl text-[var(--cb-text)]">Update your section of Us</h3>
           </div>
           <TextButton onClick={onClose}>Close</TextButton>
         </div>
@@ -124,7 +130,7 @@ function ProfileCard({ canEdit, onEdit, person, index }) {
   const accentClass = tone === 'jaylan' ? 'bg-[var(--cb-accent-soft)] text-[var(--cb-accent)]' : 'bg-[var(--cb-accent-soft)] text-[#5c4677]'
 
   return (
-    <Surface className="h-full">
+    <Surface className={`cb-person-spread cb-person-spread-${tone} h-full`}>
       <div className="flex h-full flex-col gap-5">
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -244,7 +250,7 @@ export function ProfileView({ compatibilityError, compatibilityState, model, onR
         />
       ) : null}
 
-      <Surface className="grid gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(18rem,0.9fr)]">
+      <Surface className="cb-us-hero grid gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(18rem,0.9fr)]">
         <div>
           <StatusBadge tone="info">Shared profile</StatusBadge>
           <h3 className="mt-3 font-serif text-4xl text-[var(--cb-text)]">{displayRelationshipTitle}</h3>

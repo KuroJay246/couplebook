@@ -61,7 +61,6 @@ Rollback is document-scoped:
 ## Known Readiness Gaps
 
 - Real Google OAuth cannot be proven until the Google Cloud OAuth client has the exact local or preview origins registered.
-- `http://127.0.0.1:5173` and `http://localhost:5173` are different OAuth origins. Register both for local review if both browser forms will be used.
+- `http://localhost:5173` is the canonical local browser origin for OAuth review. `127.0.0.1` remains an internal emulator/service loopback host only.
 - App Check is not initialized in app-v2. Do not claim App Check enforcement until a reviewed site key, localhost/debug-token behavior, preview behavior, and rollout plan are in place.
 - Firebase Hosting has basic low-risk security headers in `firebase.json`; CSP remains a separate hardening task because an incorrect policy can break Firebase Auth or Google Drive OAuth.
-

@@ -18,7 +18,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const APP_ROOT = path.resolve(__dirname, '..')
 const DEFAULT_PORT = 4173
-let baseUrl = process.env.COUPLEBOOK_APP_V2_BROWSER_BASE_URL || `http://127.0.0.1:${DEFAULT_PORT}`
+let baseUrl = process.env.COUPLEBOOK_APP_V2_BROWSER_BASE_URL || `http://localhost:${DEFAULT_PORT}`
 const SPOOFED_SESSION = Object.freeze({
   memorybook_active_session: 'spoofed-reader',
   memorybook_active_user: 'spoofed-reader',
@@ -182,7 +182,7 @@ async function canUsePort(port) {
       server.close(() => resolve(true))
     })
 
-    server.listen(port, '127.0.0.1')
+    server.listen(port, 'localhost')
   })
 }
 
@@ -204,11 +204,11 @@ async function withAppServer(callback) {
   }
 
   const serverPort = await findAvailablePort()
-  baseUrl = `http://127.0.0.1:${serverPort}`
+  baseUrl = `http://localhost:${serverPort}`
   const server = await createViteServer({
     root: APP_ROOT,
     server: {
-      host: '127.0.0.1',
+      host: 'localhost',
       port: serverPort,
       strictPort: true,
     },

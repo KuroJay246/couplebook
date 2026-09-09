@@ -13,7 +13,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const APP_ROOT = path.resolve(__dirname, '..')
 const OUTPUT_ROOT = path.join(APP_ROOT, 'output', 'playwright', 'event-hub-shell-port')
-let baseUrl = process.env.COUPLEBOOK_APP_V2_BROWSER_BASE_URL || 'http://127.0.0.1:4176'
+let baseUrl = process.env.COUPLEBOOK_APP_V2_BROWSER_BASE_URL || 'http://localhost:4176'
 
 function createInitScript() {
   return ({ fixture }) => {
@@ -80,13 +80,13 @@ async function withAppServer(callback) {
   const server = await createViteServer({
     root: APP_ROOT,
     server: {
-      host: '127.0.0.1',
+      host: 'localhost',
       port: 0,
     },
   })
   await server.listen()
   const address = server.httpServer.address()
-  baseUrl = `http://127.0.0.1:${address.port}`
+  baseUrl = `http://localhost:${address.port}`
 
   try {
     return await callback()

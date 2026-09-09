@@ -333,13 +333,13 @@ async function run() {
     root: APP_ROOT,
     server: {
       hmr: false,
-      host: '127.0.0.1',
+      host: 'localhost',
       port: 0,
     },
   })
   await server.listen()
   const address = server.httpServer.address()
-  const baseUrl = `http://127.0.0.1:${address.port}`
+  const baseUrl = `http://localhost:${address.port}`
   const browser = await launchBrowser()
   const initScript = createInitScript()
   const results = []

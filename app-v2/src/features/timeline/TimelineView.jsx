@@ -284,8 +284,11 @@ function DetailModal({ memory, onArchive, onClose, onEdit, status }) {
 
 function TimelineCard({ memory, onArchive, onEdit, onSelect }) {
   return (
-    <ContentCard className="timeline-card relative max-w-[58rem] overflow-hidden">
+    <ContentCard className={`timeline-card timeline-card-${memory.media.kind || 'none'} relative max-w-[58rem] overflow-hidden`}>
       <div className={`absolute inset-y-4 left-0 w-1 rounded-full ${accentStripeClass(memory)}`} aria-hidden="true" />
+      <div className="timeline-card-visual" aria-hidden="true">
+        <span>{memory.media.kind === 'video' ? 'Video' : memory.media.kind === 'image' ? 'Photo' : memory.specialMoment.isSpecial ? 'Special' : 'Note'}</span>
+      </div>
       <div className="flex flex-col gap-4 pl-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">

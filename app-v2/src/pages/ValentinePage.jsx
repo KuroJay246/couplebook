@@ -60,6 +60,7 @@ export function ValentinePage() {
   const question = model.moment.title || 'Will you be my Valentine?'
 
   function moveNoButton() {
+    if (accepted) return
     const card = cardRef.current
     if (!card) return
     const width = card.clientWidth - 142
@@ -103,7 +104,18 @@ export function ValentinePage() {
 
           <div className="valentine-buttons">
             <button className="valentine-action yes" onClick={acceptValentine} type="button">Yes</button>
-            <button className="valentine-action no" onMouseEnter={moveNoButton} style={noStyle} type="button">No</button>
+            <button
+              aria-label="No, move the playful button"
+              className="valentine-action no"
+              onClick={moveNoButton}
+              onFocus={moveNoButton}
+              onMouseEnter={moveNoButton}
+              onTouchStart={moveNoButton}
+              style={noStyle}
+              type="button"
+            >
+              No
+            </button>
           </div>
 
           <div className="valentine-response" aria-live="polite">

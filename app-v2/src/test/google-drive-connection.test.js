@@ -139,7 +139,7 @@ test('Google Drive OAuth preflight explains local IP origin mismatches before op
   })
 
   assert.equal(ipIssue.suggestedOrigin, 'http://localhost:5173')
-  assert.equal(ipIssue.requiredOrigins, 'http://127.0.0.1:5173 and http://localhost:5173')
+  assert.equal(ipIssue.requiredOrigins, 'http://localhost:5173')
   assert.match(ipIssue.message, /authorized JavaScript origin/)
   assert.equal(getGoogleDriveOAuthOriginIssue({
     origin: 'http://localhost:5173',

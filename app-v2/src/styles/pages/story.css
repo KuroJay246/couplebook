@@ -3,10 +3,46 @@
 }
 
 [data-route="timeline"] .timeline-card {
+  display: grid;
+  gap: 1rem;
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--cb-surface) 94%, transparent), color-mix(in srgb, var(--cb-surface-raised) 98%, transparent));
   border-radius: var(--cb-radius-lg);
   border-color: var(--cb-border);
+}
+
+[data-route="timeline"] .timeline-card-visual {
+  display: grid;
+  min-height: 5.5rem;
+  place-items: end start;
+  border-radius: 1rem;
+  background:
+    radial-gradient(circle at 84% 20%, color-mix(in srgb, var(--cb-accent-soft) 92%, transparent), transparent 9rem),
+    linear-gradient(135deg, color-mix(in srgb, var(--cb-accent-soft) 70%, var(--cb-surface)), color-mix(in srgb, var(--cb-surface-raised) 96%, transparent));
+  padding: 1rem;
+}
+
+[data-route="timeline"] .timeline-card-visual span {
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--cb-surface) 86%, transparent);
+  padding: 0.45rem 0.75rem;
+  color: var(--cb-accent);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+[data-route="timeline"] .timeline-card-video .timeline-card-visual {
+  background:
+    linear-gradient(90deg, rgba(36, 19, 29, 0.09) 0 10%, transparent 10% 90%, rgba(36, 19, 29, 0.09) 90%),
+    linear-gradient(135deg, color-mix(in srgb, var(--cb-info-bg) 75%, var(--cb-surface)), color-mix(in srgb, var(--cb-surface-raised) 94%, transparent));
+}
+
+[data-route="timeline"] .timeline-card-image .timeline-card-visual {
+  background:
+    radial-gradient(circle at 24% 24%, rgba(255, 255, 255, 0.54), transparent 7rem),
+    linear-gradient(135deg, color-mix(in srgb, var(--cb-accent-soft) 82%, var(--cb-surface)), color-mix(in srgb, var(--cb-surface-raised) 94%, transparent));
 }
 
 [data-route="timeline"] .timeline-card:hover {

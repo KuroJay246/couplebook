@@ -159,13 +159,13 @@ async function createServer({ projectId, storageBucket }) {
   const server = await createViteServer({
     root: APP_ROOT,
     server: {
-      host: '127.0.0.1',
+      host: 'localhost',
       port: 0,
     },
   })
   await server.listen()
   const address = server.httpServer.address()
-  return { server, baseUrl: `http://127.0.0.1:${address.port}` }
+  return { server, baseUrl: `http://localhost:${address.port}` }
 }
 
 function createNetworkController() {
@@ -249,9 +249,9 @@ async function openUploadTools(page) {
 
 async function ensureDriveConnected(page) {
   await openUploadTools(page)
-  if (await page.getByText('Private folder ready', { exact: true }).count()) return
-  await page.getByRole('button', { name: 'Connect to add files' }).click()
-  await page.getByText('Private folder ready', { exact: true }).waitFor({ state: 'visible', timeout: 10000 })
+  if (await page.getByText('Connected', { exact: true }).count()) return
+  await page.getByRole('button', { name: 'Connect Google Drive' }).click()
+  await page.getByText('Connected', { exact: true }).waitFor({ state: 'visible', timeout: 10000 })
 }
 
 async function setFiles(page, filePaths) {

@@ -223,10 +223,10 @@ async function launchBrowser() {
 }
 
 async function createLocalServer() {
-  const server = await createViteServer({ root: APP_ROOT, server: { host: '127.0.0.1', port: 0 } })
+  const server = await createViteServer({ root: APP_ROOT, server: { host: 'localhost', port: 0 } })
   await server.listen()
   const address = server.httpServer.address()
-  return { baseUrl: `http://127.0.0.1:${address.port}`, server }
+  return { baseUrl: `http://localhost:${address.port}`, server }
 }
 
 function createNetworkController() {

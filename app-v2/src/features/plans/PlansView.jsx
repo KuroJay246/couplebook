@@ -99,7 +99,7 @@ function PlanForm({ initialPlan, onCancel, onSave, saving }) {
 
 function PlanCard({ onConvert, onEdit, onStatus, plan, saving }) {
   return (
-    <ContentCard className="flex h-full flex-col gap-4">
+    <ContentCard className={`cb-plan-card cb-plan-card-${plan.status} flex h-full flex-col gap-4`}>
       <div className="flex items-start justify-between gap-3">
         <div>
           <StatusBadge tone={planTone(plan.status)}>{statusLabel(plan.status)}</StatusBadge>
@@ -148,13 +148,13 @@ function PlansSummary({ counts, setStatus, status }) {
   ]
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="cb-plans-summary grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
       {items.map((item) => (
         <button
           key={item.key}
           type="button"
           onClick={() => setStatus(item.key)}
-          className={`rounded-2xl border p-4 text-left transition ${status === item.key ? 'border-[#9A5260] bg-[#FCEEF1]' : 'border-[var(--cb-border)] bg-[var(--cb-surface)] hover:bg-[var(--cb-accent-soft)]'}`}
+          className={`rounded-2xl border p-4 text-left transition ${status === item.key ? 'is-active border-[#9A5260] bg-[#FCEEF1]' : 'border-[var(--cb-border)] bg-[var(--cb-surface)] hover:bg-[var(--cb-accent-soft)]'}`}
         >
           <p className="text-3xl font-bold text-[var(--cb-text)]">{item.value}</p>
           <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[#80685B]">{item.label}</p>
@@ -228,6 +228,18 @@ export function PlansView({ model, onRefresh, search, setSearch, setStatus, stat
       />
 
       {feedback.message ? <InlineAlert description={feedback.message} tone={feedback.kind === 'error' ? 'error' : 'success'} /> : null}
+
+      <section className="cb-plans-hero">
+        <div>
+          <p className="cb-kicker">Next together</p>
+          <h2>One place for the ideas that should not get lost.</h2>
+          <p>Keep the near plans close, let loose ideas breathe, and turn finished ones into memories when they finally happen.</p>
+        </div>
+        <div className="cb-plans-hero-actions">
+          <PrimaryButton aria-label="Start a new plan" onClick={() => { setEditing(null); setShowForm(true) }}><Sparkles className="size-4" />Start one</PrimaryButton>
+          <SecondaryButton onClick={() => setStatus('planned')}>See planned</SecondaryButton>
+        </div>
+      </section>
 
       <PlansSummary counts={model.counts} setStatus={setStatus} status={status} />
 

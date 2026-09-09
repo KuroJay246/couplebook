@@ -2,10 +2,16 @@
   scroll-margin-top: 6rem;
 }
 
-[data-route="profile"] > .cb-surface:first-of-type {
+[data-route="profile"] .cb-us-hero {
   background:
-    linear-gradient(135deg, color-mix(in srgb, var(--cb-accent-soft) 68%, transparent), transparent 46%),
-    linear-gradient(180deg, color-mix(in srgb, var(--cb-surface) 96%, transparent), color-mix(in srgb, var(--cb-surface-raised) 98%, transparent));
+    radial-gradient(circle at 86% 16%, color-mix(in srgb, var(--cb-accent-soft) 92%, transparent), transparent 18rem),
+    linear-gradient(135deg, color-mix(in srgb, var(--cb-surface) 88%, var(--cb-accent-soft)), color-mix(in srgb, var(--cb-surface-raised) 96%, transparent));
+}
+
+[data-route="profile"] .cb-us-hero h3 {
+  max-width: 13ch;
+  font-size: clamp(2.6rem, 7vw, 5rem);
+  line-height: 0.96;
 }
 
 [data-route="profile"] [role="tablist"] {
@@ -19,4 +25,23 @@
 [data-route="profile"] .cb-card {
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--cb-surface) 94%, transparent), color-mix(in srgb, var(--cb-surface-raised) 98%, transparent));
+}
+
+[data-route="profile"] .cb-person-spread {
+  overflow: hidden;
+  background:
+    linear-gradient(160deg, color-mix(in srgb, var(--cb-surface) 86%, var(--cb-accent-soft)), color-mix(in srgb, var(--cb-surface-raised) 96%, transparent));
+}
+
+[data-route="profile"] .cb-person-spread::after {
+  content: "";
+  display: block;
+  height: 0.35rem;
+  margin: 1rem -1.5rem -1.5rem;
+  background: linear-gradient(90deg, var(--cb-accent), color-mix(in srgb, var(--cb-accent-secondary) 80%, var(--cb-accent)));
+  opacity: 0.65;
+}
+
+[data-route="profile"] .cb-person-spread-omia::after {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--cb-accent-secondary) 88%, var(--cb-accent)), var(--cb-accent-soft));
 }

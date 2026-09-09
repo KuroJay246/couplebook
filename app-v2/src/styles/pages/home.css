@@ -4,18 +4,41 @@
 
 [data-route="dashboard"] > :first-child {
   background:
+    radial-gradient(circle at 84% 18%, color-mix(in srgb, var(--cb-accent) 18%, transparent), transparent 18rem),
     linear-gradient(135deg, color-mix(in srgb, var(--cb-accent-soft) 78%, transparent), transparent 52%),
-    linear-gradient(180deg, color-mix(in srgb, var(--cb-surface) 96%, transparent), color-mix(in srgb, var(--cb-surface-raised) 98%, transparent));
+    linear-gradient(180deg, color-mix(in srgb, var(--cb-surface) 92%, transparent), color-mix(in srgb, var(--cb-surface-raised) 98%, transparent));
   box-shadow: var(--cb-shadow-soft);
 }
 
 [data-route="dashboard"] > :first-child h2 {
-  max-width: 14ch;
+  max-width: 13ch;
+  line-height: 0.94;
 }
 
 [data-route="dashboard"] > :first-child .rounded-\[24px\] {
   border: 1px solid var(--cb-border);
   background: color-mix(in srgb, var(--cb-accent-soft) 72%, transparent);
+}
+
+[data-route="dashboard"] .cb-editorial-photo {
+  min-height: clamp(22rem, 38vw, 31rem);
+}
+
+[data-route="dashboard"] .cb-editorial-photo::before {
+  content: "";
+  position: absolute;
+  inset: 1.15rem;
+  border: 1px solid rgba(255, 255, 255, 0.56);
+  border-radius: 1.25rem;
+  background:
+    linear-gradient(110deg, rgba(255, 255, 255, 0.22) 0 22%, transparent 22% 28%, rgba(36, 19, 29, 0.08) 28% 30%, transparent 30% 100%),
+    radial-gradient(circle at 22% 22%, rgba(255, 255, 255, 0.48), transparent 9rem);
+  opacity: 0.82;
+}
+
+[data-route="dashboard"] .cb-editorial-photo-card {
+  position: relative;
+  z-index: 1;
 }
 
 [data-route="dashboard"] > div:nth-child(3) > section:first-child article:first-child {

@@ -16,6 +16,19 @@ function formatMomentDate(value) {
   return formatMonthDayLabel(value)
 }
 
+function birthdayParagraphs(moment) {
+  const paragraphs = []
+  for (const section of moment?.sections || []) {
+    const items = Array.isArray(section.items) ? section.items : []
+    for (const item of [section.content, ...items]) {
+      const paragraph = String(item || '').trim()
+      if (paragraph) paragraphs.push(paragraph)
+      if (paragraphs.length >= 3) return paragraphs
+    }
+  }
+  return paragraphs
+}
+
 export function BirthdayPage() {
   const { model, refreshCompatibility } = useSpecialMomentContent('birthday')
   const [revealed, setRevealed] = useState(false)
@@ -43,6 +56,8 @@ export function BirthdayPage() {
       />
     )
   }
+
+  const paragraphs = birthdayParagraphs(model.moment)
 
   return (
     <section className="special-moment-page special-birthday-page" data-route="birthday">
@@ -88,6 +103,11 @@ export function BirthdayPage() {
               <p className="birthday-kicker">{formatMomentDate(model.moment.date)}</p>
               <h1>{model.moment.title}</h1>
               <p className="birthday-subtitle">{model.moment.subtitle || 'With all my heart'}</p>
+              {paragraphs.length ? (
+                <div className="birthday-message">
+                  {paragraphs.map((paragraph) => <p key={paragraph.slice(0, 48)}>{paragraph}</p>)}
+                </div>
+              ) : null}
             </div>
           </div>
           <div className="birthday-actions">
