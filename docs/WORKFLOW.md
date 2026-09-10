@@ -65,6 +65,14 @@ npm run rules:drift
 
 If this reports missing media-index coverage, Album cannot read `couples/{coupleId}/mediaItems` in production even when local emulator rules pass. The fix is an explicitly approved Firestore rules-only deployment, not a frontend fallback or a weakened rule.
 
+For the broader Drive media backend boundary, run:
+
+```powershell
+npm run media:backend:readiness
+```
+
+This is a read-only gate. A nonzero result is expected until both the live Firestore rules include media-index coverage and the owner approves a trusted backend deployment plan for persistent Drive OAuth, Drive Changes processing, thumbnails, streaming, and partner uploads. The command must not print `.env` values or OAuth credentials.
+
 Do not use generic `firebase deploy` for normal Couple Book releases. Roll back Hosting from the Firebase Hosting release history for `couplebook-97830` to the last verified good version.
 
 ## V1.2 Preview Workflow
