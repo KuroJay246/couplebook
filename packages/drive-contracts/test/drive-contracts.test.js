@@ -2,6 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 
 import {
+  DRIVE_BACKEND_CAPABILITIES,
   DRIVE_BACKEND_ENDPOINTS,
   DRIVE_BACKEND_REQUIRED_FOR,
   DRIVE_CONNECTION_STATES,
@@ -28,6 +29,9 @@ test('drive contracts separate Couple Book identity from persistent Drive author
   assert.ok(DRIVE_FRONTEND_AUTH_CONSTRAINTS.includes('never-send-google-refresh-token-to-browser'))
   assert.ok(DRIVE_BACKEND_REQUIRED_FOR.includes('partner-upload-to-drive'))
   assert.ok(DRIVE_BACKEND_REQUIRED_FOR.includes('partner-removal-from-couple-book-without-drive-oauth'))
+  assert.equal(DRIVE_BACKEND_CAPABILITIES.length, 18)
+  assert.ok(DRIVE_BACKEND_CAPABILITIES.includes('drive-webhook-handler'))
+  assert.ok(DRIVE_BACKEND_CAPABILITIES.includes('credential-field-rejection'))
 })
 
 test('drive backend contract is couple-scoped and contains no credential values', () => {
@@ -41,6 +45,8 @@ test('drive backend contract is couple-scoped and contains no credential values'
   assert.equal(contract.provider, 'google-drive')
   assert.equal(contract.driveFolderId, '17Ar4UK5_puORz9TE1dijIk2-qHgh7oIa')
   assert.ok(contract.backendAuth.includes('verify-media-record-belongs-to-requesting-couple'))
+  assert.equal(contract.localHandlerCapabilityCount, DRIVE_BACKEND_CAPABILITIES.length)
+  assert.ok(contract.localHandlerCapabilities.includes('media-upload-finalization'))
   assert.ok(contract.backendWrites.includes('couples/couple-alpha/mediaItems'))
   assert.ok(contract.backendWrites.includes('couples/couple-alpha/mediaSync/google-drive'))
   assert.ok(contract.forbiddenWrites.includes('refresh-token'))
@@ -63,5 +69,6 @@ test('drive architecture contract keeps Firestore index fast and backend work ex
   assert.ok(contract.frontendCan.includes('render-indexed-media'))
   assert.ok(contract.backendRequiredFor.includes('drive-access-token-refresh'))
   assert.ok(contract.backendRequiredFor.includes('fast-thumbnail-proxy-or-cache'))
+  assert.equal(contract.localHandlerCapabilityCount, DRIVE_BACKEND_CAPABILITIES.length)
   assert.equal(contract.deploymentStatus, 'owner-approval-required')
 })

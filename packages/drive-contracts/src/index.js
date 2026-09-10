@@ -72,6 +72,27 @@ export const DRIVE_BACKEND_REQUIRED_FOR = Object.freeze([
   'partner-removal-from-couple-book-without-drive-oauth',
 ])
 
+export const DRIVE_BACKEND_CAPABILITIES = Object.freeze([
+  'firebase-id-token-validation',
+  'active-couple-membership-validation',
+  'oauth-state-binding',
+  'oauth-code-exchange-boundary',
+  'indexed-media-authorization',
+  'sync-reconciliation-planning',
+  'sync-now-handler',
+  'media-upload-finalization',
+  'exact-duplicate-preflight',
+  'orphan-recovery-recording',
+  'media-removal-tombstone',
+  'drive-original-delete-confirmation',
+  'drive-change-cursor-planning',
+  'drive-webhook-handler',
+  'drive-watch-renewal',
+  'drive-disconnect-cleanup',
+  'privacy-minimal-audit-events',
+  'credential-field-rejection',
+])
+
 export const DRIVE_FRONTEND_CAN_DO = Object.freeze([
   'render-indexed-media',
   'request-session-drive-import',
@@ -97,6 +118,8 @@ export function buildDriveBackendContract({
     endpoints: DRIVE_BACKEND_ENDPOINTS,
     frontendAuth: DRIVE_FRONTEND_AUTH_CONSTRAINTS,
     backendAuth: DRIVE_BACKEND_AUTH_REQUIREMENTS,
+    localHandlerCapabilities: DRIVE_BACKEND_CAPABILITIES,
+    localHandlerCapabilityCount: DRIVE_BACKEND_CAPABILITIES.length,
     backendSecrets: DRIVE_BACKEND_SECRET_CLASSES,
     backendWrites: Object.freeze([
       mediaIndexPath,
@@ -138,6 +161,8 @@ export function buildDriveArchitectureContract(options = {}) {
     backend,
     frontendCan: DRIVE_FRONTEND_CAN_DO,
     backendRequiredFor: DRIVE_BACKEND_REQUIRED_FOR,
+    localHandlerCapabilities: DRIVE_BACKEND_CAPABILITIES,
+    localHandlerCapabilityCount: DRIVE_BACKEND_CAPABILITIES.length,
     deploymentStatus: 'owner-approval-required',
     zeroCostBoundary: 'Do not enable billing or deploy a persistent token backend without owner approval.',
   })

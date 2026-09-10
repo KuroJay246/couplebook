@@ -1,4 +1,7 @@
-import { DRIVE_BACKEND_ENDPOINTS } from '@couplebook/drive-contracts'
+import {
+  DRIVE_BACKEND_CAPABILITIES,
+  DRIVE_BACKEND_ENDPOINTS,
+} from '@couplebook/drive-contracts'
 
 export const DRIVE_BACKEND_DEPLOYMENT_STATUS = 'local-contract-only-owner-approval-required'
 
@@ -12,27 +15,6 @@ export const DRIVE_BACKEND_ROUTES = Object.freeze([
   Object.freeze({ key: 'webhook', method: 'POST', path: DRIVE_BACKEND_ENDPOINTS.webhook, body: ['channelId', 'resourceId'], secretAccess: true }),
   Object.freeze({ key: 'thumbnail', method: 'GET', path: DRIVE_BACKEND_ENDPOINTS.thumbnail, body: ['mediaId'], secretAccess: true }),
   Object.freeze({ key: 'stream', method: 'GET', path: DRIVE_BACKEND_ENDPOINTS.stream, body: ['mediaId'], secretAccess: true }),
-])
-
-export const DRIVE_BACKEND_CAPABILITIES = Object.freeze([
-  'firebase-id-token-validation',
-  'active-couple-membership-validation',
-  'oauth-state-binding',
-  'oauth-code-exchange-boundary',
-  'indexed-media-authorization',
-  'sync-reconciliation-planning',
-  'sync-now-handler',
-  'media-upload-finalization',
-  'exact-duplicate-preflight',
-  'orphan-recovery-recording',
-  'media-removal-tombstone',
-  'drive-original-delete-confirmation',
-  'drive-change-cursor-planning',
-  'drive-webhook-handler',
-  'drive-watch-renewal',
-  'drive-disconnect-cleanup',
-  'privacy-minimal-audit-events',
-  'credential-field-rejection',
 ])
 
 const SAFE_ID = /^[A-Za-z0-9_-]{1,160}$/

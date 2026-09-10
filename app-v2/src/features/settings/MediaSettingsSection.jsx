@@ -49,6 +49,7 @@ function mediaCountDescription(drive) {
 
 function MediaConnectionSummary({ drive, media }) {
   const connected = drive.state === 'connected'
+  const backendReadiness = media?.backendReadiness
   return (
     <div className="mt-5 grid gap-3 sm:grid-cols-2">
       <MediaStatusCard
@@ -73,6 +74,18 @@ function MediaConnectionSummary({ drive, media }) {
         label="Media count"
         tone={connected ? 'success' : 'warning'}
         value={connected ? 'Session list' : 'Index first'}
+      />
+      <MediaStatusCard
+        description={backendReadiness?.description || 'Trusted Drive backend readiness is not available in this build.'}
+        label="Trusted backend"
+        tone={backendReadiness?.localHandlersReady ? 'success' : 'warning'}
+        value={backendReadiness?.statusLabel || 'Not verified'}
+      />
+      <MediaStatusCard
+        description="Persistent Drive OAuth refresh storage, Drive webhooks, protected media delivery, and live media-index rules still require explicit owner-approved deployment work."
+        label="Release blockers"
+        tone="warning"
+        value={backendReadiness?.deploymentLabel || 'Owner approval required'}
       />
     </div>
   )

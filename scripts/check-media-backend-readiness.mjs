@@ -4,6 +4,10 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { validateFirebaseProject, REQUIRED_PROJECT_ID } from './assert-firebase-project.mjs'
 import {
+  DRIVE_BACKEND_CAPABILITIES,
+  DRIVE_BACKEND_ENDPOINTS,
+} from '../packages/drive-contracts/src/index.js'
+import {
   listDriveBackendCapabilities,
   listDriveBackendEndpointPaths,
 } from '../packages/drive-backend/src/index.js'
@@ -20,38 +24,8 @@ const REQUIRED_ENV_KEYS = Object.freeze([
   'VITE_GOOGLE_CLIENT_ID',
 ])
 
-const TRUSTED_BACKEND_ENDPOINTS = Object.freeze([
-  '/api/drive/oauth/begin',
-  '/api/drive/oauth/callback',
-  '/api/drive/disconnect',
-  '/api/drive/sync',
-  '/api/drive/media/upload',
-  '/api/drive/media/:mediaId',
-  '/api/drive/webhook',
-  '/api/drive/media/:mediaId/thumbnail',
-  '/api/drive/media/:mediaId/stream',
-])
-
-const TRUSTED_BACKEND_CAPABILITIES = Object.freeze([
-  'firebase-id-token-validation',
-  'active-couple-membership-validation',
-  'oauth-state-binding',
-  'oauth-code-exchange-boundary',
-  'indexed-media-authorization',
-  'sync-reconciliation-planning',
-  'sync-now-handler',
-  'media-upload-finalization',
-  'exact-duplicate-preflight',
-  'orphan-recovery-recording',
-  'media-removal-tombstone',
-  'drive-original-delete-confirmation',
-  'drive-change-cursor-planning',
-  'drive-webhook-handler',
-  'drive-watch-renewal',
-  'drive-disconnect-cleanup',
-  'privacy-minimal-audit-events',
-  'credential-field-rejection',
-])
+const TRUSTED_BACKEND_ENDPOINTS = Object.freeze(Object.values(DRIVE_BACKEND_ENDPOINTS))
+const TRUSTED_BACKEND_CAPABILITIES = DRIVE_BACKEND_CAPABILITIES
 
 function parseDotEnv(text) {
   const values = {}

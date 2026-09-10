@@ -328,12 +328,35 @@ function selectSharedAlbumConfig({ env = {}, settingsSource = null } = {}) {
 }
 
 export function selectSettingsMedia(mediaSync = null, { env = {}, settingsSource = null } = {}) {
+  const localHandlerCapabilityCount = Number.isSafeInteger(mediaSync?.localHandlerCapabilityCount)
+    ? mediaSync.localHandlerCapabilityCount
+    : Number.isSafeInteger(mediaSync?.backend?.localHandlerCapabilityCount)
+      ? mediaSync.backend.localHandlerCapabilityCount
+      : 0
+  const localHandlerCapabilities = Array.isArray(mediaSync?.localHandlerCapabilities)
+    ? mediaSync.localHandlerCapabilities
+    : Array.isArray(mediaSync?.backend?.localHandlerCapabilities)
+      ? mediaSync.backend.localHandlerCapabilities
+      : []
+  const localHandlersReady = localHandlerCapabilityCount > 0 && localHandlerCapabilities.length === localHandlerCapabilityCount
+
   return {
     title: 'Google Drive media provider',
     description: 'Drive authorization is managed here once for the couple. Album stays focused on browsing indexed photos and videos.',
     connectedAccount: 'jaylanspencer99@gmail.com',
     approvedFolderLabel: 'Couple Book media folder',
     backendBoundary: mediaSync?.backend?.zeroCostBoundary || 'Persistent refresh credentials, Drive Changes sync, and thumbnail delivery require an approved trusted backend before they can run for both partners automatically.',
+    backendReadiness: {
+      localHandlersReady,
+      implementedCapabilities: localHandlerCapabilities.length,
+      requiredCapabilities: localHandlerCapabilityCount,
+      statusLabel: localHandlersReady ? 'Local handlers ready' : 'Local handlers incomplete',
+      description: localHandlersReady
+        ? `${localHandlerCapabilities.length}/${localHandlerCapabilityCount} trusted Drive backend handler capabilities are implemented locally. Deployment, refresh credential storage, and live rules updates still require owner approval.`
+        : 'Trusted Drive backend handler capability coverage is incomplete locally.',
+      deploymentLabel: mediaSync?.deploymentStatus === 'owner-approval-required' ? 'Deployment approval required' : 'Backend deployment required',
+      rulesLabel: 'Firestore rules action required',
+    },
     sharedAlbum: selectSharedAlbumConfig({ env, settingsSource }),
     items: [
       {
@@ -355,7 +378,9 @@ export function selectSettingsMedia(mediaSync = null, { env = {}, settingsSource
       },
       {
         label: 'Continuous Drive sync',
-        description: 'Background Drive Changes sync, token refresh, and webhook processing require an approved trusted backend before they can run persistently.',
+        description: localHandlersReady
+          ? 'Local handlers exist for Drive Changes sync, token refresh, webhook processing, watch renewal, uploads, removals, and audit events. They still need an approved trusted deployment before persistent use.'
+          : 'Background Drive Changes sync, token refresh, and webhook processing require an approved trusted backend before they can run persistently.',
         meta: mediaSync?.deploymentStatus === 'owner-approval-required' ? 'Owner approval required' : 'Backend required',
       },
       {
