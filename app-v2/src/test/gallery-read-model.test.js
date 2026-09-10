@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 import { buildGalleryReadModel, buildGalleryReadModelWithMediaIndex } from '../features/gallery/galleryReadModel.js'
 import { buildMediaLibrary, groupGalleryItemsByDate, groupGalleryItemsByYear, selectFilteredGalleryItems, selectMediaIndexGalleryItems } from '../features/gallery/gallerySelectors.js'
+import { mediaIndexSourceFromError } from '../services/mediaIndexService.js'
 
 function createMemoryRecord(overrides = {}) {
   return {
@@ -449,6 +450,27 @@ test('gallery read model can render Firestore media index records before Drive p
   assert.equal(model.library.favoriteCount, 1)
   assert.equal(model.library.unlinkedCount, 2)
   assert.doesNotMatch(JSON.stringify(model), /thumbnailLink|previewUrl|objectUrl|accessToken|blob:/)
+})
+
+test('Album keeps memories available when optional media index reads are unavailable', () => {
+  const mediaIndexSource = mediaIndexSourceFromError(new Error('FirebaseError: Missing or insufficient permissions.'))
+  const model = buildGalleryReadModelWithMediaIndex({
+    memorySource: {
+      status: 'ready',
+      source: 'firestore',
+      data: {
+        memories: [createMemoryRecord({ id: 'memory-safe', title: 'Saved chapter remains visible' })],
+      },
+      warnings: [],
+    },
+    mediaIndexSource,
+  })
+
+  assert.equal(model.status, 'partial')
+  assert.equal(model.items.length, 1)
+  assert.equal(model.sourceStatus.mediaInventory.status, 'unavailable')
+  assert.match(model.sourceStatus.mediaInventory.warnings.join(' '), /backend-owned records/)
+  assert.doesNotMatch(JSON.stringify(mediaIndexSource), /FirebaseError|permission-denied|Missing or insufficient permissions/)
 })
 
 test('media library groups indexed media by day and supports favorites and unlinked filters', () => {

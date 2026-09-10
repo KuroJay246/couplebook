@@ -41,6 +41,8 @@ function buildSourceStatus(memorySource, mediaIndexSource, indexedItems) {
       status: mediaIndexSource?.status || 'empty',
       count: indexedItems.length,
       label: 'Firestore media index',
+      warningCount: Array.isArray(mediaIndexSource?.warnings) ? mediaIndexSource.warnings.length : 0,
+      warnings: Array.isArray(mediaIndexSource?.warnings) ? mediaIndexSource.warnings : [],
     },
     bridge: {
       status: memorySource?.status || 'empty',

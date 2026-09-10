@@ -1,6 +1,7 @@
 import { COUPLE_BOOK_DRIVE_FOLDER_ID } from './googleDriveMediaProvider.js'
 import { db } from '../lib/firebase.js'
 import { mediaItemPath, mediaItemsPath, mediaSyncStatePath, pathToString } from './firestorePaths.js'
+import { FIRESTORE_SOURCE } from '../data/adapterUtils.js'
 import { readCollection, safeString } from './firestoreReaders.js'
 
 export const MEDIA_INDEX_PROVIDER = 'google-drive'
@@ -86,6 +87,24 @@ export function buildMediaIndexDocumentPath(coupleId, mediaId) {
 
 export function buildMediaSyncStateDocumentPath(coupleId) {
   return pathToString(mediaSyncStatePath(coupleId, MEDIA_INDEX_PROVIDER))
+}
+
+export function mediaIndexSourceFromError(error) {
+  const message = String(error?.message || error || '')
+  const isPermission = /permission|denied|unauthorized|unauthenticated/i.test(message)
+
+  return Object.freeze({
+    status: 'unavailable',
+    source: FIRESTORE_SOURCE,
+    data: Object.freeze({
+      entries: Object.freeze([]),
+    }),
+    warnings: Object.freeze([
+      isPermission
+        ? 'Firestore media index is unavailable for this account until backend-owned records are readable.'
+        : 'Firestore media index could not be loaded right now. Album can still show saved memories.',
+    ]),
+  })
 }
 
 export function driveFileToMediaIndexRecord(file, { coupleId, folderId = COUPLE_BOOK_DRIVE_FOLDER_ID, memoryId = '' } = {}) {

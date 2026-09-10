@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from 'react'
 import { FIRESTORE_SOURCE } from '../../data/adapterUtils.js'
 import { DATA_SOURCE_MODES } from '../../data/dataSourceMode.js'
 import { getBrowserTestCompatibilityState } from '../../lib/browserTestMode.js'
-import { getFirestoreMediaIndexForCouple } from '../../services/mediaIndexService.js'
+import { getFirestoreMediaIndexForCouple, mediaIndexSourceFromError } from '../../services/mediaIndexService.js'
 import { useCoupleScopedSource } from '../domain/useCoupleScopedSource.js'
 
 export const EMPTY_MEDIA_INDEX_SOURCE = Object.freeze({
@@ -34,7 +34,7 @@ export function useMediaIndexSource() {
   const loadSource = useCallback(({ coupleId, sourceMode }) => {
     if (sourceMode !== DATA_SOURCE_MODES.firestore) return EMPTY_MEDIA_INDEX_SOURCE
     if (!coupleId) return UNAVAILABLE_MEDIA_INDEX_SOURCE
-    return getFirestoreMediaIndexForCouple(coupleId)
+    return getFirestoreMediaIndexForCouple(coupleId).catch(mediaIndexSourceFromError)
   }, [])
 
   return useCoupleScopedSource({
