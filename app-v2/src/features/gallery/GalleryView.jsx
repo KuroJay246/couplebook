@@ -341,6 +341,7 @@ function DriveMediaGrid({ drive }) {
   const [loadingId, setLoadingId] = useState('')
   const [error, setError] = useState('')
   const [visibleLimit, setVisibleLimit] = useState(24)
+  const [loadingMore, setLoadingMore] = useState(false)
 
   async function showPreview(file) {
     setLoadingId(file.id)
@@ -354,9 +355,29 @@ function DriveMediaGrid({ drive }) {
     }
   }
 
+  async function showMoreFiles() {
+    if (visibleLimit < drive.files.length) {
+      setVisibleLimit((current) => current + 24)
+      return
+    }
+    if (!drive.hasMoreFiles) return
+
+    setLoadingMore(true)
+    setError('')
+    try {
+      await drive.loadMoreFiles()
+      setVisibleLimit((current) => current + 24)
+    } catch (loadError) {
+      setError(loadError.message || 'More Drive media could not be loaded right now.')
+    } finally {
+      setLoadingMore(false)
+    }
+  }
+
   if (drive.state !== 'connected') return null
   const visibleFiles = drive.files.slice(0, visibleLimit)
   const hiddenCount = Math.max(0, drive.files.length - visibleFiles.length)
+  const canShowMore = hiddenCount > 0 || drive.hasMoreFiles
 
   return (
     <Surface aria-label="Private folder previews" tone="soft">
@@ -371,7 +392,7 @@ function DriveMediaGrid({ drive }) {
       {drive.files.length === 0 ? <p className="mt-5 text-sm text-[var(--cb-text-secondary)]">The private folder is connected and there are no supported images or videos to preview yet.</p> : (
         <>
           <p className="mt-4 text-sm text-[var(--cb-text-secondary)]">
-            Showing {visibleFiles.length} of {drive.files.length} Drive media files. Thumbnails are temporary session previews and are not saved to Firestore.
+            Showing {visibleFiles.length} of {drive.files.length}{drive.hasMoreFiles ? '+' : ''} Drive media files. Thumbnails are temporary session previews and are not saved to Firestore.
           </p>
           <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {visibleFiles.map((file) => {
@@ -402,9 +423,11 @@ function DriveMediaGrid({ drive }) {
             )
           })}
           </div>
-          {hiddenCount > 0 ? (
+          {canShowMore ? (
             <div className="mt-5 flex justify-center">
-              <SecondaryButton onClick={() => setVisibleLimit((current) => current + 24)}>Show {Math.min(24, hiddenCount)} more</SecondaryButton>
+              <SecondaryButton disabled={loadingMore} onClick={() => void showMoreFiles()}>
+                {loadingMore ? 'Loading more...' : hiddenCount > 0 ? `Show ${Math.min(24, hiddenCount)} more` : 'Load more from Drive'}
+              </SecondaryButton>
             </div>
           ) : null}
         </>

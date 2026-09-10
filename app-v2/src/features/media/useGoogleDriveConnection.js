@@ -53,6 +53,7 @@ function createRenderableState() {
     state: DRIVE_STATE.disconnected,
     message: '',
     files: [],
+    nextPageToken: '',
     previews: {},
   }
 }
@@ -75,6 +76,7 @@ function readCurrentProvider(providerRef, renderRef, apply) {
       state: DRIVE_STATE.reconnectRequired,
       message: error.message,
       files: [],
+      nextPageToken: '',
       previews: {},
     })
     throw error
@@ -101,16 +103,19 @@ function withTimeout(promise, timeoutMs, createTimeoutError = createAuthorizatio
   })
 }
 
-async function listAllFiles(provider) {
-  const nextFiles = []
-  let pageToken = ''
-  for (let page = 0; page < 5; page += 1) {
-    const result = await provider.listFiles({ pageToken, pageSize: 100 })
-    nextFiles.push(...result.files)
-    pageToken = result.nextPageToken
-    if (!pageToken) break
+async function listFirstPage(provider) {
+  return provider.listFiles({ pageSize: 100 })
+}
+
+function mergeFiles(existingFiles = [], incomingFiles = []) {
+  const byId = new Map()
+  for (const file of existingFiles) {
+    if (file?.id) byId.set(file.id, file)
   }
-  return nextFiles
+  for (const file of incomingFiles) {
+    if (file?.id) byId.set(file.id, file)
+  }
+  return [...byId.values()]
 }
 
 export function createDriveConnectionController({
@@ -123,6 +128,7 @@ export function createDriveConnectionController({
   const providerRef = { current: null }
   const generationRef = { current: 0 }
   const previewUrlsRef = { current: new Set() }
+  const previewRequestsRef = { current: new Map() }
   const renderRef = { current: createRenderableState() }
   let setRenderState = () => {}
 
@@ -143,9 +149,11 @@ export function createDriveConnectionController({
 
   function reset(nextGeneration) {
     revokeSessionPreviews()
+    previewRequestsRef.current.clear()
     apply({
       generation: nextGeneration,
       files: [],
+      nextPageToken: '',
       previews: {},
     })
   }
@@ -178,7 +186,7 @@ export function createDriveConnectionController({
 
       provider = createProvider()
       const result = await withTimeout(provider.connect(), connectTimeoutMs)
-      const files = await withTimeout(listAllFiles(provider), connectTimeoutMs)
+      const listing = await withTimeout(listFirstPage(provider), connectTimeoutMs)
       if (!isActiveGeneration(generationRef, generation)) {
         provider.disconnect?.()
         const error = new Error('A newer Google Drive session replaced this authorization attempt.')
@@ -191,10 +199,11 @@ export function createDriveConnectionController({
         generation,
         state: result.state,
         message: '',
-        files,
+        files: listing.files,
+        nextPageToken: listing.nextPageToken || '',
         previews: {},
       })
-      return { ...result, generation, files }
+      return { ...result, generation, files: listing.files, nextPageToken: listing.nextPageToken || '' }
     } catch (error) {
       provider?.disconnect?.()
       if (isActiveGeneration(generationRef, generation)) {
@@ -204,6 +213,7 @@ export function createDriveConnectionController({
           state: error.code || DRIVE_STATE.temporaryFailure,
           message: error.message || 'Google Drive is temporarily unavailable. Try again.',
           files: [],
+          nextPageToken: '',
           previews: {},
         })
       }
@@ -214,34 +224,54 @@ export function createDriveConnectionController({
   async function refreshListing() {
     const generation = generationRef.current
     const provider = readCurrentProvider(providerRef, renderRef, apply)
-    const files = await listAllFiles(provider)
+    const listing = await listFirstPage(provider)
     if (!isActiveGeneration(generationRef, generation)) return renderRef.current.files
-    apply({ files })
+    apply({ files: listing.files, nextPageToken: listing.nextPageToken || '' })
+    return listing.files
+  }
+
+  async function loadMoreFiles() {
+    const generation = generationRef.current
+    const current = renderRef.current
+    if (!current.nextPageToken) return current.files
+    const provider = readCurrentProvider(providerRef, renderRef, apply)
+    const listing = await provider.listFiles({ pageToken: current.nextPageToken, pageSize: 100 })
+    if (!isActiveGeneration(generationRef, generation)) return renderRef.current.files
+    const files = mergeFiles(renderRef.current.files, listing.files)
+    apply({ files, nextPageToken: listing.nextPageToken || '' })
     return files
   }
 
   async function getPreview(fileId) {
     const current = renderRef.current
     if (current.previews[fileId]) return current.previews[fileId]
+    if (previewRequestsRef.current.has(fileId)) return previewRequestsRef.current.get(fileId)
 
     const generation = generationRef.current
     const provider = readCurrentProvider(providerRef, renderRef, apply)
-    const url = await provider.fetchPreview(fileId)
-    if (!isActiveGeneration(generationRef, generation)) {
-      revokeObjectUrl(url)
-      const error = new Error('A newer Google Drive session replaced this preview request.')
-      error.code = DRIVE_STATE.cancelled
-      throw error
-    }
+    const request = provider.fetchPreview(fileId)
+      .then((url) => {
+        if (!isActiveGeneration(generationRef, generation)) {
+          revokeObjectUrl(url)
+          const error = new Error('A newer Google Drive session replaced this preview request.')
+          error.code = DRIVE_STATE.cancelled
+          throw error
+        }
 
-    previewUrlsRef.current.add(url)
-    apply({
-      previews: {
-        ...renderRef.current.previews,
-        [fileId]: url,
-      },
-    })
-    return url
+        previewUrlsRef.current.add(url)
+        apply({
+          previews: {
+            ...renderRef.current.previews,
+            [fileId]: url,
+          },
+        })
+        return url
+      })
+      .finally(() => {
+        previewRequestsRef.current.delete(fileId)
+      })
+    previewRequestsRef.current.set(fileId, request)
+    return request
   }
 
   function disconnect() {
@@ -273,6 +303,7 @@ export function createDriveConnectionController({
     providerRef.current?.disconnect?.()
     providerRef.current = null
     generationRef.current += 1
+    previewRequestsRef.current.clear()
     revokeSessionPreviews()
   }
 
@@ -284,6 +315,7 @@ export function createDriveConnectionController({
     getPreview,
     getProvider,
     getSnapshot,
+    loadMoreFiles,
     openExternally,
     refreshListing,
     retryAccess,
@@ -314,6 +346,7 @@ export function useGoogleDriveConnection() {
 
   const connect = useCallback(async () => controller.connect(), [controller])
   const disconnect = useCallback(() => controller.disconnect(), [controller])
+  const loadMoreFiles = useCallback(async () => controller.loadMoreFiles(), [controller])
   const refreshListing = useCallback(async () => controller.refreshListing(), [controller])
   const retryAccess = useCallback(async () => controller.retryAccess(), [controller])
   const getPreview = useCallback(async (fileId) => controller.getPreview(fileId), [controller])
@@ -325,7 +358,10 @@ export function useGoogleDriveConnection() {
     files: renderState.files,
     generation: renderState.generation,
     getPreview,
+    hasMoreFiles: Boolean(renderState.nextPageToken),
+    loadMoreFiles,
     message: renderState.message,
+    nextPageToken: renderState.nextPageToken,
     openExternally,
     previews: renderState.previews,
     provider: controller.getProvider(),

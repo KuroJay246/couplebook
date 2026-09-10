@@ -59,6 +59,68 @@ test('Drive previews and refreshes remain bound to the active provider session',
   assert.ok(events.includes('provider-2:open:provider-2-image'))
 })
 
+test('concurrent Drive preview requests are deduplicated per session', async () => {
+  const events = []
+  const controller = createDriveConnectionController({
+    createProvider: () => makeProvider('dedupe', events, 15),
+    loadIdentityScript: async () => {},
+  })
+  controller.bindReact(() => {})
+  await controller.connect()
+
+  const [first, second] = await Promise.all([
+    controller.getPreview('dedupe-image'),
+    controller.getPreview('dedupe-image'),
+  ])
+
+  assert.equal(first, 'blob:dedupe:dedupe-image')
+  assert.equal(second, first)
+  assert.deepEqual(events.filter((event) => event === 'dedupe:preview:dedupe-image'), ['dedupe:preview:dedupe-image'])
+})
+
+test('Drive listing loads the first page before additional pages are requested', async () => {
+  const events = []
+  const controller = createDriveConnectionController({
+    createProvider: () => ({
+      async connect() {
+        events.push('connect')
+        return { state: 'connected' }
+      },
+      async listFiles({ pageToken = '', pageSize = 100 } = {}) {
+        events.push(`list:${pageToken || 'first'}:${pageSize}`)
+        if (!pageToken) {
+          return {
+            files: [{ id: 'first-page-image', name: 'first.jpg' }],
+            nextPageToken: 'next-page',
+          }
+        }
+        return {
+          files: [{ id: 'second-page-image', name: 'second.jpg' }],
+          nextPageToken: '',
+        }
+      },
+      disconnect() {
+        events.push('disconnect')
+      },
+      async fetchPreview() {
+        throw new Error('not used')
+      },
+      openExternally() {},
+    }),
+    loadIdentityScript: async () => {},
+  })
+
+  await controller.connect()
+  assert.deepEqual(controller.getSnapshot().files.map((file) => file.id), ['first-page-image'])
+  assert.equal(controller.getSnapshot().nextPageToken, 'next-page')
+  assert.deepEqual(events.filter((event) => event.startsWith('list:')), ['list:first:100'])
+
+  await controller.loadMoreFiles()
+  assert.deepEqual(controller.getSnapshot().files.map((file) => file.id), ['first-page-image', 'second-page-image'])
+  assert.equal(controller.getSnapshot().nextPageToken, '')
+  assert.deepEqual(events.filter((event) => event.startsWith('list:')), ['list:first:100', 'list:next-page:100'])
+})
+
 test('an in-flight preview from an old session is revoked and rejected', async () => {
   const events = []
   const controller = createDriveConnectionController({
