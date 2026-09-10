@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { validateFirebaseProject, REQUIRED_PROJECT_ID } from './assert-firebase-project.mjs'
+import { listDriveBackendEndpointPaths } from '../packages/drive-backend/src/index.js'
 
 const repoRoot = fileURLToPath(new URL('..', import.meta.url))
 
@@ -171,6 +172,7 @@ export function runMediaBackendReadinessCheck() {
 
   return evaluateMediaBackendReadiness({
     appEnv,
+    backendEndpointsImplemented: listDriveBackendEndpointPaths(),
     firebaseProject: projectGuard,
     rulesDrift,
   })
