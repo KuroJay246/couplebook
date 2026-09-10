@@ -10,6 +10,8 @@ import {
   findDriveBackendRoute,
   listDriveBackendEndpointPaths,
   planDriveSyncWrites,
+  runDriveMediaRemoval,
+  runDriveMediaUpload,
   runDriveSyncNow,
   validateDriveBackendRequest,
 } from '../src/index.js'
@@ -307,4 +309,221 @@ test('drive sync handler verifies membership and writes only planned records', a
 
   assert.equal(denied.ok, false)
   assert.equal(denied.code, 'active-couple-membership-required')
+})
+
+test('drive media upload blocks exact duplicates before Drive upload', async () => {
+  let uploadCalled = false
+  const result = await runDriveMediaUpload({
+    activeMembershipReader: async () => ({ active: true }),
+    auditWriter: async () => {},
+    body: {
+      checksum: 'a'.repeat(64),
+      clientUploadId: 'client_upload_1',
+      coupleId: 'couple_alpha',
+      fileName: 'date-night.jpg',
+      mediaId: 'media_upload_1',
+      mimeType: 'image/jpeg',
+      sizeBytes: 2048,
+    },
+    driveUploader: async () => {
+      uploadCalled = true
+    },
+    duplicateReader: async () => ({ exact: { mediaId: 'media_existing' } }),
+    headers: { authorization: 'Bearer local-test-token' },
+    mediaWriter: async () => {},
+    tokenVerifier: async () => ({ uid: 'member_one' }),
+  })
+
+  assert.equal(result.ok, false)
+  assert.equal(result.status, 409)
+  assert.equal(result.code, 'exact-duplicate-media')
+  assert.equal(uploadCalled, false)
+})
+
+test('drive media upload finalizes stable media metadata and privacy-minimal audit only', async () => {
+  const mediaWrites = []
+  const auditEvents = []
+  const result = await runDriveMediaUpload({
+    activeMembershipReader: async ({ coupleId, uid }) => ({ active: coupleId === 'couple_alpha' && uid === 'member_one' }),
+    auditWriter: async (write) => auditEvents.push(write),
+    body: {
+      checksum: 'b'.repeat(64),
+      clientUploadId: 'client_upload_2',
+      coupleId: 'couple_alpha',
+      fileName: 'movie-night.mp4',
+      mediaId: 'media_upload_2',
+      mimeType: 'video/mp4',
+      sizeBytes: 4096,
+    },
+    driveUploader: async () => ({
+      driveFileId: 'drive_uploaded_2',
+      driveFolderId: 'folder_alpha',
+    }),
+    duplicateReader: async () => ({}),
+    headers: { authorization: 'Bearer local-test-token' },
+    mediaWriter: async (write) => mediaWrites.push(write),
+    nowMs: 7000,
+    tokenVerifier: async () => ({ uid: 'member_one' }),
+  })
+
+  assert.equal(result.ok, true)
+  assert.equal(result.mediaId, 'media_upload_2')
+  assert.equal(result.driveFileId, 'drive_uploaded_2')
+  assert.equal(mediaWrites.length, 1)
+  assert.equal(mediaWrites[0].record.mediaType, 'video')
+  assert.equal(mediaWrites[0].record.createdByUid, 'member_one')
+  assert.equal(auditEvents[0].record.action, 'media.upload')
+  assertNoCredentialValues(result)
+  assertNoCredentialValues(mediaWrites[0])
+  assertNoCredentialValues(auditEvents[0])
+})
+
+test('drive media upload records orphan recovery when Firestore finalization fails after Drive upload', async () => {
+  const orphans = []
+  const result = await runDriveMediaUpload({
+    activeMembershipReader: async () => ({ active: true }),
+    auditWriter: async () => {},
+    body: {
+      checksum: 'c'.repeat(64),
+      clientUploadId: 'client_upload_3',
+      coupleId: 'couple_alpha',
+      fileName: 'picnic.jpg',
+      mediaId: 'media_upload_3',
+      mimeType: 'image/jpeg',
+      sizeBytes: 1024,
+    },
+    driveUploader: async () => ({
+      driveFileId: 'drive_uploaded_3',
+      driveFolderId: 'folder_alpha',
+    }),
+    duplicateReader: async () => ({}),
+    headers: { authorization: 'Bearer local-test-token' },
+    mediaWriter: async () => {
+      throw new Error('firestore unavailable')
+    },
+    nowMs: 8000,
+    orphanWriter: async (write) => orphans.push(write),
+    tokenVerifier: async () => ({ uid: 'member_one' }),
+  })
+
+  assert.equal(result.ok, false)
+  assert.equal(result.code, 'media-finalization-failed')
+  assert.equal(result.retryable, true)
+  assert.equal(orphans.length, 1)
+  assert.equal(orphans[0].record.reason, 'media-finalization-failed')
+  assert.equal(orphans[0].record.driveFileId, 'drive_uploaded_3')
+  assertNoCredentialValues(orphans[0])
+})
+
+test('drive media removal tombstones Couple Book metadata without deleting the Drive original by default', async () => {
+  const writes = []
+  const audits = []
+  let driveRemoveCalled = false
+  const result = await runDriveMediaRemoval({
+    activeMembershipReader: async () => ({ active: true }),
+    auditWriter: async (write) => audits.push(write),
+    body: { coupleId: 'couple_alpha', mediaId: 'media_remove_1' },
+    driveRemover: async () => {
+      driveRemoveCalled = true
+    },
+    headers: { authorization: 'Bearer local-test-token' },
+    mediaReader: async () => ({
+      coupleId: 'couple_alpha',
+      driveFileId: 'drive_remove_1',
+      mediaId: 'media_remove_1',
+      provider: 'google-drive',
+    }),
+    mediaWriter: async (write) => writes.push(write),
+    path: '/api/drive/media/media_remove_1',
+    tokenVerifier: async () => ({ uid: 'member_one' }),
+  })
+
+  assert.equal(result.ok, true)
+  assert.equal(result.deletedOriginal, false)
+  assert.equal(driveRemoveCalled, false)
+  assert.equal(writes[0].operation, 'tombstone')
+  assert.equal(writes[0].record.syncStatus, 'removed-from-couple-book')
+  assert.equal(audits[0].record.action, 'media.remove')
+})
+
+test('drive media removal requires explicit confirmation before deleting the Drive original', async () => {
+  const missingConfirmation = await runDriveMediaRemoval({
+    activeMembershipReader: async () => ({ active: true }),
+    auditWriter: async () => {},
+    body: { coupleId: 'couple_alpha', deleteOriginal: true, mediaId: 'media_remove_2' },
+    headers: { authorization: 'Bearer local-test-token' },
+    mediaReader: async () => ({
+      coupleId: 'couple_alpha',
+      driveFileId: 'drive_remove_2',
+      mediaId: 'media_remove_2',
+      provider: 'google-drive',
+    }),
+    mediaWriter: async () => {},
+    path: '/api/drive/media/media_remove_2',
+    tokenVerifier: async () => ({ uid: 'member_one' }),
+  })
+
+  assert.equal(missingConfirmation.ok, false)
+  assert.equal(missingConfirmation.code, 'drive-original-delete-confirmation-required')
+
+  const deleted = []
+  const confirmed = await runDriveMediaRemoval({
+    activeMembershipReader: async () => ({ active: true }),
+    auditWriter: async () => {},
+    body: {
+      confirmDeleteOriginal: 'delete-drive-original-media_remove_2',
+      coupleId: 'couple_alpha',
+      deleteOriginal: true,
+      mediaId: 'media_remove_2',
+    },
+    driveRemover: async (write) => deleted.push(write),
+    headers: { authorization: 'Bearer local-test-token' },
+    mediaReader: async () => ({
+      coupleId: 'couple_alpha',
+      driveFileId: 'drive_remove_2',
+      mediaId: 'media_remove_2',
+      provider: 'google-drive',
+    }),
+    mediaWriter: async () => {},
+    path: '/api/drive/media/media_remove_2',
+    tokenVerifier: async () => ({ uid: 'member_one' }),
+  })
+
+  assert.equal(confirmed.ok, true)
+  assert.equal(confirmed.deletedOriginal, true)
+  assert.equal(deleted[0].driveFileId, 'drive_remove_2')
+})
+
+test('drive media upload and removal enforce active couple membership', async () => {
+  const uploadDenied = await runDriveMediaUpload({
+    activeMembershipReader: async () => ({ active: false }),
+    auditWriter: async () => {},
+    body: {
+      checksum: 'd'.repeat(64),
+      clientUploadId: 'client_upload_4',
+      coupleId: 'couple_beta',
+      fileName: 'blocked.jpg',
+      mediaId: 'media_upload_4',
+      mimeType: 'image/jpeg',
+      sizeBytes: 1024,
+    },
+    driveUploader: async () => ({}),
+    duplicateReader: async () => ({}),
+    headers: { authorization: 'Bearer local-test-token' },
+    mediaWriter: async () => {},
+    tokenVerifier: async () => ({ uid: 'member_one' }),
+  })
+  assert.equal(uploadDenied.code, 'active-couple-membership-required')
+
+  const removeDenied = await runDriveMediaRemoval({
+    activeMembershipReader: async () => ({ active: false }),
+    auditWriter: async () => {},
+    body: { coupleId: 'couple_beta', mediaId: 'media_remove_3' },
+    headers: { authorization: 'Bearer local-test-token' },
+    mediaReader: async () => null,
+    mediaWriter: async () => {},
+    path: '/api/drive/media/media_remove_3',
+    tokenVerifier: async () => ({ uid: 'member_one' }),
+  })
+  assert.equal(removeDenied.code, 'active-couple-membership-required')
 })

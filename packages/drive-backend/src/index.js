@@ -16,6 +16,8 @@ export const DRIVE_BACKEND_ROUTES = Object.freeze([
 
 const SAFE_ID = /^[A-Za-z0-9_-]{1,160}$/
 const SAFE_AUTH_CODE = /^[A-Za-z0-9._~/-]{8,4096}$/
+const SAFE_CHECKSUM = /^[a-f0-9]{32,128}$/i
+const SUPPORTED_MEDIA_TYPE = /^(image|video)\//
 const DEFAULT_STATE_TTL_MS = 10 * 60 * 1000
 const FORBIDDEN_SYNC_FIELD_PATTERN = /(?:^|[_-])(access[_-]?token|refresh[_-]?token|client[_-]?secret|thumbnaillink|webcontentlink|previewurl|downloadurl|signedurl)(?:$|[_-])/i
 
@@ -25,6 +27,10 @@ function isSafeId(value) {
 
 function isSafeAuthCode(value) {
   return typeof value === 'string' && SAFE_AUTH_CODE.test(value)
+}
+
+function isSafeChecksum(value) {
+  return typeof value === 'string' && SAFE_CHECKSUM.test(value)
 }
 
 function getBearerToken(headers = {}) {
@@ -55,6 +61,31 @@ function assertSafeMediaRecord(record, coupleId) {
   if (!isSafeId(record.mediaId || '')) throw new Error('Drive sync media record requires a safe mediaId.')
   if (!isSafeId(record.driveFileId || '')) throw new Error('Drive sync media record requires a safe driveFileId.')
   return true
+}
+
+function assertSafeUploadDraft(upload, coupleId) {
+  if (!upload || typeof upload !== 'object') throw new Error('Drive upload draft is required.')
+  if (hasForbiddenSyncField(upload)) throw new Error('Drive upload draft must not include temporary URLs or credential fields.')
+  if (!isSafeId(upload.clientUploadId || '')) throw new Error('Drive upload draft requires a safe clientUploadId.')
+  if (!isSafeId(upload.mediaId || '')) throw new Error('Drive upload draft requires a safe mediaId.')
+  if (upload.coupleId !== coupleId) throw new Error('Drive upload draft couple mismatch.')
+  if (!SUPPORTED_MEDIA_TYPE.test(String(upload.mimeType || ''))) throw new Error('Drive upload draft requires supported image or video MIME type.')
+  if (!Number.isSafeInteger(Number(upload.sizeBytes)) || Number(upload.sizeBytes) <= 0) throw new Error('Drive upload draft requires a positive sizeBytes value.')
+  if (upload.checksum && !isSafeChecksum(upload.checksum)) throw new Error('Drive upload draft checksum is invalid.')
+  if (/[\\/]|^\.+$/.test(String(upload.fileName || ''))) throw new Error('Drive upload draft fileName must not contain a local path.')
+  return true
+}
+
+function createMediaAuditEvent({ action, coupleId, mediaId, nowMs, uid }) {
+  return Object.freeze({
+    action,
+    actorUid: uid,
+    coupleId,
+    createdAtMs: nowMs,
+    provider: 'google-drive',
+    resourceId: mediaId,
+    resourceType: 'media',
+  })
 }
 
 function createAuditEvent({ coupleId, counts, nowMs, uid }) {
@@ -425,6 +456,200 @@ export async function runDriveSyncNow({
     ok: true,
     status: 200,
     counts: plan.counts,
+  })
+}
+
+export async function runDriveMediaUpload({
+  activeMembershipReader,
+  auditWriter,
+  body = {},
+  driveUploader,
+  duplicateReader,
+  headers = {},
+  mediaWriter,
+  nowMs = Date.now(),
+  orphanWriter,
+  tokenVerifier,
+} = {}) {
+  const request = await validateDriveBackendRequest({
+    activeMembershipReader,
+    body,
+    headers,
+    method: 'POST',
+    path: DRIVE_BACKEND_ENDPOINTS.uploadMedia,
+    tokenVerifier,
+  })
+  if (!request.ok) return request
+  if (typeof duplicateReader !== 'function') return Object.freeze({ ok: false, status: 500, code: 'duplicate-reader-not-configured' })
+  if (typeof driveUploader !== 'function') return Object.freeze({ ok: false, status: 500, code: 'drive-uploader-not-configured' })
+  if (typeof mediaWriter !== 'function') return Object.freeze({ ok: false, status: 500, code: 'media-writer-not-configured' })
+  if (typeof auditWriter !== 'function') return Object.freeze({ ok: false, status: 500, code: 'audit-writer-not-configured' })
+
+  const upload = Object.freeze({
+    checksum: String(body.checksum || ''),
+    clientUploadId: body.clientUploadId,
+    coupleId: request.coupleId,
+    fileName: String(body.fileName || ''),
+    mediaId: body.mediaId,
+    mimeType: String(body.mimeType || ''),
+    sizeBytes: Number(body.sizeBytes || 0),
+  })
+  try {
+    assertSafeUploadDraft(upload, request.coupleId)
+  } catch (error) {
+    return Object.freeze({ ok: false, status: 400, code: 'invalid-upload-draft', message: error.message })
+  }
+
+  const duplicate = await duplicateReader({
+    checksum: upload.checksum,
+    coupleId: request.coupleId,
+    mediaId: upload.mediaId,
+    mimeType: upload.mimeType,
+    sizeBytes: upload.sizeBytes,
+  })
+  if (duplicate?.exact) {
+    return Object.freeze({
+      ok: false,
+      status: 409,
+      code: 'exact-duplicate-media',
+      duplicateMediaId: duplicate.exact.mediaId || '',
+    })
+  }
+
+  const uploaded = await driveUploader({ coupleId: request.coupleId, uid: request.uid, upload })
+  const mediaRecord = Object.freeze({
+    caption: '',
+    checksum: upload.checksum,
+    coupleId: request.coupleId,
+    createdByUid: request.uid,
+    deleted: false,
+    driveFileId: uploaded?.driveFileId || uploaded?.id || '',
+    driveFolderId: uploaded?.driveFolderId || '',
+    fileName: upload.fileName,
+    lastSyncedAtMs: nowMs,
+    mediaId: upload.mediaId,
+    mediaType: upload.mimeType.startsWith('video/') ? 'video' : 'image',
+    mimeType: upload.mimeType,
+    provider: 'google-drive',
+    sizeBytes: upload.sizeBytes,
+    syncStatus: 'active',
+    updatedAtMs: nowMs,
+  })
+
+  try {
+    assertSafeMediaRecord(mediaRecord, request.coupleId)
+    await mediaWriter({ coupleId: request.coupleId, mediaId: upload.mediaId, operation: 'upsert', record: mediaRecord })
+    await auditWriter({
+      coupleId: request.coupleId,
+      record: createMediaAuditEvent({
+        action: 'media.upload',
+        coupleId: request.coupleId,
+        mediaId: upload.mediaId,
+        nowMs,
+        uid: request.uid,
+      }),
+    })
+  } catch (error) {
+    if (typeof orphanWriter === 'function' && mediaRecord.driveFileId) {
+      await orphanWriter({
+        coupleId: request.coupleId,
+        record: Object.freeze({
+          clientUploadId: upload.clientUploadId,
+          coupleId: request.coupleId,
+          createdAtMs: nowMs,
+          driveFileId: mediaRecord.driveFileId,
+          mediaId: upload.mediaId,
+          provider: 'google-drive',
+          reason: 'media-finalization-failed',
+        }),
+      })
+    }
+    return Object.freeze({
+      ok: false,
+      status: 500,
+      code: 'media-finalization-failed',
+      mediaId: upload.mediaId,
+      retryable: true,
+    })
+  }
+
+  const response = Object.freeze({
+    ok: true,
+    status: 200,
+    driveFileId: mediaRecord.driveFileId,
+    mediaId: upload.mediaId,
+  })
+  assertNoCredentialValues(response)
+  return response
+}
+
+export async function runDriveMediaRemoval({
+  activeMembershipReader,
+  auditWriter,
+  body = {},
+  driveRemover,
+  headers = {},
+  mediaReader,
+  mediaWriter,
+  method = 'POST',
+  nowMs = Date.now(),
+  path = '',
+  tokenVerifier,
+} = {}) {
+  const authorized = await authorizeIndexedMediaRequest({
+    activeMembershipReader,
+    body,
+    headers,
+    mediaReader,
+    method,
+    path,
+    tokenVerifier,
+  })
+  if (!authorized.ok) return authorized
+  if (typeof mediaReader !== 'function') return Object.freeze({ ok: false, status: 500, code: 'media-reader-not-configured' })
+  if (typeof mediaWriter !== 'function') return Object.freeze({ ok: false, status: 500, code: 'media-writer-not-configured' })
+  if (typeof auditWriter !== 'function') return Object.freeze({ ok: false, status: 500, code: 'audit-writer-not-configured' })
+
+  const media = await mediaReader({ coupleId: authorized.coupleId, mediaId: authorized.mediaId })
+  assertSafeMediaRecord(media, authorized.coupleId)
+
+  const deleteOriginal = body.deleteOriginal === true
+  if (deleteOriginal) {
+    const expectedConfirmation = `delete-drive-original-${authorized.mediaId}`
+    if (body.confirmDeleteOriginal !== expectedConfirmation) {
+      return Object.freeze({ ok: false, status: 400, code: 'drive-original-delete-confirmation-required' })
+    }
+    if (typeof driveRemover !== 'function') return Object.freeze({ ok: false, status: 500, code: 'drive-remover-not-configured' })
+    await driveRemover({ coupleId: authorized.coupleId, driveFileId: media.driveFileId, mediaId: authorized.mediaId, uid: authorized.uid })
+  }
+
+  const record = Object.freeze({
+    ...media,
+    deleted: true,
+    lastSyncedAtMs: nowMs,
+    provider: 'google-drive',
+    removedAtMs: nowMs,
+    removedByUid: authorized.uid,
+    syncStatus: deleteOriginal ? 'deleted-original' : 'removed-from-couple-book',
+  })
+  assertSafeMediaRecord(record, authorized.coupleId)
+  await mediaWriter({ coupleId: authorized.coupleId, mediaId: authorized.mediaId, operation: 'tombstone', record })
+  await auditWriter({
+    coupleId: authorized.coupleId,
+    record: createMediaAuditEvent({
+      action: deleteOriginal ? 'media.deleteOriginal' : 'media.remove',
+      coupleId: authorized.coupleId,
+      mediaId: authorized.mediaId,
+      nowMs,
+      uid: authorized.uid,
+    }),
+  })
+
+  return Object.freeze({
+    ok: true,
+    status: 200,
+    deletedOriginal: deleteOriginal,
+    mediaId: authorized.mediaId,
   })
 }
 

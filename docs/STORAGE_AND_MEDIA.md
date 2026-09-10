@@ -61,6 +61,10 @@ The frontend may render the Firestore media index and request a session Drive co
 
 The local sync planner accepts already-authorized Drive metadata from an injected backend reader, compares it with indexed Firestore media records, and produces only stable `upsert`, `tombstone`, sync-state, and privacy-minimal audit writes. It rejects cross-couple records and temporary URL or credential-shaped fields such as Drive `thumbnailLink`, `webContentLink`, access tokens, refresh tokens, signed URLs, preview URLs, and download URLs. This proves the write contract; it does not replace the still-required persistent token host, Drive Changes processor, webhook receiver, or thumbnail/original streaming proxy.
 
+The local upload handler validates Firebase identity and active membership, rejects exact duplicates before the Drive write boundary, accepts only image/video drafts with safe metadata, and finalizes stable Firestore media-index records after the injected Drive uploader succeeds. If Drive upload succeeds but Firestore finalization fails, it records a privacy-safe orphan recovery record instead of pretending the item is saved.
+
+The local removal handler defaults to "Remove from Couple Book" semantics by tombstoning the media index record and leaving the original Drive file intact. Permanent Drive-original deletion is a separate destructive path that requires an explicit `delete-drive-original-{mediaId}` confirmation and a configured backend Drive remover. Both paths write privacy-minimal audit events and never expose raw Drive credentials.
+
 Required backend responsibilities:
 
 - verify Firebase ID tokens and active couple membership;
