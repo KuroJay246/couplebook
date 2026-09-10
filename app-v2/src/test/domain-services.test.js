@@ -204,6 +204,7 @@ test('Drive sync backend contract requires a trusted server boundary before pers
     'syncNow',
     'webhook',
     'thumbnail',
+    'stream',
   ])
   assert.ok(contract.backendSecrets.includes('google-refresh-token'))
   assert.ok(contract.backendAuth.includes('bind-authorization-state-to-couple-and-uid'))
