@@ -10,7 +10,7 @@ import { getLegacyFavorites, getFirestoreFavoritesByUid, buildFavoritesDocumentP
 import { getLegacyMemories, getFirestoreMemories, buildMemoryCollectionPath } from '../services/memoryService.js'
 import { getLegacyProfile, getFirestoreProfileByUid, buildProfileDocumentPath } from '../services/profileService.js'
 import { getLegacySettings, getFirestoreSettingsByUid, buildSettingsDocumentPath } from '../services/settingsService.js'
-import { getDeferredCloudSyncStatus, getDeferredMediaSyncStatus, getMediaSyncArchitectureContract, getReadOnlySyncContract, refreshCompatibilityReadModel } from '../services/syncService.js'
+import { getDeferredCloudSyncStatus, getDeferredMediaSyncStatus, getMediaSyncArchitectureContract, getMediaSyncBackendContract, getReadOnlySyncContract, refreshCompatibilityReadModel } from '../services/syncService.js'
 import { buildUserDocumentPath, getApprovedUserByUid } from '../services/userService.js'
 
 test('user service keeps approved-user reads targeted to users uid docs only', async () => {
@@ -173,13 +173,44 @@ test('sync service exposes the Google Drive media index architecture without pre
   assert.equal(contract.driveFolderId, '17Ar4UK5_puORz9TE1dijIk2-qHgh7oIa')
   assert.equal(contract.mediaIndexPath, 'couples/couple-alpha/mediaItems')
   assert.equal(contract.syncStatePath, 'couples/couple-alpha/mediaSync/google-drive')
+  assert.equal(contract.backend.projectId, 'couplebook-97830')
+  assert.equal(contract.backend.endpoints.beginAuthorization, '/api/drive/oauth/begin')
+  assert.equal(contract.backend.endpoints.thumbnail, '/api/drive/media/:mediaId/thumbnail')
+  assert.ok(contract.backend.frontendAuth.includes('never-send-google-refresh-token-to-browser'))
+  assert.ok(contract.backend.backendAuth.includes('require-active-couple-membership'))
+  assert.ok(contract.backend.backendWrites.includes('couples/couple-alpha/mediaItems'))
+  assert.ok(contract.backend.forbiddenWrites.includes('refresh-token'))
   assert.ok(contract.frontendCan.includes('render-indexed-media'))
   assert.ok(contract.backendRequiredFor.includes('refresh-token-storage'))
+  assert.ok(contract.backendRequiredFor.includes('fast-thumbnail-proxy-or-cache'))
   assert.equal(contract.deploymentStatus, 'owner-approval-required')
   assert.match(contract.zeroCostBoundary, /Do not enable billing/)
   assert.equal(status.status, 'partial')
   assert.equal(status.data.persistentBackend, false)
+  assert.ok(status.data.requiredEndpoints.includes('/api/drive/webhook'))
   assert.match(status.warnings.join(' '), /approved backend deployment/)
+})
+
+test('Drive sync backend contract requires a trusted server boundary before persistent OAuth', () => {
+  const contract = getMediaSyncBackendContract('couple-alpha')
+  const serialized = JSON.stringify(contract)
+
+  assert.equal(contract.provider, 'google-drive')
+  assert.equal(contract.driveFolderId, '17Ar4UK5_puORz9TE1dijIk2-qHgh7oIa')
+  assert.deepEqual(Object.keys(contract.endpoints), [
+    'beginAuthorization',
+    'completeAuthorization',
+    'disconnect',
+    'syncNow',
+    'webhook',
+    'thumbnail',
+  ])
+  assert.ok(contract.backendSecrets.includes('google-refresh-token'))
+  assert.ok(contract.backendAuth.includes('bind-authorization-state-to-couple-and-uid'))
+  assert.ok(contract.backendWrites.includes('couples/couple-alpha/mediaSync/google-drive'))
+  assert.equal(contract.previewStrategy.staleUrlPolicy, 'do-not-store-or-replay')
+  assert.match(contract.zeroCostBoundary, /Do not deploy/)
+  assert.doesNotMatch(serialized, /clientSecretValue|refreshTokenValue|accessTokenValue|Bearer\s/i)
 })
 
 async function collectSourceFiles(directoryUrl) {

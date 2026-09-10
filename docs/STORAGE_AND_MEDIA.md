@@ -1,18 +1,41 @@
 # Storage And Media
 
-Last updated: 2026-08-22
+Last updated: 2026-09-10
 
 ## Current Boundary
 
-Private media remains private. Couple Book may present media metadata, verified Storage references, and protected viewer states, but it must not expose raw local paths, arbitrary public URLs, or private browser filesystem references.
+Private media remains private. Couple Book may present stable media metadata, verified Google Drive references, historical verified Storage references, and protected viewer states, but it must not expose raw local paths, arbitrary public URLs, temporary Drive download URLs, OAuth tokens, or private browser filesystem references.
+
+Google Drive is the canonical original-media archive for production media. Firestore stores only stable metadata needed for private Album browsing and recovery.
 
 ## Supported Media States
 
 - `none`
 - `private-legacy-reference`
+- `drive-indexed`
+- `drive-verified`
 - `storage-verified`
 
-Verified Storage paths remain scoped under:
+`drive-indexed` records live under:
+
+```text
+couples/{coupleId}/mediaItems/{mediaId}
+couples/{coupleId}/mediaSync/google-drive
+```
+
+Allowed stable Drive metadata includes `coupleId`, `memoryId`, `driveFileId`, `driveFolderId`, provider, MIME type, media type, dimensions, duration, size, checksum, safe captions, and created/modified/captured timestamps.
+
+Do not persist:
+
+- browser object URLs;
+- Drive `thumbnailLink` or `webContentLink`;
+- temporary download URLs;
+- OAuth access tokens;
+- OAuth refresh tokens;
+- signed URLs;
+- raw local file paths.
+
+Historical verified Storage paths remain scoped under:
 
 ```text
 couples/{coupleId}/media/{mediaId}/original
@@ -22,4 +45,22 @@ couples/{coupleId}/media/{mediaId}/poster
 
 ## Upload Queue
 
-The Album queue retains the tested state machine for validation, duplicate protection, preview, hashing, upload, finalizing, saved, cancel, retry, and remove.
+The Album queue retains the tested state machine for validation, duplicate protection, preview, hashing, upload, finalizing, saved, cancel, retry, orphan recovery, and remove. Production media writes must stay Drive-first; Firebase Storage must not silently become the production original-media destination.
+
+## Persistent Drive Sync Boundary
+
+The frontend may render the Firestore media index and request a session Drive connection for owner review, but persistent Drive authorization requires a trusted backend.
+
+Required backend responsibilities:
+
+- verify Firebase ID tokens and active couple membership;
+- bind OAuth state to the requesting `uid` and `coupleId`;
+- exchange Google authorization codes server-side;
+- store Google refresh credentials outside browser source and Firestore media records;
+- process Drive Changes cursors and webhook notifications;
+- renew Drive watch channels;
+- reconcile Drive files into `couples/{coupleId}/mediaItems`;
+- write privacy-minimal audit events;
+- serve thumbnail/original previews through short-lived backend mediation or a safe cache without persisting stale URLs.
+
+Deployment remains owner-approval-required. Do not deploy a backend, enable billing, or store refresh credentials until the owner approves that exact plan.
