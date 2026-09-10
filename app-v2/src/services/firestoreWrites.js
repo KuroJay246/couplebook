@@ -2,6 +2,7 @@ import { collection, doc, getDoc, getDocs, limit, query, serverTimestamp, setDoc
 import { isFirestoreWriteMode } from '../data/writeMode.js'
 import { db } from '../lib/firebase.js'
 import { DEFAULT_THEME_ID, isSupportedThemeInput, normalizeThemeId, THEME_REGISTRY } from '../theme/themeRegistry.js'
+import { normalizeNotificationPreferences } from './notificationPreferences.js'
 import {
   auditEventPath,
   currentContractPath,
@@ -353,6 +354,7 @@ export async function saveOwnSettings(payload, context) {
       localOnlyMode: payload.localOnlyMode === true,
       reducedMotion: payload.reducedMotion === true,
     },
+    notifications: normalizeNotificationPreferences(payload.notifications),
   }
   return writeDocumentWithAudit(reference, next, undefined, {
     coupleId,

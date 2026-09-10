@@ -123,6 +123,10 @@ test('settings read model keeps approved identity, appearance notes, and migrati
   assert.equal(model.media.connectedAccount, 'jaylanspencer99@gmail.com')
   assert.equal(model.media.sharedAlbum.status, 'not-configured')
   assert.equal(model.media.sharedAlbum.url, '')
+  assert.equal(model.notifications.title, 'Notifications')
+  assert.equal(model.notifications.permission, 'unsupported')
+  assert.equal(model.notifications.categories.length, 7)
+  assert.equal(model.notifications.categories.find((category) => category.key === 'newMedia').enabled, false)
   assert.equal(model.media.items[1].label, 'Temporary previews')
   assert.equal(model.media.items[2].label, 'Fast Album index')
   assert.equal(model.media.items[3].label, 'Continuous Drive sync')
@@ -216,6 +220,55 @@ test('settings read model keeps scoped preference precedence and fallback-only a
   assert.equal(fallbackModel.appearance.anniversaryView.label, 'Jaylan perspective')
   assert.equal(scopedModel.appearance.runtimeTheme.label, 'Midnight Rose')
   assert.equal(fallbackModel.appearance.runtimeTheme.label, 'Paper Hearts')
+})
+
+test('settings read model normalizes notification preferences and permission copy without prompting', () => {
+  const model = buildSettingsReadModel({
+    approvedUser: {
+      username: 'Jaylan',
+      displayName: 'Jaylan',
+    },
+    authUser: {
+      email: 'approved@example.com',
+    },
+    compatibilitySnapshot: createSnapshot({
+      sources: {
+        settings: {
+          status: 'ready',
+          source: 'firestore',
+          data: {
+            appearanceTheme: 'paper-hearts',
+            revision: 2,
+            settings: {
+              anniversaryConfig: 'dual',
+              notifications: {
+                newMedia: true,
+                plans: true,
+                unsafeExtra: true,
+              },
+              privacyToggles: {
+                localOnlyMode: false,
+                reducedMotion: false,
+                unknownFields: {},
+              },
+              unknownFields: {},
+            },
+          },
+          warnings: [],
+        },
+      },
+    }),
+    env: {
+      NOTIFICATION_PERMISSION: 'denied',
+    },
+  })
+
+  assert.equal(model.notifications.permission, 'denied')
+  assert.equal(model.notifications.permissionLabel, 'Blocked by browser')
+  assert.equal(model.notifications.categories.find((category) => category.key === 'newMedia').enabled, true)
+  assert.equal(model.notifications.categories.find((category) => category.key === 'plans').enabled, true)
+  assert.equal(model.notifications.categories.some((category) => category.key === 'unsafeExtra'), false)
+  assert.match(model.notifications.backendBoundary, /Firebase Messaging/)
 })
 
 test('settings read model exposes only valid iCloud shared album shortcut URLs', () => {

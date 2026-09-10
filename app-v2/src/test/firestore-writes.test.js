@@ -100,7 +100,16 @@ test('write services validate text, categories, settings, memories, contract, an
 
   await saveOwnProfile({ name: 'Member One', bio: 'Safe bio', joinedDate: '2026-01-01' }, { ...context, firestore, ...firestore })
   await saveOwnFavorites({ food: ['cake', 'cake'] }, { ...context, firestore, ...firestore })
-  await saveOwnSettings({ appearanceTheme: 'moonlit', localOnlyMode: true, reducedMotion: true }, { ...context, firestore, ...firestore })
+  await saveOwnSettings({
+    appearanceTheme: 'moonlit',
+    localOnlyMode: true,
+    notifications: {
+      newMedia: true,
+      plans: true,
+      unsafeExtra: true,
+    },
+    reducedMotion: true,
+  }, { ...context, firestore, ...firestore })
   await saveMemory('memory_one', { title: 'A day', date: '2026-02-14', tags: ['walk'], specialMomentType: 'ordinary' }, { ...context, firestore, ...firestore })
   await archiveMemory('memory_one', 1, { ...context, firestore, ...firestore })
   await restoreMemory('memory_one', 2, { ...context, firestore, ...firestore })
@@ -116,6 +125,15 @@ test('write services validate text, categories, settings, memories, contract, an
   assert.equal(writes[1].data.revision, 1)
   assert.equal(writes[2].data.revision, 1)
   assert.equal(writes[2].data.appearanceTheme, 'moonlit')
+  assert.deepEqual(writes[2].data.notifications, {
+    anniversaries: false,
+    birthdays: false,
+    importantDates: false,
+    newMedia: true,
+    newMemories: false,
+    plans: true,
+    specialMoments: false,
+  })
   assert.equal(writes[3].data.mediaState, 'none')
   assert.equal(writes[3].data.revision, 1)
   assert.equal(writes[4].data.status, 'archived')

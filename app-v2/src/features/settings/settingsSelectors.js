@@ -1,4 +1,5 @@
 import { toTrimmedString } from '../../data/adapterUtils.js'
+import { NOTIFICATION_PREFERENCE_KEYS, normalizeNotificationPreferences } from '../../services/notificationPreferences.js'
 import { findTheme, normalizeThemeId } from '../../theme/themeRegistry.js'
 
 const LEGACY_THEME_LABELS = Object.freeze({
@@ -32,6 +33,37 @@ const MIGRATION_PROGRESS_LABELS = Object.freeze({
 })
 
 const SHARED_ALBUM_HOSTS = Object.freeze(['icloud.com', 'www.icloud.com'])
+
+const NOTIFICATION_PREFERENCE_COPY = Object.freeze({
+  newMemories: {
+    label: 'New memories',
+    description: 'Let this device know when a new memory is added to the book.',
+  },
+  newMedia: {
+    label: 'New photos and videos',
+    description: 'Useful for new Album media after the trusted media backend is live.',
+  },
+  plans: {
+    label: 'Plans',
+    description: 'Date nights, trips, reservations, and shared plans.',
+  },
+  importantDates: {
+    label: 'Important dates',
+    description: 'Relationship dates that should not get lost in the week.',
+  },
+  anniversaries: {
+    label: 'Anniversaries',
+    description: 'Annual reminders for milestones already known inside Couple Book.',
+  },
+  birthdays: {
+    label: 'Birthdays',
+    description: 'Birthday reminders without turning special pages into alerts.',
+  },
+  specialMoments: {
+    label: 'Special moments',
+    description: 'Birthday, Valentine, Confession, and future private moment prompts.',
+  },
+})
 
 const DATE_LABEL_FORMATTER = new Intl.DateTimeFormat('en-US', {
   month: 'short',
@@ -220,6 +252,41 @@ export function selectSettingsPrivacy() {
         meta: 'Current boundary',
       },
     ],
+  }
+}
+
+function getNotificationPermissionState(env = {}) {
+  const explicit = toTrimmedString(env.NOTIFICATION_PERMISSION || env.notificationPermission).toLowerCase()
+  if (['granted', 'denied', 'default', 'unsupported'].includes(explicit)) return explicit
+  if (typeof window !== 'undefined' && 'Notification' in window) {
+    return toTrimmedString(window.Notification?.permission).toLowerCase() || 'default'
+  }
+  return 'unsupported'
+}
+
+export function selectSettingsNotifications(settingsSource = null, env = {}) {
+  const settingsData = settingsSource?.data || {}
+  const stored = normalizeNotificationPreferences(settingsData.notifications || settingsData.settings?.notifications)
+  const permission = getNotificationPermissionState(env)
+
+  return {
+    title: 'Notifications',
+    description: 'Choose what Couple Book may notify this device about once web push is connected. Permission is requested later only from an explicit action.',
+    permission,
+    permissionLabel: permission === 'granted'
+      ? 'Allowed on this device'
+      : permission === 'denied'
+        ? 'Blocked by browser'
+        : permission === 'unsupported'
+          ? 'Not supported here'
+          : 'Not requested',
+    permissionTone: permission === 'granted' ? 'success' : permission === 'denied' ? 'error' : 'warning',
+    backendBoundary: 'Web push delivery requires Firebase Messaging, a registered device token, and a trusted backend path before notifications can be sent.',
+    categories: NOTIFICATION_PREFERENCE_KEYS.map((key) => ({
+      key,
+      enabled: stored[key] === true,
+      ...NOTIFICATION_PREFERENCE_COPY[key],
+    })),
   }
 }
 

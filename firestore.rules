@@ -240,7 +240,7 @@ service cloud.firestore {
 
     function isValidPrivateSettings(uid) {
       return isOwnUser(uid)
-        && hasOnly(['schemaVersion', 'revision', 'appearanceTheme', 'theme', 'anniversaryView', 'preferredAlbumView', 'privacy', 'createdAt', 'createdBy', 'updatedAt', 'updatedBy'])
+        && hasOnly(['schemaVersion', 'revision', 'appearanceTheme', 'theme', 'anniversaryView', 'preferredAlbumView', 'privacy', 'notifications', 'createdAt', 'createdBy', 'updatedAt', 'updatedBy'])
         && request.resource.data.schemaVersion == 1
         && hasNextRevision()
         && (
@@ -253,6 +253,17 @@ service cloud.firestore {
         && request.resource.data.privacy.keys().hasOnly(['localOnlyMode', 'reducedMotion'])
         && request.resource.data.privacy.localOnlyMode is bool
         && request.resource.data.privacy.reducedMotion is bool
+        && (!('notifications' in request.resource.data) || (
+          request.resource.data.notifications is map
+          && request.resource.data.notifications.keys().hasOnly(['newMemories', 'newMedia', 'plans', 'importantDates', 'anniversaries', 'birthdays', 'specialMoments'])
+          && request.resource.data.notifications.newMemories is bool
+          && request.resource.data.notifications.newMedia is bool
+          && request.resource.data.notifications.plans is bool
+          && request.resource.data.notifications.importantDates is bool
+          && request.resource.data.notifications.anniversaries is bool
+          && request.resource.data.notifications.birthdays is bool
+          && request.resource.data.notifications.specialMoments is bool
+        ))
         && hasOptionalMetadata();
     }
 

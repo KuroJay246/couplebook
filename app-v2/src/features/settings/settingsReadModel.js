@@ -11,6 +11,7 @@ import {
   selectSettingsDangerZone,
   selectSettingsMedia,
   selectSettingsMigrationProgress,
+  selectSettingsNotifications,
   selectSettingsPrivacy,
 } from './settingsSelectors.js'
 
@@ -46,6 +47,7 @@ export function buildSettingsReadModel({
     account: selectSettingsAccount({ approvedUser, authUser }),
     appearance: selectSettingsAppearance(resolvedSettingsSource),
     media: selectSettingsMedia(mediaSync, { env, settingsSource: resolvedSettingsSource }),
+    notifications: selectSettingsNotifications(resolvedSettingsSource, env),
     privacy: selectSettingsPrivacy(),
     compatibility: selectSettingsCompatibility(resolvedSnapshot),
     migration: selectSettingsMigrationProgress(migrationStatus, smokeGate),

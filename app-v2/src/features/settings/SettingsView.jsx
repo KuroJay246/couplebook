@@ -1,4 +1,5 @@
 import {
+  Bell,
   Gift,
   KeyRound,
   Heart,
@@ -53,6 +54,7 @@ const SETTINGS_CATEGORIES = [
   ['profiles', 'Profiles and dates'],
   ['appearance', 'Appearance'],
   ['media', 'Photos and videos'],
+  ['notifications', 'Notifications'],
   ['privacy', 'Privacy and access'],
   ['preferences', 'Preferences'],
   ['advanced', 'Advanced'],
@@ -63,6 +65,7 @@ function buildFormState(model) {
     appearanceTheme: model.appearance?.currentTheme?.value || model.appearance?.preservedTheme?.value || DEFAULT_THEME_ID,
     anniversaryView: model.appearance?.anniversaryView?.value || 'dual',
     localOnlyMode: model.appearance?.privacy?.localOnlyMode === true,
+    notifications: Object.fromEntries((model.notifications?.categories || []).map((category) => [category.key, category.enabled === true])),
     reducedMotion: model.appearance?.privacy?.reducedMotion === true,
     revision: model.appearance?.revision || 0,
   }
@@ -73,6 +76,7 @@ function hasChanges(loadedForm, form) {
     loadedForm.appearanceTheme !== form.appearanceTheme
     || loadedForm.anniversaryView !== form.anniversaryView
     || loadedForm.localOnlyMode !== form.localOnlyMode
+    || JSON.stringify(loadedForm.notifications || {}) !== JSON.stringify(form.notifications || {})
     || loadedForm.reducedMotion !== form.reducedMotion
   )
 }
@@ -141,6 +145,51 @@ function ThemeTile({ active, onSelect, theme }) {
   )
 }
 
+function NotificationSettingsSection({ notifications, onToggle, values }) {
+  return (
+    <Surface className="cb-page-frame">
+      <div className="flex flex-col gap-4 border-b pb-4 sm:flex-row sm:items-start sm:justify-between" style={{ borderColor: 'var(--cb-border)' }}>
+        <div className="flex items-start gap-3">
+          <span
+            className="grid size-11 shrink-0 place-items-center rounded-2xl"
+            style={{
+              background: 'color-mix(in srgb, var(--cb-accent-soft) 88%, transparent)',
+              color: 'var(--cb-accent)',
+            }}
+          >
+            <Bell className="size-5" aria-hidden="true" />
+          </span>
+          <div>
+            <p className="cb-kicker">Notifications</p>
+            <h3 className="cb-page-title mt-2 text-3xl">{notifications?.title || 'Notifications'}</h3>
+            <p className="cb-body-copy mt-2 text-sm">{notifications?.description}</p>
+          </div>
+        </div>
+        <StatusBadge tone={notifications?.permissionTone || 'warning'}>{notifications?.permissionLabel || 'Not requested'}</StatusBadge>
+      </div>
+
+      <InlineAlert
+        className="mt-5"
+        tone="info"
+        title="Permission is not requested automatically"
+        description={notifications?.backendBoundary}
+      />
+
+      <div className="mt-5 grid gap-4 lg:grid-cols-2">
+        {(notifications?.categories || []).map((category) => (
+          <ToggleRow
+            checked={values?.[category.key] === true}
+            description={category.description}
+            key={category.key}
+            label={category.label}
+            onChange={(checked) => onToggle(category.key, checked)}
+          />
+        ))}
+      </div>
+    </Surface>
+  )
+}
+
 export function SettingsView({ compatibilityError, compatibilityState, model, onRefresh }) {
   const writer = useOwnerWrite(onRefresh)
   const { linkGoogleProvider, signOut, user } = useAuth()
@@ -161,6 +210,17 @@ export function SettingsView({ compatibilityError, compatibilityState, model, on
     if (key === 'appearanceTheme') {
       previewTheme(value)
     }
+  }
+
+  function updateNotificationPreference(key, value) {
+    setDraft((current) => ({
+      ...current,
+      notifications: {
+        ...(form.notifications || {}),
+        ...(current.notifications || {}),
+        [key]: value,
+      },
+    }))
   }
 
   function resetCurrentView() {
@@ -370,6 +430,12 @@ export function SettingsView({ compatibilityError, compatibilityState, model, on
           />
         </div>
       </Surface>
+
+      <NotificationSettingsSection
+        notifications={model.notifications}
+        onToggle={updateNotificationPreference}
+        values={form.notifications}
+      />
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(20rem,0.9fr)]">
         <Surface>

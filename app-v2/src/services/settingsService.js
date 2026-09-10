@@ -4,6 +4,7 @@ import { readLegacySettings } from '../data/legacySettingsAdapter.js'
 import { db } from '../lib/firebase.js'
 import { pathToString, privateSettingsPath, sharedSettingsPath } from './firestorePaths.js'
 import { readDocument, requireSchemaVersion, safeString } from './firestoreReaders.js'
+import { normalizeNotificationPreferences } from './notificationPreferences.js'
 
 const settingsSourceCache = new Map()
 
@@ -42,6 +43,7 @@ export function normalizeFirestoreSettings(id, data, warnings) {
           reducedMotion: data.privacy.reducedMotion === true,
         }
       : {},
+    notifications: normalizeNotificationPreferences(data.notifications),
     revision: Number.isInteger(data.revision) && data.revision > 0 ? data.revision : 0,
     schemaVersion: data.schemaVersion,
   }
@@ -104,6 +106,7 @@ export function mergeFirestoreSettingsSources({ privateResult, shared, username 
           hideOfflineWarning: false,
           unknownFields: {},
         },
+        notifications: normalizeNotificationPreferences(privateData.notifications),
         unknownFields: {},
       },
     },
