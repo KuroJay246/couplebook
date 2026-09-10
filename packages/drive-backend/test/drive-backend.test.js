@@ -10,10 +10,13 @@ import {
   findDriveBackendRoute,
   listDriveBackendEndpointPaths,
   planDriveChangeProcessing,
+  planDriveWatchRenewal,
   planDriveSyncWrites,
+  runDriveDisconnect,
   runDriveMediaRemoval,
   runDriveMediaUpload,
   runDriveWebhook,
+  runDriveWatchRenewal,
   runDriveSyncNow,
   validateDriveBackendRequest,
 } from '../src/index.js'
@@ -713,4 +716,161 @@ test('drive webhook rejects missing and expired watch channels', async () => {
     syncStateWriter: async () => {},
   })
   assert.equal(expired.code, 'drive-watch-channel-expired')
+})
+
+test('drive watch renewal planning keeps healthy channels and renews expiring channels', () => {
+  const healthy = planDriveWatchRenewal({
+    channel: {
+      channelId: 'channel_healthy',
+      coupleId: 'couple_alpha',
+      expiresAtMs: 100000,
+      provider: 'google-drive',
+      resourceId: 'resource_healthy',
+      startChangeToken: 'token_1',
+    },
+    coupleId: 'couple_alpha',
+    minimumTtlMs: 1000,
+    nowMs: 1000,
+  })
+  assert.equal(healthy.action, 'keep')
+
+  const expiring = planDriveWatchRenewal({
+    channel: {
+      channelId: 'channel_expiring',
+      coupleId: 'couple_alpha',
+      expiresAtMs: 1500,
+      provider: 'google-drive',
+      resourceId: 'resource_expiring',
+    },
+    coupleId: 'couple_alpha',
+    minimumTtlMs: 1000,
+    nowMs: 1000,
+  })
+  assert.equal(expiring.action, 'renew')
+
+  const missing = planDriveWatchRenewal({ coupleId: 'couple_alpha' })
+  assert.equal(missing.action, 'create')
+})
+
+test('drive watch renewal replaces expiring channels with safe records and audits only metadata', async () => {
+  const stopped = []
+  const channels = []
+  const audits = []
+  const result = await runDriveWatchRenewal({
+    activeMembershipReader: async () => ({ active: true }),
+    auditWriter: async (write) => audits.push(write),
+    body: { coupleId: 'couple_alpha' },
+    channelReader: async () => ({
+      channelId: 'channel_old',
+      coupleId: 'couple_alpha',
+      expiresAtMs: 1500,
+      provider: 'google-drive',
+      resourceId: 'resource_old',
+      startChangeToken: 'token_1',
+    }),
+    channelStopper: async (write) => stopped.push(write),
+    channelWriter: async (write) => channels.push(write),
+    headers: { authorization: 'Bearer local-test-token' },
+    nowMs: 1000,
+    tokenVerifier: async () => ({ uid: 'member_one' }),
+    watchCreator: async () => ({
+      channelId: 'channel_new',
+      expiresAtMs: 90000,
+      resourceId: 'resource_new',
+      startChangeToken: 'token_2',
+    }),
+  })
+
+  assert.equal(result.ok, true)
+  assert.equal(result.channelId, 'channel_new')
+  assert.equal(stopped[0].channelId, 'channel_old')
+  assert.equal(channels[0].record.channelId, 'channel_new')
+  assert.equal(audits[0].record.action, 'drive.watchRenew')
+  assertNoCredentialValues(result)
+  assertNoCredentialValues(channels[0])
+  assertNoCredentialValues(audits[0])
+})
+
+test('drive watch renewal enforces active couple membership before creating channels', async () => {
+  const denied = await runDriveWatchRenewal({
+    activeMembershipReader: async () => ({ active: false }),
+    auditWriter: async () => {},
+    body: { coupleId: 'couple_alpha' },
+    channelReader: async () => null,
+    channelWriter: async () => {},
+    headers: { authorization: 'Bearer local-test-token' },
+    tokenVerifier: async () => ({ uid: 'member_one' }),
+    watchCreator: async () => ({}),
+  })
+
+  assert.equal(denied.ok, false)
+  assert.equal(denied.code, 'active-couple-membership-required')
+})
+
+test('drive disconnect revokes channel state and writes disconnected connection metadata only', async () => {
+  const stopped = []
+  const connections = []
+  const audits = []
+  const result = await runDriveDisconnect({
+    activeMembershipReader: async () => ({ active: true }),
+    auditWriter: async (write) => audits.push(write),
+    body: { coupleId: 'couple_alpha' },
+    channelReader: async () => ({
+      channelId: 'channel_alpha',
+      coupleId: 'couple_alpha',
+      expiresAtMs: 90000,
+      provider: 'google-drive',
+      resourceId: 'resource_alpha',
+    }),
+    channelStopper: async (write) => stopped.push(write),
+    connectionReader: async () => ({
+      coupleId: 'couple_alpha',
+      credentialHandle: 'credential_handle_alpha',
+      provider: 'google-drive',
+      status: 'connected',
+    }),
+    connectionWriter: async (write) => connections.push(write),
+    headers: { authorization: 'Bearer local-test-token' },
+    nowMs: 12000,
+    tokenVerifier: async () => ({ uid: 'member_one' }),
+  })
+
+  assert.equal(result.ok, true)
+  assert.equal(result.stoppedChannel, true)
+  assert.equal(stopped[0].channelId, 'channel_alpha')
+  assert.equal(connections[0].record.status, 'disconnected')
+  assert.equal(connections[0].record.disconnectedByUid, 'member_one')
+  assert.equal(audits[0].record.action, 'drive.disconnect')
+  assertNoCredentialValues(result)
+  assertNoCredentialValues(connections[0])
+  assertNoCredentialValues(audits[0])
+})
+
+test('drive disconnect rejects missing connections and forbidden credential fields', async () => {
+  const missing = await runDriveDisconnect({
+    activeMembershipReader: async () => ({ active: true }),
+    auditWriter: async () => {},
+    body: { coupleId: 'couple_alpha' },
+    connectionReader: async () => null,
+    connectionWriter: async () => {},
+    headers: { authorization: 'Bearer local-test-token' },
+    tokenVerifier: async () => ({ uid: 'member_one' }),
+  })
+  assert.equal(missing.code, 'drive-connection-not-found')
+
+  const forbidden = await runDriveDisconnect({
+    activeMembershipReader: async () => ({ active: true }),
+    auditWriter: async () => {},
+    body: { coupleId: 'couple_alpha' },
+    connectionReader: async () => ({
+      accessToken: 'Bearer private-token',
+      coupleId: 'couple_alpha',
+      provider: 'google-drive',
+      status: 'connected',
+    }),
+    connectionWriter: async () => {},
+    headers: { authorization: 'Bearer local-test-token' },
+    tokenVerifier: async () => ({ uid: 'member_one' }),
+  })
+  assert.equal(forbidden.code, 'drive-connection-contains-forbidden-fields')
 })

@@ -67,6 +67,8 @@ The local removal handler defaults to "Remove from Couple Book" semantics by tom
 
 The local Drive Changes/webhook handler validates Google Drive watch-channel headers against an injected channel registry, rejects expired or unknown channels, handles Drive `sync` handshakes by updating safe sync health only, and processes change batches from an injected Drive Changes reader. It advances only a safe change cursor, writes media-index upserts/tombstones through the same sync planner, and keeps audit events counts-only. It does not create a public webhook endpoint, renew real watch channels, or call Google APIs until an owner-approved trusted deployment exists.
 
+The local watch-renewal handler decides whether a Drive watch channel is healthy, expiring, expired, or missing, then replaces expiring/missing channels through injected Drive watch operations. The local disconnect handler stops the active watch channel when present, writes a disconnected provider state, and audits the action without deleting Drive files or exposing credential values. Actual watch creation, stopping, and credential revocation still require the owner-approved trusted backend.
+
 Required backend responsibilities:
 
 - verify Firebase ID tokens and active couple membership;

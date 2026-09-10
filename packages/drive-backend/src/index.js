@@ -106,6 +106,18 @@ function createSyncHealthRecord({ coupleId, lastChangeToken = '', nowMs, pending
   })
 }
 
+function assertSafeWatchChannel(channel, coupleId) {
+  if (!channel || typeof channel !== 'object') throw new Error('Drive watch channel is required.')
+  if (hasForbiddenSyncField(channel)) throw new Error('Drive watch channel must not include credential fields.')
+  if (channel.provider !== 'google-drive') throw new Error('Drive watch channel must use google-drive provider.')
+  if (channel.coupleId !== coupleId) throw new Error('Drive watch channel couple mismatch.')
+  if (!isSafeId(channel.channelId || '')) throw new Error('Drive watch channel requires a safe channelId.')
+  if (!isSafeId(channel.resourceId || '')) throw new Error('Drive watch channel requires a safe resourceId.')
+  if (!Number.isSafeInteger(Number(channel.expiresAtMs)) || Number(channel.expiresAtMs) <= 0) throw new Error('Drive watch channel requires expiresAtMs.')
+  if (channel.startChangeToken && !isSafeChangeToken(channel.startChangeToken)) throw new Error('Drive watch channel requires a safe startChangeToken.')
+  return true
+}
+
 function createAuditEvent({ coupleId, counts, nowMs, uid }) {
   return Object.freeze({
     action: 'drive.sync',
@@ -797,6 +809,188 @@ export async function runDriveWebhook({
     accepted: true,
     counts: plan.counts,
     resourceState,
+  })
+}
+
+export function planDriveWatchRenewal({
+  channel,
+  coupleId,
+  minimumTtlMs = 12 * 60 * 60 * 1000,
+  nowMs = Date.now(),
+} = {}) {
+  if (!isSafeId(coupleId || '')) throw new Error('Drive watch renewal requires a safe coupleId.')
+  if (!channel) {
+    return Object.freeze({
+      action: 'create',
+      reason: 'missing-channel',
+      status: 'action-required',
+    })
+  }
+  assertSafeWatchChannel(channel, coupleId)
+  const ttlMs = Number(channel.expiresAtMs) - nowMs
+  if (ttlMs <= 0) {
+    return Object.freeze({
+      action: 'create',
+      previousChannelId: channel.channelId,
+      reason: 'expired-channel',
+      status: 'action-required',
+    })
+  }
+  if (ttlMs <= minimumTtlMs) {
+    return Object.freeze({
+      action: 'renew',
+      previousChannelId: channel.channelId,
+      reason: 'expiring-channel',
+      status: 'renewal-required',
+      ttlMs,
+    })
+  }
+  return Object.freeze({
+    action: 'keep',
+    channelId: channel.channelId,
+    reason: 'channel-healthy',
+    status: 'current',
+    ttlMs,
+  })
+}
+
+export async function runDriveWatchRenewal({
+  activeMembershipReader,
+  auditWriter,
+  body = {},
+  channelReader,
+  channelStopper,
+  channelWriter,
+  headers = {},
+  nowMs = Date.now(),
+  tokenVerifier,
+  watchCreator,
+} = {}) {
+  const request = await validateDriveBackendRequest({
+    activeMembershipReader,
+    body,
+    headers,
+    method: 'POST',
+    path: DRIVE_BACKEND_ENDPOINTS.syncNow,
+    tokenVerifier,
+  })
+  if (!request.ok) return request
+  if (typeof channelReader !== 'function') return Object.freeze({ ok: false, status: 500, code: 'channel-reader-not-configured' })
+  if (typeof channelWriter !== 'function') return Object.freeze({ ok: false, status: 500, code: 'channel-writer-not-configured' })
+  if (typeof watchCreator !== 'function') return Object.freeze({ ok: false, status: 500, code: 'watch-creator-not-configured' })
+  if (typeof auditWriter !== 'function') return Object.freeze({ ok: false, status: 500, code: 'audit-writer-not-configured' })
+
+  const existing = await channelReader({ coupleId: request.coupleId })
+  const renewal = planDriveWatchRenewal({ channel: existing, coupleId: request.coupleId, nowMs })
+  if (renewal.action === 'keep') {
+    return Object.freeze({ ok: true, status: 200, renewal })
+  }
+  if (existing && typeof channelStopper === 'function') {
+    await channelStopper({
+      channelId: existing.channelId,
+      coupleId: request.coupleId,
+      resourceId: existing.resourceId,
+    })
+  }
+  const created = await watchCreator({
+    coupleId: request.coupleId,
+    previousChannelId: existing?.channelId || '',
+    uid: request.uid,
+  })
+  const nextChannel = Object.freeze({
+    channelId: created?.channelId || '',
+    coupleId: request.coupleId,
+    createdAtMs: nowMs,
+    expiresAtMs: Number(created?.expiresAtMs || 0),
+    provider: 'google-drive',
+    resourceId: created?.resourceId || '',
+    startChangeToken: created?.startChangeToken || existing?.startChangeToken || '',
+  })
+  assertSafeWatchChannel(nextChannel, request.coupleId)
+  await channelWriter({ coupleId: request.coupleId, record: nextChannel })
+  await auditWriter({
+    coupleId: request.coupleId,
+    record: createMediaAuditEvent({
+      action: 'drive.watchRenew',
+      coupleId: request.coupleId,
+      mediaId: nextChannel.channelId,
+      nowMs,
+      uid: request.uid,
+    }),
+  })
+  return Object.freeze({
+    ok: true,
+    status: 200,
+    channelId: nextChannel.channelId,
+    renewal,
+  })
+}
+
+export async function runDriveDisconnect({
+  activeMembershipReader,
+  auditWriter,
+  body = {},
+  channelReader,
+  channelStopper,
+  connectionReader,
+  connectionWriter,
+  headers = {},
+  nowMs = Date.now(),
+  tokenVerifier,
+} = {}) {
+  const request = await validateDriveBackendRequest({
+    activeMembershipReader,
+    body,
+    headers,
+    method: 'POST',
+    path: DRIVE_BACKEND_ENDPOINTS.disconnect,
+    tokenVerifier,
+  })
+  if (!request.ok) return request
+  if (typeof connectionReader !== 'function') return Object.freeze({ ok: false, status: 500, code: 'connection-reader-not-configured' })
+  if (typeof connectionWriter !== 'function') return Object.freeze({ ok: false, status: 500, code: 'connection-writer-not-configured' })
+  if (typeof auditWriter !== 'function') return Object.freeze({ ok: false, status: 500, code: 'audit-writer-not-configured' })
+
+  const connection = await connectionReader({ coupleId: request.coupleId })
+  if (!connection || connection.provider !== 'google-drive') return Object.freeze({ ok: false, status: 404, code: 'drive-connection-not-found' })
+  if (hasForbiddenSyncField(connection)) return Object.freeze({ ok: false, status: 500, code: 'drive-connection-contains-forbidden-fields' })
+
+  const channel = typeof channelReader === 'function' ? await channelReader({ coupleId: request.coupleId }) : null
+  if (channel) {
+    assertSafeWatchChannel(channel, request.coupleId)
+    if (typeof channelStopper === 'function') {
+      await channelStopper({
+        channelId: channel.channelId,
+        coupleId: request.coupleId,
+        resourceId: channel.resourceId,
+      })
+    }
+  }
+
+  await connectionWriter({
+    coupleId: request.coupleId,
+    record: Object.freeze({
+      coupleId: request.coupleId,
+      disconnectedAtMs: nowMs,
+      disconnectedByUid: request.uid,
+      provider: 'google-drive',
+      status: 'disconnected',
+    }),
+  })
+  await auditWriter({
+    coupleId: request.coupleId,
+    record: createMediaAuditEvent({
+      action: 'drive.disconnect',
+      coupleId: request.coupleId,
+      mediaId: 'google_drive',
+      nowMs,
+      uid: request.uid,
+    }),
+  })
+  return Object.freeze({
+    ok: true,
+    status: 200,
+    stoppedChannel: Boolean(channel),
   })
 }
 
