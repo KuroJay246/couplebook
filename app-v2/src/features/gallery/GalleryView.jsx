@@ -545,7 +545,7 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
           </div>
           <div className="mt-5 flex flex-wrap gap-2">
             <PrimaryButton disabled={!uploadQueue.canUpload} onClick={() => fileInputRef.current?.click()}><Upload className="size-4" />Select files</PrimaryButton>
-            <SecondaryButton disabled={uploadQueue.isUploading || uploadQueue.summary.queued + uploadQueue.summary.failed + uploadQueue.summary.orphaned === 0 || uploadQueue.requiresDriveConnection} onClick={uploadQueue.startUploads}>
+            <SecondaryButton disabled={uploadQueue.isUploading || uploadQueue.summary.queued + uploadQueue.summary.failed + uploadQueue.summary.orphaned === 0 || !uploadQueue.canStartUploads} onClick={uploadQueue.startUploads}>
               {uploadQueue.isUploading ? 'Uploading…' : 'Start uploads'}
             </SecondaryButton>
             <SecondaryButton disabled={uploadQueue.summary.saved + uploadQueue.summary.failed + uploadQueue.summary.cancelled === 0 || uploadQueue.isUploading} onClick={uploadQueue.clearCompleted}>
@@ -553,12 +553,12 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
             </SecondaryButton>
             <SecondaryButton as={Link} to="/settings">Open Media & Sync</SecondaryButton>
           </div>
-          {uploadQueue.requiresDriveConnection ? (
+          {uploadQueue.requiresTrustedMediaBackend ? (
             <InlineAlert
               className="mt-5"
               tone="warning"
-              title="Media provider setup required"
-              description="Uploads are held until the owner-managed Drive media provider is configured from Settings. Album will not open a Google OAuth popup for normal browsing."
+              title="Trusted media backend required"
+              description="Files can be prepared here by approved members, but Drive storage and Firestore finalization need the approved couple-level media backend. Album will not open a Google OAuth popup for partner uploads."
             />
           ) : null}
           <div className="mt-5">

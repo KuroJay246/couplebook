@@ -20,6 +20,7 @@ const RETRYABLE_STATUSES = new Set([
   QUEUE_STATUS.cancelled,
   QUEUE_STATUS.orphanedUpload,
   QUEUE_STATUS.reconnectRequired,
+  QUEUE_STATUS.backendRequired,
 ])
 const FINISHED_STATUSES = new Set([
   QUEUE_STATUS.saved,
@@ -29,8 +30,10 @@ const FINISHED_STATUSES = new Set([
   QUEUE_STATUS.possibleDuplicate,
   QUEUE_STATUS.orphanedUpload,
   QUEUE_STATUS.reconnectRequired,
+  QUEUE_STATUS.backendRequired,
 ])
 const env = readRuntimeEnv()
+const TRUSTED_MEDIA_BACKEND_AVAILABLE = false
 
 const initialState = Object.freeze({
   items: [],
@@ -162,6 +165,7 @@ function canStartItem(item) {
     || item.status === QUEUE_STATUS.failed
     || item.status === QUEUE_STATUS.orphanedUpload
     || item.status === QUEUE_STATUS.reconnectRequired
+    || item.status === QUEUE_STATUS.backendRequired
   )
 }
 
@@ -386,15 +390,15 @@ export function useMediaUploadQueue(onRefresh, drive) {
         return
       }
 
-      if (!driveProvider || driveState !== 'connected') {
+      if (!TRUSTED_MEDIA_BACKEND_AVAILABLE && (!driveProvider || driveState !== 'connected')) {
         updateItem(itemId, {
           checksum,
-          error: 'Reconnect the Couple Book Google Drive account before uploading media.',
+          error: 'Trusted media backend approval is required before this file can be stored in Couple Book Drive.',
           progress: 0,
           retryable: true,
-          status: QUEUE_STATUS.reconnectRequired,
+          status: QUEUE_STATUS.backendRequired,
         })
-        setNotice({ kind: 'error', message: 'Google Drive must be connected before uploads can continue.' })
+        setNotice({ kind: 'error', message: 'Upload is prepared, but trusted backend storage is not approved yet.' })
         return
       }
 
@@ -624,7 +628,8 @@ export function useMediaUploadQueue(onRefresh, drive) {
   return {
     acceptedTypes: ACCEPTED_MEDIA_TYPES,
     addFiles,
-    canUpload: writer.canWrite && Boolean(driveProvider && driveState === 'connected'),
+    canStartUploads: writer.canWrite && Boolean(TRUSTED_MEDIA_BACKEND_AVAILABLE || (driveProvider && driveState === 'connected')),
+    canUpload: writer.canWrite,
     cancelItem,
     clearCompleted,
     isUploading,
@@ -637,5 +642,6 @@ export function useMediaUploadQueue(onRefresh, drive) {
     summary,
     updateDraft,
     requiresDriveConnection: !driveProvider || driveState !== 'connected',
+    requiresTrustedMediaBackend: !TRUSTED_MEDIA_BACKEND_AVAILABLE,
   }
 }

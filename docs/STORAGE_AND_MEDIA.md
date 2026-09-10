@@ -51,6 +51,8 @@ couples/{coupleId}/media/{mediaId}/poster
 
 The Album queue retains the tested state machine for validation, duplicate protection, preview, hashing, upload, finalizing, saved, cancel, retry, orphan recovery, and remove. Production media writes must stay Drive-first; Firebase Storage must not silently become the production original-media destination.
 
+Approved members may prepare local files in the Album upload queue without authorizing Google Drive in the browser. Actual Drive storage for normal partner uploads requires the trusted couple-level media backend so the browser does not receive the owner's Google refresh credential or a reusable Drive access token. Until that backend is owner-approved and deployed, the queue must show a backend-required state instead of opening a Google OAuth popup in Album.
+
 ## Persistent Drive Sync Boundary
 
 The frontend may render the Firestore media index and request a session Drive connection for owner review, but persistent Drive authorization requires a trusted backend.

@@ -202,6 +202,8 @@ test('Drive sync backend contract requires a trusted server boundary before pers
     'completeAuthorization',
     'disconnect',
     'syncNow',
+    'uploadMedia',
+    'removeMedia',
     'webhook',
     'thumbnail',
     'stream',
@@ -210,6 +212,7 @@ test('Drive sync backend contract requires a trusted server boundary before pers
   assert.ok(contract.backendAuth.includes('bind-authorization-state-to-couple-and-uid'))
   assert.ok(contract.backendWrites.includes('couples/couple-alpha/mediaSync/google-drive'))
   assert.equal(contract.previewStrategy.staleUrlPolicy, 'do-not-store-or-replay')
+  assert.equal(contract.uploadStrategy.browserDriveSession, 'owner-review-only-not-required-for-normal-partners')
   assert.match(contract.zeroCostBoundary, /Do not deploy/)
   assert.doesNotMatch(serialized, /clientSecretValue|refreshTokenValue|accessTokenValue|Bearer\s/i)
 })

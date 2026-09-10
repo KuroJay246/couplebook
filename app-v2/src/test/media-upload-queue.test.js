@@ -43,6 +43,7 @@ test('queue domain owns stable user-facing status labels and tones', () => {
   assert.equal(queueStatusLabel(QUEUE_STATUS.duplicate), 'Duplicate blocked')
   assert.equal(queueStatusLabel(QUEUE_STATUS.orphanedUpload), 'Finalize upload')
   assert.equal(queueStatusLabel(QUEUE_STATUS.reconnectRequired), 'Reconnect Drive')
+  assert.equal(queueStatusLabel(QUEUE_STATUS.backendRequired), 'Backend required')
   assert.equal(queueStatusLabel(QUEUE_STATUS.failed), 'Needs review')
   assert.equal(queueStatusLabel(QUEUE_STATUS.saved), 'Saved')
 
@@ -50,6 +51,7 @@ test('queue domain owns stable user-facing status labels and tones', () => {
   assert.equal(queueStatusTone(QUEUE_STATUS.failed), 'error')
   assert.equal(queueStatusTone(QUEUE_STATUS.duplicate), 'error')
   assert.equal(queueStatusTone(QUEUE_STATUS.reconnectRequired), 'warning')
+  assert.equal(queueStatusTone(QUEUE_STATUS.backendRequired), 'warning')
   assert.equal(queueStatusTone(QUEUE_STATUS.uploading), 'info')
   assert.equal(queueStatusTone(QUEUE_STATUS.queued), 'neutral')
 })

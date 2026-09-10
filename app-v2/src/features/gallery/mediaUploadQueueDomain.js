@@ -9,6 +9,7 @@ export const QUEUE_STATUS = Object.freeze({
   finalizing: 'finalizing',
   orphanedUpload: 'orphaned-upload',
   reconnectRequired: 'reconnect-required',
+  backendRequired: 'backend-required',
   cancelling: 'cancelling',
   cancelled: 'cancelled',
   failed: 'failed',
@@ -50,6 +51,7 @@ export function queueStatusLabel(status) {
   if (status === QUEUE_STATUS.finalizing) return 'Finalizing'
   if (status === QUEUE_STATUS.orphanedUpload) return 'Finalize upload'
   if (status === QUEUE_STATUS.reconnectRequired) return 'Reconnect Drive'
+  if (status === QUEUE_STATUS.backendRequired) return 'Backend required'
   if (status === QUEUE_STATUS.cancelling) return 'Cancelling'
   if (status === QUEUE_STATUS.cancelled) return 'Cancelled'
   if (status === QUEUE_STATUS.failed) return 'Needs review'
@@ -60,7 +62,7 @@ export function queueStatusLabel(status) {
 export function queueStatusTone(status) {
   if (status === QUEUE_STATUS.saved) return 'success'
   if ([QUEUE_STATUS.failed, QUEUE_STATUS.duplicate].includes(status)) return 'error'
-  if ([QUEUE_STATUS.orphanedUpload, QUEUE_STATUS.reconnectRequired, QUEUE_STATUS.possibleDuplicate].includes(status)) return 'warning'
+  if ([QUEUE_STATUS.orphanedUpload, QUEUE_STATUS.reconnectRequired, QUEUE_STATUS.backendRequired, QUEUE_STATUS.possibleDuplicate].includes(status)) return 'warning'
   if (status === QUEUE_STATUS.cancelled) return 'warning'
   if ([QUEUE_STATUS.uploading, QUEUE_STATUS.finalizing, QUEUE_STATUS.hashing].includes(status)) return 'info'
   return 'neutral'

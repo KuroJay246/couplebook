@@ -17,6 +17,8 @@ export const DRIVE_BACKEND_ENDPOINTS = Object.freeze({
   completeAuthorization: '/api/drive/oauth/callback',
   disconnect: '/api/drive/disconnect',
   syncNow: '/api/drive/sync',
+  uploadMedia: '/api/drive/media/upload',
+  removeMedia: '/api/drive/media/:mediaId',
   webhook: '/api/drive/webhook',
   thumbnail: '/api/drive/media/:mediaId/thumbnail',
   stream: '/api/drive/media/:mediaId/stream',
@@ -67,6 +69,7 @@ export const DRIVE_BACKEND_REQUIRED_FOR = Object.freeze([
   'fast-thumbnail-proxy-or-cache',
   'drive-original-streaming',
   'partner-upload-to-drive',
+  'partner-removal-from-couple-book-without-drive-oauth',
 ])
 
 export const DRIVE_FRONTEND_CAN_DO = Object.freeze([
@@ -105,6 +108,11 @@ export function buildDriveBackendContract({
       grid: 'backend-proxied-thumbnail-or-safe-thumbnail-cache',
       viewer: 'short-lived-backend-mediated-stream',
       staleUrlPolicy: 'do-not-store-or-replay',
+    }),
+    uploadStrategy: Object.freeze({
+      directPartnerUpload: 'firebase-authenticated-member-to-trusted-backend-to-drive',
+      browserDriveSession: 'owner-review-only-not-required-for-normal-partners',
+      duplicateCheck: 'hash-first-then-reviewed-probable-duplicate-detection',
     }),
     sourceOfTruth: Object.freeze({
       drive: Object.freeze(['original-binary', 'drive-file-existence', 'drive-file-metadata']),

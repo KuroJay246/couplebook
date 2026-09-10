@@ -21,10 +21,13 @@ test('drive contracts expose the approved connection states and owner-safe copy'
 test('drive contracts separate Couple Book identity from persistent Drive authorization', () => {
   assert.equal(DRIVE_MEDIA_PROVIDER, 'google-drive')
   assert.equal(DRIVE_BACKEND_ENDPOINTS.beginAuthorization, '/api/drive/oauth/begin')
+  assert.equal(DRIVE_BACKEND_ENDPOINTS.uploadMedia, '/api/drive/media/upload')
+  assert.equal(DRIVE_BACKEND_ENDPOINTS.removeMedia, '/api/drive/media/:mediaId')
   assert.equal(DRIVE_BACKEND_ENDPOINTS.stream, '/api/drive/media/:mediaId/stream')
   assert.ok(DRIVE_FRONTEND_AUTH_CONSTRAINTS.includes('send-firebase-id-token'))
   assert.ok(DRIVE_FRONTEND_AUTH_CONSTRAINTS.includes('never-send-google-refresh-token-to-browser'))
   assert.ok(DRIVE_BACKEND_REQUIRED_FOR.includes('partner-upload-to-drive'))
+  assert.ok(DRIVE_BACKEND_REQUIRED_FOR.includes('partner-removal-from-couple-book-without-drive-oauth'))
 })
 
 test('drive backend contract is couple-scoped and contains no credential values', () => {
@@ -42,6 +45,8 @@ test('drive backend contract is couple-scoped and contains no credential values'
   assert.ok(contract.backendWrites.includes('couples/couple-alpha/mediaSync/google-drive'))
   assert.ok(contract.forbiddenWrites.includes('refresh-token'))
   assert.equal(contract.previewStrategy.staleUrlPolicy, 'do-not-store-or-replay')
+  assert.equal(contract.uploadStrategy.directPartnerUpload, 'firebase-authenticated-member-to-trusted-backend-to-drive')
+  assert.equal(contract.uploadStrategy.browserDriveSession, 'owner-review-only-not-required-for-normal-partners')
   assert.match(contract.zeroCostBoundary, /Do not deploy/)
   assert.doesNotMatch(serialized, /clientSecretValue|refreshTokenValue|accessTokenValue|Bearer\s/i)
 })

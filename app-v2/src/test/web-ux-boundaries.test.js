@@ -14,6 +14,8 @@ test('Album keeps management controls behind an explicit secondary action', () =
   assert.match(gallerySource, /Manage Media & Sync/)
   assert.doesNotMatch(gallerySource, /Metadata-first private album/)
   assert.doesNotMatch(gallerySource, /Connect Google Drive|Google Drive connection|DriveMediaGrid/)
+  assert.match(gallerySource, /Trusted media backend required/)
+  assert.match(gallerySource, /partner uploads/)
 })
 
 test('Settings owns Google Drive media provider administration', () => {
