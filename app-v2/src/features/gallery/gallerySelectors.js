@@ -31,6 +31,16 @@ function createMonthLabel(date) {
   })
 }
 
+function createDayLabel(date) {
+  if (date.status !== 'valid') return 'Needs date review'
+
+  return new Date(Date.UTC(date.year, date.month - 1, date.day || 1)).toLocaleDateString('en-US', {
+    timeZone: 'UTC',
+    day: 'numeric',
+    month: 'long',
+  })
+}
+
 function normalizeIndexedDate(value) {
   const original = String(value || '').trim()
   if (!original) {
@@ -78,6 +88,8 @@ function formatIndexedDate(date) {
 function matchesGalleryFilter(item, filter) {
   if (filter === 'photos') return item.media.kind === 'image'
   if (filter === 'videos') return item.media.kind === 'video'
+  if (filter === 'favorites') return item.media.favorite === true
+  if (filter === 'unlinked') return (item.media.kind === 'image' || item.media.kind === 'video') && !item.memoryId && !item.media.linkedMemoryId
   return true
 }
 
@@ -275,6 +287,48 @@ export function groupGalleryItemsByYear(items = []) {
     })))
 }
 
+function dateGroupKey(item) {
+  const date = item.date || {}
+  if (date.status !== 'valid') return 'date-review'
+  const day = String(date.day || 1).padStart(2, '0')
+  return `${date.year}-${String(date.month).padStart(2, '0')}-${day}`
+}
+
+export function groupGalleryItemsByDate(items = []) {
+  const map = new Map()
+  for (const item of Array.isArray(items) ? items : []) {
+    const key = dateGroupKey(item)
+    if (!map.has(key)) {
+      map.set(key, {
+        id: `album-day-${key}`,
+        key,
+        monthLabel: item.monthLabel || createMonthLabel(item.date || {}),
+        dayLabel: createDayLabel(item.date || {}),
+        sortTimestamp: item.sort?.timestamp ?? null,
+        items: [],
+      })
+    }
+    map.get(key).items.push(item)
+  }
+
+  return freezeClone([...map.values()].sort((left, right) => {
+    if (left.key === 'date-review') return 1
+    if (right.key === 'date-review') return -1
+    return (right.sortTimestamp ?? 0) - (left.sortTimestamp ?? 0)
+  }))
+}
+
+export function buildMediaLibrary(items = []) {
+  const visualItems = (Array.isArray(items) ? items : []).filter((item) => item.media.kind === 'image' || item.media.kind === 'video')
+  const groups = groupGalleryItemsByDate(visualItems)
+  return freezeClone({
+    groups,
+    visualCount: visualItems.length,
+    favoriteCount: visualItems.filter((item) => item.media.favorite === true).length,
+    unlinkedCount: visualItems.filter((item) => !item.memoryId && !item.media.linkedMemoryId).length,
+  })
+}
+
 export function selectGalleryItems(memories = []) {
   const displayMemories = selectTimelineDisplayMemories(memories)
   return deepFreeze(sortByNewest(displayMemories).map((memory, index) => buildGalleryItem(memory, index)))
@@ -377,24 +431,38 @@ export function buildGalleryFilters(items = []) {
     ['all', { key: 'all', label: 'All visual memories', count: items.length }],
     ['photos', { key: 'photos', label: 'Photos', count: 0 }],
     ['videos', { key: 'videos', label: 'Videos', count: 0 }],
+    ['favorites', { key: 'favorites', label: 'Favorites', count: 0 }],
+    ['unlinked', { key: 'unlinked', label: 'Unlinked', count: 0 }],
     ['special', { key: 'special', label: 'Special moments', count: 0 }],
     ['unavailable', { key: 'unavailable', label: 'Unavailable media', count: 0 }],
   ])
+  const photoFilter = typeMap.get('photos')
+  const videoFilter = typeMap.get('videos')
+  const favoriteFilter = typeMap.get('favorites')
+  const unlinkedFilter = typeMap.get('unlinked')
+  const specialFilter = typeMap.get('special')
+  const unavailableFilter = typeMap.get('unavailable')
 
   for (const item of items) {
+    const media = item.media || {}
     if (item.date.year !== null) {
       const yearKey = String(item.date.year)
       if (!yearMap.has(yearKey)) {
         yearMap.set(yearKey, { key: yearKey, label: yearKey, count: 0 })
       }
-      yearMap.get(yearKey).count += 1
+      const yearFilter = yearMap.get(yearKey)
+      yearFilter.count += 1
     }
 
-    if (item.media.kind === 'image') typeMap.get('photos').count += 1
-    if (item.media.kind === 'video') typeMap.get('videos').count += 1
-    if (item.specialMoment.isSpecial) typeMap.get('special').count += 1
+    if (media.kind === 'image') photoFilter.count += 1
+    if (media.kind === 'video') videoFilter.count += 1
+    if (media.favorite === true) favoriteFilter.count += 1
+    if ((media.kind === 'image' || media.kind === 'video') && !item.memoryId && !media.linkedMemoryId) {
+      unlinkedFilter.count += 1
+    }
+    if (item.specialMoment.isSpecial) specialFilter.count += 1
     if (['private-legacy-reference', 'unavailable', 'invalid'].includes(item.media.status)) {
-      typeMap.get('unavailable').count += 1
+      unavailableFilter.count += 1
     }
   }
 

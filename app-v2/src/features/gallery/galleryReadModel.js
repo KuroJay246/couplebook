@@ -1,6 +1,6 @@
 import { freezeClone } from '../../data/adapterUtils.js'
 import { normalizeTimelineMemories } from '../memories/memoryNormalizer.js'
-import { buildGalleryCollections, buildGalleryFilters, buildGallerySummary, selectGalleryItems, selectMediaIndexGalleryItems } from './gallerySelectors.js'
+import { buildGalleryCollections, buildGalleryFilters, buildGallerySummary, buildMediaLibrary, selectGalleryItems, selectMediaIndexGalleryItems } from './gallerySelectors.js'
 
 const EMPTY_MEMORY_SOURCE = Object.freeze({
   status: 'empty',
@@ -72,6 +72,7 @@ export function buildGalleryReadModelWithMediaIndex({ compatibilitySnapshot = nu
     items,
     memoryItems,
     indexedItems,
+    library: buildMediaLibrary(items),
     summary: buildGallerySummary(items),
     collections: buildGalleryCollections(items),
     photos,

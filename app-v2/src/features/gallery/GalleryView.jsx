@@ -19,7 +19,7 @@ import { ContentCard, Surface } from '../../components/ui/Surface.jsx'
 import { Toast } from '../../components/ui/Toast.jsx'
 import { useDialogAccessibility } from '../../components/ui/useDialogAccessibility.js'
 import { formatBytes } from '../../services/mediaUploadService.js'
-import { groupGalleryItemsByYear, selectFilteredGalleryItems } from './gallerySelectors.js'
+import { groupGalleryItemsByDate, selectFilteredGalleryItems } from './gallerySelectors.js'
 import { QUEUE_STATUS, queueStatusLabel, queueStatusTone } from './useMediaUploadQueue.js'
 import { useMediaUploadQueue } from './useMediaUploadQueue.js'
 import { useGoogleDriveConnection } from '../media/useGoogleDriveConnection.js'
@@ -28,6 +28,8 @@ const FILTERS = [
   { key: 'all', label: 'All media' },
   { key: 'photos', label: 'Photos' },
   { key: 'videos', label: 'Videos' },
+  { key: 'favorites', label: 'Favorites' },
+  { key: 'unlinked', label: 'Unlinked' },
 ]
 
 function mediaStatus(item) {
@@ -74,19 +76,27 @@ function formatDuration(durationMillis) {
   return `${minutes}:${seconds}`
 }
 
-function GalleryTile({ item, onSelect }) {
+function GalleryTile({ item, onSelect, onToggleSelection, selected = false, selectionMode = false }) {
   const isVideo = item.media.kind === 'video'
   const previewUrl = item.media.previewUrl || item.media.thumbnailUrl || ''
   const isIndexedDriveMedia = item.media.status === 'drive-indexed'
   const duration = formatDuration(item.media.durationMillis)
+  const tileAction = () => {
+    if (selectionMode) {
+      onToggleSelection(item)
+      return
+    }
+    onSelect(item)
+  }
 
   if (isIndexedDriveMedia) {
     return (
-      <article className={`gallery-index-tile ${isVideo ? 'is-video' : 'is-photo'}`}>
+      <article className={`gallery-index-tile ${isVideo ? 'is-video' : 'is-photo'} ${selected ? 'is-selected' : ''}`}>
         <button
-          aria-label={galleryTileLabel(item)}
+          aria-pressed={selectionMode ? selected : undefined}
+          aria-label={selectionMode ? `${selected ? 'Deselect' : 'Select'} ${galleryTileLabel(item)}` : galleryTileLabel(item)}
           className="gallery-index-tile-button"
-          onClick={() => onSelect(item)}
+          onClick={tileAction}
           style={mediaTileAspectStyle(item)}
           type="button"
         >
@@ -99,6 +109,7 @@ function GalleryTile({ item, onSelect }) {
               {isVideo ? 'Video' : 'Photo'}{duration ? ` / ${duration}` : ''}{item.displayDate ? ` / ${item.displayDate}` : ''}
             </span>
           </span>
+          {selectionMode ? <span className="gallery-index-selection" aria-hidden="true">{selected ? 'Selected' : 'Select'}</span> : null}
           {item.media.favorite ? <span className="gallery-index-favorite" aria-hidden="true"><Heart className="size-3.5" fill="currentColor" /></span> : null}
           {isVideo ? <span className="gallery-index-play" aria-hidden="true"><Film className="size-4" /></span> : null}
         </button>
@@ -107,11 +118,12 @@ function GalleryTile({ item, onSelect }) {
   }
 
   return (
-    <article className="cb-photo-book-tile gallery-item flex h-full flex-col overflow-hidden">
+    <article className={`cb-photo-book-tile gallery-item flex h-full flex-col overflow-hidden ${selected ? 'is-selected' : ''}`}>
       <button
-        aria-label={galleryTileLabel(item)}
+        aria-pressed={selectionMode ? selected : undefined}
+        aria-label={selectionMode ? `${selected ? 'Deselect' : 'Select'} ${galleryTileLabel(item)}` : galleryTileLabel(item)}
         className={`cb-photo-book-tile-inner gallery-media-frame ${isVideo ? 'is-video' : item.media.kind === 'image' ? 'is-photo' : item.specialMoment.isSpecial ? 'is-special' : 'is-memory'} flex min-h-72 w-full flex-col justify-between p-5 text-left`}
-        onClick={() => onSelect(item)}
+        onClick={tileAction}
         type="button"
       >
         <div className="flex items-start justify-between gap-3">
@@ -134,6 +146,7 @@ function GalleryTile({ item, onSelect }) {
             </div>
           )}
         </div>
+        {selectionMode ? <span className="gallery-selection-pill">{selected ? 'Selected' : 'Select'}</span> : null}
         <div>
           <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">{item.displayDate || 'Date review'}</p>
           <h3 className="mt-2 text-xl font-bold text-[var(--cb-text)]">{item.title}</h3>
@@ -146,7 +159,7 @@ function GalleryTile({ item, onSelect }) {
           {item.tags?.slice(0, 2).map((tag) => <StatusBadge key={tag.key || tag.label}>{tag.label}</StatusBadge>)}
         </div>
         <div className="mt-auto flex flex-wrap gap-2">
-          <PrimaryButton onClick={() => onSelect(item)}>Open item</PrimaryButton>
+          <PrimaryButton onClick={() => (selectionMode ? onToggleSelection(item) : onSelect(item))}>{selectionMode ? (selected ? 'Deselect' : 'Select') : 'Open item'}</PrimaryButton>
           {item.specialMoment.route ? <SecondaryButton as={Link} to={item.specialMoment.route}>Open related page</SecondaryButton> : null}
         </div>
       </div>
@@ -405,6 +418,8 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
   const [year, setYear] = useState('all')
   const [search, setSearch] = useState('')
   const [selectedItem, setSelectedItem] = useState(null)
+  const [selectedKeys, setSelectedKeys] = useState(() => new Set())
+  const [selectionMode, setSelectionMode] = useState(false)
   const [removeState, setRemoveState] = useState({ item: null, pending: false })
   const [manageUploadsOpen, setManageUploadsOpen] = useState(false)
   const fileInputRef = useRef(null)
@@ -414,7 +429,27 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
   const years = model.filters?.availableYears || []
 
   const filtered = useMemo(() => selectFilteredGalleryItems(items, { filter, search, year }), [filter, items, search, year])
-  const grouped = useMemo(() => groupGalleryItemsByYear(filtered), [filtered])
+  const grouped = useMemo(() => groupGalleryItemsByDate(filtered), [filtered])
+  const selectedCount = selectedKeys.size
+
+  function toggleSelectionMode() {
+    if (selectionMode) setSelectedKeys(new Set())
+    setSelectionMode((current) => !current)
+  }
+
+  function toggleItemSelection(item) {
+    setSelectedKeys((current) => {
+      const next = new Set(current)
+      if (next.has(item.key)) next.delete(item.key)
+      else next.add(item.key)
+      return next
+    })
+  }
+
+  function clearSelection() {
+    setSelectedKeys(new Set())
+    setSelectionMode(false)
+  }
 
   function showNeighbor(direction) {
     if (!selectedItem || filtered.length <= 1) return
@@ -511,11 +546,35 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
           <SearchField label="Search Album" onChange={(event) => setSearch(event.target.value)} placeholder="Search dates, titles, and tags" value={search} />
         </div>
         <div className="mt-4 rounded-2xl border border-[var(--cb-border)] bg-[var(--cb-surface-soft)] p-4">
-          <p className="text-sm text-[var(--cb-text-secondary)]">
-            {filtered.length} {filtered.length === 1 ? 'memory' : 'memories'} across our photos, videos, and saved chapters.
-          </p>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-[var(--cb-text-secondary)]">
+              {filtered.length} {filtered.length === 1 ? 'item' : 'items'} across our photos, videos, and saved chapters.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <SecondaryButton aria-pressed={selectionMode} onClick={toggleSelectionMode}>{selectionMode ? 'Exit select' : 'Select'}</SecondaryButton>
+              {selectionMode ? <TextButton disabled={selectedCount === 0} onClick={clearSelection}>Clear selection</TextButton> : null}
+            </div>
+          </div>
         </div>
       </Surface>
+
+      {selectionMode ? (
+        <Surface aria-label="Album selection toolbar" tone="soft">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="cb-kicker">Selection</p>
+              <p className="mt-1 text-sm text-[var(--cb-text-secondary)]">
+                {selectedCount === 0 ? 'Choose photos or videos to prepare a batch action.' : `${selectedCount} ${selectedCount === 1 ? 'item' : 'items'} selected.`}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <SecondaryButton disabled={selectedCount === 0}>Favorite selected</SecondaryButton>
+              <SecondaryButton disabled={selectedCount === 0}>Link to memory</SecondaryButton>
+              <DangerButton disabled={selectedCount === 0}>Remove selected</DangerButton>
+            </div>
+          </div>
+        </Surface>
+      ) : null}
 
       <Surface tone="soft" aria-label="Album media access">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -598,15 +657,22 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
           <section key={group.id} className="space-y-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Album chapter</p>
-                <h3 className="mt-2 font-serif text-3xl text-[var(--cb-text)]">{group.yearLabel}</h3>
-                <p className="mt-2 text-sm text-[var(--cb-text-secondary)]">{group.items.length} {group.items.length === 1 ? 'memory' : 'memories'} in this chapter.</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">{group.monthLabel}</p>
+                <h3 className="mt-2 font-serif text-3xl text-[var(--cb-text)]">{group.dayLabel}</h3>
+                <p className="mt-2 text-sm text-[var(--cb-text-secondary)]">{group.items.length} {group.items.length === 1 ? 'item' : 'items'} from this day.</p>
               </div>
-              {group.featured ? <StatusBadge tone="info">Featured: {group.featured.title}</StatusBadge> : null}
+              {group.items[0] ? <StatusBadge tone="info">Newest: {group.items[0].title}</StatusBadge> : null}
             </div>
             <div className={group.items.some((item) => item.media.status === 'drive-indexed') ? 'gallery-media-library-grid' : 'grid gap-4 md:grid-cols-2 xl:grid-cols-3'}>
               {group.items.map((item) => (
-                <GalleryTile item={item} key={item.key} onSelect={setSelectedItem} />
+                <GalleryTile
+                  item={item}
+                  key={item.key}
+                  onSelect={setSelectedItem}
+                  onToggleSelection={toggleItemSelection}
+                  selected={selectedKeys.has(item.key)}
+                  selectionMode={selectionMode}
+                />
               ))}
             </div>
           </section>

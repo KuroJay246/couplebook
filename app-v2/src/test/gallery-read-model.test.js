@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 import { buildGalleryReadModel, buildGalleryReadModelWithMediaIndex } from '../features/gallery/galleryReadModel.js'
-import { groupGalleryItemsByYear, selectFilteredGalleryItems, selectMediaIndexGalleryItems } from '../features/gallery/gallerySelectors.js'
+import { buildMediaLibrary, groupGalleryItemsByDate, groupGalleryItemsByYear, selectFilteredGalleryItems, selectMediaIndexGalleryItems } from '../features/gallery/gallerySelectors.js'
 
 function createMemoryRecord(overrides = {}) {
   return {
@@ -445,7 +445,60 @@ test('gallery read model can render Firestore media index records before Drive p
   assert.equal(model.items[1].title, 'Fictional indexed caption')
   assert.equal(model.sourceStatus.mediaInventory.count, 2)
   assert.equal(model.sourceStatus.mediaInventory.status, 'ready')
+  assert.equal(model.library.groups.length, 1)
+  assert.equal(model.library.favoriteCount, 1)
+  assert.equal(model.library.unlinkedCount, 2)
   assert.doesNotMatch(JSON.stringify(model), /thumbnailLink|previewUrl|objectUrl|accessToken|blob:/)
+})
+
+test('media library groups indexed media by day and supports favorites and unlinked filters', () => {
+  const items = selectMediaIndexGalleryItems([
+    {
+      mediaId: 'drive_day_video',
+      provider: 'google-drive',
+      driveFileId: '1dayVideoDriveFileId',
+      driveFolderId: '17Ar4UK5_puORz9TE1dijIk2-qHgh7oIa',
+      mimeType: 'video/mp4',
+      mediaType: 'video',
+      fileName: 'CB_VID_0035.mp4',
+      capturedAt: '2026-09-06T19:00:00.000Z',
+      durationMillis: 65000,
+    },
+    {
+      mediaId: 'drive_day_photo',
+      provider: 'google-drive',
+      driveFileId: '1dayPhotoDriveFileId',
+      driveFolderId: '17Ar4UK5_puORz9TE1dijIk2-qHgh7oIa',
+      mimeType: 'image/jpeg',
+      mediaType: 'image',
+      fileName: 'CB_IMG_1001.jpg',
+      capturedAt: '2026-09-06T15:00:00.000Z',
+      favorite: true,
+    },
+    {
+      mediaId: 'drive_other_day_photo',
+      provider: 'google-drive',
+      driveFileId: '1otherDayPhotoFileId',
+      driveFolderId: '17Ar4UK5_puORz9TE1dijIk2-qHgh7oIa',
+      mimeType: 'image/jpeg',
+      mediaType: 'image',
+      fileName: 'CB_IMG_1002.jpg',
+      capturedAt: '2026-09-03T15:00:00.000Z',
+      linkedMemoryId: 'memory_001',
+    },
+  ])
+  const groups = groupGalleryItemsByDate(items)
+  const library = buildMediaLibrary(items)
+
+  assert.equal(groups.length, 2)
+  assert.equal(groups[0].dayLabel, 'September 6')
+  assert.equal(groups[0].monthLabel, 'September 2026')
+  assert.equal(groups[0].items.length, 2)
+  assert.equal(library.visualCount, 3)
+  assert.equal(library.favoriteCount, 1)
+  assert.equal(library.unlinkedCount, 2)
+  assert.equal(selectFilteredGalleryItems(items, { filter: 'favorites' }).length, 1)
+  assert.equal(selectFilteredGalleryItems(items, { filter: 'unlinked' }).length, 2)
 })
 
 test('media index gallery selector filters tombstones and keeps newest Drive media first', () => {

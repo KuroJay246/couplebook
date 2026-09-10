@@ -49,7 +49,8 @@ test('gallery view keeps verified private media boundaries and uses the modular 
   const navigationSource = await readSource('../styles/navigation.css')
 
   assert.match(galleryViewSource, /function galleryTileLabel\(item\)/)
-  assert.match(galleryViewSource, /aria-label=\{galleryTileLabel\(item\)\}/)
+  assert.match(galleryViewSource, /aria-label=\{selectionMode \? .*galleryTileLabel\(item\).* : galleryTileLabel\(item\)\}/)
+  assert.match(galleryViewSource, /aria-pressed=\{selectionMode \? selected : undefined\}/)
   assert.match(galleryViewSource, /storage-verified/)
   assert.match(galleryViewSource, /Connect to add files/)
   assert.doesNotMatch(galleryViewSource, /Private media provider|Google Drive connection/)
