@@ -223,8 +223,11 @@ export function selectSettingsPrivacy() {
 
 export function selectSettingsMedia(mediaSync = null) {
   return {
-    title: 'Photos and videos',
-    description: 'Media connection details belong here, while Album stays focused on browsing, opening, and adding memories.',
+    title: 'Google Drive media provider',
+    description: 'Drive authorization is managed here once for the couple. Album stays focused on browsing indexed photos and videos.',
+    connectedAccount: 'jaylanspencer99@gmail.com',
+    approvedFolderLabel: 'Couple Book media folder',
+    backendBoundary: mediaSync?.backend?.zeroCostBoundary || 'Persistent refresh credentials, Drive Changes sync, and thumbnail delivery require an approved trusted backend before they can run for both partners automatically.',
     items: [
       {
         label: 'Private folder',
@@ -250,8 +253,8 @@ export function selectSettingsMedia(mediaSync = null) {
       },
       {
         label: 'Album access',
-        description: 'Album may ask for a connection only when adding files or opening private previews.',
-        meta: 'Contextual',
+        description: 'Album reads the couple-scoped Firestore media index and must not ask normal members to authorize Google Drive for browsing.',
+        meta: 'Index first',
       },
     ],
   }

@@ -539,9 +539,16 @@ function galleryTile(page, title) {
 }
 
 async function ensureDriveConnected(page) {
-  if (await page.getByText('Connected', { exact: true }).first().isVisible().catch(() => false)) return
-  await page.getByRole('button', { name: 'Connect Google Drive' }).click()
-  await page.getByText('Connected', { exact: true }).first().waitFor({ state: 'visible', timeout: 15000 })
+  const baseUrl = new globalThis.URL(page.url()).origin
+  await page.goto(`${baseUrl}/settings`, { waitUntil: 'domcontentloaded' })
+  await page.getByRole('heading', { name: 'Settings' }).waitFor({ state: 'visible', timeout: 15000 })
+  await page.getByLabel('Media and sync settings').waitFor({ state: 'visible', timeout: 10000 })
+  if (!(await page.getByText('Connected', { exact: true }).first().isVisible().catch(() => false))) {
+    await page.getByRole('button', { name: 'Connect Google Drive' }).click()
+    await page.getByText('Connected', { exact: true }).first().waitFor({ state: 'visible', timeout: 15000 })
+  }
+  await page.goto(`${baseUrl}/gallery`, { waitUntil: 'domcontentloaded' })
+  await page.getByRole('heading', { name: 'Our Memories' }).waitFor({ state: 'visible', timeout: 15000 })
 }
 
 async function setFiles(page, filePaths) {

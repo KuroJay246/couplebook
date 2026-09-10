@@ -248,10 +248,16 @@ async function openUploadTools(page) {
 }
 
 async function ensureDriveConnected(page) {
+  const baseUrl = new globalThis.URL(page.url()).origin
+  await page.goto(`${baseUrl}/settings`, { waitUntil: 'domcontentloaded' })
+  await page.getByRole('heading', { name: 'Settings' }).waitFor({ state: 'visible', timeout: 15000 })
+  await page.getByLabel('Media and sync settings').waitFor({ state: 'visible', timeout: 10000 })
+  if (!(await page.getByText('Connected', { exact: true }).count())) {
+    await page.getByRole('button', { name: 'Connect Google Drive' }).click()
+    await page.getByText('Connected', { exact: true }).waitFor({ state: 'visible', timeout: 10000 })
+  }
+  await openGallery(page, baseUrl)
   await openUploadTools(page)
-  if (await page.getByText('Connected', { exact: true }).count()) return
-  await page.getByRole('button', { name: 'Connect Google Drive' }).click()
-  await page.getByText('Connected', { exact: true }).waitFor({ state: 'visible', timeout: 10000 })
 }
 
 async function setFiles(page, filePaths) {

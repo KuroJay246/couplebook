@@ -11,6 +11,7 @@ async function readSource(relativePath) {
 test('settings route uses the read-only feature hook and utility view', async () => {
   const settingsPageSource = await readSource('../pages/SettingsPage.jsx')
   const settingsViewSource = await readSource('../features/settings/SettingsView.jsx')
+  const mediaSettingsSource = await readSource('../features/settings/MediaSettingsSection.jsx')
 
   assert.match(settingsPageSource, /useSettingsData/)
   assert.match(settingsPageSource, /SettingsView/)
@@ -18,7 +19,7 @@ test('settings route uses the read-only feature hook and utility view', async ()
   assert.match(settingsViewSource, /THEME_REGISTRY/)
   assert.match(settingsViewSource, /Special moments/)
   assert.match(settingsViewSource, /Photos and videos/)
-  assert.match(settingsViewSource, /Open Album/)
+  assert.match(mediaSettingsSource, /Open Album/)
   assert.match(settingsViewSource, /System health/)
   assert.match(settingsViewSource, /Google sign-in/)
   assert.match(settingsViewSource, /Link Google sign-in/)

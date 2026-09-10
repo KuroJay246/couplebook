@@ -624,7 +624,7 @@ export function useMediaUploadQueue(onRefresh, drive) {
   return {
     acceptedTypes: ACCEPTED_MEDIA_TYPES,
     addFiles,
-    canUpload: writer.canWrite,
+    canUpload: writer.canWrite && Boolean(driveProvider && driveState === 'connected'),
     cancelItem,
     clearCompleted,
     isUploading,

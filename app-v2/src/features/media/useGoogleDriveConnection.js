@@ -58,6 +58,8 @@ function createRenderableState() {
   }
 }
 
+const controllerCache = new Map()
+
 function isActiveGeneration(generationRef, generation) {
   return generationRef.current === generation
 }
@@ -130,16 +132,18 @@ export function createDriveConnectionController({
   const previewUrlsRef = { current: new Set() }
   const previewRequestsRef = { current: new Map() }
   const renderRef = { current: createRenderableState() }
-  let setRenderState = () => {}
+  const subscribers = new Set()
 
   function bindReact(setState) {
-    setRenderState = setState
+    subscribers.add(setState)
+    setState(renderRef.current)
+    return () => subscribers.delete(setState)
   }
 
   function apply(update) {
     const next = { ...renderRef.current, ...update }
     renderRef.current = next
-    setRenderState(next)
+    for (const subscriber of subscribers) subscriber(next)
   }
 
   function revokeSessionPreviews() {
@@ -322,26 +326,33 @@ export function createDriveConnectionController({
   }
 }
 
+function getSharedDriveConnectionController({ googleClientId, useLocalDriveProvider }) {
+  const key = `${useLocalDriveProvider ? 'local' : 'google'}:${googleClientId || 'missing-client'}`
+  if (!controllerCache.has(key)) {
+    controllerCache.set(key, createDriveConnectionController({
+      createProvider: () => (useLocalDriveProvider
+        ? createLocalGoogleDriveTestProvider()
+        : createGoogleDriveMediaProvider({ clientId: googleClientId })),
+      loadIdentityScript: () => (useLocalDriveProvider ? Promise.resolve() : loadGoogleIdentityScript()),
+      skipOAuthOriginPreflight: useLocalDriveProvider,
+    }))
+  }
+  return controllerCache.get(key)
+}
+
 export function useGoogleDriveConnection() {
   const env = readRuntimeEnv()
   const googleClientId = env.VITE_GOOGLE_CLIENT_ID
   const localUploadTestHooksEnabled = env.VITE_ENABLE_LOCAL_UPLOAD_TEST_HOOKS
   const useLocalDriveProvider = shouldUseLocalDriveTestProvider(localUploadTestHooksEnabled)
   const controller = useMemo(
-    () => createDriveConnectionController({
-      createProvider: () => (useLocalDriveProvider
-        ? createLocalGoogleDriveTestProvider()
-        : createGoogleDriveMediaProvider({ clientId: googleClientId })),
-      loadIdentityScript: () => (useLocalDriveProvider ? Promise.resolve() : loadGoogleIdentityScript()),
-      skipOAuthOriginPreflight: useLocalDriveProvider,
-    }),
+    () => getSharedDriveConnectionController({ googleClientId, useLocalDriveProvider }),
     [googleClientId, useLocalDriveProvider],
   )
   const [renderState, setRenderState] = useState(() => controller.getSnapshot())
 
   useEffect(() => {
-    controller.bindReact(setRenderState)
-    return () => controller.cleanup()
+    return controller.bindReact(setRenderState)
   }, [controller])
 
   const connect = useCallback(async () => controller.connect(), [controller])

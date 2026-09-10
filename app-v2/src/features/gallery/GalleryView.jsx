@@ -337,105 +337,6 @@ function UploadQueueCard({ item, onCancel, onChange, onRemove, onRetry }) {
   )
 }
 
-function DriveMediaGrid({ drive }) {
-  const [loadingId, setLoadingId] = useState('')
-  const [error, setError] = useState('')
-  const [visibleLimit, setVisibleLimit] = useState(24)
-  const [loadingMore, setLoadingMore] = useState(false)
-
-  async function showPreview(file) {
-    setLoadingId(file.id)
-    setError('')
-    try {
-      await drive.getPreview(file.id)
-    } catch (previewError) {
-      setError(previewError.message || 'This Drive preview is temporarily unavailable.')
-    } finally {
-      setLoadingId('')
-    }
-  }
-
-  async function showMoreFiles() {
-    if (visibleLimit < drive.files.length) {
-      setVisibleLimit((current) => current + 24)
-      return
-    }
-    if (!drive.hasMoreFiles) return
-
-    setLoadingMore(true)
-    setError('')
-    try {
-      await drive.loadMoreFiles()
-      setVisibleLimit((current) => current + 24)
-    } catch (loadError) {
-      setError(loadError.message || 'More Drive media could not be loaded right now.')
-    } finally {
-      setLoadingMore(false)
-    }
-  }
-
-  if (drive.state !== 'connected') return null
-  const visibleFiles = drive.files.slice(0, visibleLimit)
-  const hiddenCount = Math.max(0, drive.files.length - visibleFiles.length)
-  const canShowMore = hiddenCount > 0 || drive.hasMoreFiles
-
-  return (
-    <Surface aria-label="Private folder previews" tone="soft">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="cb-kicker">Our photos and videos</p>
-          <h2 className="mt-2 font-serif text-2xl text-[var(--cb-text)]">Private folder previews</h2>
-        </div>
-        <SecondaryButton onClick={() => void drive.refreshListing()}>Refresh previews</SecondaryButton>
-      </div>
-      {error ? <InlineAlert className="mt-4" tone="error" title="Preview unavailable" description={error} /> : null}
-      {drive.files.length === 0 ? <p className="mt-5 text-sm text-[var(--cb-text-secondary)]">The private folder is connected and there are no supported images or videos to preview yet.</p> : (
-        <>
-          <p className="mt-4 text-sm text-[var(--cb-text-secondary)]">
-            Showing {visibleFiles.length} of {drive.files.length}{drive.hasMoreFiles ? '+' : ''} Drive media files. Thumbnails are temporary session previews and are not saved to Firestore.
-          </p>
-          <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {visibleFiles.map((file) => {
-            const preview = drive.previews[file.id]
-            const isVideo = file.mimeType?.startsWith('video/')
-            const runtimeThumbnail = file.thumbnailLink || ''
-            return (
-              <article className="cb-card overflow-hidden" key={file.id}>
-                <MediaPreview
-                  alt={file.name}
-                  className="aspect-[4/3] bg-[var(--cb-surface-raised)]"
-                  kind={isVideo ? 'video' : 'image'}
-                  loading={loadingId === file.id}
-                  objectFit={isVideo ? 'contain' : 'cover'}
-                  onLoadRequest={() => void showPreview(file)}
-                  openOriginal={isVideo ? () => drive.openExternally(file.id) : undefined}
-                  poster={isVideo ? runtimeThumbnail : ''}
-                  src={preview || (isVideo ? '' : runtimeThumbnail)}
-                  title={file.name}
-                />
-                <div className="p-4">
-                  <p className="truncate text-sm font-semibold text-[var(--cb-text)]">{file.name}</p>
-                  <p className="mt-1 text-xs text-[var(--cb-text-muted)]">{isVideo ? 'Video' : 'Photo'} from the private folder</p>
-                  {!isVideo && !preview ? <SecondaryButton className="mt-3" disabled={loadingId === file.id} onClick={() => void showPreview(file)}>{loadingId === file.id ? 'Loading...' : 'Open full preview'}</SecondaryButton> : null}
-                  {isVideo ? <SecondaryButton className="mt-3" onClick={() => drive.openExternally(file.id)}>Open original</SecondaryButton> : null}
-                </div>
-              </article>
-            )
-          })}
-          </div>
-          {canShowMore ? (
-            <div className="mt-5 flex justify-center">
-              <SecondaryButton disabled={loadingMore} onClick={() => void showMoreFiles()}>
-                {loadingMore ? 'Loading more...' : hiddenCount > 0 ? `Show ${Math.min(24, hiddenCount)} more` : 'Load more from Drive'}
-              </SecondaryButton>
-            </div>
-          ) : null}
-        </>
-      )}
-    </Surface>
-  )
-}
-
 export function GalleryView({ compatibilityError, compatibilityState, model, onRefresh }) {
   const [filter, setFilter] = useState('all')
   const [year, setYear] = useState('all')
@@ -450,6 +351,8 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
   const uploadQueue = useMediaUploadQueue(onRefresh, drive)
   const items = useMemo(() => (Array.isArray(model.items) ? model.items : []), [model])
   const years = model.filters?.availableYears || []
+  const mediaInventory = model.sourceStatus?.mediaInventory || {}
+  const mediaWarnings = Array.isArray(mediaInventory.warnings) ? mediaInventory.warnings : []
 
   const filtered = useMemo(() => selectFilteredGalleryItems(items, { filter, search, year }), [filter, items, search, year])
   const grouped = useMemo(() => groupGalleryItemsByDate(filtered), [filtered])
@@ -529,7 +432,9 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
           <>
             <StatusBadge tone="info">{model.summary.totalMemories} items</StatusBadge>
             <SecondaryButton aria-expanded={manageUploadsOpen} onClick={() => setManageUploadsOpen((value) => !value)}><SlidersHorizontal className="size-4" />{manageUploadsOpen ? 'Close add flow' : 'Add details'}</SecondaryButton>
-            <PrimaryButton disabled={!uploadQueue.canUpload} onClick={() => fileInputRef.current?.click()}><Upload className="size-4" />Add files</PrimaryButton>
+            {uploadQueue.canUpload
+              ? <PrimaryButton onClick={() => fileInputRef.current?.click()}><Upload className="size-4" />Add files</PrimaryButton>
+              : <SecondaryButton as={Link} to="/settings"><Upload className="size-4" />Media & Sync</SecondaryButton>}
           </>
         )}
       />
@@ -602,24 +507,21 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
       <Surface tone="soft" aria-label="Album media access">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="cb-kicker">Add to Album</p>
-            <h2 className="mt-2 font-serif text-2xl text-[var(--cb-text)]">Photos and videos save through the private folder</h2>
+            <p className="cb-kicker">Media provider</p>
+            <h2 className="mt-2 font-serif text-2xl text-[var(--cb-text)]">Album reads the private media index</h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--cb-text-secondary)]">
-              Connect when you are adding or previewing originals. Everyday browsing stays focused on the memories, not the storage details.
+              Drive account recovery and synchronization belong in Settings. Approved members should browse indexed photos and videos here without seeing a Drive authorization popup.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            {drive.state === 'connected' ? <StatusBadge tone="success">Connected</StatusBadge> : <StatusBadge tone="warning">{drive.state === 'disconnected' ? 'Connection needed to add files' : drive.state}</StatusBadge>}
-            {drive.state === 'connected'
-              ? <SecondaryButton as={Link} to="/settings">Media settings</SecondaryButton>
-              : <PrimaryButton aria-label="Connect Google Drive" loading={drive.state === 'connecting'} onClick={() => void drive.connect()}>{drive.state === 'connecting' ? 'Connecting' : 'Connect to add files'}</PrimaryButton>}
-            {drive.state !== 'connected' && drive.state !== 'connecting' && drive.state !== 'disconnected' ? <SecondaryButton onClick={() => void drive.retryAccess()}>Try again</SecondaryButton> : null}
+            <StatusBadge tone={mediaInventory.status === 'ready' ? 'success' : mediaInventory.status === 'unavailable' ? 'warning' : 'info'}>
+              {mediaInventory.status === 'ready' ? 'Indexed media available' : mediaInventory.status === 'unavailable' ? 'Index unavailable' : 'Index pending'}
+            </StatusBadge>
+            <SecondaryButton as={Link} to="/settings">Manage Media & Sync</SecondaryButton>
           </div>
         </div>
-        {drive.message ? <InlineAlert className="mt-4" tone={drive.state === 'wrong-account' || drive.state === 'folder-inaccessible' ? 'warning' : 'error'} title="Media access needs attention" description={drive.message} /> : null}
-        {drive.state === 'wrong-account' || drive.state === 'folder-inaccessible' ? <p className="mt-3 text-sm text-[var(--cb-text-secondary)]">Reconnect from Settings using the Google account that owns or can open the private media folder.</p> : null}
+        {mediaWarnings.length > 0 ? <InlineAlert className="mt-4" tone="warning" title="Media index needs attention" description={mediaWarnings[0]} /> : null}
       </Surface>
-      <DriveMediaGrid drive={drive} />
       {manageUploadsOpen ? <div className="grid gap-5" aria-label="Album management tools">
         <Surface aria-label="Upload queue" tone="soft">
           <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Add memories</p>
@@ -649,7 +551,16 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
             <SecondaryButton disabled={uploadQueue.summary.saved + uploadQueue.summary.failed + uploadQueue.summary.cancelled === 0 || uploadQueue.isUploading} onClick={uploadQueue.clearCompleted}>
               Clear finished
             </SecondaryButton>
+            <SecondaryButton as={Link} to="/settings">Open Media & Sync</SecondaryButton>
           </div>
+          {uploadQueue.requiresDriveConnection ? (
+            <InlineAlert
+              className="mt-5"
+              tone="warning"
+              title="Media provider setup required"
+              description="Uploads are held until the owner-managed Drive media provider is configured from Settings. Album will not open a Google OAuth popup for normal browsing."
+            />
+          ) : null}
           <div className="mt-5">
             {uploadQueue.items.length > 0 ? (
               <div className="grid gap-4">
