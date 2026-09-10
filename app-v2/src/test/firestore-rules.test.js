@@ -44,7 +44,9 @@ const ids = Object.freeze({
   memberOne: 'member_one',
   memberTwo: 'member_two',
   pendingPartner: 'pending_partner',
+  disabledMember: 'disabled_member',
   inactive: 'inactive_member',
+  removedMember: 'removed_member',
   outsider: 'outsider_user',
   couple: 'couple_alpha',
   otherCouple: 'couple_beta',
@@ -78,7 +80,9 @@ test.beforeEach(async () => {
     await setDoc(doc(db, 'users', ids.memberOne), { approved: true, accessStatus: 'active', coupleId: ids.couple, displayName: 'Member One', schemaVersion: 1 })
     await setDoc(doc(db, 'users', ids.memberTwo), { approved: true, accessStatus: 'active', coupleId: ids.couple, displayName: 'Member Two', schemaVersion: 1 })
     await setDoc(doc(db, 'users', ids.pendingPartner), { approved: true, accessStatus: 'pending', coupleId: ids.couple, displayName: 'Pending Partner', schemaVersion: 1 })
+    await setDoc(doc(db, 'users', ids.disabledMember), { approved: true, accessStatus: 'disabled', coupleId: ids.couple, displayName: 'Disabled Member', schemaVersion: 1 })
     await setDoc(doc(db, 'users', ids.inactive), { approved: true, accessStatus: 'active', coupleId: ids.couple, displayName: 'Inactive', schemaVersion: 1 })
+    await setDoc(doc(db, 'users', ids.removedMember), { approved: true, accessStatus: 'active', coupleId: ids.couple, displayName: 'Removed Member', schemaVersion: 1 })
     await setDoc(doc(db, 'users', ids.outsider), { approved: false, accessStatus: 'active', coupleId: ids.couple, displayName: 'Outsider', schemaVersion: 1 })
     await setDoc(doc(db, 'users', ids.otherMember), { approved: true, accessStatus: 'active', coupleId: ids.otherCouple, displayName: 'Other', schemaVersion: 1 })
 
@@ -88,6 +92,7 @@ test.beforeEach(async () => {
     await setDoc(doc(db, 'couples', ids.couple, 'members', ids.memberOne), { active: true, role: 'member', schemaVersion: 1 })
     await setDoc(doc(db, 'couples', ids.couple, 'members', ids.memberTwo), { active: true, role: 'member', schemaVersion: 1 })
     await setDoc(doc(db, 'couples', ids.couple, 'members', ids.pendingPartner), { active: true, role: 'member', schemaVersion: 1 })
+    await setDoc(doc(db, 'couples', ids.couple, 'members', ids.disabledMember), { active: true, role: 'member', schemaVersion: 1 })
     await setDoc(doc(db, 'couples', ids.couple, 'members', ids.inactive), { active: false, role: 'member', schemaVersion: 1 })
     await setDoc(doc(db, 'couples', ids.otherCouple, 'members', ids.otherMember), { active: true, role: 'member', schemaVersion: 1 })
 
@@ -211,7 +216,7 @@ test('second active member receives same couple access but not private settings 
 })
 
 test('pending, unauthorized, inactive, and cross-couple users fail closed', { skip: !hasEmulator }, async () => {
-  for (const uid of [ids.pendingPartner, ids.outsider, ids.inactive, ids.otherMember]) {
+  for (const uid of [ids.pendingPartner, ids.disabledMember, ids.outsider, ids.inactive, ids.removedMember, ids.otherMember]) {
     const db = authed(uid)
     await assertFails(getDoc(doc(db, 'couples', ids.couple)))
     await assertFails(getDoc(doc(db, 'couples', ids.couple, 'members', uid)))
@@ -224,6 +229,40 @@ test('pending, unauthorized, inactive, and cross-couple users fail closed', { sk
     await assertFails(getDoc(doc(db, 'couples', ids.couple, 'mediaSync', 'google-drive')))
     await assertFails(getDoc(doc(db, 'couples', ids.couple, 'specialMoments', 'birthday')))
   }
+})
+
+test('media index rules enforce the couple membership matrix', { skip: !hasEmulator }, async () => {
+  const ownerDb = authed(ids.memberOne)
+  const partnerDb = authed(ids.memberTwo)
+  const mediaDocPath = ['couples', ids.couple, 'mediaItems', 'drive_1F_USpYY9Qi2sIoftCWVjp_uYPdZAnRaa']
+  const syncDocPath = ['couples', ids.couple, 'mediaSync', 'google-drive']
+
+  await assertFails(getDoc(doc(signedOut(), ...mediaDocPath)))
+  await assertFails(getDocs(collection(signedOut(), 'couples', ids.couple, 'mediaItems')))
+  await assertSucceeds(getDoc(doc(ownerDb, ...mediaDocPath)))
+  await assertSucceeds(getDocs(collection(ownerDb, 'couples', ids.couple, 'mediaItems')))
+  await assertSucceeds(getDoc(doc(partnerDb, ...mediaDocPath)))
+  await assertSucceeds(getDocs(collection(partnerDb, 'couples', ids.couple, 'mediaItems')))
+  await assertSucceeds(getDoc(doc(ownerDb, ...syncDocPath)))
+  await assertSucceeds(getDoc(doc(partnerDb, ...syncDocPath)))
+
+  for (const uid of [ids.pendingPartner, ids.disabledMember, ids.inactive, ids.removedMember, ids.outsider, ids.otherMember]) {
+    const deniedDb = authed(uid)
+    await assertFails(getDoc(doc(deniedDb, ...mediaDocPath)))
+    await assertFails(getDocs(collection(deniedDb, 'couples', ids.couple, 'mediaItems')))
+    await assertFails(getDoc(doc(deniedDb, ...syncDocPath)))
+  }
+
+  await assertFails(getDoc(doc(ownerDb, 'couples', ids.otherCouple, 'mediaItems', 'drive_cross_couple')))
+  await assertFails(getDocs(collection(ownerDb, 'couples', ids.otherCouple, 'mediaItems')))
+  await assertFails(getDoc(doc(ownerDb, 'couples', ids.couple, 'mediaSync', 'dropbox')))
+  await assertFails(setDoc(doc(ownerDb, 'couples', ids.couple, 'mediaItems', 'drive_client_spoof'), {
+    schemaVersion: 1,
+    coupleId: ids.couple,
+    mediaId: 'drive_client_spoof',
+    provider: 'google-drive',
+    driveFileId: '1ClientSpoof',
+  }))
 })
 
 test('active members can perform valid emulator writes', { skip: !hasEmulator }, async () => {

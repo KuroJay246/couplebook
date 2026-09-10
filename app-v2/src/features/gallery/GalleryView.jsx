@@ -352,6 +352,7 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
   const items = useMemo(() => (Array.isArray(model.items) ? model.items : []), [model])
   const years = model.filters?.availableYears || []
   const mediaInventory = model.sourceStatus?.mediaInventory || {}
+  const mediaBackend = model.mediaBackend || {}
   const mediaWarnings = Array.isArray(mediaInventory.warnings) ? mediaInventory.warnings : []
 
   const filtered = useMemo(() => selectFilteredGalleryItems(items, { filter, search, year }), [filter, items, search, year])
@@ -517,10 +518,15 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
             <StatusBadge tone={mediaInventory.status === 'ready' ? 'success' : mediaInventory.status === 'unavailable' ? 'warning' : 'info'}>
               {mediaInventory.status === 'ready' ? 'Indexed media available' : mediaInventory.status === 'unavailable' ? 'Index unavailable' : 'Index pending'}
             </StatusBadge>
+            <StatusBadge tone={mediaBackend.localHandlersReady ? 'success' : 'warning'}>
+              {mediaBackend.statusLabel || 'Backend contract pending'}
+            </StatusBadge>
+            <StatusBadge tone="warning">{mediaBackend.deploymentLabel || 'Deployment approval required'}</StatusBadge>
             <SecondaryButton as={Link} to="/settings">Manage Media & Sync</SecondaryButton>
           </div>
         </div>
         {mediaWarnings.length > 0 ? <InlineAlert className="mt-4" tone="warning" title="Media index needs attention" description={mediaWarnings[0]} /> : null}
+        {mediaBackend.description ? <InlineAlert className="mt-4" tone="info" title="Trusted backend contract" description={mediaBackend.description} /> : null}
       </Surface>
       {manageUploadsOpen ? <div className="grid gap-5" aria-label="Album management tools">
         <Surface aria-label="Upload queue" tone="soft">
@@ -558,7 +564,7 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
               className="mt-5"
               tone="warning"
               title="Trusted media backend required"
-              description="Files can be prepared here by approved members, but Drive storage and Firestore finalization need the approved couple-level media backend. Album will not open a Google OAuth popup for partner uploads."
+              description={`${mediaBackend.uploadLabel || 'Backend contract pending'}. Files can be prepared here by approved members, but Drive storage and Firestore finalization need the approved couple-level media backend. Album will not open a Google OAuth popup for partner uploads.`}
             />
           ) : null}
           <div className="mt-5">

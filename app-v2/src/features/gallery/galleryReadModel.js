@@ -1,4 +1,5 @@
 import { freezeClone } from '../../data/adapterUtils.js'
+import { getMediaSyncArchitectureContract } from '../../services/syncService.js'
 import { normalizeTimelineMemories } from '../memories/memoryNormalizer.js'
 import { buildGalleryCollections, buildGalleryFilters, buildGallerySummary, buildMediaLibrary, selectGalleryItems, selectMediaIndexGalleryItems } from './gallerySelectors.js'
 
@@ -51,11 +52,33 @@ function buildSourceStatus(memorySource, mediaIndexSource, indexedItems) {
   })
 }
 
+function buildMediaBackendStatus(coupleId = 'couple') {
+  const contract = getMediaSyncArchitectureContract(coupleId)
+  const capabilities = Array.isArray(contract.localHandlerCapabilities) ? contract.localHandlerCapabilities : []
+  const requiredCapabilityCount = Number.isSafeInteger(contract.localHandlerCapabilityCount)
+    ? contract.localHandlerCapabilityCount
+    : capabilities.length
+  const localHandlersReady = requiredCapabilityCount > 0 && capabilities.length === requiredCapabilityCount
+
+  return freezeClone({
+    provider: contract.provider,
+    localHandlersReady,
+    implementedCapabilities: capabilities.length,
+    requiredCapabilities: requiredCapabilityCount,
+    statusLabel: localHandlersReady ? 'Local backend handlers ready' : 'Local backend handlers incomplete',
+    deploymentLabel: contract.deploymentStatus === 'owner-approval-required' ? 'Deployment approval required' : 'Trusted deployment required',
+    uploadLabel: localHandlersReady ? 'Backend contract ready locally' : 'Backend contract incomplete',
+    description: localHandlersReady
+      ? `${capabilities.length}/${requiredCapabilityCount} trusted Drive backend handler capabilities are implemented locally. Album still needs the owner-approved deployment before uploads, thumbnails, streams, and background sync can run persistently.`
+      : 'Trusted Drive backend handler coverage is incomplete locally, so Album can only prepare media records.',
+  })
+}
+
 export function buildGalleryReadModel({ compatibilitySnapshot = null, memorySource = null } = {}) {
   return buildGalleryReadModelWithMediaIndex({ compatibilitySnapshot, memorySource })
 }
 
-export function buildGalleryReadModelWithMediaIndex({ compatibilitySnapshot = null, memorySource = null, mediaIndexSource = null } = {}) {
+export function buildGalleryReadModelWithMediaIndex({ compatibilitySnapshot = null, memorySource = null, mediaIndexSource = null, coupleId = 'couple' } = {}) {
   const resolvedMemorySource = memorySource || compatibilitySnapshot?.sources?.memories || EMPTY_MEMORY_SOURCE
   const resolvedMediaIndexSource = mediaIndexSource || compatibilitySnapshot?.sources?.mediaIndex || EMPTY_MEDIA_INDEX_SOURCE
   const normalizedMemories = normalizeTimelineMemories(resolvedMemorySource?.data?.memories || [])
@@ -83,6 +106,7 @@ export function buildGalleryReadModelWithMediaIndex({ compatibilitySnapshot = nu
     unavailableMedia,
     filters: buildGalleryFilters(items),
     sourceStatus: buildSourceStatus(resolvedMemorySource, resolvedMediaIndexSource, indexedItems),
+    mediaBackend: buildMediaBackendStatus(coupleId),
     warnings: [
       ...(Array.isArray(resolvedMemorySource?.warnings) ? resolvedMemorySource.warnings : []),
       ...(Array.isArray(resolvedMediaIndexSource?.warnings) ? resolvedMediaIndexSource.warnings : []),
