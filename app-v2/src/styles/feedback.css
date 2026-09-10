@@ -2,3 +2,19 @@
 [role="alert"] {
   scroll-margin-top: 6rem;
 }
+
+.cb-pwa-status {
+  position: fixed;
+  inset: auto 1rem calc(1rem + env(safe-area-inset-bottom)) 1rem;
+  z-index: 80;
+  margin-inline: auto;
+  max-width: min(42rem, calc(100vw - 2rem));
+  box-shadow: 0 20px 48px rgb(47 36 48 / 0.18);
+}
+
+@media (min-width: 768px) {
+  .cb-pwa-status {
+    inset-inline: auto 1.25rem;
+    max-width: 28rem;
+  }
+}

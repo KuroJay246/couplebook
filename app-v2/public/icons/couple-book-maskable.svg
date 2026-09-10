@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Couple Book">
+  <rect width="512" height="512" fill="#5f1934"/>
+  <circle cx="256" cy="256" r="220" fill="#f7eef0"/>
+  <path d="M160 132c0-20 16-36 36-36h60v320h-64c-50 0-92-41-92-92V184c0-29 26-52 60-52Z" fill="#fff8f8"/>
+  <path d="M352 132c0-20-16-36-36-36h-60v320h64c50 0 92-41 92-92V184c0-29-26-52-60-52Z" fill="#ead6dd"/>
+  <path d="M256 158c-37-27-70-38-98-32-24 5-40 24-40 50v142c0 38 31 70 70 70h68" fill="none" stroke="#b64d72" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M256 158c37-27 70-38 98-32 24 5 40 24 40 50v142c0 38-31 70-70 70h-68" fill="none" stroke="#b64d72" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M208 212c16-14 32-14 48 2 16-16 32-16 48-2 18 17 15 48-6 67l-42 38-42-38c-21-19-24-50-6-67Z" fill="#5f1934"/>
+</svg>

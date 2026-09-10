@@ -1,0 +1,28 @@
+{
+  "name": "Couple Book",
+  "short_name": "Couple Book",
+  "description": "A private shared journal for memories, plans, and protected relationship pages.",
+  "id": "/",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
+  "orientation": "portrait-primary",
+  "background_color": "#f7eef0",
+  "theme_color": "#5f1934",
+  "categories": ["lifestyle", "photo"],
+  "icons": [
+    {
+      "src": "/icons/couple-book-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/couple-book-maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}
