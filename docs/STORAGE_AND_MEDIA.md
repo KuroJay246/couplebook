@@ -23,6 +23,8 @@ couples/{coupleId}/mediaItems/{mediaId}
 couples/{coupleId}/mediaSync/google-drive
 ```
 
+Production Album reads depend on the deployed Firestore ruleset containing these paths. Use `npm run rules:drift` to confirm the live ruleset includes active-member read coverage for both paths before treating media-index reads as unblocked. A stale deployed ruleset will produce `permission-denied` for approved members even when the local rules and emulator tests pass.
+
 Allowed stable Drive metadata includes `coupleId`, `memoryId`, `driveFileId`, `driveFolderId`, provider, MIME type, media type, dimensions, duration, size, checksum, safe captions, and created/modified/captured timestamps.
 
 Do not persist:

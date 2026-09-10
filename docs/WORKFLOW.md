@@ -57,6 +57,14 @@ Deploy Firestore rules only when `firestore.rules` changed, rules tests passed, 
 firebase deploy --only firestore:rules --project couplebook-97830
 ```
 
+Before and after a rules-only deployment, check deployed-rule drift:
+
+```powershell
+npm run rules:drift
+```
+
+If this reports missing media-index coverage, Album cannot read `couples/{coupleId}/mediaItems` in production even when local emulator rules pass. The fix is an explicitly approved Firestore rules-only deployment, not a frontend fallback or a weakened rule.
+
 Do not use generic `firebase deploy` for normal Couple Book releases. Roll back Hosting from the Firebase Hosting release history for `couplebook-97830` to the last verified good version.
 
 ## V1.2 Preview Workflow
