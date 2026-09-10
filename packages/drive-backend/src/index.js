@@ -17,6 +17,7 @@ export const DRIVE_BACKEND_ROUTES = Object.freeze([
 const SAFE_ID = /^[A-Za-z0-9_-]{1,160}$/
 const SAFE_AUTH_CODE = /^[A-Za-z0-9._~/-]{8,4096}$/
 const DEFAULT_STATE_TTL_MS = 10 * 60 * 1000
+const FORBIDDEN_SYNC_FIELD_PATTERN = /(?:^|[_-])(access[_-]?token|refresh[_-]?token|client[_-]?secret|thumbnaillink|webcontentlink|previewurl|downloadurl|signedurl)(?:$|[_-])/i
 
 function isSafeId(value) {
   return typeof value === 'string' && SAFE_ID.test(value)
@@ -30,6 +31,46 @@ function getBearerToken(headers = {}) {
   const authorization = headers.authorization || headers.Authorization || ''
   const match = /^Bearer\s+(.+)$/i.exec(String(authorization).trim())
   return match?.[1] || ''
+}
+
+function stableJson(value) {
+  return JSON.stringify(value, Object.keys(value || {}).sort())
+}
+
+function hasForbiddenSyncField(value) {
+  if (!value || typeof value !== 'object') return false
+  return Object.entries(value).some(([key, child]) => {
+    if (FORBIDDEN_SYNC_FIELD_PATTERN.test(key)) return true
+    if (typeof child === 'string' && /Bearer\s+[A-Za-z0-9._-]+/i.test(child)) return true
+    if (child && typeof child === 'object') return hasForbiddenSyncField(child)
+    return false
+  })
+}
+
+function assertSafeMediaRecord(record, coupleId) {
+  if (!record || typeof record !== 'object') throw new Error('Drive sync media record is required.')
+  if (hasForbiddenSyncField(record)) throw new Error('Drive sync media records must not include temporary URLs or credential fields.')
+  if (record.provider !== 'google-drive') throw new Error('Drive sync media records must use google-drive provider.')
+  if (record.coupleId !== coupleId) throw new Error('Drive sync media record couple mismatch.')
+  if (!isSafeId(record.mediaId || '')) throw new Error('Drive sync media record requires a safe mediaId.')
+  if (!isSafeId(record.driveFileId || '')) throw new Error('Drive sync media record requires a safe driveFileId.')
+  return true
+}
+
+function createAuditEvent({ coupleId, counts, nowMs, uid }) {
+  return Object.freeze({
+    action: 'drive.sync',
+    actorUid: uid,
+    coupleId,
+    createdAtMs: nowMs,
+    provider: 'google-drive',
+    resourceType: 'mediaSync',
+    summary: Object.freeze({
+      upserted: counts.upserted,
+      tombstoned: counts.tombstoned,
+      unchanged: counts.unchanged,
+    }),
+  })
 }
 
 export function listDriveBackendEndpointPaths() {
@@ -222,6 +263,168 @@ export async function authorizeIndexedMediaRequest({
     mediaId,
     routeKey: request.routeKey,
     uid: request.uid,
+  })
+}
+
+export function planDriveSyncWrites({
+  coupleId,
+  driveRecords = [],
+  indexedRecords = [],
+  nowMs = Date.now(),
+  uid = '',
+} = {}) {
+  if (!isSafeId(coupleId || '')) throw new Error('Drive sync requires a safe coupleId.')
+  if (uid && !isSafeId(uid)) throw new Error('Drive sync requires a safe uid when provided.')
+
+  const indexedByDriveFileId = new Map()
+  const driveFileIds = new Set()
+  const mediaWrites = []
+  const tombstoneWrites = []
+  let unchanged = 0
+
+  for (const indexedRecord of indexedRecords) {
+    assertSafeMediaRecord(indexedRecord, coupleId)
+    indexedByDriveFileId.set(indexedRecord.driveFileId, indexedRecord)
+  }
+
+  for (const driveRecord of driveRecords) {
+    assertSafeMediaRecord(driveRecord, coupleId)
+    driveFileIds.add(driveRecord.driveFileId)
+    const existing = indexedByDriveFileId.get(driveRecord.driveFileId)
+    const nextRecord = Object.freeze({
+      ...driveRecord,
+      deleted: false,
+      lastSyncedAtMs: nowMs,
+      provider: 'google-drive',
+      syncStatus: 'active',
+    })
+    if (!existing || existing.deleted === true || stableJson({
+      caption: existing.caption || '',
+      coupleId: existing.coupleId,
+      driveFileId: existing.driveFileId,
+      durationMs: existing.durationMs || null,
+      height: existing.height || null,
+      mediaId: existing.mediaId,
+      mimeType: existing.mimeType || '',
+      name: existing.name || '',
+      provider: existing.provider,
+      sizeBytes: existing.sizeBytes || null,
+      width: existing.width || null,
+    }) !== stableJson({
+      caption: nextRecord.caption || '',
+      coupleId: nextRecord.coupleId,
+      driveFileId: nextRecord.driveFileId,
+      durationMs: nextRecord.durationMs || null,
+      height: nextRecord.height || null,
+      mediaId: nextRecord.mediaId,
+      mimeType: nextRecord.mimeType || '',
+      name: nextRecord.name || '',
+      provider: nextRecord.provider,
+      sizeBytes: nextRecord.sizeBytes || null,
+      width: nextRecord.width || null,
+    })) {
+      mediaWrites.push(Object.freeze({
+        mediaId: nextRecord.mediaId,
+        operation: 'upsert',
+        record: nextRecord,
+      }))
+    } else {
+      unchanged += 1
+    }
+  }
+
+  for (const indexedRecord of indexedRecords) {
+    if (driveFileIds.has(indexedRecord.driveFileId) || indexedRecord.deleted === true) continue
+    tombstoneWrites.push(Object.freeze({
+      mediaId: indexedRecord.mediaId,
+      operation: 'tombstone',
+      record: Object.freeze({
+        ...indexedRecord,
+        deleted: true,
+        lastSyncedAtMs: nowMs,
+        provider: 'google-drive',
+        syncStatus: 'missing-in-drive',
+      }),
+    }))
+  }
+
+  const counts = Object.freeze({
+    driveFiles: driveRecords.length,
+    indexedRecords: indexedRecords.length,
+    tombstoned: tombstoneWrites.length,
+    unchanged,
+    upserted: mediaWrites.length,
+  })
+  const syncStateWrite = Object.freeze({
+    coupleId,
+    counts,
+    lastSyncedAtMs: nowMs,
+    provider: 'google-drive',
+    status: 'ok',
+  })
+  const auditEvent = createAuditEvent({ coupleId, counts, nowMs, uid })
+  const plan = Object.freeze({
+    auditEvent,
+    counts,
+    mediaWrites: Object.freeze(mediaWrites),
+    provider: 'google-drive',
+    syncStateWrite,
+    tombstoneWrites: Object.freeze(tombstoneWrites),
+  })
+  assertNoCredentialValues(plan)
+  if (hasForbiddenSyncField(plan)) throw new Error('Drive sync plan contains forbidden media fields.')
+  return plan
+}
+
+export async function runDriveSyncNow({
+  activeMembershipReader,
+  auditWriter,
+  body = {},
+  driveRecordReader,
+  headers = {},
+  indexedMediaReader,
+  mediaWriter,
+  nowMs = Date.now(),
+  syncStateWriter,
+  tokenVerifier,
+} = {}) {
+  const request = await validateDriveBackendRequest({
+    activeMembershipReader,
+    body,
+    headers,
+    method: 'POST',
+    path: DRIVE_BACKEND_ENDPOINTS.syncNow,
+    tokenVerifier,
+  })
+  if (!request.ok) return request
+  if (typeof driveRecordReader !== 'function') return Object.freeze({ ok: false, status: 500, code: 'drive-record-reader-not-configured' })
+  if (typeof indexedMediaReader !== 'function') return Object.freeze({ ok: false, status: 500, code: 'indexed-media-reader-not-configured' })
+  if (typeof mediaWriter !== 'function') return Object.freeze({ ok: false, status: 500, code: 'media-writer-not-configured' })
+  if (typeof syncStateWriter !== 'function') return Object.freeze({ ok: false, status: 500, code: 'sync-state-writer-not-configured' })
+  if (typeof auditWriter !== 'function') return Object.freeze({ ok: false, status: 500, code: 'audit-writer-not-configured' })
+
+  const [driveRecords, indexedRecords] = await Promise.all([
+    driveRecordReader({ coupleId: request.coupleId, uid: request.uid }),
+    indexedMediaReader({ coupleId: request.coupleId, uid: request.uid }),
+  ])
+  const plan = planDriveSyncWrites({
+    coupleId: request.coupleId,
+    driveRecords,
+    indexedRecords,
+    nowMs,
+    uid: request.uid,
+  })
+
+  for (const write of [...plan.mediaWrites, ...plan.tombstoneWrites]) {
+    await mediaWriter({ coupleId: request.coupleId, ...write })
+  }
+  await syncStateWriter({ coupleId: request.coupleId, record: plan.syncStateWrite })
+  await auditWriter({ coupleId: request.coupleId, record: plan.auditEvent })
+
+  return Object.freeze({
+    ok: true,
+    status: 200,
+    counts: plan.counts,
   })
 }
 

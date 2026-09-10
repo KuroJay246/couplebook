@@ -9,6 +9,8 @@ import {
   completeDriveAuthorization,
   findDriveBackendRoute,
   listDriveBackendEndpointPaths,
+  planDriveSyncWrites,
+  runDriveSyncNow,
   validateDriveBackendRequest,
 } from '../src/index.js'
 
@@ -160,4 +162,149 @@ test('indexed media authorization verifies membership and media record couple sc
 
   assert.equal(mismatch.ok, false)
   assert.equal(mismatch.code, 'media-couple-mismatch')
+})
+
+test('drive sync planning creates upserts, tombstones, sync state, and privacy-minimal audit counts', () => {
+  const plan = planDriveSyncWrites({
+    coupleId: 'couple_alpha',
+    driveRecords: [
+      {
+        coupleId: 'couple_alpha',
+        driveFileId: 'drive_existing',
+        mediaId: 'media_existing',
+        mimeType: 'image/jpeg',
+        name: 'anniversary.jpg',
+        provider: 'google-drive',
+        sizeBytes: 1200,
+      },
+      {
+        coupleId: 'couple_alpha',
+        driveFileId: 'drive_new',
+        mediaId: 'media_new',
+        mimeType: 'video/mp4',
+        name: 'movie-night.mp4',
+        provider: 'google-drive',
+        sizeBytes: 9300,
+      },
+    ],
+    indexedRecords: [
+      {
+        coupleId: 'couple_alpha',
+        driveFileId: 'drive_existing',
+        mediaId: 'media_existing',
+        mimeType: 'image/jpeg',
+        name: 'anniversary.jpg',
+        provider: 'google-drive',
+        sizeBytes: 1200,
+      },
+      {
+        coupleId: 'couple_alpha',
+        driveFileId: 'drive_missing',
+        mediaId: 'media_missing',
+        mimeType: 'image/png',
+        name: 'removed.png',
+        provider: 'google-drive',
+        sizeBytes: 4400,
+      },
+    ],
+    nowMs: 5000,
+    uid: 'member_one',
+  })
+
+  assert.equal(plan.mediaWrites.length, 1)
+  assert.equal(plan.mediaWrites[0].mediaId, 'media_new')
+  assert.equal(plan.tombstoneWrites.length, 1)
+  assert.equal(plan.tombstoneWrites[0].mediaId, 'media_missing')
+  assert.equal(plan.tombstoneWrites[0].record.deleted, true)
+  assert.deepEqual(plan.counts, {
+    driveFiles: 2,
+    indexedRecords: 2,
+    tombstoned: 1,
+    unchanged: 1,
+    upserted: 1,
+  })
+  assert.equal(plan.syncStateWrite.status, 'ok')
+  assert.equal(plan.auditEvent.action, 'drive.sync')
+  assert.deepEqual(plan.auditEvent.summary, {
+    upserted: 1,
+    tombstoned: 1,
+    unchanged: 1,
+  })
+  assertNoCredentialValues(plan)
+})
+
+test('drive sync planning rejects temporary Drive URLs and cross-couple records', () => {
+  assert.throws(() => planDriveSyncWrites({
+    coupleId: 'couple_alpha',
+    driveRecords: [
+      {
+        coupleId: 'couple_alpha',
+        driveFileId: 'drive_new',
+        mediaId: 'media_new',
+        provider: 'google-drive',
+        thumbnailLink: 'https://lh3.googleusercontent.com/private-temp-url',
+      },
+    ],
+  }), /temporary URLs/)
+
+  assert.throws(() => planDriveSyncWrites({
+    coupleId: 'couple_alpha',
+    driveRecords: [
+      {
+        coupleId: 'couple_beta',
+        driveFileId: 'drive_new',
+        mediaId: 'media_new',
+        provider: 'google-drive',
+      },
+    ],
+  }), /couple mismatch/)
+})
+
+test('drive sync handler verifies membership and writes only planned records', async () => {
+  const writes = []
+  const syncStates = []
+  const auditEvents = []
+
+  const result = await runDriveSyncNow({
+    activeMembershipReader: async ({ coupleId, uid }) => ({ active: coupleId === 'couple_alpha' && uid === 'member_one' }),
+    auditWriter: async (write) => auditEvents.push(write),
+    body: { coupleId: 'couple_alpha' },
+    driveRecordReader: async () => [
+      {
+        coupleId: 'couple_alpha',
+        driveFileId: 'drive_new',
+        mediaId: 'media_new',
+        mimeType: 'image/jpeg',
+        name: 'new.jpg',
+        provider: 'google-drive',
+      },
+    ],
+    headers: { authorization: 'Bearer local-test-token' },
+    indexedMediaReader: async () => [],
+    mediaWriter: async (write) => writes.push(write),
+    nowMs: 6000,
+    syncStateWriter: async (write) => syncStates.push(write),
+    tokenVerifier: async () => ({ uid: 'member_one' }),
+  })
+
+  assert.equal(result.ok, true)
+  assert.equal(writes.length, 1)
+  assert.equal(writes[0].operation, 'upsert')
+  assert.equal(syncStates[0].record.counts.upserted, 1)
+  assert.equal(auditEvents[0].record.actorUid, 'member_one')
+
+  const denied = await runDriveSyncNow({
+    activeMembershipReader: async () => ({ active: false }),
+    auditWriter: async () => {},
+    body: { coupleId: 'couple_alpha' },
+    driveRecordReader: async () => [],
+    headers: { authorization: 'Bearer local-test-token' },
+    indexedMediaReader: async () => [],
+    mediaWriter: async () => {},
+    syncStateWriter: async () => {},
+    tokenVerifier: async () => ({ uid: 'member_two' }),
+  })
+
+  assert.equal(denied.ok, false)
+  assert.equal(denied.code, 'active-couple-membership-required')
 })
