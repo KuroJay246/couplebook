@@ -14,6 +14,27 @@ export const DRIVE_BACKEND_ROUTES = Object.freeze([
   Object.freeze({ key: 'stream', method: 'GET', path: DRIVE_BACKEND_ENDPOINTS.stream, body: ['mediaId'], secretAccess: true }),
 ])
 
+export const DRIVE_BACKEND_CAPABILITIES = Object.freeze([
+  'firebase-id-token-validation',
+  'active-couple-membership-validation',
+  'oauth-state-binding',
+  'oauth-code-exchange-boundary',
+  'indexed-media-authorization',
+  'sync-reconciliation-planning',
+  'sync-now-handler',
+  'media-upload-finalization',
+  'exact-duplicate-preflight',
+  'orphan-recovery-recording',
+  'media-removal-tombstone',
+  'drive-original-delete-confirmation',
+  'drive-change-cursor-planning',
+  'drive-webhook-handler',
+  'drive-watch-renewal',
+  'drive-disconnect-cleanup',
+  'privacy-minimal-audit-events',
+  'credential-field-rejection',
+])
+
 const SAFE_ID = /^[A-Za-z0-9_-]{1,160}$/
 const SAFE_AUTH_CODE = /^[A-Za-z0-9._~/-]{8,4096}$/
 const SAFE_CHECKSUM = /^[a-f0-9]{32,128}$/i
@@ -136,6 +157,10 @@ function createAuditEvent({ coupleId, counts, nowMs, uid }) {
 
 export function listDriveBackendEndpointPaths() {
   return Object.freeze(DRIVE_BACKEND_ROUTES.map((route) => route.path))
+}
+
+export function listDriveBackendCapabilities() {
+  return DRIVE_BACKEND_CAPABILITIES
 }
 
 export function findDriveBackendRoute(path, method = 'GET') {

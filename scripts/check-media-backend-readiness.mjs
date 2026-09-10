@@ -3,7 +3,10 @@ import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { validateFirebaseProject, REQUIRED_PROJECT_ID } from './assert-firebase-project.mjs'
-import { listDriveBackendEndpointPaths } from '../packages/drive-backend/src/index.js'
+import {
+  listDriveBackendCapabilities,
+  listDriveBackendEndpointPaths,
+} from '../packages/drive-backend/src/index.js'
 
 const repoRoot = fileURLToPath(new URL('..', import.meta.url))
 
@@ -27,6 +30,27 @@ const TRUSTED_BACKEND_ENDPOINTS = Object.freeze([
   '/api/drive/webhook',
   '/api/drive/media/:mediaId/thumbnail',
   '/api/drive/media/:mediaId/stream',
+])
+
+const TRUSTED_BACKEND_CAPABILITIES = Object.freeze([
+  'firebase-id-token-validation',
+  'active-couple-membership-validation',
+  'oauth-state-binding',
+  'oauth-code-exchange-boundary',
+  'indexed-media-authorization',
+  'sync-reconciliation-planning',
+  'sync-now-handler',
+  'media-upload-finalization',
+  'exact-duplicate-preflight',
+  'orphan-recovery-recording',
+  'media-removal-tombstone',
+  'drive-original-delete-confirmation',
+  'drive-change-cursor-planning',
+  'drive-webhook-handler',
+  'drive-watch-renewal',
+  'drive-disconnect-cleanup',
+  'privacy-minimal-audit-events',
+  'credential-field-rejection',
 ])
 
 function parseDotEnv(text) {
@@ -77,6 +101,7 @@ export function summarizeRulesDrift(output = '') {
 }
 
 export function evaluateMediaBackendReadiness({
+  backendCapabilitiesImplemented = [],
   appEnv = {},
   backendEndpointsImplemented = [],
   firebaseProject = { ok: false, errors: ['Firebase project guard was not run.'] },
@@ -85,6 +110,8 @@ export function evaluateMediaBackendReadiness({
   const missingEnvKeys = REQUIRED_ENV_KEYS.filter((key) => !appEnv[key])
   const implementedEndpoints = new Set(backendEndpointsImplemented)
   const missingBackendEndpoints = TRUSTED_BACKEND_ENDPOINTS.filter((endpoint) => !implementedEndpoints.has(endpoint))
+  const implementedCapabilities = new Set(backendCapabilitiesImplemented)
+  const missingBackendCapabilities = TRUSTED_BACKEND_CAPABILITIES.filter((capability) => !implementedCapabilities.has(capability))
   const blockers = []
   const warnings = []
 
@@ -106,6 +133,10 @@ export function evaluateMediaBackendReadiness({
     blockers.push(`Trusted Drive backend endpoints are not implemented locally: ${missingBackendEndpoints.join(', ')}`)
   }
 
+  if (missingBackendCapabilities.length) {
+    blockers.push(`Trusted Drive backend local handlers are incomplete: ${missingBackendCapabilities.join(', ')}`)
+  }
+
   blockers.push('Persistent Drive OAuth refresh storage, Drive Changes processing, webhook handling, and partner upload mediation require an approved trusted backend deployment plan.')
 
   return Object.freeze({
@@ -125,6 +156,9 @@ export function evaluateMediaBackendReadiness({
       created: rulesDrift.created || '',
     }),
     backend: Object.freeze({
+      requiredCapabilities: TRUSTED_BACKEND_CAPABILITIES,
+      implementedCapabilities: Object.freeze([...implementedCapabilities]),
+      missingCapabilities: Object.freeze(missingBackendCapabilities),
       requiredEndpoints: TRUSTED_BACKEND_ENDPOINTS,
       implementedEndpoints: Object.freeze([...implementedEndpoints]),
       missingEndpoints: Object.freeze(missingBackendEndpoints),
@@ -146,6 +180,7 @@ function printReport(report) {
   console.log(`Rules exact match: ${report.rules.exactMatch ? 'yes' : 'no'}`)
   console.log(`Rules media-index coverage deployed: ${report.rules.missingMediaCoverage ? 'no' : 'yes or not proven missing'}`)
   console.log(`Trusted backend endpoints implemented: ${report.backend.implementedEndpoints.length}/${report.backend.requiredEndpoints.length}`)
+  console.log(`Trusted backend local handler capabilities implemented: ${report.backend.implementedCapabilities.length}/${report.backend.requiredCapabilities.length}`)
 
   if (report.warnings.length) {
     console.log('\nWarnings:')
@@ -172,6 +207,7 @@ export function runMediaBackendReadinessCheck() {
 
   return evaluateMediaBackendReadiness({
     appEnv,
+    backendCapabilitiesImplemented: listDriveBackendCapabilities(),
     backendEndpointsImplemented: listDriveBackendEndpointPaths(),
     firebaseProject: projectGuard,
     rulesDrift,
