@@ -57,6 +57,8 @@ Approved members may prepare local files in the Album upload queue without autho
 
 The frontend may render the Firestore media index and request a session Drive connection for owner review, but persistent Drive authorization requires a trusted backend.
 
+`packages/drive-backend` contains the local trusted-backend contract and pure request handlers used to prove the backend boundary before deployment. It validates Firebase bearer-token identity, active couple membership, OAuth state binding to `uid` and `coupleId`, and indexed-media couple scope for thumbnail/stream/remove requests. This package is not deployed hosting and does not store Google refresh credentials.
+
 Required backend responsibilities:
 
 - verify Firebase ID tokens and active couple membership;
