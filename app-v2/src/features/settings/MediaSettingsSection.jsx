@@ -1,4 +1,4 @@
-import { Images, RefreshCw, Unplug } from 'lucide-react'
+import { ExternalLink, Images, RefreshCw, Unplug } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { PrimaryButton, SecondaryButton } from '../../components/ui/Button.jsx'
 import { InlineAlert } from '../../components/ui/InlineAlert.jsx'
@@ -114,6 +114,33 @@ function MediaArchitectureItems({ items = [] }) {
   )
 }
 
+function SharedAlbumShortcut({ sharedAlbum }) {
+  const configured = sharedAlbum?.status === 'configured' && sharedAlbum?.url
+
+  return (
+    <ContentCard className="mt-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold" style={{ color: 'var(--cb-text)' }}>{sharedAlbum?.title || 'Shared iCloud Album shortcut'}</p>
+          <p className="cb-body-copy mt-2 text-sm">
+            {sharedAlbum?.description || 'Optional external shortcut for a shared iCloud album. Couple Book does not scrape iCloud or use this link for authorization.'}
+          </p>
+          <p className="cb-body-copy mt-2 text-xs">{sharedAlbum?.boundary || 'Convenience link only'}</p>
+        </div>
+        <StatusBadge tone={configured ? 'success' : 'warning'}>{sharedAlbum?.statusLabel || 'Not configured'}</StatusBadge>
+      </div>
+      {configured ? (
+        <div className="mt-4">
+          <SecondaryButton as="a" href={sharedAlbum.url} rel="noreferrer noopener" target="_blank">
+            <ExternalLink className="size-4" aria-hidden="true" />
+            Open Shared Album
+          </SecondaryButton>
+        </div>
+      ) : null}
+    </ContentCard>
+  )
+}
+
 export function MediaSettingsSection({ media }) {
   const drive = useGoogleDriveConnection()
 
@@ -138,6 +165,7 @@ export function MediaSettingsSection({ media }) {
 
       <MediaConnectionSummary drive={drive} media={media} />
       <MediaSyncActions drive={drive} />
+      <SharedAlbumShortcut sharedAlbum={media?.sharedAlbum} />
 
       {drive.message ? (
         <InlineAlert

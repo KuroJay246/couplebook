@@ -8,6 +8,8 @@ Private media remains private. Couple Book may present stable media metadata, ve
 
 Google Drive is the canonical original-media archive for production media. Firestore stores only stable metadata needed for private Album browsing and recovery.
 
+Settings may expose an optional `VITE_SHARED_ICLOUD_ALBUM_URL` shortcut when the owner configures a valid HTTPS iCloud shared-album URL. This is only a convenience link for manual review/imports. It is not a media provider, not an authorization source, not scraped by Couple Book, and not used by Album read models.
+
 ## Supported Media States
 
 - `none`

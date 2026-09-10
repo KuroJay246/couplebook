@@ -31,6 +31,8 @@ const MIGRATION_PROGRESS_LABELS = Object.freeze({
   '/profile': 'Us',
 })
 
+const SHARED_ALBUM_HOSTS = Object.freeze(['icloud.com', 'www.icloud.com'])
+
 const DATE_LABEL_FORMATTER = new Intl.DateTimeFormat('en-US', {
   month: 'short',
   day: 'numeric',
@@ -221,13 +223,51 @@ export function selectSettingsPrivacy() {
   }
 }
 
-export function selectSettingsMedia(mediaSync = null) {
+export function normalizeSharedIcloudAlbumUrl(value) {
+  const rawUrl = toTrimmedString(value)
+  if (!rawUrl) return ''
+
+  try {
+    const url = new URL(rawUrl)
+    const host = url.hostname.toLowerCase()
+    if (url.protocol !== 'https:') return ''
+    if (!SHARED_ALBUM_HOSTS.includes(host)) return ''
+    if (!url.pathname.toLowerCase().startsWith('/sharedalbum')) return ''
+    return url.href
+  } catch {
+    return ''
+  }
+}
+
+function selectSharedAlbumConfig({ env = {}, settingsSource = null } = {}) {
+  const settings = settingsSource?.data?.settings || {}
+  const configuredUrl = normalizeSharedIcloudAlbumUrl(
+    settings.sharedIcloudAlbumUrl
+      || settings.sharedAlbumUrl
+      || settings.sharedAlbum?.url
+      || env.VITE_SHARED_ICLOUD_ALBUM_URL,
+  )
+
+  return {
+    title: 'Shared iCloud Album shortcut',
+    status: configuredUrl ? 'configured' : 'not-configured',
+    statusLabel: configuredUrl ? 'Ready' : 'Not configured',
+    url: configuredUrl,
+    description: configuredUrl
+      ? 'Opens the owner-configured iCloud shared album in a separate browser context for manual review or imports.'
+      : 'Optional external shortcut for a shared iCloud album. Couple Book does not scrape iCloud, store iCloud credentials, or use this link for authorization.',
+    boundary: 'Convenience link only',
+  }
+}
+
+export function selectSettingsMedia(mediaSync = null, { env = {}, settingsSource = null } = {}) {
   return {
     title: 'Google Drive media provider',
     description: 'Drive authorization is managed here once for the couple. Album stays focused on browsing indexed photos and videos.',
     connectedAccount: 'jaylanspencer99@gmail.com',
     approvedFolderLabel: 'Couple Book media folder',
     backendBoundary: mediaSync?.backend?.zeroCostBoundary || 'Persistent refresh credentials, Drive Changes sync, and thumbnail delivery require an approved trusted backend before they can run for both partners automatically.',
+    sharedAlbum: selectSharedAlbumConfig({ env, settingsSource }),
     items: [
       {
         label: 'Private folder',

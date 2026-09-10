@@ -21,6 +21,8 @@ test('Settings owns Google Drive media provider administration', () => {
   assert.match(mediaSettingsSource, /Media & Sync/)
   assert.match(mediaSettingsSource, /Connect Google Drive/)
   assert.match(mediaSettingsSource, /Sync now/)
+  assert.match(mediaSettingsSource, /Shared iCloud Album shortcut/)
+  assert.match(mediaSettingsSource, /Convenience link only/)
   assert.match(mediaSettingsSource, /Persistent background sync requires trusted backend approval/)
 })
 

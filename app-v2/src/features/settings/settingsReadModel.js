@@ -1,4 +1,4 @@
-import { getRuntimeMode, freezeClone } from '../../data/adapterUtils.js'
+import { getRuntimeMode, freezeClone, readRuntimeEnv } from '../../data/adapterUtils.js'
 import { approvedAccountMigrationGate, routeMigrationStatus } from '../../app/migrationStatus.js'
 import { getMediaSyncArchitectureContract } from '../../services/syncService.js'
 import {
@@ -23,6 +23,7 @@ export function buildSettingsReadModel({
   runtimeMode = getRuntimeMode(),
   migrationStatus = routeMigrationStatus,
   smokeGate = approvedAccountMigrationGate,
+  env = readRuntimeEnv(),
 } = {}) {
   const snapshot = compatibilitySnapshot || {
     status: 'empty',
@@ -44,7 +45,7 @@ export function buildSettingsReadModel({
     status: deriveSettingsStatus(resolvedSettingsSource),
     account: selectSettingsAccount({ approvedUser, authUser }),
     appearance: selectSettingsAppearance(resolvedSettingsSource),
-    media: selectSettingsMedia(mediaSync),
+    media: selectSettingsMedia(mediaSync, { env, settingsSource: resolvedSettingsSource }),
     privacy: selectSettingsPrivacy(),
     compatibility: selectSettingsCompatibility(resolvedSnapshot),
     migration: selectSettingsMigrationProgress(migrationStatus, smokeGate),

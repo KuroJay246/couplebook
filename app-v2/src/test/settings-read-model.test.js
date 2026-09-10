@@ -121,6 +121,8 @@ test('settings read model keeps approved identity, appearance notes, and migrati
   assert.equal(model.appearance.anniversaryView.label, 'Both perspectives')
   assert.equal(model.media.title, 'Google Drive media provider')
   assert.equal(model.media.connectedAccount, 'jaylanspencer99@gmail.com')
+  assert.equal(model.media.sharedAlbum.status, 'not-configured')
+  assert.equal(model.media.sharedAlbum.url, '')
   assert.equal(model.media.items[1].label, 'Temporary previews')
   assert.equal(model.media.items[2].label, 'Fast Album index')
   assert.equal(model.media.items[3].label, 'Continuous Drive sync')
@@ -214,6 +216,50 @@ test('settings read model keeps scoped preference precedence and fallback-only a
   assert.equal(fallbackModel.appearance.anniversaryView.label, 'Jaylan perspective')
   assert.equal(scopedModel.appearance.runtimeTheme.label, 'Midnight Rose')
   assert.equal(fallbackModel.appearance.runtimeTheme.label, 'Paper Hearts')
+})
+
+test('settings read model exposes only valid iCloud shared album shortcut URLs', () => {
+  const configuredModel = buildSettingsReadModel({
+    approvedUser: {
+      username: 'Jaylan',
+      displayName: 'Jaylan',
+    },
+    compatibilitySnapshot: createSnapshot(),
+    env: {
+      VITE_SHARED_ICLOUD_ALBUM_URL: 'https://www.icloud.com/sharedalbum/#B0TESTALBUM',
+    },
+  })
+
+  const invalidModel = buildSettingsReadModel({
+    approvedUser: {
+      username: 'Jaylan',
+      displayName: 'Jaylan',
+    },
+    compatibilitySnapshot: createSnapshot({
+      sources: {
+        settings: {
+          status: 'ready',
+          source: 'legacy-local-storage',
+          data: {
+            settings: {
+              sharedIcloudAlbumUrl: 'https://example.com/not-the-album',
+            },
+          },
+          warnings: [],
+        },
+      },
+    }),
+    env: {
+      VITE_SHARED_ICLOUD_ALBUM_URL: 'javascript:alert(1)',
+    },
+  })
+
+  assert.equal(configuredModel.media.sharedAlbum.status, 'configured')
+  assert.equal(configuredModel.media.sharedAlbum.url, 'https://www.icloud.com/sharedalbum/#B0TESTALBUM')
+  assert.equal(configuredModel.media.sharedAlbum.boundary, 'Convenience link only')
+  assert.equal(invalidModel.media.sharedAlbum.status, 'not-configured')
+  assert.equal(invalidModel.media.sharedAlbum.url, '')
+  assert.doesNotMatch(JSON.stringify(invalidModel), /example\.com|javascript:/)
 })
 
 test('settings read model keeps empty and invalid states safe without exposing raw technical values', () => {
