@@ -65,6 +65,8 @@ The local upload handler validates Firebase identity and active membership, reje
 
 The local removal handler defaults to "Remove from Couple Book" semantics by tombstoning the media index record and leaving the original Drive file intact. Permanent Drive-original deletion is a separate destructive path that requires an explicit `delete-drive-original-{mediaId}` confirmation and a configured backend Drive remover. Both paths write privacy-minimal audit events and never expose raw Drive credentials.
 
+The local Drive Changes/webhook handler validates Google Drive watch-channel headers against an injected channel registry, rejects expired or unknown channels, handles Drive `sync` handshakes by updating safe sync health only, and processes change batches from an injected Drive Changes reader. It advances only a safe change cursor, writes media-index upserts/tombstones through the same sync planner, and keeps audit events counts-only. It does not create a public webhook endpoint, renew real watch channels, or call Google APIs until an owner-approved trusted deployment exists.
+
 Required backend responsibilities:
 
 - verify Firebase ID tokens and active couple membership;

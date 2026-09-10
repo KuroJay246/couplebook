@@ -9,9 +9,11 @@ import {
   completeDriveAuthorization,
   findDriveBackendRoute,
   listDriveBackendEndpointPaths,
+  planDriveChangeProcessing,
   planDriveSyncWrites,
   runDriveMediaRemoval,
   runDriveMediaUpload,
+  runDriveWebhook,
   runDriveSyncNow,
   validateDriveBackendRequest,
 } from '../src/index.js'
@@ -526,4 +528,189 @@ test('drive media upload and removal enforce active couple membership', async ()
     tokenVerifier: async () => ({ uid: 'member_one' }),
   })
   assert.equal(removeDenied.code, 'active-couple-membership-required')
+})
+
+test('drive change processing converts added and removed Drive changes into safe media writes', () => {
+  const plan = planDriveChangeProcessing({
+    changes: [
+      {
+        mediaRecord: {
+          coupleId: 'couple_alpha',
+          driveFileId: 'drive_added',
+          mediaId: 'media_added',
+          mimeType: 'image/jpeg',
+          provider: 'google-drive',
+        },
+      },
+      {
+        driveFileId: 'drive_removed',
+        removed: true,
+      },
+    ],
+    coupleId: 'couple_alpha',
+    indexedRecords: [
+      {
+        coupleId: 'couple_alpha',
+        driveFileId: 'drive_existing',
+        mediaId: 'media_existing',
+        mimeType: 'image/jpeg',
+        provider: 'google-drive',
+      },
+      {
+        coupleId: 'couple_alpha',
+        driveFileId: 'drive_removed',
+        mediaId: 'media_removed',
+        mimeType: 'video/mp4',
+        provider: 'google-drive',
+      },
+    ],
+    nextChangeToken: 'change_token_2',
+    nowMs: 9000,
+  })
+
+  assert.equal(plan.mediaWrites.length, 1)
+  assert.equal(plan.mediaWrites[0].mediaId, 'media_added')
+  assert.equal(plan.tombstoneWrites.length, 1)
+  assert.equal(plan.tombstoneWrites[0].mediaId, 'media_removed')
+  assert.equal(plan.syncStateWrite.lastChangeToken, 'change_token_2')
+  assert.equal(plan.syncStateWrite.pendingChangeCount, 2)
+  assert.deepEqual(plan.removedDriveFileIds, ['drive_removed'])
+  assertNoCredentialValues(plan)
+})
+
+test('drive change processing rejects temporary URL and credential fields', () => {
+  assert.throws(() => planDriveChangeProcessing({
+    changes: [
+      {
+        mediaRecord: {
+          coupleId: 'couple_alpha',
+          driveFileId: 'drive_added',
+          mediaId: 'media_added',
+          provider: 'google-drive',
+          webContentLink: 'https://drive.google.com/private-temp',
+        },
+      },
+    ],
+    coupleId: 'couple_alpha',
+  }), /temporary URLs|credential fields/)
+})
+
+test('drive webhook accepts sync handshakes and records safe sync health only', async () => {
+  const syncStates = []
+  const result = await runDriveWebhook({
+    auditWriter: async () => {},
+    channelReader: async () => ({
+      coupleId: 'couple_alpha',
+      expiresAtMs: 20000,
+      provider: 'google-drive',
+      startChangeToken: 'start_token_1',
+    }),
+    changesReader: async () => {
+      throw new Error('sync handshake should not read changes')
+    },
+    headers: {
+      'x-goog-channel-id': 'channel_alpha',
+      'x-goog-resource-id': 'resource_alpha',
+      'x-goog-resource-state': 'sync',
+    },
+    indexedMediaReader: async () => [],
+    mediaWriter: async () => {},
+    nowMs: 10000,
+    syncStateReader: async () => ({ lastChangeToken: 'start_token_1' }),
+    syncStateWriter: async (write) => syncStates.push(write),
+  })
+
+  assert.equal(result.ok, true)
+  assert.equal(result.resourceState, 'sync')
+  assert.equal(syncStates.length, 1)
+  assert.equal(syncStates[0].record.lastChangeToken, 'start_token_1')
+  assertNoCredentialValues(syncStates[0])
+})
+
+test('drive webhook reads changes, writes media plans, advances cursor, and audits counts', async () => {
+  const mediaWrites = []
+  const syncStates = []
+  const audits = []
+  const result = await runDriveWebhook({
+    auditWriter: async (write) => audits.push(write),
+    channelReader: async () => ({
+      coupleId: 'couple_alpha',
+      expiresAtMs: 20000,
+      provider: 'google-drive',
+      startChangeToken: 'start_token_1',
+    }),
+    changesReader: async ({ startToken }) => {
+      assert.equal(startToken, 'start_token_1')
+      return {
+        changes: [
+          {
+            mediaRecord: {
+              coupleId: 'couple_alpha',
+              driveFileId: 'drive_added',
+              mediaId: 'media_added',
+              mimeType: 'image/jpeg',
+              provider: 'google-drive',
+            },
+          },
+        ],
+        nextChangeToken: 'change_token_2',
+      }
+    },
+    headers: {
+      'x-goog-channel-id': 'channel_alpha',
+      'x-goog-resource-id': 'resource_alpha',
+      'x-goog-resource-state': 'exists',
+    },
+    indexedMediaReader: async () => [],
+    mediaWriter: async (write) => mediaWrites.push(write),
+    nowMs: 11000,
+    syncStateReader: async () => ({ lastChangeToken: 'start_token_1' }),
+    syncStateWriter: async (write) => syncStates.push(write),
+  })
+
+  assert.equal(result.ok, true)
+  assert.equal(result.counts.upserted, 1)
+  assert.equal(mediaWrites.length, 1)
+  assert.equal(syncStates[0].record.lastChangeToken, 'change_token_2')
+  assert.equal(audits[0].record.action, 'drive.sync')
+  assertNoCredentialValues(result)
+})
+
+test('drive webhook rejects missing and expired watch channels', async () => {
+  const missing = await runDriveWebhook({
+    auditWriter: async () => {},
+    channelReader: async () => null,
+    changesReader: async () => ({}),
+    headers: {
+      'x-goog-channel-id': 'channel_alpha',
+      'x-goog-resource-id': 'resource_alpha',
+      'x-goog-resource-state': 'exists',
+    },
+    indexedMediaReader: async () => [],
+    mediaWriter: async () => {},
+    syncStateReader: async () => ({}),
+    syncStateWriter: async () => {},
+  })
+  assert.equal(missing.code, 'drive-watch-channel-not-found')
+
+  const expired = await runDriveWebhook({
+    auditWriter: async () => {},
+    channelReader: async () => ({
+      coupleId: 'couple_alpha',
+      expiresAtMs: 1000,
+      provider: 'google-drive',
+    }),
+    changesReader: async () => ({}),
+    headers: {
+      'x-goog-channel-id': 'channel_alpha',
+      'x-goog-resource-id': 'resource_alpha',
+      'x-goog-resource-state': 'exists',
+    },
+    indexedMediaReader: async () => [],
+    mediaWriter: async () => {},
+    nowMs: 2000,
+    syncStateReader: async () => ({}),
+    syncStateWriter: async () => {},
+  })
+  assert.equal(expired.code, 'drive-watch-channel-expired')
 })

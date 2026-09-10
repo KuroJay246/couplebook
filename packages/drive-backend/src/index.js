@@ -18,6 +18,7 @@ const SAFE_ID = /^[A-Za-z0-9_-]{1,160}$/
 const SAFE_AUTH_CODE = /^[A-Za-z0-9._~/-]{8,4096}$/
 const SAFE_CHECKSUM = /^[a-f0-9]{32,128}$/i
 const SUPPORTED_MEDIA_TYPE = /^(image|video)\//
+const SAFE_CHANGE_TOKEN = /^[A-Za-z0-9._~/-]{1,500}$/
 const DEFAULT_STATE_TTL_MS = 10 * 60 * 1000
 const FORBIDDEN_SYNC_FIELD_PATTERN = /(?:^|[_-])(access[_-]?token|refresh[_-]?token|client[_-]?secret|thumbnaillink|webcontentlink|previewurl|downloadurl|signedurl)(?:$|[_-])/i
 
@@ -31,6 +32,10 @@ function isSafeAuthCode(value) {
 
 function isSafeChecksum(value) {
   return typeof value === 'string' && SAFE_CHECKSUM.test(value)
+}
+
+function isSafeChangeToken(value) {
+  return typeof value === 'string' && SAFE_CHANGE_TOKEN.test(value)
 }
 
 function getBearerToken(headers = {}) {
@@ -85,6 +90,19 @@ function createMediaAuditEvent({ action, coupleId, mediaId, nowMs, uid }) {
     provider: 'google-drive',
     resourceId: mediaId,
     resourceType: 'media',
+  })
+}
+
+function createSyncHealthRecord({ coupleId, lastChangeToken = '', nowMs, pendingChangeCount = 0, status = 'current' }) {
+  if (!isSafeId(coupleId || '')) throw new Error('Drive sync health requires a safe coupleId.')
+  if (lastChangeToken && !isSafeChangeToken(lastChangeToken)) throw new Error('Drive sync health requires a safe change token.')
+  return Object.freeze({
+    coupleId,
+    lastChangeToken,
+    lastWebhookAtMs: nowMs,
+    pendingChangeCount,
+    provider: 'google-drive',
+    status,
   })
 }
 
@@ -650,6 +668,135 @@ export async function runDriveMediaRemoval({
     status: 200,
     deletedOriginal: deleteOriginal,
     mediaId: authorized.mediaId,
+  })
+}
+
+export function planDriveChangeProcessing({
+  changes = [],
+  coupleId,
+  indexedRecords = [],
+  nextChangeToken = '',
+  nowMs = Date.now(),
+  uid = 'drive_webhook',
+} = {}) {
+  if (!isSafeId(coupleId || '')) throw new Error('Drive change processing requires a safe coupleId.')
+  if (nextChangeToken && !isSafeChangeToken(nextChangeToken)) throw new Error('Drive change processing requires a safe next change token.')
+  if (!Array.isArray(changes)) throw new Error('Drive changes must be an array.')
+
+  const upsertRecords = []
+  const removedDriveFileIds = new Set()
+  for (const change of changes) {
+    if (!change || typeof change !== 'object') throw new Error('Drive change entry is required.')
+    if (hasForbiddenSyncField(change)) throw new Error('Drive changes must not include temporary URLs or credential fields.')
+    const removed = change.removed === true || change.deleted === true
+    if (removed) {
+      const driveFileId = String(change.driveFileId || change.fileId || '')
+      if (!isSafeId(driveFileId)) throw new Error('Removed Drive change requires a safe driveFileId.')
+      removedDriveFileIds.add(driveFileId)
+      continue
+    }
+    const record = change.mediaRecord || change.record
+    assertSafeMediaRecord(record, coupleId)
+    upsertRecords.push(record)
+  }
+
+  const removedIndexedRecords = indexedRecords.filter((record) => {
+    assertSafeMediaRecord(record, coupleId)
+    return removedDriveFileIds.has(record.driveFileId)
+  })
+  const plan = planDriveSyncWrites({
+    coupleId,
+    driveRecords: [
+      ...upsertRecords,
+      ...indexedRecords.filter((record) => !removedDriveFileIds.has(record.driveFileId)),
+    ],
+    indexedRecords,
+    nowMs,
+    uid,
+  })
+  const syncStateWrite = Object.freeze({
+    ...plan.syncStateWrite,
+    lastChangeToken: nextChangeToken,
+    pendingChangeCount: changes.length,
+    status: 'current',
+  })
+  const result = Object.freeze({
+    ...plan,
+    removedDriveFileIds: Object.freeze([...removedDriveFileIds]),
+    removedIndexedCount: removedIndexedRecords.length,
+    syncStateWrite,
+  })
+  assertNoCredentialValues(result)
+  if (hasForbiddenSyncField(result)) throw new Error('Drive change plan contains forbidden fields.')
+  return result
+}
+
+export async function runDriveWebhook({
+  auditWriter,
+  channelReader,
+  changesReader,
+  headers = {},
+  indexedMediaReader,
+  mediaWriter,
+  nowMs = Date.now(),
+  syncStateReader,
+  syncStateWriter,
+} = {}) {
+  const channelId = String(headers['x-goog-channel-id'] || headers['X-Goog-Channel-Id'] || '')
+  const resourceId = String(headers['x-goog-resource-id'] || headers['X-Goog-Resource-Id'] || '')
+  const resourceState = String(headers['x-goog-resource-state'] || headers['X-Goog-Resource-State'] || '')
+  if (!isSafeId(channelId)) return Object.freeze({ ok: false, status: 400, code: 'invalid-drive-channel-id' })
+  if (!isSafeId(resourceId)) return Object.freeze({ ok: false, status: 400, code: 'invalid-drive-resource-id' })
+  if (typeof channelReader !== 'function') return Object.freeze({ ok: false, status: 500, code: 'channel-reader-not-configured' })
+  if (typeof changesReader !== 'function') return Object.freeze({ ok: false, status: 500, code: 'changes-reader-not-configured' })
+  if (typeof indexedMediaReader !== 'function') return Object.freeze({ ok: false, status: 500, code: 'indexed-media-reader-not-configured' })
+  if (typeof mediaWriter !== 'function') return Object.freeze({ ok: false, status: 500, code: 'media-writer-not-configured' })
+  if (typeof syncStateReader !== 'function') return Object.freeze({ ok: false, status: 500, code: 'sync-state-reader-not-configured' })
+  if (typeof syncStateWriter !== 'function') return Object.freeze({ ok: false, status: 500, code: 'sync-state-writer-not-configured' })
+  if (typeof auditWriter !== 'function') return Object.freeze({ ok: false, status: 500, code: 'audit-writer-not-configured' })
+
+  const channel = await channelReader({ channelId, resourceId })
+  if (!channel || channel.provider !== 'google-drive') return Object.freeze({ ok: false, status: 404, code: 'drive-watch-channel-not-found' })
+  if (!isSafeId(channel.coupleId || '')) return Object.freeze({ ok: false, status: 500, code: 'drive-watch-channel-corrupt' })
+  if (Number(channel.expiresAtMs || 0) <= nowMs) return Object.freeze({ ok: false, status: 410, code: 'drive-watch-channel-expired' })
+
+  const syncState = await syncStateReader({ coupleId: channel.coupleId })
+  const startToken = String(syncState?.lastChangeToken || channel.startChangeToken || '')
+  if (startToken && !isSafeChangeToken(startToken)) return Object.freeze({ ok: false, status: 500, code: 'drive-change-token-corrupt' })
+
+  if (resourceState === 'sync') {
+    const record = createSyncHealthRecord({
+      coupleId: channel.coupleId,
+      lastChangeToken: startToken,
+      nowMs,
+      pendingChangeCount: 0,
+      status: 'current',
+    })
+    await syncStateWriter({ coupleId: channel.coupleId, record })
+    return Object.freeze({ ok: true, status: 200, accepted: true, resourceState })
+  }
+
+  const changeBatch = await changesReader({ coupleId: channel.coupleId, startToken })
+  const indexedRecords = await indexedMediaReader({ coupleId: channel.coupleId })
+  const plan = planDriveChangeProcessing({
+    changes: changeBatch?.changes || [],
+    coupleId: channel.coupleId,
+    indexedRecords,
+    nextChangeToken: changeBatch?.nextChangeToken || startToken,
+    nowMs,
+  })
+  for (const write of [...plan.mediaWrites, ...plan.tombstoneWrites]) {
+    await mediaWriter({ coupleId: channel.coupleId, ...write })
+  }
+  await syncStateWriter({ coupleId: channel.coupleId, record: plan.syncStateWrite })
+  await auditWriter({ coupleId: channel.coupleId, record: plan.auditEvent })
+
+  return Object.freeze({
+    ok: true,
+    status: 200,
+    accepted: true,
+    counts: plan.counts,
+    resourceState,
   })
 }
 
