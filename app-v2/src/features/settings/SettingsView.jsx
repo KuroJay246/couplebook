@@ -56,7 +56,6 @@ const SETTINGS_CATEGORIES = [
   ['media', 'Photos and videos'],
   ['notifications', 'Notifications'],
   ['privacy', 'Privacy and access'],
-  ['preferences', 'Preferences'],
   ['advanced', 'Advanced'],
 ]
 
@@ -294,7 +293,7 @@ export function SettingsView({ compatibilityError, compatibilityState, model, on
       <PageHeader
         eyebrow="Settings"
         title="Settings"
-        description="Appearance, special pages, privacy details, and the personal controls that belong around your private shared journal."
+        description="Account, appearance, media, notifications, privacy, and diagnostics."
         actions={(
           <>
             <StatusBadge tone={dirty ? 'warning' : 'success'}>
@@ -322,7 +321,7 @@ export function SettingsView({ compatibilityError, compatibilityState, model, on
         ))}
       </nav>
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(20rem,0.9fr)]">
+      {activeCategory === 'profiles' ? <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(20rem,0.9fr)]">
         <Surface className="cb-page-frame">
           <p className="cb-kicker">Special moments</p>
           <h3 className="cb-page-title mt-2 text-3xl">Birthday, Valentine, and Confession</h3>
@@ -382,9 +381,9 @@ export function SettingsView({ compatibilityError, compatibilityState, model, on
             <SecondaryButton as={Link} to="/contract">Open Contract</SecondaryButton>
           </div>
         </Surface>
-      </div>
+      </div> : null}
 
-      <Surface className="cb-page-frame">
+      {activeCategory === 'appearance' ? <Surface className="cb-page-frame">
         <div className="flex flex-col gap-4 border-b pb-4 sm:flex-row sm:items-end sm:justify-between" style={{ borderColor: 'var(--cb-border)' }}>
           <div>
             <p className="cb-kicker">Appearance</p>
@@ -429,15 +428,15 @@ export function SettingsView({ compatibilityError, compatibilityState, model, on
             onChange={(value) => updateField('reducedMotion', value)}
           />
         </div>
-      </Surface>
+      </Surface> : null}
 
-      <NotificationSettingsSection
+      {activeCategory === 'notifications' ? <NotificationSettingsSection
         notifications={model.notifications}
         onToggle={updateNotificationPreference}
         values={form.notifications}
-      />
+      /> : null}
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(20rem,0.9fr)]">
+      {activeCategory === 'privacy' ? (
         <Surface>
           <div className="flex items-start gap-3">
             <span
@@ -501,10 +500,12 @@ export function SettingsView({ compatibilityError, compatibilityState, model, on
             ))}
           </div>
         </Surface>
+      ) : null}
 
-        <MediaSettingsSection media={model.media} />
+      {activeCategory === 'media' ? <MediaSettingsSection media={model.media} /> : null}
 
-        <details className="cb-advanced-panel">
+      {activeCategory === 'advanced' ? (
+        <details className="cb-advanced-panel" open>
           <summary className="cb-advanced-summary">
             <span>
               <span className="cb-kicker">Advanced</span>
@@ -552,7 +553,7 @@ export function SettingsView({ compatibilityError, compatibilityState, model, on
           </Surface>
           </div>
         </details>
-      </div>
+      ) : null}
 
       <ConfirmDialog
         confirmLabel="Sign out"

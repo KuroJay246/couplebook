@@ -5,8 +5,8 @@ import { EmptyState } from '../../components/ui/EmptyState.jsx'
 import { ErrorState } from '../../components/ui/ErrorState.jsx'
 import { FormField, SelectField, TextAreaField, TextField } from '../../components/ui/FormField.jsx'
 import { InlineAlert } from '../../components/ui/InlineAlert.jsx'
+import { LoadingSkeleton } from '../../components/ui/LoadingSkeleton.jsx'
 import { LoadingState } from '../../components/ui/LoadingState.jsx'
-import { PageHeader } from '../../components/ui/PageHeader.jsx'
 import { SearchField } from '../../components/ui/SearchField.jsx'
 import { SegmentedControl } from '../../components/ui/SegmentedControl.jsx'
 import { StatusBadge } from '../../components/ui/StatusBadge.jsx'
@@ -61,11 +61,11 @@ function PlanForm({ initialPlan, onCancel, onSave, saving }) {
   }
 
   return (
-    <Surface as="form" onSubmit={submit}>
+    <Surface as="form" className="cb-plan-form" onSubmit={submit}>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">{form.id ? 'Edit plan' : 'New plan'}</p>
-          <h3 className="mt-2 font-serif text-3xl text-[var(--cb-text)]">{form.id ? 'Update this plan' : 'Add a new plan'}</h3>
+          <h3 className="mt-2 text-2xl font-semibold text-[var(--cb-text)]">{form.id ? 'Update this plan' : 'Add a new plan'}</h3>
         </div>
         <SecondaryButton onClick={onCancel}>Cancel</SecondaryButton>
       </div>
@@ -99,12 +99,11 @@ function PlanForm({ initialPlan, onCancel, onSave, saving }) {
 
 function PlanCard({ onConvert, onEdit, onStatus, plan, saving }) {
   return (
-    <ContentCard className={`cb-plan-card cb-plan-card-${plan.status} flex h-full flex-col gap-4`}>
+    <article className={`cb-plan-row cb-plan-card-${plan.status}`}>
       <div className="flex items-start justify-between gap-3">
         <div>
-          <StatusBadge tone={planTone(plan.status)}>{statusLabel(plan.status)}</StatusBadge>
-          <h3 className="mt-3 text-xl font-bold text-[var(--cb-text)]">{plan.title}</h3>
-          <p className="mt-2 text-sm text-[var(--cb-text-secondary)]">{plan.category}</p>
+          <h3>{plan.title}</h3>
+          <p>{plan.category}{plan.targetDate ? ` / ${plan.targetDate}` : ''}</p>
         </div>
         <ContextMenu
           label={`Actions for ${plan.title}`}
@@ -116,26 +115,16 @@ function PlanCard({ onConvert, onEdit, onStatus, plan, saving }) {
         />
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="rounded-2xl border border-[var(--cb-border)] bg-[var(--cb-surface-soft)] p-3">
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-text-muted)]">Target date</p>
-          <p className="mt-2 text-sm font-semibold text-[var(--cb-text)]">{plan.targetDate || 'No date yet'}</p>
-        </div>
-        <div className="rounded-2xl border border-[var(--cb-border)] bg-[var(--cb-surface-soft)] p-3">
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-text-muted)]">Status</p>
-          <p className="mt-2 text-sm font-semibold text-[var(--cb-text)]">{statusLabel(plan.status)}</p>
-        </div>
-      </div>
+      {plan.notes ? <p className="cb-plan-note">{plan.notes}</p> : null}
 
-      {plan.notes ? <p className="text-sm leading-6 text-[var(--cb-text-secondary)]">{plan.notes}</p> : <p className="text-sm leading-6 text-[var(--cb-text-muted)]">No extra notes yet.</p>}
-
-      <div className="mt-auto flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <StatusBadge tone={planTone(plan.status)}>{statusLabel(plan.status)}</StatusBadge>
         <SecondaryButton onClick={() => onEdit(plan)}>Edit</SecondaryButton>
         {plan.status !== 'completed' ? <PrimaryButton disabled={saving} onClick={() => onStatus(plan, 'completed')}><CheckCircle2 className="size-4" />Complete</PrimaryButton> : null}
         {plan.status === 'completed' && !plan.convertedMemoryId ? <PrimaryButton disabled={saving} onClick={() => onConvert(plan)}>Turn into memory</PrimaryButton> : null}
         {plan.convertedMemoryId ? <StatusBadge tone="success">Memory created</StatusBadge> : null}
       </div>
-    </ContentCard>
+    </article>
   )
 }
 
@@ -148,16 +137,16 @@ function PlansSummary({ counts, setStatus, status }) {
   ]
 
   return (
-    <div className="cb-plans-summary grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="cb-plans-summary">
       {items.map((item) => (
         <button
           key={item.key}
           type="button"
           onClick={() => setStatus(item.key)}
-          className={`rounded-2xl border p-4 text-left transition ${status === item.key ? 'is-active border-[#9A5260] bg-[#FCEEF1]' : 'border-[var(--cb-border)] bg-[var(--cb-surface)] hover:bg-[var(--cb-accent-soft)]'}`}
+          className={status === item.key ? 'is-active' : ''}
         >
-          <p className="text-3xl font-bold text-[var(--cb-text)]">{item.value}</p>
-          <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[#80685B]">{item.label}</p>
+          <span>{item.label}</span>
+          <strong>{item.value}</strong>
         </button>
       ))}
     </div>
@@ -206,7 +195,13 @@ export function PlansView({ model, onRefresh, search, setSearch, setStatus, stat
   }
 
   if (model.status === 'loading') {
-    return <LoadingState message="Loading Plans..." />
+    return (
+      <section className="cb-plans-redesign" data-route="plans">
+        <div className="cb-plans-header"><h2>Plans</h2><p>Loading...</p></div>
+        <LoadingSkeleton className="h-14" />
+        <LoadingSkeleton className="h-24" />
+      </section>
+    )
   }
 
   if (model.status === 'invalid' || model.status === 'unavailable') {
@@ -214,36 +209,21 @@ export function PlansView({ model, onRefresh, search, setSearch, setStatus, stat
   }
 
   return (
-    <section className="space-y-5" data-route="plans">
-      <PageHeader
-        eyebrow="Plans"
-        title="Things we want to do together"
-        description="Date ideas, trips, gifts, restaurants, and goals."
-        actions={(
-          <>
-            <StatusBadge tone="info">{model.counts.total} active</StatusBadge>
-            <PrimaryButton onClick={() => { setEditing(null); setShowForm(true) }}><Sparkles className="size-4" />Add plan</PrimaryButton>
-          </>
-        )}
-      />
+    <section className="cb-plans-redesign" data-route="plans">
+      <div className="cb-plans-header">
+        <div>
+          <h2>Plans</h2>
+          <p>{model.counts.total} saved</p>
+        </div>
+        <PrimaryButton onClick={() => { setEditing(null); setShowForm(true) }}><Sparkles className="size-4" />Add Plan</PrimaryButton>
+      </div>
 
       {feedback.message ? <InlineAlert description={feedback.message} tone={feedback.kind === 'error' ? 'error' : 'success'} /> : null}
 
-      <section className="cb-plans-hero">
-        <div>
-          <p className="cb-kicker">Next together</p>
-          <h2>Save what you want to do next.</h2>
-        </div>
-        <div className="cb-plans-hero-actions">
-          <PrimaryButton aria-label="Start a new plan" onClick={() => { setEditing(null); setShowForm(true) }}><Sparkles className="size-4" />Start one</PrimaryButton>
-          <SecondaryButton onClick={() => setStatus('planned')}>See planned</SecondaryButton>
-        </div>
-      </section>
-
       <PlansSummary counts={model.counts} setStatus={setStatus} status={status} />
 
-      <Surface>
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+      <Surface className="cb-plans-toolbar">
+        <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <SearchField label="Search plans" onChange={(event) => setSearch(event.target.value)} placeholder="Search ideas, places, notes" value={search} />
           <SegmentedControl label="Status filter" onChange={setStatus} options={statusOptions} value={status} />
         </div>
@@ -259,7 +239,7 @@ export function PlansView({ model, onRefresh, search, setSearch, setStatus, stat
       ) : null}
 
       {model.filtered.length ? (
-        <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+        <div className="cb-plans-list">
           {model.filtered.map((plan) => (
             <PlanCard
               key={plan.id}

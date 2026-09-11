@@ -12,10 +12,9 @@ test('profile route uses the feature hook and owner editing view', async () => {
 
   assert.match(profilePageSource, /useProfileData/)
   assert.match(profilePageSource, /ProfileView/)
-  assert.match(profileViewSource, /Our relationship/)
-  assert.match(profileViewSource, /PageTabs/)
-  assert.match(profileViewSource, /Shared matches/)
-  assert.match(profileViewSource, /Our Promises/)
+  assert.match(profileViewSource, /cb-us-redesign/)
+  assert.match(profileViewSource, /relationshipTitle/)
+  assert.match(profileViewSource, /Favorites/)
   assert.match(profileViewSource, /useOwnerWrite/)
   assert.match(profileViewSource, /ProfileEditDialog/)
   assert.match(profileViewSource, /saveProfile/)
@@ -26,7 +25,8 @@ test('profile route uses the feature hook and owner editing view', async () => {
 test('profile view keeps unavailable states calm and does not invent private details', async () => {
   const profileViewSource = await readSource('../features/profile/ProfileView.jsx')
 
-  assert.match(profileViewSource, /No note yet\./)
-  assert.match(profileViewSource, /Private account details stay in Settings\./)
+  assert.match(profileViewSource, /Add note/)
+  assert.match(profileViewSource, /No shared favorites yet\./)
+  assert.doesNotMatch(profileViewSource, /PageTabs|Our Promises|Open Contract/)
   assert.doesNotMatch(profileViewSource, /UIDs, membership status, Firestore paths/)
 })

@@ -6,9 +6,10 @@ const gallerySource = await readFile(new URL('../features/gallery/GalleryView.js
 const settingsSource = await readFile(new URL('../features/settings/SettingsView.jsx', import.meta.url), 'utf8')
 const mediaSettingsSource = await readFile(new URL('../features/settings/MediaSettingsSection.jsx', import.meta.url), 'utf8')
 const styleSource = await readFile(new URL('../styles/index.css', import.meta.url), 'utf8')
+const albumStyleSource = await readFile(new URL('../styles/pages/album.css', import.meta.url), 'utf8')
 
 test('Album keeps management controls behind an explicit secondary action', () => {
-  assert.match(gallerySource, /Add details/)
+  assert.match(gallerySource, /Manage/)
   assert.match(gallerySource, /manageUploadsOpen/)
   assert.match(gallerySource, /aria-label="Album management tools"/)
   assert.doesNotMatch(gallerySource, /Manage Media & Sync/)
@@ -36,6 +37,6 @@ test('Settings keeps technical health behind Advanced', () => {
 
 test('responsive web styling defines a mobile album and advanced-panel treatment', () => {
   assert.match(styleSource, /@media \(max-width: 640px\)/)
-  assert.match(styleSource, /\.cb-album-intro/)
+  assert.match(albumStyleSource, /\.cb-album-header/)
   assert.match(styleSource, /\.cb-advanced-summary/)
 })

@@ -40,7 +40,7 @@ export function BrandWordmark({ compact = false }) {
   return (
     <span className={compact ? 'sr-only' : 'cb-brand-copy'}>
       <span className="cb-brand-title">Couple Book</span>
-      <span className="cb-brand-subtitle">Private shared journal</span>
+      <span className="cb-brand-subtitle">Memories for two</span>
     </span>
   )
 }

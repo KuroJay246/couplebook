@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
   BookHeart,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Gift,
@@ -24,8 +23,6 @@ import { protectedRouteMeta } from '../app/routeConfig'
 import { useAuth } from '../auth/useAuth'
 import { BrandMark } from '../components/BrandMark'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog.jsx'
-import { QuickAddMemory } from '../features/memories/QuickAddMemory.jsx'
-import { useTheme } from '../theme/useTheme.js'
 import { mobilePrimaryNavigation } from '../utils/navigation.js'
 
 const NAV_ICON_BY_NAME = {
@@ -43,9 +40,8 @@ const NAV_ICON_BY_NAME = {
 }
 
 const desktopNavGroups = [
-  { label: 'The book', items: ['/dashboard', '/timeline', '/gallery', '/profile', '/plans'] },
-  { label: 'Special moments', items: ['/birthday', '/valentine', '/confession'] },
-  { label: 'More', items: ['/favorites', '/settings'] },
+  { label: 'Main', items: ['/dashboard', '/timeline', '/gallery', '/profile', '/plans'] },
+  { label: 'More', items: ['/favorites', '/birthday', '/valentine', '/confession', '/settings'] },
 ]
 
 const mobileMoreGroups = [
@@ -101,21 +97,17 @@ function SidebarContent({ collapsed = false, groups, onNavigate, onRequestSignOu
         ) : null}
       </div>
 
-      <div className={`${collapsed ? 'mx-3 px-2 py-3' : 'mx-4 px-4 py-4'} cb-nav-panel overflow-hidden`}>
+      <div className={`${collapsed ? 'mx-3 px-2 py-3' : 'mx-3 px-3 py-3'} cb-nav-panel overflow-hidden`}>
         <Link to="/profile" onClick={onNavigate} className="flex w-full min-w-0 items-center justify-between gap-3 text-left">
           <span className="min-w-0 flex-1 overflow-hidden">
             <span className={collapsed ? 'sr-only' : 'cb-kicker'}>
-              Private book
+              Couple Book
             </span>
             <span className={`${collapsed ? 'sr-only' : 'mt-2 block'} max-w-full truncate text-sm font-semibold`} style={{ color: 'var(--cb-text)' }}>
               {displayName}
             </span>
-            <span className={`${collapsed ? 'sr-only' : 'mt-1 block'} max-w-full truncate text-xs`} style={{ color: 'var(--cb-text-muted)' }}>
-              Shared with care
-            </span>
             {collapsed ? <HeartHandshake className="mx-auto size-5" style={{ color: 'var(--cb-text-secondary)' }} aria-hidden="true" /> : null}
           </span>
-          {!collapsed ? <ChevronDown className="size-4 shrink-0" style={{ color: 'var(--cb-text-muted)' }} aria-hidden="true" /> : null}
         </Link>
       </div>
 
@@ -192,15 +184,12 @@ function SidebarContent({ collapsed = false, groups, onNavigate, onRequestSignOu
 
 export function AppShell() {
   const [menuOpen, setMenuOpen] = useState(false)
-  const [quickAddOpen, setQuickAddOpen] = useState(false)
   const [signOutState, setSignOutState] = useState({ open: false, pending: false })
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const menuButtonRef = useRef(null)
   const mobilePanelRef = useRef(null)
   const location = useLocation()
-  const { approvedUser, signOut, user } = useAuth()
-  const { activeThemeDefinition } = useTheme()
-  const displayName = surfaceDisplayName(approvedUser?.displayName || approvedUser?.username || user?.email) || 'Private reader'
+  const { signOut, user } = useAuth()
   const mobileItems = useMemo(
     () =>
       mobilePrimaryNavigation(protectedRouteMeta).map((route) => ({
@@ -210,7 +199,6 @@ export function AppShell() {
     [],
   )
   const currentRoute = protectedRouteMeta.find((route) => route.path === location.pathname) || protectedRouteMeta[0]
-  const showShellAddMemory = location.pathname === '/dashboard' || location.pathname === '/timeline'
 
   useEffect(() => {
     if (!menuOpen) return undefined
@@ -270,7 +258,7 @@ export function AppShell() {
     <div className="cb-app-shell">
       <aside
         className="fixed inset-y-0 left-0 z-30 hidden transition-[width] duration-200 lg:block"
-        style={{ width: sidebarCollapsed ? '92px' : '272px' }}
+        style={{ width: sidebarCollapsed ? '84px' : '220px' }}
       >
         <SidebarContent
           collapsed={sidebarCollapsed}
@@ -317,9 +305,9 @@ export function AppShell() {
 
       <div
         className="main-content min-w-0 transition-[padding] duration-200 lg:pl-[var(--shell-sidebar-width)]"
-        style={{ '--shell-sidebar-width': sidebarCollapsed ? '92px' : '272px' }}
+        style={{ '--shell-sidebar-width': sidebarCollapsed ? '84px' : '220px' }}
       >
-        <header className="cb-shell-header app-safe-top sticky top-0 z-20 px-3 pb-4 pt-3 sm:px-6 lg:px-8">
+        <header className="cb-shell-header app-safe-top sticky top-0 z-20 px-3 py-3 sm:px-6 lg:px-8">
           <div className="cb-page-container flex items-center gap-3">
             <button
               ref={menuButtonRef}
@@ -332,24 +320,8 @@ export function AppShell() {
               <Menu className="size-5" />
             </button>
             <div className="min-w-0 flex-1">
-              <p className="cb-kicker">{currentRoute.chapter || 'Private shared journal'}</p>
-              <h1 className="cb-page-title mt-1 truncate text-2xl sm:text-3xl">{currentRoute.title}</h1>
-              <p className="cb-body-copy mt-2 hidden text-sm sm:block">{currentRoute.summary}</p>
+              <h1 className="truncate text-xl font-semibold text-[var(--cb-text)] sm:text-2xl">{currentRoute.title}</h1>
             </div>
-            <div className="hidden items-center gap-2 xl:flex">
-              <span className="cb-shell-meta-pill">{activeThemeDefinition.name}</span>
-              <span className="cb-shell-meta-pill">{displayName}</span>
-            </div>
-            {showShellAddMemory ? (
-              <button
-                type="button"
-                onClick={() => setQuickAddOpen(true)}
-                className="cb-button cb-button-primary hidden min-h-11 px-4 sm:inline-flex"
-              >
-                <Sparkles className="size-4" aria-hidden="true" />
-                Add Memory
-              </button>
-            ) : null}
           </div>
         </header>
 
@@ -373,7 +345,6 @@ export function AppShell() {
         </nav>
       </div>
 
-      <QuickAddMemory onClose={() => setQuickAddOpen(false)} open={quickAddOpen} />
       <ConfirmDialog
         confirmLabel="Sign out"
         message="This closes the approved Couple Book session on this device and returns to the sign-in screen."

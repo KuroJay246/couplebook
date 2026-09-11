@@ -11,7 +11,6 @@ import { InlineAlert } from '../../components/ui/InlineAlert.jsx'
 import { LoadingSkeleton } from '../../components/ui/LoadingSkeleton.jsx'
 import { LoadingState } from '../../components/ui/LoadingState.jsx'
 import { MediaPreview } from '../../components/ui/MediaPreview.jsx'
-import { PageHeader } from '../../components/ui/PageHeader.jsx'
 import { SearchField } from '../../components/ui/SearchField.jsx'
 import { SegmentedControl } from '../../components/ui/SegmentedControl.jsx'
 import { StatusBadge } from '../../components/ui/StatusBadge.jsx'
@@ -32,15 +31,6 @@ const FILTERS = [
   { key: 'unlinked', label: 'Unlinked' },
 ]
 
-function mediaStatus(item) {
-  if (item.media.status === 'drive-verified') return item.media.kind === 'video' ? 'Verified Drive video' : 'Verified Drive photo'
-  if (item.media.status === 'storage-verified') return item.media.kind === 'video' ? 'Verified private video' : 'Verified private photo'
-  if (item.media.kind === 'video') return 'Private video stored safely'
-  if (item.media.kind === 'image') return 'Private image stored safely'
-  if (item.specialMoment.isSpecial) return 'Protected special page'
-  return 'Saved memory'
-}
-
 function galleryTileLabel(item) {
   return [
     item.title,
@@ -50,13 +40,6 @@ function galleryTileLabel(item) {
   ]
     .filter(Boolean)
     .join(', ')
-}
-
-function toneFor(item) {
-  if (item.media.kind === 'video') return 'info'
-  if (item.media.kind === 'image') return 'success'
-  if (item.specialMoment.isSpecial) return 'warning'
-  return 'default'
 }
 
 function mediaTileAspectStyle(item) {
@@ -81,6 +64,7 @@ function GalleryTile({ item, onSelect, onToggleSelection, selected = false, sele
   const previewUrl = item.media.previewUrl || item.media.thumbnailUrl || ''
   const isIndexedDriveMedia = item.media.status === 'drive-indexed'
   const duration = formatDuration(item.media.durationMillis)
+  const showTitle = item.titleKind === 'authored' || item.descriptionKind === 'authored'
   const tileAction = () => {
     if (selectionMode) {
       onToggleSelection(item)
@@ -91,7 +75,7 @@ function GalleryTile({ item, onSelect, onToggleSelection, selected = false, sele
 
   if (isIndexedDriveMedia) {
     return (
-      <article className={`gallery-index-tile ${isVideo ? 'is-video' : 'is-photo'} ${selected ? 'is-selected' : ''}`}>
+      <article className={`gallery-index-tile cb-gallery-tile ${isVideo ? 'is-video' : 'is-photo'} ${selected ? 'is-selected' : ''}`}>
         <button
           aria-pressed={selectionMode ? selected : undefined}
           aria-label={selectionMode ? `${selected ? 'Deselect' : 'Select'} ${galleryTileLabel(item)}` : galleryTileLabel(item)}
@@ -103,12 +87,7 @@ function GalleryTile({ item, onSelect, onToggleSelection, selected = false, sele
           <span className="gallery-index-placeholder" aria-hidden="true">
             {isVideo ? <Film className="size-7" /> : <ImageIcon className="size-7" />}
           </span>
-          <span className="gallery-index-overlay">
-            <span className="gallery-index-title">{item.title}</span>
-            <span className="gallery-index-meta">
-              {isVideo ? 'Video' : 'Photo'}{duration ? ` / ${duration}` : ''}{item.displayDate ? ` / ${item.displayDate}` : ''}
-            </span>
-          </span>
+          {showTitle ? <span className="gallery-index-overlay"><span className="gallery-index-title">{item.title}</span></span> : null}
           {selectionMode ? <span className="gallery-index-selection" aria-hidden="true">{selected ? 'Selected' : 'Select'}</span> : null}
           {item.media.favorite ? <span className="gallery-index-favorite" aria-hidden="true"><Heart className="size-3.5" fill="currentColor" /></span> : null}
           {isVideo ? <span className="gallery-index-play" aria-hidden="true"><Film className="size-4" /></span> : null}
@@ -118,18 +97,15 @@ function GalleryTile({ item, onSelect, onToggleSelection, selected = false, sele
   }
 
   return (
-    <article className={`cb-photo-book-tile gallery-item flex h-full flex-col overflow-hidden ${selected ? 'is-selected' : ''}`}>
+    <article className={`cb-gallery-tile gallery-item ${selected ? 'is-selected' : ''}`}>
       <button
         aria-pressed={selectionMode ? selected : undefined}
         aria-label={selectionMode ? `${selected ? 'Deselect' : 'Select'} ${galleryTileLabel(item)}` : galleryTileLabel(item)}
-        className={`cb-photo-book-tile-inner gallery-media-frame ${isVideo ? 'is-video' : item.media.kind === 'image' ? 'is-photo' : item.specialMoment.isSpecial ? 'is-special' : 'is-memory'} flex min-h-72 w-full flex-col justify-between p-5 text-left`}
+        className={`gallery-media-frame ${isVideo ? 'is-video' : item.media.kind === 'image' ? 'is-photo' : item.specialMoment.isSpecial ? 'is-special' : 'is-memory'}`}
         onClick={tileAction}
+        style={mediaTileAspectStyle(item)}
         type="button"
       >
-        <div className="flex items-start justify-between gap-3">
-          <StatusBadge tone={toneFor(item)}>{mediaStatus(item)}</StatusBadge>
-          {isVideo ? <Film className="size-5 text-[var(--cb-accent)]" aria-hidden="true" /> : <ImageIcon className="size-5 text-[var(--cb-accent)]" aria-hidden="true" />}
-        </div>
         <div className="gallery-tile-art" aria-hidden="true">
           {previewUrl ? (
             <MediaPreview
@@ -147,22 +123,10 @@ function GalleryTile({ item, onSelect, onToggleSelection, selected = false, sele
           )}
         </div>
         {selectionMode ? <span className="gallery-selection-pill">{selected ? 'Selected' : 'Select'}</span> : null}
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">{item.displayDate || 'Date review'}</p>
-          <h3 className="mt-2 text-xl font-bold text-[var(--cb-text)]">{item.title}</h3>
-          <p className="mt-2 line-clamp-3 text-sm leading-6 text-[var(--cb-text-secondary)]">{item.description}</p>
-        </div>
+        {item.media.favorite ? <span className="gallery-index-favorite" aria-hidden="true"><Heart className="size-3.5" fill="currentColor" /></span> : null}
+        {isVideo ? <span className="gallery-index-play" aria-hidden="true">{duration || <Film className="size-4" />}</span> : null}
+        {showTitle ? <span className="gallery-index-overlay"><span className="gallery-index-title">{item.title}</span></span> : null}
       </button>
-      <div className="flex flex-1 flex-col gap-4 p-4">
-        <div className="flex flex-wrap items-center gap-2">
-          <StatusBadge>{item.typeLabel}</StatusBadge>
-          {item.tags?.slice(0, 2).map((tag) => <StatusBadge key={tag.key || tag.label}>{tag.label}</StatusBadge>)}
-        </div>
-        <div className="mt-auto flex flex-wrap gap-2">
-          <PrimaryButton onClick={() => (selectionMode ? onToggleSelection(item) : onSelect(item))}>{selectionMode ? (selected ? 'Deselect' : 'Select') : 'Open item'}</PrimaryButton>
-          {item.specialMoment.route ? <SecondaryButton as={Link} to={item.specialMoment.route}>Open related page</SecondaryButton> : null}
-        </div>
-      </div>
     </article>
   )
 }
@@ -198,56 +162,39 @@ function GalleryLightbox({ item, items, onClose, onNext, onPrevious, onRemove })
 
   if (!item) return null
   const isVideo = item.media.kind === 'video'
+  const mediaUrl = item.media.previewUrl || item.media.thumbnailUrl || ''
   const currentIndex = items.findIndex((entry) => entry.key === item.key)
   const canStep = items.length > 1 && currentIndex >= 0
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <button type="button" className="absolute inset-0 bg-[var(--cb-bg-soft)]/75 backdrop-blur-sm" onClick={onClose} aria-label="Close Album viewer" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#080508] p-3">
+      <button type="button" className="absolute inset-0" onClick={onClose} aria-label="Close Album viewer" />
       <div
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative max-h-[calc(100vh-2rem)] w-full max-w-5xl overflow-auto rounded-[28px] border border-white/10 bg-[#140d12] text-white shadow-[0_24px_80px_rgba(0,0,0,0.35)]"
+        className="cb-media-viewer relative h-[calc(100vh-1.5rem)] w-full max-w-7xl overflow-hidden text-white"
       >
-        <div className="grid min-h-[min(32rem,calc(100vh-4rem))] lg:grid-cols-[minmax(0,1.3fr)_minmax(22rem,0.7fr)]">
-          <div className="flex items-center justify-center bg-[linear-gradient(180deg,#24131d_0%,#140d12_100%)] p-6">
-            <MediaPreview
-              alt={item.title}
-              className="min-h-80 w-full rounded-[24px] border border-white/10 bg-white/[0.04]"
-              description="The original is available through the private media session; temporary preview links are never saved here."
-              kind={isVideo ? 'video' : 'image'}
-              objectFit="contain"
-              title={mediaStatus(item)}
-            />
+        <div className="cb-media-viewer-stage">
+          {mediaUrl ? (
+            <MediaPreview alt={item.title} className="cb-media-viewer-media" controls={isVideo} kind={isVideo ? 'video' : 'image'} objectFit="contain" src={mediaUrl} />
+          ) : (
+            <div className="cb-media-viewer-empty">{isVideo ? <Film className="size-10" /> : <ImageIcon className="size-10" />}</div>
+          )}
+        </div>
+        <div className="cb-media-viewer-top">
+          <TextButton aria-label="Close" className="text-white hover:bg-white/10" onClick={onClose} ref={closeButtonRef}>Close</TextButton>
+        </div>
+        <div className="cb-media-viewer-bottom">
+          <div>
+            <h3 id={titleId}>{item.title}</h3>
+            <p>{item.displayDate || ''}</p>
           </div>
-          <div className="flex flex-col gap-5 p-6">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <StatusBadge tone={toneFor(item)}>{item.typeLabel}</StatusBadge>
-                <h3 id={titleId} className="mt-3 text-2xl font-bold">{item.title}</h3>
-                <p className="mt-2 text-sm text-white/72">{item.displayDate || 'Date review'}</p>
-              </div>
-              <TextButton aria-label="Close" className="text-white hover:bg-[var(--cb-surface)]/10" onClick={onClose} ref={closeButtonRef}>Close</TextButton>
-            </div>
-            <p className="text-sm leading-6 text-white/78">{item.description}</p>
-            <div className="flex flex-wrap gap-2">
-              {(item.tags || []).map((tag) => <StatusBadge key={tag.key || tag.label}>{tag.label}</StatusBadge>)}
-            </div>
-            <InlineAlert
-              tone="info"
-              title="Private original"
-              description={hasVerifiedPrivateMedia
-                ? 'The saved original stays protected. Couple Book shows the memory record here and opens temporary previews only when the media session is available.'
-                : 'This item is shown through protected story details until its private media is available here.'}
-            />
-            <div className="mt-auto flex flex-wrap gap-2">
-              {canStep ? <SecondaryButton className="border-white/20 bg-transparent text-white hover:bg-[var(--cb-surface)]/10" onClick={onPrevious}>Previous</SecondaryButton> : null}
-              {canStep ? <SecondaryButton className="border-white/20 bg-transparent text-white hover:bg-[var(--cb-surface)]/10" onClick={onNext}>Next</SecondaryButton> : null}
-              <SecondaryButton as={Link} className="border-white/20 bg-transparent text-white hover:bg-[var(--cb-surface)]/10" to="/timeline">Open Story</SecondaryButton>
-              {hasVerifiedPrivateMedia ? <DangerButton onClick={() => onRemove(item)}>Remove from Album</DangerButton> : null}
-            </div>
+          <div className="flex flex-wrap gap-2">
+            {canStep ? <SecondaryButton className="border-white/20 bg-white/5 text-white hover:bg-white/10" onClick={onPrevious}>Previous</SecondaryButton> : null}
+            {canStep ? <SecondaryButton className="border-white/20 bg-white/5 text-white hover:bg-white/10" onClick={onNext}>Next</SecondaryButton> : null}
+            {hasVerifiedPrivateMedia ? <DangerButton onClick={() => onRemove(item)}>Remove</DangerButton> : null}
           </div>
         </div>
       </div>
@@ -424,41 +371,23 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
         }}
         type="file"
       />
-      <PageHeader
-        eyebrow="Album"
-        title="Our Memories"
-        description="Photos, videos, and the stories attached to them, kept together as one private book."
-        actions={(
-          <>
-            <StatusBadge tone="info">{model.summary.totalMemories} items</StatusBadge>
-            <SecondaryButton aria-expanded={manageUploadsOpen} onClick={() => setManageUploadsOpen((value) => !value)}><SlidersHorizontal className="size-4" />{manageUploadsOpen ? 'Close add flow' : 'Add details'}</SecondaryButton>
-            {uploadQueue.canUpload
-              ? <PrimaryButton onClick={() => fileInputRef.current?.click()}><Upload className="size-4" />Add files</PrimaryButton>
-              : <SecondaryButton as={Link} to="/settings"><Upload className="size-4" />Media & Sync</SecondaryButton>}
-          </>
-        )}
-      />
+      <div className="cb-album-header">
+        <div>
+          <h2>Album</h2>
+          <p>{model.summary.totalMemories} items</p>
+        </div>
+        <div className="cb-album-actions">
+          <SecondaryButton aria-expanded={manageUploadsOpen} onClick={() => setManageUploadsOpen((value) => !value)}><SlidersHorizontal className="size-4" />Manage</SecondaryButton>
+          {uploadQueue.canUpload
+            ? <PrimaryButton onClick={() => fileInputRef.current?.click()}><Upload className="size-4" />Add</PrimaryButton>
+            : <SecondaryButton as={Link} to="/settings"><Upload className="size-4" />Sync</SecondaryButton>}
+        </div>
+      </div>
 
       {uploadQueue.notice.message ? <InlineAlert description={uploadQueue.notice.message} tone={uploadQueue.notice.kind === 'error' ? 'error' : uploadQueue.notice.kind === 'success' ? 'success' : 'info'} /> : null}
 
-      <section className="cb-album-intro grid gap-5 rounded-[28px] border border-[var(--cb-border)] bg-[var(--cb-surface)] p-6 shadow-[var(--cb-shadow-card)] lg:grid-cols-[minmax(0,1.1fr)_minmax(18rem,0.9fr)]">
-        <div>
-          <p className="cb-kicker">A book of moments</p>
-          <h2 className="mt-2 font-serif text-4xl text-[var(--cb-text)]">Browse, open, remember</h2>
-          <p className="cb-body-copy mt-3 max-w-2xl text-sm leading-7">Move through the collection by photo, video, year, or memory. Add new files when you want them saved into the book.</p>
-        </div>
-        <div className="grid grid-cols-3 gap-3 self-end">
-          {[['Photos', model.summary.photos], ['Videos', model.summary.videos], ['Chapters', grouped.length]].map(([label, value]) => (
-            <div className="rounded-2xl bg-[var(--cb-accent-soft)] p-4 text-center" key={label}>
-              <p className="text-2xl font-bold text-[var(--cb-text)]">{value}</p>
-              <p className="mt-1 text-[0.68rem] font-bold uppercase tracking-[0.12em] text-[var(--cb-text-muted)]">{label}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <Surface>
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(12rem,0.45fr)_minmax(0,1fr)]">
+      <Surface className="cb-album-toolbar">
+        <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(11rem,0.35fr)_minmax(0,0.8fr)]">
           <SegmentedControl
             label="Media type"
             onChange={setFilter}
@@ -473,15 +402,11 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
           </FormField>
           <SearchField label="Search Album" onChange={(event) => setSearch(event.target.value)} placeholder="Search dates, titles, and tags" value={search} />
         </div>
-        <div className="mt-4 rounded-2xl border border-[var(--cb-border)] bg-[var(--cb-surface-soft)] p-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-[var(--cb-text-secondary)]">
-              {filtered.length} {filtered.length === 1 ? 'item' : 'items'} across our photos, videos, and saved chapters.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <SecondaryButton aria-pressed={selectionMode} onClick={toggleSelectionMode}>{selectionMode ? 'Exit select' : 'Select'}</SecondaryButton>
-              {selectionMode ? <TextButton disabled={selectedCount === 0} onClick={clearSelection}>Clear selection</TextButton> : null}
-            </div>
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-[var(--cb-text-secondary)]">{filtered.length} shown</p>
+          <div className="flex flex-wrap gap-2">
+            <SecondaryButton aria-pressed={selectionMode} onClick={toggleSelectionMode}>{selectionMode ? 'Done' : 'Select'}</SecondaryButton>
+            {selectionMode ? <TextButton disabled={selectedCount === 0} onClick={clearSelection}>Clear</TextButton> : null}
           </div>
         </div>
       </Surface>
@@ -582,7 +507,7 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
               </div>
               {group.items[0] ? <StatusBadge tone="info">Newest: {group.items[0].title}</StatusBadge> : null}
             </div>
-            <div className={group.items.some((item) => item.media.status === 'drive-indexed') ? 'gallery-media-library-grid' : 'grid gap-4 md:grid-cols-2 xl:grid-cols-3'}>
+            <div className="gallery-media-library-grid">
               {group.items.map((item) => (
                 <GalleryTile
                   item={item}
