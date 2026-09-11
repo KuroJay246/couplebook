@@ -36,7 +36,7 @@ export function buildProfileReadModel({
 
   const people = selectProfilePeople(resolvedSnapshot.sources?.profile, approvedUser)
   const importantDates = selectImportantDates(people, resolvedSnapshot.sources?.contract)
-  const primaryAnniversary = importantDates.find((item) => item.type === 'relationship') || null
+  const primaryAnniversary = selectRelationshipAnniversaries(people)[0] || null
   const nextImportantDate = importantDates[0] || null
   const relationship = {
     title: selectRelationshipTitle(people),

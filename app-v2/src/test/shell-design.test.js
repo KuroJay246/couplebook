@@ -44,7 +44,7 @@ test('app shell keeps the refined navigation hierarchy explicit', async () => {
   assert.match(shellSource, /desktopNavGroups/)
   assert.match(shellSource, /Sign out/)
   assert.match(shellSource, /Main/)
-  assert.match(shellSource, /More/)
+  assert.doesNotMatch(shellSource.slice(shellSource.indexOf('const desktopNavGroups'), shellSource.indexOf('const mobileMoreGroups')), /'\/birthday'|'\/valentine'|'\/confession'|'\/favorites'/)
   assert.doesNotMatch(shellSource, /currentRoute\.chapter|cb-shell-meta-pill|QuickAddMemory/)
   const desktopNavSource = shellSource.slice(shellSource.indexOf('const desktopNavGroups'), shellSource.indexOf('const mobileMoreGroups'))
   const mobileMoreSource = shellSource.slice(shellSource.indexOf('const mobileMoreGroups'), shellSource.indexOf('function surfaceDisplayName'))

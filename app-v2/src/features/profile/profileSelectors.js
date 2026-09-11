@@ -12,7 +12,11 @@ function toTrimmedString(value) {
 function createDateAtNoon(dateLike) {
   if (!dateLike) return null
 
-  const date = new Date(dateLike)
+  const normalized = String(dateLike).trim()
+  const match = normalized.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  const date = match
+    ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]), 12, 0, 0, 0)
+    : new Date(normalized)
   if (Number.isNaN(date.getTime())) return null
 
   date.setHours(12, 0, 0, 0)
@@ -66,7 +70,7 @@ function formatDaysTogether(days) {
 function normalizeAnniversaryView(value) {
   const normalized = toTrimmedString(value).toLowerCase()
   if (!normalized) return null
-  if (normalized === 'dual') return 'Dual view'
+  if (normalized === 'dual') return 'Both perspectives'
   return `${normalized.charAt(0).toUpperCase()}${normalized.slice(1)}'s perspective`
 }
 
@@ -159,27 +163,42 @@ export function selectRelationshipTitle(people) {
 }
 
 export function selectRelationshipAnniversaries(people) {
-  return people
+  const candidates = people
     .flatMap((person) => {
       if (!person.joinedDate) return []
-      const totalDays = daysSince(person.joinedDate)
-      const daysUntil = daysUntilAnnualDate(person.joinedDate)
-
       return [{
-      id: `${person.id}-anniversary`,
-      kind: 'anniversary',
-      label: `${person.shortName}'s relationship date`,
-      date: person.joinedDate,
-      dateLabel: person.joinedDateLabel,
-      summary: person.anniversaryViewLabel || 'Relationship date',
-      repeatsAnnually: true,
-      daysUntil,
-      countdownLabel: formatDaysUntil(daysUntil),
-      totalDays,
-      timeTogetherLabel: formatDaysTogether(totalDays),
-      status: 'ready',
+        sourcePersonId: person.id,
+        sourcePersonName: person.shortName,
+        date: person.joinedDate,
+        dateLabel: person.joinedDateLabel,
+        summary: person.anniversaryViewLabel,
       }]
     })
+
+  if (candidates.length === 0) return []
+
+  const primary = candidates
+    .toSorted((left, right) => left.date.localeCompare(right.date))[0]
+  const totalDays = daysSince(primary.date)
+  const daysUntil = daysUntilAnnualDate(primary.date)
+
+  return [{
+    id: 'couple-primary-anniversary',
+    kind: 'anniversary',
+    scope: 'couple',
+    label: 'Relationship date',
+    date: primary.date,
+    dateLabel: primary.dateLabel,
+    summary: 'Primary couple anniversary',
+    repeatsAnnually: true,
+    primary: true,
+    sourcePersonId: primary.sourcePersonId,
+    daysUntil,
+    countdownLabel: formatDaysUntil(daysUntil),
+    totalDays,
+    timeTogetherLabel: formatDaysTogether(totalDays),
+    status: 'ready',
+  }]
 }
 
 export function selectRelationshipMilestones(people, contractSource) {

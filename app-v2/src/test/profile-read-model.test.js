@@ -113,7 +113,9 @@ test('profile read model keeps two-person content, highlights, and contract summ
   assert.equal(model.people[0].displayName, 'Jaylan')
   assert.equal(model.people[1].anniversaryViewLabel, "Omia's perspective")
   assert.equal(model.relationship.title, 'Jaylan and Omia')
-  assert.equal(model.relationship.anniversaries.length, 2)
+  assert.equal(model.relationship.anniversaries.length, 1)
+  assert.equal(model.relationship.primaryAnniversary.label, 'Relationship date')
+  assert.equal(model.relationship.primaryAnniversary.scope, 'couple')
   assert.equal(model.relationship.milestones.some((item) => item.kind === 'contract'), true)
   assert.equal(model.sharedHighlights.length, 4)
   assert.equal(model.entries.contract.description, '1 of 2 preserved signatures are already visible from the migrated Contract page.')
@@ -126,6 +128,49 @@ test('profile read model keeps two-person content, highlights, and contract summ
     ['profile', 'favorites', 'contract'],
   )
   assert.deepEqual(model.warnings, ['Legacy contract signatures are read-only.'])
+})
+
+test('birthday closer than relationship anniversary does not become next anniversary', () => {
+  const baseSnapshot = createSnapshot()
+  const model = buildProfileReadModel({
+    compatibilitySnapshot: createSnapshot({
+      sources: {
+        ...baseSnapshot.sources,
+        profile: {
+          status: 'ready',
+          source: 'legacy-local-storage',
+          warnings: [],
+          data: {
+            participantOrder: ['Jaylan', 'Omia'],
+            profilesByUsername: {
+              Jaylan: {
+                name: 'Jaylan',
+                bio: '',
+                avatar: '',
+                anniversaryView: 'dual',
+                joinedDate: '2025-12-28',
+                birthday: '',
+              },
+              Omia: {
+                name: 'Omia',
+                bio: '',
+                avatar: '',
+                anniversaryView: 'dual',
+                joinedDate: '2025-12-28',
+                birthday: '2006-09-15',
+              },
+            },
+          },
+        },
+      },
+    }),
+  })
+
+  assert.equal(model.relationship.primaryAnniversary.label, 'Relationship date')
+  assert.equal(model.relationship.primaryAnniversary.date, '2025-12-28')
+  assert.equal(model.relationship.primaryAnniversary.countdownLabel, '108 days')
+  assert.equal(model.relationship.nextImportantDate.label, "Omia's birthday")
+  assert.equal(model.relationship.nextImportantDate.countdownLabel, '4 days')
 })
 
 test('profile read model stays unavailable when no safe profile content is accessible', () => {

@@ -146,30 +146,70 @@ h6 {
   position: relative;
 }
 
+.cb-settings-page,
+.cb-settings-pane {
+  display: grid;
+  gap: 1rem;
+}
+
+.cb-settings-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid var(--cb-border);
+  padding-bottom: 1rem;
+}
+
+.cb-settings-heading h2 {
+  color: var(--cb-text);
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
+  font-weight: 800;
+}
+
+.cb-settings-heading p {
+  margin-top: 0.35rem;
+  color: var(--cb-text-secondary);
+  font-size: 0.92rem;
+}
+
+.cb-settings-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: end;
+}
+
+.cb-settings-layout {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(12rem, 16rem) minmax(0, 1fr);
+  align-items: start;
+}
+
 .cb-settings-tabs {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.55rem;
-  padding: 0.35rem;
-  border: 1px solid var(--cb-border);
-  border-radius: 1.25rem;
-  background: var(--cb-surface-soft);
+  gap: 0.25rem;
+  grid-template-columns: 1fr;
+  border-right: 1px solid var(--cb-border);
+  padding-right: 0.75rem;
 }
 
 .cb-settings-tab {
+  display: block;
+  width: 100%;
   min-height: 2.75rem;
-  padding: 0.55rem 0.75rem;
-  border-radius: 0.9rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.55rem;
   color: var(--cb-text-muted);
-  font-size: 0.78rem;
-  font-weight: 700;
+  font-size: 0.82rem;
+  font-weight: 750;
   text-align: left;
 }
 
 .cb-settings-tab-active {
-  background: var(--cb-surface);
+  background: color-mix(in srgb, var(--cb-accent-soft) 62%, transparent);
   color: var(--cb-text);
-  box-shadow: 0 8px 20px rgba(84, 53, 67, 0.08);
 }
 
 /* The primary dashboard memory action remains a full touch target even when rendered as a route link. */
@@ -356,7 +396,24 @@ a[href="/timeline"].cb-button-pill {
 }
 
 @media (max-width: 640px) {
-  .cb-settings-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cb-settings-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .cb-settings-actions {
+    justify-content: start;
+  }
+
+  .cb-settings-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .cb-settings-tabs {
+    grid-template-columns: 1fr 1fr;
+    border-right: 0;
+    padding-right: 0;
+  }
 
   [data-route="settings"],
   [data-route="settings"] h1,

@@ -3,6 +3,8 @@ import { useAuth } from '../../auth/useAuth.js'
 import { getPlansForCouple } from '../../services/planService.js'
 import { buildPlansReadModel } from './plansReadModel.js'
 
+const PLANS_LOAD_TIMEOUT_MS = 6000
+
 function resolveCoupleId(approvedUser) {
   return approvedUser?.coupleId || approvedUser?.raw?.coupleId || ''
 }
@@ -19,8 +21,28 @@ export function usePlansModel() {
       setSource({ status: 'empty', data: { plans: [] }, warnings: ['Plans need an approved couple before loading.'] })
       return
     }
-    const result = await getPlansForCouple(coupleId)
-    setSource(result)
+    setSource((current) => (current.status === 'ready' ? current : { status: 'loading', data: { plans: [] }, warnings: [] }))
+    try {
+      const result = await Promise.race([
+        getPlansForCouple(coupleId),
+        new Promise((resolve) => {
+          window.setTimeout(() => {
+            resolve({
+              status: 'unavailable',
+              data: { plans: [] },
+              warnings: ['Plans took too long to load.'],
+            })
+          }, PLANS_LOAD_TIMEOUT_MS)
+        }),
+      ])
+      setSource(result)
+    } catch (error) {
+      setSource({
+        status: 'unavailable',
+        data: { plans: [] },
+        warnings: [error?.message || 'Plans could not be loaded.'],
+      })
+    }
   }, [coupleId])
 
   useEffect(() => {

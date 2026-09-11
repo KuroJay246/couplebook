@@ -183,6 +183,13 @@ function buildGalleryItem(memory, index) {
 
 function buildMediaIndexGalleryItem(record, index) {
   const mediaType = record.mediaType === 'video' ? 'video' : 'image'
+  const dateSource = record.capturedAt
+    ? 'captured'
+    : record.createdTime
+      ? 'drive-created'
+      : record.modifiedTime
+        ? 'drive-modified'
+        : 'missing'
   const date = normalizeIndexedDate(record.capturedAt || record.createdTime || record.modifiedTime)
   const title = record.caption || record.fileName || (mediaType === 'video' ? 'Drive video' : 'Drive photo')
   const description = record.caption
@@ -220,6 +227,7 @@ function buildMediaIndexGalleryItem(record, index) {
       favorite: record.favorite === true,
       caption: record.caption || '',
       linkedMemoryId: record.linkedMemoryId || record.memoryId || '',
+      dateSource,
     },
     specialMoment: {
       isSpecial: false,
@@ -305,6 +313,7 @@ export function groupGalleryItemsByDate(items = []) {
         monthLabel: item.monthLabel || createMonthLabel(item.date || {}),
         dayLabel: createDayLabel(item.date || {}),
         sortTimestamp: item.sort?.timestamp ?? null,
+        dateSource: item.media?.dateSource || 'memory-date',
         items: [],
       })
     }

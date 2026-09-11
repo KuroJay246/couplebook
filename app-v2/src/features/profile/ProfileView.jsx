@@ -121,6 +121,7 @@ export function ProfileView({ compatibilityError, compatibilityState, model, onR
   }, [model.people, writer.approvedUser])
 
   const primaryAnniversary = model.relationship?.primaryAnniversary || null
+  const nextImportantDate = model.relationship?.nextImportantDate || null
   const importantDates = model.relationship?.importantDates || []
 
   async function saveProfile(payload) {
@@ -152,7 +153,7 @@ export function ProfileView({ compatibilityError, compatibilityState, model, onR
       <div className="cb-us-hero-new">
         <div>
           <h2>{relationshipTitle(people)}</h2>
-          <p>{primaryAnniversary?.summary || 'Set the relationship date to calculate anniversaries and time together.'}</p>
+          <p>{primaryAnniversary?.dateLabel ? `Together since ${primaryAnniversary.dateLabel}` : 'Set the relationship date to calculate anniversaries and time together.'}</p>
         </div>
         <div className="cb-us-hero-actions">
           <SecondaryButton as={Link} to="/favorites"><Star className="size-4" />Favorites</SecondaryButton>
@@ -173,7 +174,11 @@ export function ProfileView({ compatibilityError, compatibilityState, model, onR
         </div>
         <div>
           <span>Next anniversary</span>
-          <strong>{model.relationship?.nextImportantDate?.countdownLabel || 'Add date'}</strong>
+          <strong>{primaryAnniversary?.countdownLabel || 'Add date'}</strong>
+        </div>
+        <div>
+          <span>Next important date</span>
+          <strong>{nextImportantDate?.countdownLabel || 'Add date'}</strong>
         </div>
       </div>
 
@@ -189,7 +194,8 @@ export function ProfileView({ compatibilityError, compatibilityState, model, onR
                 <div className="cb-us-avatar">{relationshipDisplayName(person.displayName, index).slice(0, 1)}</div>
                 <div>
                   <h4>{relationshipDisplayName(person.displayName, index)}</h4>
-                  {person.bio ? <p>{person.bio}</p> : <button type="button" onClick={() => setEditingPerson(person)}>Add note</button>}
+                  {person.birthdayLabel ? <p>Birthday {person.birthdayLabel}</p> : null}
+                  {person.bio ? <p>{person.bio}</p> : null}
                 </div>
                 {isOwnerProfile(person, writer.approvedUser) ? <SecondaryButton onClick={() => setEditingPerson(person)}>Edit</SecondaryButton> : null}
               </article>

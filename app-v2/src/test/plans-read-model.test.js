@@ -18,3 +18,15 @@ test('plans read model sorts active plans before completed and supports filters'
   assert.equal(model.counts.completed, 1)
   assert.deepEqual(model.filtered.map((plan) => plan.id), ['movie'])
 })
+
+test('plans read model preserves finite unavailable state for failed loads', () => {
+  const model = buildPlansReadModel({
+    status: 'unavailable',
+    data: { plans: [] },
+    warnings: ['Plans took too long to load.'],
+  })
+
+  assert.equal(model.status, 'unavailable')
+  assert.equal(model.filtered.length, 0)
+  assert.deepEqual(model.warnings, ['Plans took too long to load.'])
+})

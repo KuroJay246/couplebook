@@ -40,8 +40,7 @@ const NAV_ICON_BY_NAME = {
 }
 
 const desktopNavGroups = [
-  { label: 'Main', items: ['/dashboard', '/timeline', '/gallery', '/profile', '/plans'] },
-  { label: 'More', items: ['/favorites', '/birthday', '/valentine', '/confession', '/settings'] },
+  { label: 'Main', items: ['/dashboard', '/timeline', '/gallery', '/profile', '/plans', '/settings'] },
 ]
 
 const mobileMoreGroups = [
@@ -97,21 +96,7 @@ function SidebarContent({ collapsed = false, groups, onNavigate, onRequestSignOu
         ) : null}
       </div>
 
-      <div className={`${collapsed ? 'mx-3 px-2 py-3' : 'mx-3 px-3 py-3'} cb-nav-panel overflow-hidden`}>
-        <Link to="/profile" onClick={onNavigate} className="flex w-full min-w-0 items-center justify-between gap-3 text-left">
-          <span className="min-w-0 flex-1 overflow-hidden">
-            <span className={collapsed ? 'sr-only' : 'cb-kicker'}>
-              Couple Book
-            </span>
-            <span className={`${collapsed ? 'sr-only' : 'mt-2 block'} max-w-full truncate text-sm font-semibold`} style={{ color: 'var(--cb-text)' }}>
-              {displayName}
-            </span>
-            {collapsed ? <HeartHandshake className="mx-auto size-5" style={{ color: 'var(--cb-text-secondary)' }} aria-hidden="true" /> : null}
-          </span>
-        </Link>
-      </div>
-
-      <nav className="mt-5 min-h-0 flex-1 overflow-y-auto px-3 pb-4" aria-label="Main navigation">
+      <nav className="mt-2 min-h-0 flex-1 overflow-y-auto px-3 pb-4" aria-label="Main navigation">
         {groups.map((group) => (
           <div className="mb-5" key={group.label}>
             <p className={collapsed ? 'sr-only' : 'cb-kicker px-3'}>{group.label}</p>
@@ -152,7 +137,7 @@ function SidebarContent({ collapsed = false, groups, onNavigate, onRequestSignOu
       </nav>
 
       <div className="shrink-0 border-t p-3" style={{ borderColor: 'var(--cb-nav-border)' }}>
-        <p className={collapsed ? 'sr-only' : 'cb-kicker px-3'}>Account</p>
+        <p className={collapsed ? 'sr-only' : 'cb-kicker px-3'}>{displayName}</p>
         <div className={`mt-2 flex items-center ${collapsed ? 'justify-center' : 'gap-3'} rounded-2xl px-2.5 py-2.5`} style={{ background: 'color-mix(in srgb, var(--cb-surface) 88%, transparent)' }}>
           <div
             className="grid size-9 shrink-0 place-items-center rounded-full text-xs font-bold uppercase"

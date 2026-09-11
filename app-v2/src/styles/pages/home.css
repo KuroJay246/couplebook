@@ -17,7 +17,7 @@
 .cb-home-topline h2 {
   color: var(--cb-text);
   font-family: var(--cb-font-serif);
-  font-size: clamp(2.1rem, 5vw, 4rem);
+  font-size: clamp(2rem, 4vw, 3.2rem);
   line-height: 0.98;
 }
 
@@ -36,7 +36,7 @@
 }
 
 .cb-home-lead {
-  min-height: clamp(25rem, 48vw, 38rem);
+  min-height: clamp(18rem, 34vw, 28rem);
   display: flex;
   flex-direction: column;
   justify-content: end;
@@ -52,6 +52,17 @@
   box-shadow: var(--cb-shadow-soft);
 }
 
+.cb-home-lead.is-text-memory {
+  min-height: 15rem;
+  justify-content: center;
+  background: transparent;
+  box-shadow: none;
+}
+
+.cb-home-add-memory {
+  min-height: 2.5rem !important;
+}
+
 .cb-home-lead-label,
 .cb-home-row-label {
   color: var(--cb-accent);
@@ -65,7 +76,7 @@
   max-width: 18ch;
   color: var(--cb-text);
   font-family: var(--cb-font-serif);
-  font-size: clamp(2.2rem, 5vw, 4.8rem);
+  font-size: clamp(1.8rem, 4vw, 3.5rem);
   line-height: 0.95;
 }
 
@@ -107,7 +118,7 @@
 }
 
 .cb-home-bottom {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 0.8fr);
 }
 
 .cb-home-section-header,
@@ -164,7 +175,7 @@
   }
 
   .cb-home-lead {
-    min-height: 22rem;
+    min-height: 16rem;
   }
 }
 

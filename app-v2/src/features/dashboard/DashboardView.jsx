@@ -1,4 +1,4 @@
-import { CalendarHeart, HeartHandshake, Images, NotebookPen, Plus } from 'lucide-react'
+import { CalendarHeart, NotebookPen, Plus } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { EmptyState } from '../../components/ui/EmptyState.jsx'
 import { PrimaryButton, SecondaryButton } from '../../components/ui/Button.jsx'
@@ -13,7 +13,7 @@ function MemoryLead({ memory }) {
   }
 
   return (
-    <Link className="cb-home-lead" to="/timeline">
+    <Link className={`cb-home-lead ${memory.mediaKind === 'image' || memory.mediaKind === 'video' ? 'has-media-reference' : 'is-text-memory'}`} to="/timeline">
       <span className="cb-home-lead-label">{memory.dateLabel || 'Recent memory'}</span>
       <span className="cb-home-lead-title">{memory.title}</span>
       <span className="cb-home-lead-copy">{memory.description}</span>
@@ -22,8 +22,8 @@ function MemoryLead({ memory }) {
 }
 
 function CompactDate({ milestones }) {
-  const anniversary = milestones?.anniversaryCards?.[0] || null
   const birthday = milestones?.birthdayCards?.[0] || null
+  const anniversary = milestones?.anniversaryCards?.[0] || null
   const date = birthday || anniversary
 
   return (
@@ -86,7 +86,7 @@ export function DashboardView({ model }) {
           <h2>Omia & Jaylan</h2>
           <p>{model.todayInUs?.currentMilestone || 'Your memories, dates, and plans in one place.'}</p>
         </div>
-        <PrimaryButton as={Link} to="/timeline">
+        <PrimaryButton as={Link} className="cb-home-add-memory" to="/timeline">
           <Plus className="size-4" />
           Add Memory
         </PrimaryButton>
@@ -97,21 +97,12 @@ export function DashboardView({ model }) {
         <div className="cb-home-side">
           <CompactDate milestones={model.milestones} />
           <section className="cb-home-row">
-            <div className="cb-home-row-icon"><Images className="size-4" /></div>
+            <div className="cb-home-row-icon"><NotebookPen className="size-4" /></div>
             <div>
-              <p className="cb-home-row-label">Album</p>
-              <h2>{model.recentMemories?.totalCount || 0} saved memories</h2>
-              <p>Open the photo and video library.</p>
-              <SecondaryButton as={Link} to="/gallery">Open Album</SecondaryButton>
-            </div>
-          </section>
-          <section className="cb-home-row">
-            <div className="cb-home-row-icon"><HeartHandshake className="size-4" /></div>
-            <div>
-              <p className="cb-home-row-label">Us</p>
-              <h2>Profiles and dates</h2>
-              <p>Manage birthdays, anniversaries, favorites, and notes.</p>
-              <SecondaryButton as={Link} to="/profile">Open Us</SecondaryButton>
+              <p className="cb-home-row-label">Next plan</p>
+              <h2>Plans</h2>
+              <p>Save the next date, trip, gift, or idea.</p>
+              <SecondaryButton as={Link} to="/plans">Open Plans</SecondaryButton>
             </div>
           </section>
         </div>
@@ -119,16 +110,6 @@ export function DashboardView({ model }) {
 
       <div className="cb-home-bottom">
         <RecentMemories section={model.recentMemories} />
-        <section className="cb-home-section">
-          <div className="cb-home-section-header">
-            <h2>Plans</h2>
-            <Link to="/plans">Open</Link>
-          </div>
-          <Link className="cb-home-plan-link" to="/plans">
-            <NotebookPen className="size-4" />
-            Save the next date, trip, gift, or idea.
-          </Link>
-        </section>
         <SpecialMoments section={model.specialMoments} />
       </div>
     </section>

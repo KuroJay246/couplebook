@@ -86,6 +86,7 @@ function GalleryTile({ item, onSelect, onToggleSelection, selected = false, sele
         >
           <span className="gallery-index-placeholder" aria-hidden="true">
             {isVideo ? <Film className="size-7" /> : <ImageIcon className="size-7" />}
+            <span>{isVideo ? 'Video preview needs Drive access' : 'Photo preview needs Drive access'}</span>
           </span>
           {showTitle ? <span className="gallery-index-overlay"><span className="gallery-index-title">{item.title}</span></span> : null}
           {selectionMode ? <span className="gallery-index-selection" aria-hidden="true">{selected ? 'Selected' : 'Select'}</span> : null}
@@ -300,6 +301,7 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
   const years = model.filters?.availableYears || []
   const mediaInventory = model.sourceStatus?.mediaInventory || {}
   const mediaWarnings = Array.isArray(mediaInventory.warnings) ? mediaInventory.warnings : []
+  const userFacingMediaWarning = mediaWarnings.length > 0 ? 'Some photos could not be loaded. Try again from Media & Sync.' : ''
 
   const filtered = useMemo(() => selectFilteredGalleryItems(items, { filter, search, year }), [filter, items, search, year])
   const grouped = useMemo(() => groupGalleryItemsByDate(filtered), [filtered])
@@ -386,8 +388,8 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
 
       {uploadQueue.notice.message ? <InlineAlert description={uploadQueue.notice.message} tone={uploadQueue.notice.kind === 'error' ? 'error' : uploadQueue.notice.kind === 'success' ? 'success' : 'info'} /> : null}
 
-      <Surface className="cb-album-toolbar">
-        <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(11rem,0.35fr)_minmax(0,0.8fr)]">
+      <div className="cb-album-toolbar">
+        <div className="cb-album-filter-row">
           <SegmentedControl
             label="Media type"
             onChange={setFilter}
@@ -402,14 +404,14 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
           </FormField>
           <SearchField label="Search Album" onChange={(event) => setSearch(event.target.value)} placeholder="Search dates, titles, and tags" value={search} />
         </div>
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+        <div className="cb-album-toolbar-meta">
           <p className="text-sm text-[var(--cb-text-secondary)]">{filtered.length} shown</p>
           <div className="flex flex-wrap gap-2">
             <SecondaryButton aria-pressed={selectionMode} onClick={toggleSelectionMode}>{selectionMode ? 'Done' : 'Select'}</SecondaryButton>
             {selectionMode ? <TextButton disabled={selectedCount === 0} onClick={clearSelection}>Clear</TextButton> : null}
           </div>
         </div>
-      </Surface>
+      </div>
 
       {selectionMode ? (
         <Surface aria-label="Album selection toolbar" tone="soft">
@@ -429,8 +431,8 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
         </Surface>
       ) : null}
 
-      {mediaWarnings.length > 0 ? (
-        <InlineAlert tone="warning" title="Some media is unavailable" description={mediaWarnings[0]} />
+      {userFacingMediaWarning ? (
+        <InlineAlert tone="warning" title="Some photos could not be loaded" description="Try again from Media & Sync." />
       ) : null}
       {manageUploadsOpen ? <div className="grid gap-5" aria-label="Album management tools">
         <Surface aria-label="Upload queue" tone="soft">
@@ -503,9 +505,11 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">{group.monthLabel}</p>
                 <h3 className="mt-2 font-serif text-3xl text-[var(--cb-text)]">{group.dayLabel}</h3>
-                <p className="mt-2 text-sm text-[var(--cb-text-secondary)]">{group.items.length} {group.items.length === 1 ? 'item' : 'items'} from this day.</p>
+                <p className="mt-2 text-sm text-[var(--cb-text-secondary)]">
+                  {group.items.length} {group.items.length === 1 ? 'item' : 'items'}
+                  {group.dateSource && group.dateSource !== 'captured' && group.dateSource !== 'memory-date' ? ' by saved file date.' : '.'}
+                </p>
               </div>
-              {group.items[0] ? <StatusBadge tone="info">Newest: {group.items[0].title}</StatusBadge> : null}
             </div>
             <div className="gallery-media-library-grid">
               {group.items.map((item) => (

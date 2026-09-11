@@ -1,25 +1,19 @@
 import {
   Bell,
-  Gift,
   KeyRound,
-  Heart,
   LockKeyhole,
   LogOut,
   MonitorCog,
-  PenSquare,
-  ScrollText,
   Shield,
   Sparkles,
 } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { PrimaryButton, SecondaryButton } from '../../components/ui/Button.jsx'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx'
 import { ErrorState } from '../../components/ui/ErrorState.jsx'
 import { FormField, SelectField } from '../../components/ui/FormField.jsx'
 import { InlineAlert } from '../../components/ui/InlineAlert.jsx'
 import { LoadingState } from '../../components/ui/LoadingState.jsx'
-import { PageHeader } from '../../components/ui/PageHeader.jsx'
 import { StatusBadge } from '../../components/ui/StatusBadge.jsx'
 import { ContentCard, Surface } from '../../components/ui/Surface.jsx'
 import { useAuth } from '../../auth/useAuth.js'
@@ -29,33 +23,13 @@ import { useOwnerWrite } from '../editing/useOwnerWrite.js'
 import { GOOGLE_PROVIDER_ID, isGoogleProviderLinked } from '../../services/authService.js'
 import { MediaSettingsSection } from './MediaSettingsSection.jsx'
 
-const MOMENT_LINKS = [
-  {
-    href: '/birthday',
-    icon: Gift,
-    title: 'Birthday',
-    description: 'A warmer chapter for celebrations, notes, and meaningful reveals.',
-  },
-  {
-    href: '/valentine',
-    icon: Heart,
-    title: 'Valentine',
-    description: 'A love-letter reading flow with a softer, more intimate pace.',
-  },
-  {
-    href: '/confession',
-    icon: PenSquare,
-    title: 'Confession',
-    description: 'A quieter private page for vulnerable writing and protected edits.',
-  },
-]
-
 const SETTINGS_CATEGORIES = [
-  ['profiles', 'Profiles and dates'],
+  ['profiles', 'Profile & Relationship'],
+  ['dates', 'Important Dates'],
   ['appearance', 'Appearance'],
-  ['media', 'Photos and videos'],
+  ['media', 'Media & Sync'],
   ['notifications', 'Notifications'],
-  ['privacy', 'Privacy and access'],
+  ['privacy', 'Privacy & Security'],
   ['advanced', 'Advanced'],
 ]
 
@@ -192,7 +166,7 @@ function NotificationSettingsSection({ notifications, onToggle, values }) {
 export function SettingsView({ compatibilityError, compatibilityState, model, onRefresh }) {
   const writer = useOwnerWrite(onRefresh)
   const { linkGoogleProvider, signOut, user } = useAuth()
-  const { activeTheme, previewTheme, commitTheme, resetTheme } = useTheme()
+  const { previewTheme, commitTheme, resetTheme } = useTheme()
   const loadedForm = useMemo(() => buildFormState(model), [model])
   const [draft, setDraft] = useState({})
   const [signOutState, setSignOutState] = useState({ open: false, pending: false })
@@ -201,7 +175,6 @@ export function SettingsView({ compatibilityError, compatibilityState, model, on
   const [activeCategory, setActiveCategory] = useState('profiles')
   const form = useMemo(() => ({ ...loadedForm, ...draft, revision: loadedForm.revision }), [draft, loadedForm])
   const dirty = hasChanges(loadedForm, form)
-  const agreementCards = [model.contract?.currentUser, model.contract?.partner].filter(Boolean)
   const googleLinked = isGoogleProviderLinked(user)
 
   function updateField(key, value) {
@@ -289,99 +262,54 @@ export function SettingsView({ compatibilityError, compatibilityState, model, on
   }
 
   return (
-    <section className="space-y-5" data-route="settings">
-      <PageHeader
-        eyebrow="Settings"
-        title="Settings"
-        description="Account, appearance, media, notifications, privacy, and diagnostics."
-        actions={(
-          <>
-            <StatusBadge tone={dirty ? 'warning' : 'success'}>
-              {dirty ? 'Unsaved changes' : `Saved theme: ${activeTheme}`}
-            </StatusBadge>
-            <SecondaryButton disabled={!dirty || status.saving} onClick={resetCurrentView}>Cancel</SecondaryButton>
-            <PrimaryButton loading={status.saving} onClick={saveSettings}>{status.saving ? 'Saving' : 'Save changes'}</PrimaryButton>
-          </>
-        )}
-      />
+    <section className="cb-settings-page" data-route="settings">
+      <div className="cb-settings-heading">
+        <div>
+          <h2>Settings</h2>
+          <p>Account, appearance, media, notifications, privacy, and diagnostics.</p>
+        </div>
+        <div className="cb-settings-actions">
+          <StatusBadge tone={dirty ? 'warning' : 'success'}>
+            {dirty ? 'Unsaved changes' : 'Saved'}
+          </StatusBadge>
+          <SecondaryButton disabled={!dirty || status.saving} onClick={resetCurrentView}>Cancel</SecondaryButton>
+          <PrimaryButton loading={status.saving} onClick={saveSettings}>{status.saving ? 'Saving' : 'Save changes'}</PrimaryButton>
+        </div>
+      </div>
 
       {status.message ? <InlineAlert description={status.message} tone={status.kind === 'error' ? 'error' : 'success'} /> : null}
 
-      <nav aria-label="Settings categories" className="cb-settings-tabs">
-        {SETTINGS_CATEGORIES.map(([key, label]) => (
-          <button
-            aria-current={activeCategory === key ? 'page' : undefined}
-            className={activeCategory === key ? 'cb-settings-tab cb-settings-tab-active min-h-11' : 'cb-settings-tab min-h-11'}
-            key={key}
-            onClick={() => setActiveCategory(key)}
-            type="button"
-          >
-            {label}
-          </button>
-        ))}
-      </nav>
-
-      {activeCategory === 'profiles' ? <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(20rem,0.9fr)]">
-        <Surface className="cb-page-frame">
-          <p className="cb-kicker">Special moments</p>
-          <h3 className="cb-page-title mt-2 text-3xl">Birthday, Valentine, and Confession</h3>
-          <p className="cb-body-copy mt-3 text-sm">
-            Birthday, Valentine, and Confession stay close here so they feel like part of the same product without becoming ordinary list pages.
-          </p>
-          <div className="mt-5 grid gap-3">
-            {MOMENT_LINKS.map(({ href, icon: Icon, title, description }) => (
-              <Link className="cb-card cb-motion-standard flex items-start gap-4 p-4 hover:translate-y-[-1px]" key={href} to={href}>
-                <span
-                  className="grid size-11 shrink-0 place-items-center rounded-2xl"
-                  style={{
-                    background: 'color-mix(in srgb, var(--cb-accent-soft) 88%, transparent)',
-                    color: 'var(--cb-accent)',
-                  }}
-                >
-                  <Icon className="size-5" aria-hidden="true" />
-                </span>
-                <span className="min-w-0">
-                  <span className="block text-sm font-semibold" style={{ color: 'var(--cb-text)' }}>{title}</span>
-                  <span className="cb-body-copy mt-1 block text-sm">{description}</span>
-                </span>
-              </Link>
-            ))}
-          </div>
-        </Surface>
-
-        <Surface tone="soft">
-          <div className="flex items-start gap-3">
-            <span
-              className="grid size-11 shrink-0 place-items-center rounded-2xl"
-              style={{
-                background: 'color-mix(in srgb, var(--cb-accent-soft) 88%, transparent)',
-                color: 'var(--cb-accent)',
-              }}
+      <div className="cb-settings-layout">
+        <nav aria-label="Settings categories" className="cb-settings-tabs">
+          {SETTINGS_CATEGORIES.map(([key, label]) => (
+            <button
+              aria-current={activeCategory === key ? 'page' : undefined}
+              className={activeCategory === key ? 'cb-settings-tab cb-settings-tab-active min-h-11' : 'cb-settings-tab min-h-11'}
+              key={key}
+              onClick={() => setActiveCategory(key)}
+              type="button"
             >
-              <ScrollText className="size-5" aria-hidden="true" />
-            </span>
-            <div>
-              <p className="cb-kicker">Our commitment</p>
-              <h3 className="cb-page-title mt-2 text-2xl">Contract</h3>
-              <p className="cb-body-copy mt-2 text-sm">The contract stays readable, deliberate, and visually secondary to the promise itself.</p>
-            </div>
-          </div>
-          <div className="mt-5 grid gap-3">
-            {agreementCards.length > 0 ? agreementCards.map((record) => (
-              <ContentCard key={record.displayName}>
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-semibold" style={{ color: 'var(--cb-text)' }}>{record.displayName}</p>
-                    <p className="cb-body-copy mt-2 text-sm">{record.note}</p>
-                  </div>
-                  <StatusBadge tone={record.status === 'accepted' ? 'success' : 'warning'}>{record.label}</StatusBadge>
-                </div>
-              </ContentCard>
-            )) : null}
-            <SecondaryButton as={Link} to="/contract">Open Contract</SecondaryButton>
-          </div>
+              {label}
+            </button>
+          ))}
+        </nav>
+
+        <div className="cb-settings-pane">
+      {activeCategory === 'profiles' ? (
+        <Surface className="cb-page-frame">
+          <p className="cb-kicker">Profile & Relationship</p>
+          <h3 className="cb-page-title mt-2 text-2xl">Use Us for profile details</h3>
+          <p className="cb-body-copy mt-2 text-sm">Partner names, birthdays, shared relationship dates, and favorites live on the Us page so Settings stays focused on configuration.</p>
         </Surface>
-      </div> : null}
+      ) : null}
+
+      {activeCategory === 'dates' ? (
+        <Surface className="cb-page-frame">
+          <p className="cb-kicker">Important Dates</p>
+          <h3 className="cb-page-title mt-2 text-2xl">Dates are managed from Us</h3>
+          <p className="cb-body-copy mt-2 text-sm">Birthdays are partner dates. The primary anniversary is a couple-level relationship date.</p>
+        </Surface>
+      ) : null}
 
       {activeCategory === 'appearance' ? <Surface className="cb-page-frame">
         <div className="flex flex-col gap-4 border-b pb-4 sm:flex-row sm:items-end sm:justify-between" style={{ borderColor: 'var(--cb-border)' }}>
@@ -390,7 +318,7 @@ export function SettingsView({ compatibilityError, compatibilityState, model, on
             <h3 className="cb-page-title mt-2 text-3xl">Appearance</h3>
             <p className="cb-body-copy mt-2 text-sm">Preview every supported theme instantly. Save only one allowed theme ID to your personal settings.</p>
           </div>
-          <StatusBadge tone="info">{THEME_REGISTRY.find((theme) => theme.id === form.appearanceTheme)?.name || 'Midnight Rose'}</StatusBadge>
+          <StatusBadge tone="info">Theme: {THEME_REGISTRY.find((theme) => theme.id === form.appearanceTheme)?.name || 'Midnight Rose'}</StatusBadge>
         </div>
 
         <div className="mt-5 grid gap-4 xl:grid-cols-3">
@@ -408,7 +336,7 @@ export function SettingsView({ compatibilityError, compatibilityState, model, on
             </SelectField>
           </FormField>
           <ContentCard>
-            <p className="cb-kicker">Saved preference</p>
+            <p className="cb-kicker">Current theme</p>
             <p className="mt-2 text-sm font-semibold" style={{ color: 'var(--cb-text)' }}>{model.appearance?.preservedTheme?.label}</p>
             <p className="cb-body-copy mt-2 text-sm">{model.appearance?.preservedTheme?.origin}</p>
           </ContentCard>
@@ -554,6 +482,8 @@ export function SettingsView({ compatibilityError, compatibilityState, model, on
           </div>
         </details>
       ) : null}
+        </div>
+      </div>
 
       <ConfirmDialog
         confirmLabel="Sign out"

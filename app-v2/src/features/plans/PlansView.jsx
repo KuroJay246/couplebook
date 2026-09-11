@@ -5,8 +5,6 @@ import { EmptyState } from '../../components/ui/EmptyState.jsx'
 import { ErrorState } from '../../components/ui/ErrorState.jsx'
 import { FormField, SelectField, TextAreaField, TextField } from '../../components/ui/FormField.jsx'
 import { InlineAlert } from '../../components/ui/InlineAlert.jsx'
-import { LoadingSkeleton } from '../../components/ui/LoadingSkeleton.jsx'
-import { LoadingState } from '../../components/ui/LoadingState.jsx'
 import { SearchField } from '../../components/ui/SearchField.jsx'
 import { SegmentedControl } from '../../components/ui/SegmentedControl.jsx'
 import { StatusBadge } from '../../components/ui/StatusBadge.jsx'
@@ -197,15 +195,20 @@ export function PlansView({ model, onRefresh, search, setSearch, setStatus, stat
   if (model.status === 'loading') {
     return (
       <section className="cb-plans-redesign" data-route="plans">
-        <div className="cb-plans-header"><h2>Plans</h2><p>Loading...</p></div>
-        <LoadingSkeleton className="h-14" />
-        <LoadingSkeleton className="h-24" />
+        <div className="cb-plans-header"><h2>Plans</h2><p>Checking saved plans.</p></div>
+        <EmptyState
+          icon={CalendarDays}
+          title="Opening Plans..."
+          description="This should resolve shortly. If it does not, refresh the plan list."
+          onCreate={onRefresh}
+          createLabel="Retry"
+        />
       </section>
     )
   }
 
   if (model.status === 'invalid' || model.status === 'unavailable') {
-    return <ErrorState title="Plans could not be loaded" message="The Plans view is not available right now." onRetry={onRefresh} />
+    return <ErrorState title="Plans could not be loaded" message="Plans could not be loaded. Try again." onRetry={onRefresh} />
   }
 
   return (

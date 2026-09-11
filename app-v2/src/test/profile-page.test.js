@@ -25,7 +25,8 @@ test('profile route uses the feature hook and owner editing view', async () => {
 test('profile view keeps unavailable states calm and does not invent private details', async () => {
   const profileViewSource = await readSource('../features/profile/ProfileView.jsx')
 
-  assert.match(profileViewSource, /Add note/)
+  assert.doesNotMatch(profileViewSource, /Creative soul|details planner|personal note is waiting|Dual view/)
+  assert.doesNotMatch(profileViewSource, />Add note</)
   assert.match(profileViewSource, /No shared favorites yet\./)
   assert.doesNotMatch(profileViewSource, /PageTabs|Our Promises|Open Contract/)
   assert.doesNotMatch(profileViewSource, /UIDs, membership status, Firestore paths/)
