@@ -20,6 +20,7 @@ export function ContractView({ compatibilityError, compatibilityState, model, on
   const agreementSections = model.agreement?.sections || []
   const history = model.history || []
   const acceptanceCards = [model.acceptance?.currentUser, model.acceptance?.partner].filter(Boolean)
+  const agreementReady = agreementSections.length > 0
 
   async function handleAccept() {
     setStatus({ kind: '', message: '', saving: true })
@@ -49,8 +50,8 @@ export function ContractView({ compatibilityError, compatibilityState, model, on
         actions={(
           <>
             {model.agreement?.version ? <StatusBadge tone="info">Version {model.agreement.version}</StatusBadge> : null}
-            <PrimaryButton disabled={accepted} loading={status.saving} onClick={() => setConfirmOpen(true)}>
-              {accepted ? 'Accepted' : 'Accept contract'}
+            <PrimaryButton disabled={accepted || !agreementReady} loading={status.saving} onClick={() => setConfirmOpen(true)}>
+              {accepted ? 'Accepted' : agreementReady ? 'Accept contract' : 'Agreement pending'}
             </PrimaryButton>
           </>
         )}
@@ -82,7 +83,7 @@ export function ContractView({ compatibilityError, compatibilityState, model, on
                 ) : null}
               </ContentCard>
             )) : (
-              <EmptyState title="Agreement wording is unavailable here." description="This page keeps the protected contract status in place while agreement text waits for an authorized runtime source." />
+              <EmptyState title="Agreement text is not ready here." description="This page keeps private acceptance status available while the saved agreement wording is restored from the protected Couple Book source." />
             )}
           </div>
         </Surface>

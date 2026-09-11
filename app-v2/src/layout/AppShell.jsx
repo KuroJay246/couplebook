@@ -43,13 +43,14 @@ const NAV_ICON_BY_NAME = {
 }
 
 const desktopNavGroups = [
-  { label: 'In the book', items: ['/dashboard', '/timeline', '/gallery', '/profile', '/plans'] },
-  { label: 'Keepsakes', items: ['/favorites', '/contract'] },
-  { label: 'Private pages', items: ['/birthday', '/valentine', '/confession', '/settings'] },
+  { label: 'The book', items: ['/dashboard', '/timeline', '/gallery', '/profile', '/plans'] },
+  { label: 'Special moments', items: ['/birthday', '/valentine', '/confession'] },
+  { label: 'More', items: ['/favorites', '/settings'] },
 ]
 
 const mobileMoreGroups = [
-  { label: 'More', items: ['/favorites', '/contract', '/birthday', '/valentine', '/confession', '/settings'] },
+  { label: 'Special moments', items: ['/birthday', '/valentine', '/confession'] },
+  { label: 'More', items: ['/favorites', '/settings'] },
 ]
 
 function surfaceDisplayName(value) {
@@ -104,13 +105,13 @@ function SidebarContent({ collapsed = false, groups, onNavigate, onRequestSignOu
         <Link to="/profile" onClick={onNavigate} className="flex w-full min-w-0 items-center justify-between gap-3 text-left">
           <span className="min-w-0 flex-1 overflow-hidden">
             <span className={collapsed ? 'sr-only' : 'cb-kicker'}>
-              Shared between two
+              Private book
             </span>
             <span className={`${collapsed ? 'sr-only' : 'mt-2 block'} max-w-full truncate text-sm font-semibold`} style={{ color: 'var(--cb-text)' }}>
               {displayName}
             </span>
             <span className={`${collapsed ? 'sr-only' : 'mt-1 block'} max-w-full truncate text-xs`} style={{ color: 'var(--cb-text-muted)' }}>
-              Private shared journal
+              Shared with care
             </span>
             {collapsed ? <HeartHandshake className="mx-auto size-5" style={{ color: 'var(--cb-text-secondary)' }} aria-hidden="true" /> : null}
           </span>

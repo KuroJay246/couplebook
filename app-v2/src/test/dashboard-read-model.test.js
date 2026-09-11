@@ -91,7 +91,7 @@ test('dashboard read model keeps the approved section order and filters mileston
   assert.equal(model.specialMoments.items.map((item) => item.href).join(','), '/birthday,/valentine,/confession')
   assert.equal(
     model.supportingNavigation.items.map((item) => item.href).join(','),
-    '/timeline,/gallery,/profile,/favorites,/settings,/contract',
+    '/timeline,/gallery,/profile,/favorites,/settings',
   )
   assert.equal(model.recentMemories.items.length, 2)
   assert.equal(model.recentMemories.items[0].title, 'Library afternoon')

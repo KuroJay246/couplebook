@@ -123,14 +123,14 @@ export function selectAgreementDocument({ agreementSource = null, contractSource
 
   return {
     status: 'unavailable',
-    title: 'Agreement content unavailable in this migrated view.',
+    title: 'Our agreement is being kept private.',
     introduction:
-      'This routed Contract page can preserve status safely, but the agreement wording itself has not been reintroduced from an authorized runtime source yet.',
+      'The preserved acceptance status can stay visible here, but the agreement wording needs to come from the protected Couple Book source before it is shown.',
     sections: [],
     version: version || null,
-    sourceStatus: 'Awaiting protected agreement source',
+    sourceStatus: 'Waiting for saved agreement text',
     summary:
-      'Status can be preserved here without copying the old static contract wording into the routed JavaScript bundle.',
+      'Acceptance status can be preserved without exposing private agreement wording in the app bundle.',
   }
 }
 
@@ -474,16 +474,16 @@ export function selectContractPrivacy() {
     rawSignaturesHidden: true,
     items: [
       {
-        label: 'Read-only route',
-        description: 'This migrated Contract page preserves what can be read safely, without reintroducing signing or editing.',
+        label: 'Private agreement',
+        description: 'The page only shows agreement wording after it comes from the protected Couple Book source.',
       },
       {
-        label: 'Raw signatures hidden',
-        description: 'Signature payloads, data URLs, and image-like content stay outside the display model and the routed page.',
+        label: 'Signatures protected',
+        description: 'Signature payloads, data URLs, and image-like content stay outside the visible page.',
       },
       {
-        label: 'Protected wording only',
-        description: 'Agreement text returns here only when it comes from an authorized runtime source, not from the old static files.',
+        label: 'Status preserved',
+        description: 'Acceptance status can remain available without showing unfinished or unsafe agreement text.',
       },
     ],
   }

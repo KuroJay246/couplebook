@@ -219,8 +219,8 @@ export function SpecialMomentFrame({ momentKey }) {
       {model.warnings?.length ? (
         <InlineAlert
           tone="info"
-          title="Protected content notes"
-          description={`This page loaded with ${model.warnings.length} runtime note${model.warnings.length === 1 ? '' : 's'}.`}
+          title="Some details are still private"
+          description="This page is keeping anything it cannot safely show out of view."
         />
       ) : null}
 
@@ -235,8 +235,8 @@ export function SpecialMomentFrame({ momentKey }) {
           </div>
           <div className="grid gap-4">
             <Surface tone="soft">
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Private boundary</p>
-              <p className="mt-2 text-sm leading-6 text-[#6B564C]">This page remains runtime-only. The protected shell can read it after access checks without bundling the private content into public assets.</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Only for you two</p>
+              <p className="mt-2 text-sm leading-6 text-[#6B564C]">The message stays inside the signed-in Couple Book session, with private details shown only when they are safe to read here.</p>
             </Surface>
             <Surface tone="soft">
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Go next</p>

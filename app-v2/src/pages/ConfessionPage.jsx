@@ -32,10 +32,10 @@ function RestorationSlot({ label, status }) {
 }
 
 function slotStatusCopy(slot) {
-  if (!slot) return 'Photo awaiting restoration'
+  if (!slot) return 'Private media'
   if (slot.kind === 'audio') return slot.status === 'mapped' ? 'Audio ready' : 'Audio optional'
-  if (slot.kind === 'video') return slot.status === 'mapped' ? 'Video ready' : 'Video awaiting restoration'
-  return slot.status === 'mapped' ? 'Photo ready' : 'Photo awaiting restoration'
+  if (slot.kind === 'video') return slot.status === 'mapped' ? 'Video ready' : 'Private video'
+  return slot.status === 'mapped' ? 'Photo ready' : 'Private photo'
 }
 
 function CandidatePreview({ candidate, resolvePreviewUrl }) {
@@ -67,6 +67,7 @@ export function ConfessionPage() {
     updateOwnerMapping,
     user,
   } = useConfessionOwnerBridge()
+  const recoveryToolsEnabled = import.meta.env.VITE_ENABLE_SPECIAL_MOMENT_RECOVERY_TOOLS === 'true'
 
   const letterText = model.moment?.sections?.length
     ? splitRuntimeParagraphs(model.moment.sections.flatMap((section) => (section.content ? [section.content] : [])).join('\n\n'))
@@ -156,7 +157,7 @@ export function ConfessionPage() {
             )}
           </div>
 
-          {user?.uid && showOwnerTools ? (
+          {recoveryToolsEnabled && user?.uid && showOwnerTools ? (
             <aside className="confession-owner-panel">
               <h3>Owner restoration status</h3>
               <p className="confession-owner-copy">

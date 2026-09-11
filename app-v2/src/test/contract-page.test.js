@@ -15,6 +15,7 @@ test('contract route uses the read-only feature hook and shared-space view', asy
   assert.match(contractViewSource, /Shared Relationship Contract/)
   assert.match(contractViewSource, /Protected boundaries/)
   assert.match(contractViewSource, /model\.agreement\?\.sections \|\| \[\]/)
+  assert.match(contractViewSource, /agreementReady/)
   assert.match(contractViewSource, /Acceptance history/)
   assert.doesNotMatch(contractViewSource, /Sign & Open Vault|Accept button|Edit agreement|Upload signature|Draw signature|Export PDF/)
 })
@@ -22,8 +23,9 @@ test('contract route uses the read-only feature hook and shared-space view', asy
 test('contract view keeps unavailable agreement wording honest and does not expose raw technical warnings', async () => {
   const contractViewSource = await readSource('../features/contract/ContractView.jsx')
 
-  assert.match(contractViewSource, /Agreement wording is unavailable here\./)
-  assert.match(contractViewSource, /authorized runtime source/)
+  assert.match(contractViewSource, /Agreement text is not ready here\./)
+  assert.match(contractViewSource, /protected Couple Book source/)
+  assert.match(contractViewSource, /Agreement pending/)
   assert.match(contractViewSource, /model\.sourceStatus\?\.warnings/)
   assert.doesNotMatch(contractViewSource, /localStorage|memorybook_contract_signatures|users\/\{uid\}|data:image|base64/)
 })

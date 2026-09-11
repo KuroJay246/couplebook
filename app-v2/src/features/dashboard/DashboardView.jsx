@@ -159,7 +159,7 @@ function SpecialMoments({ section }) {
     <div className="rounded-[24px] border border-[var(--cb-border)] bg-[var(--cb-surface)] p-6 shadow-[0_8px_24px_rgba(84,53,67,0.04)]">
       <div>
         <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Keep Exploring</p>
-        <h3 className="mt-2 font-serif text-2xl text-[var(--cb-text)]">Private pages with their own feeling</h3>
+        <h3 className="mt-2 font-serif text-2xl text-[var(--cb-text)]">Special moments with their own feeling</h3>
         <p className="mt-2 text-sm leading-6 text-[var(--cb-text-secondary)]">Jump back into the birthday, Valentine, and confession spaces without digging through the full archive.</p>
       </div>
       <div className="mt-5 grid gap-3">

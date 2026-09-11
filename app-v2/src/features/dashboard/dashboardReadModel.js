@@ -4,7 +4,7 @@ import { selectOnThisDayMemory } from '../timeline/onThisDay.js'
 import { calculateBirthdayCountdown } from '../../../../packages/core/src/dates.js'
 
 const SPECIAL_MOMENT_PATHS = ['/birthday', '/valentine', '/confession']
-const SUPPORTING_ROUTE_PATHS = ['/timeline', '/gallery', '/profile', '/favorites', '/settings', '/contract']
+const SUPPORTING_ROUTE_PATHS = ['/timeline', '/gallery', '/profile', '/favorites', '/settings']
 const SOURCE_ORDER = ['profile', 'settings', 'favorites', 'contract', 'memories']
 
 function toTrimmedString(value) {
@@ -399,7 +399,7 @@ function buildSpecialMomentsSection(routeMeta) {
 
   return {
     eyebrow: 'Special moments',
-    title: 'Private pages',
+    title: 'Special moments',
     description: 'Birthday, Valentine, and Confession.',
     items: SPECIAL_MOMENT_PATHS.map((path) => {
       const meta = routeMeta.find((route) => route.path === path) || {}
@@ -466,7 +466,7 @@ function buildSupportingNavigation(routeMeta) {
   return {
     eyebrow: 'Supporting navigation',
     title: 'More places',
-    description: 'Favorites, settings, and private pages.',
+    description: 'Favorites, settings, and the places you open most.',
     items: SUPPORTING_ROUTE_PATHS.map((path) => {
       const meta = routeMeta.find((route) => route.path === path) || {}
       return {
