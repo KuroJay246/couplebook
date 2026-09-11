@@ -15,7 +15,7 @@ export const GOOGLE_PROVIDER_ID = 'google.com'
 
 export async function ensureAuthPersistence() {
   if (!isFirebaseConfigured || !auth) {
-    throw new Error(missingFirebaseConfigMessage || 'Firebase auth is not configured for app-v2.')
+    throw new Error(missingFirebaseConfigMessage || 'Firebase auth is not configured for Couple Book.')
   }
 
   if (!persistencePromise) {
@@ -39,7 +39,7 @@ export function observeAuthState(onResolve, onError) {
 
 export async function signInWithEmail(email, password) {
   if (!auth || !isFirebaseConfigured) {
-    throw new Error(missingFirebaseConfigMessage || 'Firebase auth is not configured for app-v2.')
+    throw new Error(missingFirebaseConfigMessage || 'Firebase auth is not configured for Couple Book.')
   }
 
   if (!email?.trim()) throw new Error('Enter an approved account email.')
@@ -106,7 +106,7 @@ export async function linkCurrentUserWithGoogle({
   providerFactory = createGoogleAuthProvider,
 } = {}) {
   if (!authInstance || !firebaseConfigured) {
-    throw new Error(missingFirebaseConfigMessage || 'Firebase auth is not configured for app-v2.')
+    throw new Error(missingFirebaseConfigMessage || 'Firebase auth is not configured for Couple Book.')
   }
 
   const currentUser = authInstance.currentUser
@@ -131,7 +131,7 @@ export async function signInWithGoogleProvider({
   signInTimeoutMs = 20000,
 } = {}) {
   if (!authInstance || !firebaseConfigured) {
-    throw new Error(missingFirebaseConfigMessage || 'Firebase auth is not configured for app-v2.')
+    throw new Error(missingFirebaseConfigMessage || 'Firebase auth is not configured for Couple Book.')
   }
 
   await ensurePersistence()

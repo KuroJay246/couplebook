@@ -6,12 +6,13 @@ async function readProjectFile(relativePath) {
   return readFile(new URL(`../../${relativePath}`, import.meta.url), 'utf8')
 }
 
-test('web app manifest is installable and scoped to Couple Book app-v2', async () => {
+test('web app manifest is installable and scoped to Couple Book', async () => {
   const manifest = JSON.parse(await readProjectFile('public/manifest.webmanifest'))
   const indexHtml = await readProjectFile('index.html')
 
   assert.equal(manifest.name, 'Couple Book')
   assert.equal(manifest.short_name, 'Couple Book')
+  assert.match(indexHtml, /<title>Couple Book<\/title>/)
   assert.equal(manifest.start_url, '/dashboard')
   assert.equal(manifest.scope, '/')
   assert.equal(manifest.display, 'standalone')

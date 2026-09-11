@@ -41,7 +41,7 @@ export async function getDeferredCloudSyncStatus() {
   return createCompatibilityResult({
     status: 'unavailable',
     source: FIRESTORE_SOURCE,
-    warnings: ['Live synchronization remains disabled in app-v2 while the compatibility bridge stays read-only.'],
+    warnings: ['Live synchronization remains disabled while the compatibility bridge stays read-only.'],
   })
 }
 

@@ -7,7 +7,7 @@ export function buildUserDocumentPath(uid) {
 }
 
 export function getUserDocumentRef(uid, firestore = db) {
-  if (!firestore) throw new Error('Firestore is not configured for app-v2.')
+  if (!firestore) throw new Error('Firestore is not configured for Couple Book.')
   return doc(firestore, ...userPath(uid))
 }
 

@@ -172,7 +172,7 @@ export function LoginPage() {
 
         {!isConfigured ? (
           <ErrorState
-            description={authError || 'Add environment values in app-v2 before enabling sign-in.'}
+            description={authError || 'Add the local app environment values before enabling sign-in.'}
             title="Firebase configuration is incomplete"
           />
         ) : null}

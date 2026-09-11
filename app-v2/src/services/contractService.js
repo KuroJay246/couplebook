@@ -25,7 +25,7 @@ export async function getFirestoreContractByUid() {
 export function normalizeFirestoreContract(id, data, warnings) {
   if (!requireSchemaVersion(data, warnings)) return null
   if (data.signaturePayload || data.signatureBase64 || data.strokeData) {
-    warnings.push('Raw contract signature payload is not allowed in app-v2 contract reads.')
+    warnings.push('Raw contract signature payload is not allowed in Couple Book contract reads.')
     return null
   }
   return {

@@ -242,7 +242,7 @@ export function selectSettingsPrivacy() {
         meta: 'Required',
       },
       {
-        label: 'Private media stays outside app-v2',
+        label: 'Private media stays outside the app bundle',
         description: 'Private media stays protected and appears only when it is available to your account.',
         meta: 'Protected',
       },

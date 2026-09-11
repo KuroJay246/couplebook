@@ -58,7 +58,7 @@ function buildSourceStatus(memorySource) {
         key: 'autoscan',
         status: 'deferred',
         source: 'local dev server: /api/scan-media',
-        summary: 'Filename-derived autoscan entries remain outside app-v2 until a safer private media inventory boundary exists.',
+        summary: 'Filename-derived autoscan entries remain outside the private story until a safer media inventory boundary exists.',
       },
       {
         key: 'fallback-seed',

@@ -10,6 +10,6 @@ export async function getRegisteredDevice() {
   return createCompatibilityResult({
     status: 'unavailable',
     source: FIRESTORE_SOURCE,
-    warnings: ['Device registration remains disabled in app-v2 until a trusted backend session-management flow exists.'],
+    warnings: ['Device registration remains disabled until a trusted backend session-management flow exists.'],
   })
 }

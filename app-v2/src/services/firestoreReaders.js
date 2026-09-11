@@ -9,7 +9,7 @@ import {
 } from '../data/adapterUtils.js'
 
 export async function readDocument({ firestore, path, getDocument = getDoc, normalize, missingStatus = 'unavailable' }) {
-  if (!firestore) throw new Error('Firestore is not configured for app-v2.')
+  if (!firestore) throw new Error('Firestore is not configured for Couple Book.')
   const reference = doc(firestore, ...path)
   const snapshot = await getDocument(reference)
 
@@ -25,7 +25,7 @@ export async function readDocument({ firestore, path, getDocument = getDoc, norm
 }
 
 export async function readCollection({ firestore, path, getCollection = getDocs, normalizeEntry, emptyStatus = 'empty' }) {
-  if (!firestore) throw new Error('Firestore is not configured for app-v2.')
+  if (!firestore) throw new Error('Firestore is not configured for Couple Book.')
   const snapshot = await getCollection(collection(firestore, ...path))
   const warnings = []
   const entries = []
