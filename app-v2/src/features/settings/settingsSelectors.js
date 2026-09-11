@@ -61,7 +61,7 @@ const NOTIFICATION_PREFERENCE_COPY = Object.freeze({
   },
   specialMoments: {
     label: 'Special moments',
-    description: 'Birthday, Valentine, Confession, and future private moment prompts.',
+    description: 'Birthday, Valentine, and Confession.',
   },
 })
 
@@ -192,7 +192,7 @@ export function selectSettingsAppearance(settingsSource) {
       label: formatAnniversaryViewLabel(anniversaryView),
       value: anniversaryView || 'dual',
       description: anniversaryView
-        ? 'The old dashboard anniversary preference is preserved for reference until editing returns in a later phase.'
+        ? 'This controls which saved relationship date appears first in Home.'
         : 'No anniversary preference is stored here yet.',
       meta: anniversaryView ? 'Preserved setting' : 'Not set',
     },
@@ -431,7 +431,7 @@ function getCompatibilitySummary(key, source) {
     if (status === 'invalid') return 'Protected contract context needs review before it can be summarized here safely.'
   }
 
-  return 'This shared detail will appear here when it is available to your account.'
+  return 'Not available right now.'
 }
 
 export function selectSettingsCompatibility(snapshot) {
@@ -524,7 +524,7 @@ export function selectSettingsDangerZone() {
       },
       {
         label: 'No browser cleanup tools',
-        description: 'Any future destructive workflow must be reviewed separately instead of quietly returning as a browser utility.',
+        description: 'Destructive account actions are not available here.',
         meta: 'Deferred',
       },
       {

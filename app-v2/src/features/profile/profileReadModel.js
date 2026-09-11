@@ -3,6 +3,7 @@ import {
   deriveProfileStatus,
   selectContractEntry,
   selectFavoritesEntry,
+  selectImportantDates,
   selectProfilePeople,
   selectProfileSourceStatus,
   selectRelationshipAnniversaries,
@@ -34,14 +35,20 @@ export function buildProfileReadModel({
   }
 
   const people = selectProfilePeople(resolvedSnapshot.sources?.profile, approvedUser)
+  const importantDates = selectImportantDates(people, resolvedSnapshot.sources?.contract)
+  const primaryAnniversary = importantDates.find((item) => item.type === 'relationship') || null
+  const nextImportantDate = importantDates[0] || null
   const relationship = {
     title: selectRelationshipTitle(people),
     summary:
       people.length >= 2
-        ? 'The relationship remains the subject of this shared space, with individual details nested inside one quieter spread.'
-        : 'The shared relationship frame is ready, but the paired profile details still need their read-only bridge.',
+        ? `${people.map((person) => person.shortName || person.displayName).join(' + ')}`
+        : 'Add the second profile to complete this page.',
     anniversaries: selectRelationshipAnniversaries(people),
+    importantDates,
     milestones: selectRelationshipMilestones(people, resolvedSnapshot.sources?.contract),
+    nextImportantDate,
+    primaryAnniversary,
   }
   const sharedHighlights = selectSharedHighlights(resolvedSnapshot.sources?.favorites)
   const entries = {

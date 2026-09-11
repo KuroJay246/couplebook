@@ -519,7 +519,7 @@ export function SettingsView({ compatibilityError, compatibilityState, model, on
               <div>
                 <p className="cb-kicker">System health</p>
                 <h3 className="cb-page-title mt-2 text-2xl">System health</h3>
-                <p className="cb-body-copy mt-2 text-sm">Compatibility stays visible here without turning Settings into an engineering dashboard.</p>
+                <p className="cb-body-copy mt-2 text-sm">Connection status and migration health.</p>
               </div>
             </div>
             <div className="mt-5 grid gap-3">

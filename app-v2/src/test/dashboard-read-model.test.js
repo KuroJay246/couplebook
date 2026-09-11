@@ -87,7 +87,7 @@ test('dashboard read model keeps the approved section order and filters mileston
 
   assert.equal(model.hero.eyebrow, 'Private home')
   assert.equal(model.recentMemories.title, 'The latest pages worth reopening')
-  assert.equal(model.milestones.title, 'Relationship time stays close at hand')
+  assert.equal(model.milestones.title, 'Dates worth holding close')
   assert.equal(model.specialMoments.items.map((item) => item.href).join(','), '/birthday,/valentine,/confession')
   assert.equal(
     model.supportingNavigation.items.map((item) => item.href).join(','),
@@ -127,8 +127,8 @@ test('dashboard read model keeps unavailable memory states honest instead of pre
   })
 
   assert.equal(model.recentMemories.state, 'unavailable')
-  assert.match(model.recentMemories.emptyState.title, /still waiting on its archive/i)
-  assert.match(model.recentMemories.emptyState.description, /shared archive is connected/i)
+  assert.match(model.recentMemories.emptyState.title, /no recent memories yet/i)
+  assert.match(model.recentMemories.emptyState.description, /connect the archive or add a memory/i)
   assert.equal(model.sourceState.totals.unavailable, 1)
   assert.equal(model.sourceState.warnings.length, 1)
 })

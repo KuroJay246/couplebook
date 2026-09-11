@@ -51,6 +51,31 @@ function daysTogether(value) {
   return Math.max(0, Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)))
 }
 
+function relationshipMetricCards(relationship) {
+  const primaryAnniversary = relationship?.primaryAnniversary || null
+  const nextDate = relationship?.nextImportantDate || null
+  return [
+    {
+      key: 'together-since',
+      label: 'Together since',
+      value: primaryAnniversary?.dateLabel || 'Add date',
+      helper: primaryAnniversary?.summary || 'Set this from your profile.',
+    },
+    {
+      key: 'next-date',
+      label: 'Next important date',
+      value: nextDate?.label || 'Add date',
+      helper: nextDate?.countdownLabel ? `${nextDate.countdownLabel} away` : 'Birthdays and anniversaries appear here.',
+    },
+    {
+      key: 'time-together',
+      label: 'Time together',
+      value: primaryAnniversary?.timeTogetherLabel || 'Add date',
+      helper: primaryAnniversary?.dateLabel || 'Calculated from the saved relationship date.',
+    },
+  ]
+}
+
 function ProfileEditDialog({ onClose, onSave, person, status }) {
   const firstFieldRef = useRef(null)
   const titleId = useId()
@@ -98,14 +123,14 @@ function ProfileEditDialog({ onClose, onSave, person, status }) {
           <FormField label="Bio" className="sm:col-span-2">
             <TextAreaField onChange={(event) => updateField('bio', event.target.value)} rows={6} value={form.bio} />
           </FormField>
-          <FormField label="Anniversary view">
+          <FormField label="Primary anniversary view">
             <SelectField onChange={(event) => updateField('anniversaryView', event.target.value)} value={form.anniversaryView}>
               <option value="dual">Both perspectives</option>
               <option value="jaylan">Jaylan perspective</option>
               <option value="omia">Omia perspective</option>
             </SelectField>
           </FormField>
-          <FormField label="Joined date">
+          <FormField label="Relationship date">
             <TextField onChange={(event) => updateField('joinedDate', event.target.value)} type="date" value={form.joinedDate || ''} />
           </FormField>
           <FormField label="Birthday">
@@ -142,7 +167,7 @@ function ProfileCard({ canEdit, onEdit, person, index }) {
           {canEdit ? <SecondaryButton onClick={() => onEdit(person)}>Edit</SecondaryButton> : null}
         </div>
 
-        <p className="text-sm leading-6 text-[var(--cb-text-secondary)]">{person.bio || 'A personal note is waiting to be written.'}</p>
+        <p className="text-sm leading-6 text-[var(--cb-text-secondary)]">{person.bio || 'No note yet.'}</p>
 
         <div className="grid gap-3 sm:grid-cols-2">
           {(person.details || []).map((detail) => (
@@ -196,7 +221,7 @@ export function ProfileView({ compatibilityError, compatibilityState, model, onR
 
   const displayRelationshipTitle = relationshipTitle(model.relationship?.title, people)
   const tabs = [
-    { id: 'overview', label: 'About Us' },
+    { id: 'overview', label: 'Overview' },
     ...people.map((person, index) => ({ id: `person-${index}`, label: relationshipDisplayName(person.displayName, index) })),
     { id: 'dates', label: 'Dates' },
     { id: 'shared', label: 'Shared matches' },
@@ -231,14 +256,8 @@ export function ProfileView({ compatibilityError, compatibilityState, model, onR
     <section className="space-y-5" data-route="profile">
       <PageHeader
         eyebrow="Us"
-        title="About us"
-        description="Both of you, the dates that matter, and the things that make this relationship feel like yours."
-        actions={(
-          <>
-            <SecondaryButton as={Link} to="/favorites"><Star className="size-4" />Favorites</SecondaryButton>
-            <PrimaryButton as={Link} to="/plans"><Sparkles className="size-4" />Things to try</PrimaryButton>
-          </>
-        )}
+        title="Our relationship"
+        description="Profiles, dates, favorites, and promises in one private place."
       />
 
       {status.message && !editingPerson ? <InlineAlert description={status.message} tone={status.kind === 'error' ? 'error' : 'success'} /> : null}
@@ -250,25 +269,24 @@ export function ProfileView({ compatibilityError, compatibilityState, model, onR
         />
       ) : null}
 
-      <Surface className="cb-us-hero grid gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(18rem,0.9fr)]">
+      <Surface className="cb-us-hero grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(22rem,0.85fr)]">
         <div>
-          <StatusBadge tone="info">Shared profile</StatusBadge>
+          <StatusBadge tone="info">Private profile</StatusBadge>
           <h3 className="mt-3 font-serif text-4xl text-[var(--cb-text)]">{displayRelationshipTitle}</h3>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--cb-text-secondary)]">{model.relationship?.summary}</p>
+          <div className="mt-5 flex flex-wrap gap-2">
+            <SecondaryButton as={Link} to="/favorites"><Star className="size-4" />Favorites</SecondaryButton>
+            <PrimaryButton as={Link} to="/plans"><Sparkles className="size-4" />Add a plan</PrimaryButton>
+          </div>
         </div>
-        <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
-          <ContentCard>
-            <p className="text-3xl font-bold text-[var(--cb-text)]">{people.length}</p>
-            <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[var(--cb-text-muted)]">People in us</p>
-          </ContentCard>
-          <ContentCard>
-            <p className="text-3xl font-bold text-[var(--cb-text)]">{(model.relationship?.anniversaries || []).length}</p>
-            <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[var(--cb-text-muted)]">Shared dates</p>
-          </ContentCard>
-          <ContentCard>
-            <p className="text-3xl font-bold text-[var(--cb-text)]">{(model.relationship?.milestones || []).length}</p>
-            <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[var(--cb-text-muted)]">Milestones</p>
-          </ContentCard>
+        <div className="grid gap-3">
+          {relationshipMetricCards(model.relationship).map((item) => (
+            <ContentCard key={item.key}>
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--cb-text-muted)]">{item.label}</p>
+              <p className="mt-2 text-lg font-bold text-[var(--cb-text)]">{item.value}</p>
+              <p className="mt-1 text-xs text-[var(--cb-text-secondary)]">{item.helper}</p>
+            </ContentCard>
+          ))}
         </div>
       </Surface>
 
@@ -277,13 +295,20 @@ export function ProfileView({ compatibilityError, compatibilityState, model, onR
       {activeTab === 'overview' ? (
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(22rem,0.9fr)]">
           <Surface>
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Our story</p>
-            <h3 className="mt-2 font-serif text-3xl text-[var(--cb-text)]">What feels most like us</h3>
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Partners</p>
+            <h3 className="mt-2 font-serif text-3xl text-[var(--cb-text)]">Profiles</h3>
             <div className="mt-5 grid gap-4 md:grid-cols-2">
               {people.map((person, index) => (
                 <ContentCard key={person.id}>
                   <p className="text-sm font-bold text-[var(--cb-text)]">{relationshipDisplayName(person.displayName, index)}</p>
-                  <p className="mt-2 text-sm leading-6 text-[var(--cb-text-secondary)]">{person.bio || 'A personal note is waiting to be written.'}</p>
+                  <p className="mt-2 text-sm leading-6 text-[var(--cb-text-secondary)]">{person.bio || 'No note yet.'}</p>
+                  <button
+                    type="button"
+                    className="mt-4 text-xs font-bold text-[var(--cb-accent)]"
+                    onClick={() => setActiveTab(`person-${index}`)}
+                  >
+                    View profile
+                  </button>
                 </ContentCard>
               ))}
             </div>
@@ -291,16 +316,16 @@ export function ProfileView({ compatibilityError, compatibilityState, model, onR
           <div className="grid gap-5">
             <Surface tone="soft">
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Shared matches</p>
-              <h3 className="mt-2 font-serif text-2xl text-[var(--cb-text)]">Things you already have in common</h3>
+              <h3 className="mt-2 font-serif text-2xl text-[var(--cb-text)]">Shared favorites</h3>
               <div className="mt-4 flex flex-wrap gap-2">
                 {model.sharedHighlights?.length > 0
                   ? model.sharedHighlights.map((highlight) => <StatusBadge key={highlight.id}>{highlight.label}</StatusBadge>)
-                  : <p className="text-sm text-[var(--cb-text-secondary)]">Shared favorites will surface here as the preserved collection fills out.</p>}
+                  : <p className="text-sm text-[var(--cb-text-secondary)]">No favorites yet.</p>}
               </div>
             </Surface>
             <Surface tone="soft">
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Things to try</p>
-              <p className="mt-2 text-sm leading-6 text-[var(--cb-text-secondary)]">Plans keeps upcoming dates, gifts, and ideas close without turning this page into a dashboard.</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Plans</p>
+              <p className="mt-2 text-sm leading-6 text-[var(--cb-text-secondary)]">Date ideas, trips, gifts, and goals.</p>
               <div className="mt-4">
                 <SecondaryButton as={Link} to="/plans">Open Plans</SecondaryButton>
               </div>
@@ -328,19 +353,24 @@ export function ProfileView({ compatibilityError, compatibilityState, model, onR
             <div className="flex items-start gap-3">
               <CalendarDays className="mt-1 size-5 text-[var(--cb-accent)]" aria-hidden="true" />
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Relationship dates</p>
-                <h3 className="mt-2 font-serif text-3xl text-[var(--cb-text)]">Dates worth holding close</h3>
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Important dates</p>
+                <h3 className="mt-2 font-serif text-3xl text-[var(--cb-text)]">Birthdays and anniversaries</h3>
               </div>
             </div>
             <div className="mt-5 grid gap-3">
-              {(model.relationship?.anniversaries || []).map((item) => (
+              {(model.relationship?.importantDates || []).map((item) => (
                 <ContentCard key={item.id}>
-                  <p className="text-sm font-bold text-[var(--cb-text)]">{item.label}</p>
-                  <p className="mt-2 text-sm text-[var(--cb-text-secondary)]">{item.dateLabel || 'Still to be added'}</p>
-                  <p className="mt-1 text-sm text-[var(--cb-text-muted)]">{item.summary}</p>
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-bold text-[var(--cb-text)]">{item.label}</p>
+                      <p className="mt-2 text-sm text-[var(--cb-text-secondary)]">{item.dateLabel || 'Add date'}</p>
+                    </div>
+                    <StatusBadge tone={item.daysUntil === 0 ? 'success' : 'info'}>{item.countdownLabel || 'Saved'}</StatusBadge>
+                  </div>
+                  <p className="mt-2 text-xs text-[var(--cb-text-muted)]">{item.repeatsAnnually ? 'Repeats annually' : 'One-time date'}{item.primary ? ' • Primary anniversary' : ''}</p>
                 </ContentCard>
               ))}
-              {(model.relationship?.anniversaries || []).length === 0 ? <EmptyState title="No dates are saved yet." description="Joined dates and anniversaries will appear here when they are available." /> : null}
+              {(model.relationship?.importantDates || []).length === 0 ? <EmptyState title="No dates yet." description="Edit a profile to add birthdays and relationship dates." /> : null}
             </div>
           </Surface>
           <Surface>
@@ -348,7 +378,7 @@ export function ProfileView({ compatibilityError, compatibilityState, model, onR
               <HeartHandshake className="mt-1 size-5 text-[var(--cb-accent)]" aria-hidden="true" />
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Milestones</p>
-                <h3 className="mt-2 font-serif text-3xl text-[var(--cb-text)]">Birthdays and contract progress</h3>
+              <h3 className="mt-2 font-serif text-3xl text-[var(--cb-text)]">Promises and records</h3>
               </div>
             </div>
             <div className="mt-5 grid gap-3">
@@ -358,7 +388,7 @@ export function ProfileView({ compatibilityError, compatibilityState, model, onR
                   <p className="mt-2 text-sm text-[var(--cb-text-secondary)]">{item.value || 'Still to be added'}</p>
                 </ContentCard>
               ))}
-              {(model.relationship?.milestones || []).length === 0 ? <EmptyState title="No milestones are saved yet." description="Birthday and contract milestones will appear here when they are available." /> : null}
+              {(model.relationship?.milestones || []).length === 0 ? <EmptyState title="No records yet." description="Saved birthdays and contract status appear here." /> : null}
             </div>
           </Surface>
         </div>
@@ -375,7 +405,7 @@ export function ProfileView({ compatibilityError, compatibilityState, model, onR
                   <p className="text-sm font-bold text-[var(--cb-text)]">{highlight.label}</p>
                   <p className="mt-2 text-sm text-[var(--cb-text-secondary)]">{highlight.owner} • {highlight.category}</p>
                 </ContentCard>
-              )) : <EmptyState title="No shared matches are visible yet." description="Favorites will begin surfacing here as the shared collection is filled out." />}
+              )) : <EmptyState title="No shared matches yet." description="Add favorites to compare the lists." />}
             </div>
           </Surface>
           <Surface tone="soft">
@@ -384,7 +414,7 @@ export function ProfileView({ compatibilityError, compatibilityState, model, onR
             <div className="mt-5 grid gap-3">
               <ContentCard>
                 <p className="text-sm font-bold text-[var(--cb-text)]">{model.entries?.favorites?.title || 'Shared favorites'}</p>
-                <p className="mt-2 text-sm leading-6 text-[var(--cb-text-secondary)]">{model.entries?.favorites?.description}</p>
+                <p className="mt-2 text-sm leading-6 text-[var(--cb-text-secondary)]">Foods, songs, places, and ideas both profiles can keep close.</p>
                 <div className="mt-4">
                   <SecondaryButton as={Link} to={model.entries?.favorites?.href || '/favorites'}>Open Favorites</SecondaryButton>
                 </div>
@@ -404,14 +434,14 @@ export function ProfileView({ compatibilityError, compatibilityState, model, onR
                 <h3 className="mt-2 font-serif text-3xl text-[var(--cb-text)]">Relationship contract</h3>
               </div>
             </div>
-            <p className="mt-3 text-sm leading-6 text-[var(--cb-text-secondary)]">{model.entries?.contract?.description}</p>
+            <p className="mt-3 text-sm leading-6 text-[var(--cb-text-secondary)]">Private agreement details and acceptance status.</p>
             <div className="mt-5">
               <PrimaryButton as={Link} to={model.entries?.contract?.href || '/contract'}>Open Contract</PrimaryButton>
             </div>
           </Surface>
           <Surface tone="soft">
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Protected</p>
-            <p className="mt-2 text-sm leading-6 text-[var(--cb-text-secondary)]">UIDs, membership status, Firestore paths, and internal authorization language stay out of this view.</p>
+            <p className="mt-2 text-sm leading-6 text-[var(--cb-text-secondary)]">Private account details stay in Settings.</p>
           </Surface>
         </div>
       ) : null}

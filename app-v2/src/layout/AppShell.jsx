@@ -209,6 +209,7 @@ export function AppShell() {
     [],
   )
   const currentRoute = protectedRouteMeta.find((route) => route.path === location.pathname) || protectedRouteMeta[0]
+  const showShellAddMemory = location.pathname === '/dashboard' || location.pathname === '/timeline'
 
   useEffect(() => {
     if (!menuOpen) return undefined
@@ -338,14 +339,16 @@ export function AppShell() {
               <span className="cb-shell-meta-pill">{activeThemeDefinition.name}</span>
               <span className="cb-shell-meta-pill">{displayName}</span>
             </div>
-            <button
-              type="button"
-              onClick={() => setQuickAddOpen(true)}
-              className="cb-button cb-button-primary hidden min-h-11 px-4 sm:inline-flex"
-            >
-              <Sparkles className="size-4" aria-hidden="true" />
-              Add Memory
-            </button>
+            {showShellAddMemory ? (
+              <button
+                type="button"
+                onClick={() => setQuickAddOpen(true)}
+                className="cb-button cb-button-primary hidden min-h-11 px-4 sm:inline-flex"
+              >
+                <Sparkles className="size-4" aria-hidden="true" />
+                Add Memory
+              </button>
+            ) : null}
           </div>
         </header>
 

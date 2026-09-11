@@ -390,7 +390,7 @@ export function selectContractEntries() {
       href: '/profile',
       title: 'Shared profile',
       status: 'ready',
-      description: 'Shared identity and milestones stay close to the preserved agreement without turning this page into an account console.',
+      description: 'Names, dates, and shared details live in Us.',
     },
     favorites: {
       href: '/favorites',

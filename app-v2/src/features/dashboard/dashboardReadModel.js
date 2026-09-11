@@ -173,17 +173,12 @@ function buildHeroSection({ approvedUser, participants, recentMemories, sourceSt
   const memoryCount = recentMemories.totalCount
   const unavailableCount = sourceState.totals.unavailable
 
-  let description =
-    'Recent memories stay first, milestones stay close, and every lower-priority surface remains one deliberate step down.'
+  let description = 'Recent memories, upcoming dates, and plans.'
 
   if (recentMemories.state === 'unavailable') {
-    description =
-      'Your recent memories will appear here when the shared archive is connected.'
+    description = 'Connect the memory archive to show recent memories.'
   } else if (memoryCount > 0) {
-    description = `${memoryCount} ${pluralize(
-      memoryCount,
-      'memory',
-    )} are ready to reopen first, with milestones and special pages kept close behind.`
+    description = `${memoryCount} ${pluralize(memoryCount, 'memory')} ready to reopen.`
   }
 
   return {
@@ -281,28 +276,28 @@ function buildRecentMemoriesSection(memorySource) {
     }
   })
 
-  let emptyTitle = 'This chapter is still waiting on its archive.'
-    let emptyDescription = 'Recent memories will appear here when the shared archive is connected.'
+  let emptyTitle = 'No recent memories yet.'
+  let emptyDescription = 'Connect the archive or add a memory.'
 
   if (state === 'empty') {
-    emptyTitle = 'No recent memories are stored for this view yet.'
-      emptyDescription = 'Your latest chapter will appear here once a memory has been saved.'
+    emptyTitle = 'No recent memories yet.'
+    emptyDescription = 'Add a memory to start the story.'
   }
 
   if (state === 'invalid') {
     emptyTitle = 'Recent memory data needs attention before it can be shown.'
-      emptyDescription = 'Some saved memories could not be read right now.'
+    emptyDescription = 'Some saved memories could not be read right now.'
   }
 
   if (state === 'ready' && items.length === 0) {
-    emptyTitle = 'The archive responded, but no recent memory cards were available.'
-      emptyDescription = 'There are no recent memory cards to show yet.'
+    emptyTitle = 'No recent memories yet.'
+    emptyDescription = 'Add a memory to start the story.'
   }
 
   return {
     eyebrow: 'Recent memories',
     title: 'The latest pages worth reopening',
-    description: 'The story should open on what still feels closest, not on admin counters or utility surfaces.',
+    description: 'Recent saved memories.',
     state,
     source: memorySource?.source || 'unknown',
     totalCount: displayMemories.length,
@@ -312,29 +307,6 @@ function buildRecentMemoriesSection(memorySource) {
       title: emptyTitle,
       description: emptyDescription,
     },
-  }
-}
-
-const DAILY_PROMPTS = Object.freeze([
-  'What small thing from today would you want us to remember later?',
-  'What is one place we should go back to together?',
-  'What did one of us do recently that felt quietly loving?',
-  'What is a tiny tradition we should keep building?',
-  'What should our next ordinary-but-special date feel like?',
-  'What is one detail from the beginning of us that still matters?',
-  'What would make this week feel more like us?',
-])
-
-function buildPromptSection(now) {
-  const start = Date.UTC(2026, 0, 1)
-  const dayIndex = Math.max(0, Math.floor((Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) - start) / 86400000))
-  const prompt = DAILY_PROMPTS[dayIndex % DAILY_PROMPTS.length]
-  return {
-    eyebrow: 'For us today',
-    title: prompt,
-    promptId: `v1.2-${dayIndex % DAILY_PROMPTS.length}`,
-    answeredState: 'not-connected',
-    description: 'Prompt answers are designed for a future private couple-scoped write path. V1.2 shows the daily prompt without storing answers yet.',
   }
 }
 
@@ -355,7 +327,7 @@ function buildOnThisDaySection(memorySource, now) {
       : null,
     emptyState: {
       title: 'No memory matches this date yet.',
-      description: 'On This Day only shows active memories from a prior year with the same month and day.',
+      description: 'Add dated memories to use On This Day.',
     },
   }
 }
@@ -406,29 +378,29 @@ function buildMilestonesSection({ participants, settingsSource, now }) {
 
   return {
     eyebrow: 'Milestones',
-    title: 'Relationship time stays close at hand',
-    description: 'Anniversary counters and birthdays remain supporting context instead of trying to become the whole page.',
+    title: 'Dates worth holding close',
+    description: 'Anniversaries and birthdays from Us.',
     anniversaryCards,
     birthdayCards,
     hasContent: anniversaryCards.length > 0 || birthdayCards.length > 0,
     emptyState: {
-        title: 'Milestones will appear here soon.',
-      description: 'Joined dates and birthdays will appear once the shared profile read model is fully connected.',
+      title: 'No important dates yet.',
+      description: 'Add birthdays and relationship dates from Us.',
     },
   }
 }
 
 function buildSpecialMomentsSection(routeMeta) {
   const descriptions = {
-    '/birthday': 'The protected birthday page stays close without resurfacing public entry points.',
-    '/valentine': 'A quieter special route, still private and still separate from the main archive flow.',
-    '/confession': 'The preserved confession route remains protected while its content waits behind the new shell.',
+    '/birthday': 'Birthday letter and media.',
+    '/valentine': 'Valentine keepsake.',
+    '/confession': 'Private confession page.',
   }
 
   return {
     eyebrow: 'Special moments',
-    title: 'Pages with their own private chapter',
-    description: 'The dedicated moment routes stay near the front without taking over the main reading order.',
+    title: 'Private pages',
+    description: 'Birthday, Valentine, and Confession.',
     items: SPECIAL_MOMENT_PATHS.map((path) => {
       const meta = routeMeta.find((route) => route.path === path) || {}
       return {
@@ -493,8 +465,8 @@ function buildSourceStateSection(snapshot) {
 function buildSupportingNavigation(routeMeta) {
   return {
     eyebrow: 'Supporting navigation',
-    title: 'Everything else stays one step down',
-    description: 'Secondary routes remain reachable without competing with the story opening.',
+    title: 'More places',
+    description: 'Favorites, settings, and private pages.',
     items: SUPPORTING_ROUTE_PATHS.map((path) => {
       const meta = routeMeta.find((route) => route.path === path) || {}
       return {
@@ -515,7 +487,7 @@ function buildTodayInUsSection({ milestones, recentMemories }) {
     daysTogether: anniversary?.duration?.totalDays || 0,
     currentMilestone: anniversary
       ? `${anniversary.label}: ${anniversary.totalDaysLabel}`
-      : 'Milestone dates are waiting on profile details.',
+      : 'Add a relationship date in Us.',
     featured,
   }
 }
@@ -565,7 +537,6 @@ export function buildDashboardReadModel({
     }),
     todayInUs: buildTodayInUsSection({ milestones, recentMemories }),
     onThisDay: buildOnThisDaySection(resolvedMemorySource, now),
-    prompt: buildPromptSection(now),
     recentMemories,
     milestones,
     specialMoments: buildSpecialMomentsSection(routeMeta),

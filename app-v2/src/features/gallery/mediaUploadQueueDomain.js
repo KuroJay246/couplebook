@@ -51,7 +51,7 @@ export function queueStatusLabel(status) {
   if (status === QUEUE_STATUS.finalizing) return 'Finalizing'
   if (status === QUEUE_STATUS.orphanedUpload) return 'Finalize upload'
   if (status === QUEUE_STATUS.reconnectRequired) return 'Reconnect Drive'
-  if (status === QUEUE_STATUS.backendRequired) return 'Backend required'
+  if (status === QUEUE_STATUS.backendRequired) return 'Setup required'
   if (status === QUEUE_STATUS.cancelling) return 'Cancelling'
   if (status === QUEUE_STATUS.cancelled) return 'Cancelled'
   if (status === QUEUE_STATUS.failed) return 'Needs review'

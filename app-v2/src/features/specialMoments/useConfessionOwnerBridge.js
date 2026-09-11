@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useAuth } from '../../auth/useAuth.js'
+import { getBrowserTestAuthState } from '../../lib/browserTestMode.js'
 import {
   canUseConfessionOwnerBridge,
   getConfessionOwnerBridgeBaseUrl,
@@ -15,7 +16,8 @@ export function useConfessionOwnerBridge() {
   const [ownerStateError, setOwnerStateError] = useState('')
   const [activeSlotAction, setActiveSlotAction] = useState('')
   const baseUrl = useMemo(() => getConfessionOwnerBridgeBaseUrl(), [])
-  const showOwnerTools = canUseConfessionOwnerBridge({ baseUrl, user })
+  const browserTestAuth = useMemo(() => getBrowserTestAuthState(), [])
+  const showOwnerTools = !browserTestAuth && canUseConfessionOwnerBridge({ baseUrl, user })
 
   const refreshOwnerState = useCallback(async () => {
     if (!showOwnerTools) return

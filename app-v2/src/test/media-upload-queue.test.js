@@ -43,7 +43,7 @@ test('queue domain owns stable user-facing status labels and tones', () => {
   assert.equal(queueStatusLabel(QUEUE_STATUS.duplicate), 'Duplicate blocked')
   assert.equal(queueStatusLabel(QUEUE_STATUS.orphanedUpload), 'Finalize upload')
   assert.equal(queueStatusLabel(QUEUE_STATUS.reconnectRequired), 'Reconnect Drive')
-  assert.equal(queueStatusLabel(QUEUE_STATUS.backendRequired), 'Backend required')
+  assert.equal(queueStatusLabel(QUEUE_STATUS.backendRequired), 'Setup required')
   assert.equal(queueStatusLabel(QUEUE_STATUS.failed), 'Needs review')
   assert.equal(queueStatusLabel(QUEUE_STATUS.saved), 'Saved')
 

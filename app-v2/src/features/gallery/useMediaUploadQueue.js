@@ -393,12 +393,12 @@ export function useMediaUploadQueue(onRefresh, drive) {
       if (!TRUSTED_MEDIA_BACKEND_AVAILABLE && (!driveProvider || driveState !== 'connected')) {
         updateItem(itemId, {
           checksum,
-          error: 'Trusted media backend approval is required before this file can be stored in Couple Book Drive.',
+          error: 'Owner media setup is required before this file can be saved to the shared Album.',
           progress: 0,
           retryable: true,
           status: QUEUE_STATUS.backendRequired,
         })
-        setNotice({ kind: 'error', message: 'Upload is prepared, but trusted backend storage is not approved yet.' })
+        setNotice({ kind: 'error', message: 'Upload is prepared. Finish media setup in Settings before saving it.' })
         return
       }
 

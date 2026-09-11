@@ -253,11 +253,11 @@ export function FavoritesView({ compatibilityError, compatibilityState, model, o
       <PageHeader
         eyebrow="Saved Details"
         title="Favorite Things"
-        description="A side-by-side look at what each of you loves, plus the things you already have in common."
+        description="Foods, songs, places, activities, and gift ideas."
         actions={(
           <>
             <SecondaryButton as={Link} to="/profile"><Heart className="size-4" />Back to Us</SecondaryButton>
-            <PrimaryButton as={Link} to="/plans"><Star className="size-4" />Things to try</PrimaryButton>
+            <PrimaryButton as={Link} to="/plans"><Star className="size-4" />Add plan</PrimaryButton>
           </>
         )}
       />
@@ -272,7 +272,7 @@ export function FavoritesView({ compatibilityError, compatibilityState, model, o
             <p className="mt-3 text-sm leading-6 text-[var(--cb-text-secondary)]">
               {sharedMatches.length > 0
                 ? `${sharedMatches.length} shared ${sharedMatches.length === 1 ? 'match' : 'matches'} already stand out.`
-                : 'No exact shared matches yet, but everything still lives in one collection.'}
+                : 'No shared matches yet.'}
             </p>
           </div>
           <SearchField label="Search favorites" onChange={(event) => setSearch(comparableItem(event.target.value))} placeholder="Search foods, songs, places, and more" value={search} />

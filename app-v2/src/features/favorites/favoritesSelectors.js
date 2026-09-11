@@ -34,11 +34,11 @@ function slugify(value) {
 
 function summarizeSource(key, source) {
   const status = source?.status || 'empty'
-  let summary = 'This supporting source is waiting for its first safe values.'
+  let summary = 'No values yet.'
 
   if (key === 'favorites') {
     if (status === 'ready') summary = 'Preserved favorites are available for this shared collection.'
-    if (status === 'empty') summary = 'This collection is ready, but no preserved favorites are stored here yet.'
+    if (status === 'empty') summary = 'No favorites yet.'
     if (status === 'unavailable') summary = 'Saved favorites remain safely in the legacy book on this origin.'
     if (status === 'invalid') summary = 'Stored favorites need review before they can open safely here.'
   }
@@ -46,7 +46,7 @@ function summarizeSource(key, source) {
   if (key === 'profile') {
     if (status === 'ready') summary = 'Profile names and paired context are available for this collection.'
     if (status === 'empty') summary = 'Profile details remain quiet, so this page uses only preserved owner labels.'
-    if (status === 'unavailable') summary = 'Profile names are still waiting on their read-only bridge here.'
+    if (status === 'unavailable') summary = 'Profiles are not available right now.'
     if (status === 'invalid') summary = 'Stored profile details need review before they can support this page.'
   }
 
@@ -240,7 +240,7 @@ function selectProfileEntry(profileSource, people) {
   let description = 'The paired profile spread stays nearby as part of the same read-only relationship space.'
 
   if (status === 'ready' && people.length > 0) {
-    description = 'Profile keeps names, milestones, and shared context close to this favorites collection.'
+    description = 'Names and relationship dates live in Us.'
   } else if (status === 'empty') {
     description = 'The profile route is ready even while some paired details remain quiet.'
   } else if (status === 'unavailable') {
@@ -263,7 +263,7 @@ function selectContractEntry(contractSource) {
   const acceptedCount = Object.values(signatures).filter((signature) => signature?.accepted === true).length
   const status = contractSource?.status || 'empty'
 
-  let description = 'The migrated Contract page stays protected, quiet, and one step down from this shared collection.'
+  let description = 'Private agreement details and acceptance status.'
   if (status === 'ready' && signatureCount > 0) {
     description = `${acceptedCount} of ${signatureCount} preserved signatures remain visible from the migrated Contract page.`
   } else if (status === 'ready' && contractSource?.data?.accepted) {
@@ -312,7 +312,7 @@ export function selectFavoritesSourceStatus(snapshot, people, shared) {
   }
 
   if (people.length === 1) {
-    notes.push('One preserved collection is visible here already; the rest can reconnect later without rewriting the source.')
+    notes.push('One favorites list is available.')
   }
 
   if (profileItem.status === 'unavailable' || profileItem.status === 'invalid') {

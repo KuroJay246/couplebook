@@ -32,7 +32,7 @@ export function buildPlansReadModel(source, { search = '', status = 'all' } = {}
       title: normalizedSearch || status !== 'all' ? 'No plans match this view yet.' : 'No plans are saved yet.',
       description: normalizedSearch || status !== 'all'
         ? 'Try a different search or status filter.'
-        : 'Save date ideas, places to visit, goals, and little surprises so they can become memories later.',
+        : 'Add a date idea, trip, gift, restaurant, or goal.',
     },
   }
 }

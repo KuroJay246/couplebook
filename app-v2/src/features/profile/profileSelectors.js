@@ -30,6 +30,39 @@ function formatDateLabel(dateLike) {
   })
 }
 
+function daysUntilAnnualDate(dateLike, nowValue = new Date()) {
+  const source = createDateAtNoon(dateLike)
+  const now = createDateAtNoon(nowValue)
+  if (!source || !now) return null
+
+  let next = new Date(now.getFullYear(), source.getMonth(), source.getDate(), 12, 0, 0, 0)
+  if (next < now) {
+    next = new Date(now.getFullYear() + 1, source.getMonth(), source.getDate(), 12, 0, 0, 0)
+  }
+
+  return Math.ceil((next.getTime() - now.getTime()) / 86400000)
+}
+
+function daysSince(dateLike, nowValue = new Date()) {
+  const start = createDateAtNoon(dateLike)
+  const now = createDateAtNoon(nowValue)
+  if (!start || !now || now < start) return null
+  return Math.floor((now.getTime() - start.getTime()) / 86400000)
+}
+
+function formatDaysUntil(days) {
+  if (!Number.isFinite(days)) return null
+  if (days === 0) return 'Today'
+  if (days === 1) return 'Tomorrow'
+  return `${days} days`
+}
+
+function formatDaysTogether(days) {
+  if (!Number.isFinite(days)) return null
+  if (days === 1) return '1 day'
+  return `${days.toLocaleString('en-US')} days`
+}
+
 function normalizeAnniversaryView(value) {
   const normalized = toTrimmedString(value).toLowerCase()
   if (!normalized) return null
@@ -129,14 +162,21 @@ export function selectRelationshipAnniversaries(people) {
   return people
     .flatMap((person) => {
       if (!person.joinedDate) return []
+      const totalDays = daysSince(person.joinedDate)
+      const daysUntil = daysUntilAnnualDate(person.joinedDate)
 
       return [{
       id: `${person.id}-anniversary`,
       kind: 'anniversary',
-      label: `${person.shortName}'s view`,
+      label: `${person.shortName}'s relationship date`,
       date: person.joinedDate,
       dateLabel: person.joinedDateLabel,
-      summary: person.anniversaryViewLabel || 'Shared relationship marker',
+      summary: person.anniversaryViewLabel || 'Relationship date',
+      repeatsAnnually: true,
+      daysUntil,
+      countdownLabel: formatDaysUntil(daysUntil),
+      totalDays,
+      timeTogetherLabel: formatDaysTogether(totalDays),
       status: 'ready',
       }]
     })
@@ -152,6 +192,11 @@ export function selectRelationshipMilestones(people, contractSource) {
       kind: 'birthday',
       label: `${person.shortName}'s birthday`,
       value: person.birthdayLabel,
+      date: person.birthday,
+      dateLabel: person.birthdayLabel,
+      repeatsAnnually: true,
+      daysUntil: daysUntilAnnualDate(person.birthday),
+      countdownLabel: formatDaysUntil(daysUntilAnnualDate(person.birthday)),
       status: 'ready',
       }]
     })
@@ -176,6 +221,28 @@ export function selectRelationshipMilestones(people, contractSource) {
   }
 
   return milestones
+}
+
+export function selectImportantDates(people, contractSource) {
+  const anniversaryDates = selectRelationshipAnniversaries(people).map((item, index) => ({
+    ...item,
+    type: 'relationship',
+    primary: index === 0,
+  }))
+  const milestoneDates = selectRelationshipMilestones(people, contractSource).flatMap((item) => {
+    if (item.kind !== 'birthday') return []
+    return [{
+      ...item,
+      type: 'birthday',
+      primary: false,
+    }]
+  })
+
+  return [...anniversaryDates, ...milestoneDates].toSorted((left, right) => {
+    const leftDays = Number.isFinite(left.daysUntil) ? left.daysUntil : 9999
+    const rightDays = Number.isFinite(right.daysUntil) ? right.daysUntil : 9999
+    return leftDays - rightDays || left.label.localeCompare(right.label)
+  })
 }
 
 export function selectSharedHighlights(favoritesSource) {
@@ -212,7 +279,7 @@ export function selectContractEntry(contractSource) {
   const acceptedCount = Object.values(signatures).filter((signature) => signature?.accepted === true).length
   const status = contractSource?.status || 'empty'
 
-  let description = 'The migrated Contract page keeps the preserved agreement quiet, read-only, and one step down from this shared profile.'
+  let description = 'Private agreement details and acceptance status.'
   if (status === 'ready' && signatureCount > 0) {
     description = `${acceptedCount} of ${signatureCount} preserved signatures are already visible from the migrated Contract page.`
   } else if (status === 'ready' && contractSource?.data?.accepted) {
@@ -243,7 +310,7 @@ export function selectFavoritesEntry(favoritesSource, sharedHighlights) {
   } else if (status === 'ready') {
     description = 'The migrated Favorites page is ready even while preserved highlights stay quiet.'
   } else if (status === 'empty') {
-    description = 'The Favorites page is ready, but no preserved favorites are visible for this profile view yet.'
+    description = 'No favorites yet.'
   } else if (status === 'invalid') {
     description = 'Stored favorites data needs review before it can be shown here.'
   }

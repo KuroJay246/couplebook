@@ -1,4 +1,4 @@
-import { CalendarHeart, Clock3, HeartHandshake, Images, NotebookPen, Plus, Star } from 'lucide-react'
+import { CalendarHeart, Clock3, HeartHandshake, Images, NotebookPen, Plus } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { EmptyState } from '../../components/ui/EmptyState.jsx'
 import { StatusBadge } from '../../components/ui/StatusBadge.jsx'
@@ -13,9 +13,6 @@ function RecentMemories({ section }) {
         <div>
           <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Latest Chapter</p>
           <h2 className="mt-2 font-serif text-3xl text-[var(--cb-text)]">Recent memories worth reopening</h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--cb-text-secondary)]">
-            The newest moments stay close, with one quick path back to the wider story when you want it.
-          </p>
         </div>
         <Link className="inline-flex min-h-10 items-center rounded-xl border border-[var(--cb-border)] px-4 text-xs font-bold text-[var(--cb-text-muted)] hover:bg-[var(--cb-accent-soft)]" to="/timeline">
           View All
@@ -30,7 +27,7 @@ function RecentMemories({ section }) {
           </article>
         )) : (
           <div className="md:col-span-2 xl:col-span-3">
-            <EmptyState title="No recent memories are ready yet." description="Add the next memory and it will surface here for quick return visits." />
+            <EmptyState title="No recent memories yet." description="Add a memory to start the story." />
           </div>
         )}
       </div>
@@ -59,7 +56,7 @@ function TodayInUs({ section }) {
         </article>
       ) : (
         <div className="mt-5">
-          <EmptyState title="No featured memory yet." description="Add a memory or connect the archive to make Home feel more alive." />
+          <EmptyState title="No featured memory yet." description="Add a memory to pin something meaningful here." />
         </div>
       )}
     </section>
@@ -86,21 +83,6 @@ function OnThisDay({ section }) {
           <EmptyState title={section.emptyState.title} description={section.emptyState.description} />
         </div>
       )}
-    </section>
-  )
-}
-
-function DailyPrompt({ section }) {
-  return (
-    <section className="rounded-[24px] border border-[var(--cb-border)] bg-[var(--cb-surface)] p-6 shadow-[0_8px_24px_rgba(84,53,67,0.04)]" aria-labelledby="daily-prompt-title">
-      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">{section.eyebrow}</p>
-      <h3 className="mt-2 font-serif text-2xl text-[var(--cb-text)]" id="daily-prompt-title">{section.title}</h3>
-      <p className="mt-2 text-sm leading-6 text-[var(--cb-text-secondary)]">{section.description}</p>
-      <div className="mt-4">
-        <Link className="inline-flex min-h-10 items-center rounded-xl border border-[var(--cb-border)] px-4 text-xs font-bold text-[var(--cb-text-muted)] hover:bg-[var(--cb-accent-soft)]" to="/timeline">
-          Save today as a memory
-        </Link>
-      </div>
     </section>
   )
 }
@@ -144,7 +126,6 @@ function Milestones({ section }) {
       <div className="rounded-[24px] border border-[var(--cb-border)] bg-[var(--cb-surface)] p-6 shadow-[0_8px_24px_rgba(84,53,67,0.04)]">
         <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Coming Up</p>
         <h3 className="mt-2 font-serif text-2xl text-[var(--cb-text)]">Dates worth holding close</h3>
-        <p className="mt-2 text-sm leading-6 text-[var(--cb-text-secondary)]">Anniversaries and birthdays sit together as the next page markers.</p>
         <div className="mt-5 grid gap-3">
           {anniversaries.map((card) => (
             <AnniversaryCard card={card} key={card.id} />
@@ -196,34 +177,6 @@ function SpecialMoments({ section }) {
   )
 }
 
-function RelationshipSummary({ model }) {
-  const summary = [
-    { label: 'Memories saved', value: model.recentMemories?.totalCount || 0 },
-    { label: 'Special pages', value: (model.specialMoments?.items || []).length },
-    { label: 'Birthday reminders', value: (model.milestones?.birthdayCards || []).length },
-  ]
-
-  return (
-    <section className="rounded-[24px] border border-[var(--cb-border)] bg-[var(--cb-surface)] p-6 shadow-[0_8px_24px_rgba(84,53,67,0.04)]">
-      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Little Things</p>
-      <h3 className="mt-2 font-serif text-2xl text-[var(--cb-text)]">The details that make it yours</h3>
-      <p className="mt-2 text-sm leading-6 text-[var(--cb-text-secondary)]">A small count of what this book is already holding.</p>
-      <div className="mt-5 grid gap-3 sm:grid-cols-3">
-        {summary.map((item) => (
-          <div className="rounded-2xl border border-[var(--cb-border)] bg-[var(--cb-surface-raised)] p-4" key={item.label}>
-            <span className="block text-2xl font-bold text-[var(--cb-text)]">{item.value}</span>
-            <span className="mt-1 block text-xs uppercase tracking-[0.12em] text-[var(--cb-text-muted)]">{item.label}</span>
-          </div>
-        ))}
-      </div>
-      <div className="mt-5 flex flex-wrap gap-2">
-        <Link className="inline-flex min-h-10 items-center rounded-xl bg-[var(--cb-accent)] px-4 text-xs font-bold text-white" to="/favorites">Favorite Things</Link>
-        <Link className="inline-flex min-h-10 items-center rounded-xl border border-[var(--cb-border)] px-4 text-xs font-bold text-[var(--cb-text-muted)] hover:bg-[var(--cb-accent-soft)]" to="/contract">Our Promises</Link>
-      </div>
-    </section>
-  )
-}
-
 export function DashboardView({ model }) {
   const featuredMemory = model.todayInUs?.featured
   const birthdayCard = model.milestones?.birthdayCards?.[0]
@@ -234,9 +187,9 @@ export function DashboardView({ model }) {
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)]">
           <div>
             <StatusBadge tone="info">Our space</StatusBadge>
-            <h2 className="mt-4 max-w-xl font-serif text-4xl text-[var(--cb-text)] lg:text-5xl">Our memories, plans, and special moments in one place.</h2>
+            <h2 className="mt-4 max-w-xl font-serif text-4xl text-[var(--cb-text)] lg:text-5xl">Memories, dates, and plans.</h2>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--cb-text-secondary)]">
-              Start with the part of the relationship that still feels closest, then move into the album, the story, or what is coming up next.
+              Open the latest memory, check what is coming up, or add something new.
             </p>
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <PrimaryButton as={Link} className="cb-button-pill" to="/timeline">
@@ -259,8 +212,8 @@ export function DashboardView({ model }) {
             <div className="cb-editorial-photo-grid">
               <div className="cb-editorial-photo-card ml-auto">
                 <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Featured memory</p>
-                <p className="mt-2 text-lg font-semibold text-[var(--cb-text)]">{featuredMemory?.title || 'Your next favorite memory goes here'}</p>
-                <p className="mt-2 text-sm leading-6 text-[var(--cb-text-secondary)]">{featuredMemory?.description || 'Add one good photo, one honest note, or one saved video and Home will start feeling lived in.'}</p>
+                <p className="mt-2 text-lg font-semibold text-[var(--cb-text)]">{featuredMemory?.title || 'No featured memory yet'}</p>
+                <p className="mt-2 text-sm leading-6 text-[var(--cb-text-secondary)]">{featuredMemory?.description || 'Add a memory to feature it here.'}</p>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="cb-editorial-photo-card">
@@ -271,7 +224,7 @@ export function DashboardView({ model }) {
                 <div className="cb-editorial-photo-card">
                   <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Coming up</p>
                   <p className="mt-2 text-sm font-semibold text-[var(--cb-text)]">{birthdayCard?.label || 'A saved date'}</p>
-                  <p className="mt-1 text-sm text-[var(--cb-text-secondary)]">{birthdayCard?.countdownLabel || 'Add birthdays and plans to keep the next milestone close.'}</p>
+                  <p className="mt-1 text-sm text-[var(--cb-text-secondary)]">{birthdayCard?.countdownLabel || 'Add birthdays or anniversaries in Us.'}</p>
                 </div>
               </div>
             </div>
@@ -295,7 +248,6 @@ export function DashboardView({ model }) {
             </div>
             <div className="mt-2 text-sm text-[var(--cb-text-secondary)]">{model.hero.dateLabel}</div>
           </div>
-          <RelationshipSummary model={model} />
           <SpecialMoments section={model.specialMoments} />
         </div>
       </div>
@@ -303,10 +255,9 @@ export function DashboardView({ model }) {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <Milestones section={model.milestones} />
         <div className="grid gap-6">
-          <DailyPrompt section={model.prompt} />
           <section className="rounded-[24px] border border-[var(--cb-border)] bg-[var(--cb-surface)] p-6 shadow-[0_8px_24px_rgba(84,53,67,0.04)]">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Keep exploring</p>
-            <h3 className="mt-2 font-serif text-2xl text-[var(--cb-text)]">Everything else is one step away</h3>
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Quick links</p>
+            <h3 className="mt-2 font-serif text-2xl text-[var(--cb-text)]">Open a section</h3>
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
               <Link className="flex items-center gap-3 rounded-2xl border border-[var(--cb-border)] bg-[var(--cb-surface-raised)] p-4 hover:bg-[var(--cb-accent-soft)]" to="/timeline">
                 <NotebookPen className="size-5 text-[var(--cb-accent)]" />

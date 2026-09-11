@@ -218,7 +218,7 @@ export function PlansView({ model, onRefresh, search, setSearch, setStatus, stat
       <PageHeader
         eyebrow="Plans"
         title="Things we want to do together"
-        description="Keep date ideas, places, little surprises, and finished plans in one calm place."
+        description="Date ideas, trips, gifts, restaurants, and goals."
         actions={(
           <>
             <StatusBadge tone="info">{model.counts.total} active</StatusBadge>
@@ -232,8 +232,7 @@ export function PlansView({ model, onRefresh, search, setSearch, setStatus, stat
       <section className="cb-plans-hero">
         <div>
           <p className="cb-kicker">Next together</p>
-          <h2>One place for the ideas that should not get lost.</h2>
-          <p>Keep the near plans close, let loose ideas breathe, and turn finished ones into memories when they finally happen.</p>
+          <h2>Save what you want to do next.</h2>
         </div>
         <div className="cb-plans-hero-actions">
           <PrimaryButton aria-label="Start a new plan" onClick={() => { setEditing(null); setShowForm(true) }}><Sparkles className="size-4" />Start one</PrimaryButton>
