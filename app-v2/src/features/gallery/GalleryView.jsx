@@ -526,7 +526,7 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
           </div>
         </div>
         {mediaWarnings.length > 0 ? <InlineAlert className="mt-4" tone="warning" title="Media index needs attention" description={mediaWarnings[0]} /> : null}
-        {mediaBackend.description ? <InlineAlert className="mt-4" tone="info" title="Trusted backend contract" description={mediaBackend.description} /> : null}
+        {mediaBackend.description ? <InlineAlert className="mt-4" tone="info" title="Shared media service" description={mediaBackend.description} /> : null}
       </Surface>
       {manageUploadsOpen ? <div className="grid gap-5" aria-label="Album management tools">
         <Surface aria-label="Upload queue" tone="soft">

@@ -65,12 +65,12 @@ function buildMediaBackendStatus(coupleId = 'couple') {
     localHandlersReady,
     implementedCapabilities: capabilities.length,
     requiredCapabilities: requiredCapabilityCount,
-    statusLabel: localHandlersReady ? 'Local backend handlers ready' : 'Local backend handlers incomplete',
+    statusLabel: localHandlersReady ? 'Media service prepared' : 'Media service pending',
     deploymentLabel: contract.deploymentStatus === 'owner-approval-required' ? 'Deployment approval required' : 'Trusted deployment required',
-    uploadLabel: localHandlersReady ? 'Backend contract ready locally' : 'Backend contract incomplete',
+    uploadLabel: localHandlersReady ? 'Media saving is prepared locally' : 'Media saving is pending',
     description: localHandlersReady
-      ? `${capabilities.length}/${requiredCapabilityCount} trusted Drive backend handler capabilities are implemented locally. Album still needs the owner-approved deployment before uploads, thumbnails, streams, and background sync can run persistently.`
-      : 'Trusted Drive backend handler coverage is incomplete locally, so Album can only prepare media records.',
+      ? 'Album can prepare photos and videos now. Saving new files to the shared Drive library, thumbnails, video playback, and background sync still need the owner-approved media service to go live.'
+      : 'Album can browse available memories, but shared Drive saving and background sync still need the trusted media service.',
   })
 }
 
