@@ -266,7 +266,7 @@ export function SettingsView({ compatibilityError, compatibilityState, model, on
       <div className="cb-settings-heading">
         <div>
           <h2>Settings</h2>
-          <p>Account, appearance, media, notifications, privacy, and diagnostics.</p>
+          <p>Account, appearance, media, notifications, privacy, and private access.</p>
         </div>
         <div className="cb-settings-actions">
           <StatusBadge tone={dirty ? 'warning' : 'success'}>
@@ -448,7 +448,7 @@ export function SettingsView({ compatibilityError, compatibilityState, model, on
               <div>
                 <p className="cb-kicker">System health</p>
                 <h3 className="cb-page-title mt-2 text-2xl">System health</h3>
-                <p className="cb-body-copy mt-2 text-sm">Connection status and migration health.</p>
+                <p className="cb-body-copy mt-2 text-sm">Private access, saved data, and media connection health.</p>
               </div>
             </div>
             <div className="mt-5 grid gap-3">

@@ -41,7 +41,7 @@ const NOTIFICATION_PREFERENCE_COPY = Object.freeze({
   },
   newMedia: {
     label: 'New photos and videos',
-    description: 'Useful for new Album media after the trusted media backend is live.',
+    description: 'Useful for new Album media after shared media sync is fully connected.',
   },
   plans: {
     label: 'Plans',
@@ -281,7 +281,7 @@ export function selectSettingsNotifications(settingsSource = null, env = {}) {
           ? 'Not supported here'
           : 'Not requested',
     permissionTone: permission === 'granted' ? 'success' : permission === 'denied' ? 'error' : 'warning',
-    backendBoundary: 'Web push delivery requires Firebase Messaging, a registered device token, and a trusted backend path before notifications can be sent.',
+    backendBoundary: 'Web push delivery still needs an approved private notification service before this browser can receive alerts.',
     categories: NOTIFICATION_PREFERENCE_KEYS.map((key) => ({
       key,
       enabled: stored[key] === true,
@@ -341,20 +341,20 @@ export function selectSettingsMedia(mediaSync = null, { env = {}, settingsSource
   const localHandlersReady = localHandlerCapabilityCount > 0 && localHandlerCapabilities.length === localHandlerCapabilityCount
 
   return {
-    title: 'Google Drive media provider',
+    title: 'Google Drive media library',
     description: 'Drive authorization is managed here once for the couple. Album stays focused on browsing indexed photos and videos.',
     connectedAccount: 'jaylanspencer99@gmail.com',
     approvedFolderLabel: 'Couple Book media folder',
-    backendBoundary: mediaSync?.backend?.zeroCostBoundary || 'Persistent refresh credentials, Drive Changes sync, and thumbnail delivery require an approved trusted backend before they can run for both partners automatically.',
+    backendBoundary: 'Automatic refresh, background Drive updates, and protected previews need an approved private media service before they can stay connected for both partners.',
     backendReadiness: {
       localHandlersReady,
       implementedCapabilities: localHandlerCapabilities.length,
       requiredCapabilities: localHandlerCapabilityCount,
-      statusLabel: localHandlersReady ? 'Local handlers ready' : 'Local handlers incomplete',
+      statusLabel: localHandlersReady ? 'Prepared locally' : 'Setup incomplete',
       description: localHandlersReady
-        ? `${localHandlerCapabilities.length}/${localHandlerCapabilityCount} trusted Drive backend handler capabilities are implemented locally. Deployment, refresh credential storage, and live rules updates still require owner approval.`
-        : 'Trusted Drive backend handler capability coverage is incomplete locally.',
-      deploymentLabel: mediaSync?.deploymentStatus === 'owner-approval-required' ? 'Deployment approval required' : 'Backend deployment required',
+        ? 'The media service pieces are prepared locally. Turning on automatic Drive refresh, protected playback, and shared updates still requires owner approval.'
+        : 'The shared media service is not fully prepared locally yet.',
+      deploymentLabel: mediaSync?.deploymentStatus === 'owner-approval-required' ? 'Owner approval needed' : 'Private service setup needed',
       rulesLabel: 'Firestore rules action required',
     },
     sharedAlbum: selectSharedAlbumConfig({ env, settingsSource }),
@@ -379,13 +379,13 @@ export function selectSettingsMedia(mediaSync = null, { env = {}, settingsSource
       {
         label: 'Continuous Drive sync',
         description: localHandlersReady
-          ? 'Local handlers exist for Drive Changes sync, token refresh, webhook processing, watch renewal, uploads, removals, and audit events. They still need an approved trusted deployment before persistent use.'
-          : 'Background Drive Changes sync, token refresh, and webhook processing require an approved trusted backend before they can run persistently.',
-        meta: mediaSync?.deploymentStatus === 'owner-approval-required' ? 'Owner approval required' : 'Backend required',
+          ? 'Automatic updates are prepared locally. They still need owner approval before Couple Book keeps Drive connected in the background.'
+          : 'Background Drive updates require an approved private media service before they can run persistently.',
+        meta: mediaSync?.deploymentStatus === 'owner-approval-required' ? 'Owner approval needed' : 'Setup needed',
       },
       {
         label: 'Album access',
-        description: 'Album reads the couple-scoped Firestore media index and must not ask normal members to authorize Google Drive for browsing.',
+        description: 'Album opens from the shared couple media index and does not ask normal browsing sessions to authorize Google Drive.',
         meta: 'Index first',
       },
     ],

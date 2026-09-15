@@ -43,7 +43,7 @@ function MediaStatusCard({ description, label, tone = 'info', value }) {
 }
 
 function mediaCountDescription(drive) {
-  if (drive.state !== 'connected') return 'Loaded from Firestore media index when backend sync is available'
+  if (drive.state !== 'connected') return 'Loaded from the shared Album index when media sync is available'
   return `${drive.files.length}${drive.hasMoreFiles ? '+' : ''} files listed in this owner session`
 }
 
@@ -76,16 +76,16 @@ function MediaConnectionSummary({ drive, media }) {
         value={connected ? 'Session list' : 'Index first'}
       />
       <MediaStatusCard
-        description={backendReadiness?.description || 'Trusted Drive backend readiness is not available in this build.'}
-        label="Trusted backend"
+        description={backendReadiness?.description || 'The shared media service still needs final setup before it can sync automatically.'}
+        label="Shared media service"
         tone={backendReadiness?.localHandlersReady ? 'success' : 'warning'}
         value={backendReadiness?.statusLabel || 'Not verified'}
       />
       <MediaStatusCard
-        description="Persistent Drive OAuth refresh storage, Drive webhooks, protected media delivery, and live media-index rules still require explicit owner-approved deployment work."
-        label="Release blockers"
+        description="Automatic Drive refresh, protected playback links, and continuous updates still need owner-approved service setup before both partners can rely on them."
+        label="Setup still needed"
         tone="warning"
-        value={backendReadiness?.deploymentLabel || 'Owner approval required'}
+        value={backendReadiness?.deploymentLabel || 'Owner approval needed'}
       />
     </div>
   )
@@ -192,8 +192,8 @@ export function MediaSettingsSection({ media }) {
       <InlineAlert
         className="mt-5"
         tone="warning"
-        title="Persistent background sync requires trusted backend approval"
-        description={media?.backendBoundary || 'The browser can prove owner authorization locally, but refresh credentials, Drive Changes sync, webhook renewal, and protected thumbnail delivery must run on a trusted backend before this becomes a persistent couple-level media provider.'}
+        title="Automatic media sync needs owner approval"
+        description={media?.backendBoundary || 'Couple Book can verify Drive access in this browser, but automatic refresh, background updates, and protected preview delivery need an approved private service before they can stay connected for both partners.'}
       />
 
       <MediaArchitectureItems items={media?.items} />
