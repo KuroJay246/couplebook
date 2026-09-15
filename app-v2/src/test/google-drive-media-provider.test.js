@@ -72,3 +72,43 @@ test('Google Drive provider revokes Drive preview object URLs on disconnect', as
     globalThis.URL = originalUrl
   }
 })
+
+test('Google Drive provider can revoke one Drive preview without clearing the session', async () => {
+  const originalUrl = globalThis.URL
+  const created = []
+  const revoked = []
+  globalThis.URL = {
+    ...originalUrl,
+    createObjectURL() {
+      const url = `blob:drive-preview-${created.length + 1}`
+      created.push(url)
+      return url
+    },
+    revokeObjectURL(url) {
+      revoked.push(url)
+    },
+  }
+
+  const provider = createGoogleDriveMediaProvider({
+    clientId: 'test-client',
+    fetchImpl: async (url) => {
+      if (String(url).includes('alt=media')) {
+        return new Response(new Blob(['preview']), { status: 200 })
+      }
+      return new Response(JSON.stringify({ id: COUPLE_BOOK_DRIVE_FOLDER_ID, mimeType: 'application/vnd.google-apps.folder', trashed: false }), { status: 200 })
+    },
+    google: { accounts: { oauth2: { initTokenClient: ({ callback }) => ({ requestAccessToken() { void callback({ access_token: 'test-token' }) } }) } } },
+  })
+
+  try {
+    await provider.connect()
+    const first = await provider.fetchPreview('image-1')
+    const second = await provider.fetchPreview('image-2')
+    assert.equal(provider.revokePreview(first), true)
+    assert.equal(provider.revokePreview(first), false)
+    provider.disconnect()
+    assert.deepEqual(revoked, [first, second])
+  } finally {
+    globalThis.URL = originalUrl
+  }
+})

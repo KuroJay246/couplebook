@@ -372,8 +372,8 @@ export function selectSettingsMedia(mediaSync = null, { env = {}, settingsSource
       {
         label: 'Fast Album index',
         description: mediaSync?.mediaIndexPath
-          ? `Stable Drive media metadata is read from ${mediaSync.mediaIndexPath}; original files stay in Google Drive.`
-          : 'Stable Drive media metadata is read from a couple-scoped Firestore media index when available.',
+          ? 'Album can open from the couple media index first while original files stay protected in Google Drive.'
+          : 'Album can open from a couple-scoped media index when available.',
         meta: 'Metadata only',
       },
       {

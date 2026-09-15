@@ -22,22 +22,6 @@ function splitRuntimeParagraphs(text) {
   return paragraphs
 }
 
-function RestorationSlot({ label, status }) {
-  return (
-    <div className="confession-slot">
-      <span className="confession-slot-label">{label}</span>
-      <span className="confession-slot-status">{status}</span>
-    </div>
-  )
-}
-
-function slotStatusCopy(slot) {
-  if (!slot) return 'Private media'
-  if (slot.kind === 'audio') return slot.status === 'mapped' ? 'Audio ready' : 'Audio optional'
-  if (slot.kind === 'video') return slot.status === 'mapped' ? 'Video ready' : 'Private video'
-  return slot.status === 'mapped' ? 'Photo ready' : 'Private photo'
-}
-
 function CandidatePreview({ candidate, resolvePreviewUrl }) {
   const previewUrl = resolvePreviewUrl(candidate.previewUrl)
   if (!previewUrl) return null
@@ -73,13 +57,13 @@ export function ConfessionPage() {
     ? splitRuntimeParagraphs(model.moment.sections.flatMap((section) => (section.content ? [section.content] : [])).join('\n\n'))
     : []
   const slotMap = Object.fromEntries((model.mediaSlots || []).map((slot) => [slot.id, slot]))
-  function renderVisualSlot(slotId, fallbackLabel) {
+  function renderVisualSlot(slotId) {
     const slot = slotMap[slotId]
     if (slot?.status === 'mapped' && slot.url && slot.kind === 'image') {
       return <img alt={slot.label} className="confession-slot-image" src={slot.url} />
     }
 
-    return <RestorationSlot label={fallbackLabel} status={slotStatusCopy(slot)} />
+    return null
   }
 
   if (model.status === 'loading') {
@@ -122,14 +106,14 @@ export function ConfessionPage() {
 
         <article className="confession-card">
           <header className="confession-card-header">
-            <p className="confession-overline">For Mara</p>
+            <p className="confession-overline">For Omia</p>
             <h2>{model.moment.subtitle || 'To the girl who fills my heart'}</h2>
           </header>
 
           <div className="confession-notes">
-            {renderVisualSlot('top-note-photo', 'Top note photo')}
-            {renderVisualSlot('cheesy-note-image', 'Cheesy note image')}
-            {renderVisualSlot('outside-note-photo', 'Outside note photo')}
+            {renderVisualSlot('top-note-photo')}
+            {renderVisualSlot('cheesy-note-image')}
+            {renderVisualSlot('outside-note-photo')}
           </div>
 
           <div className="confession-letter">
@@ -139,7 +123,7 @@ export function ConfessionPage() {
           </div>
 
           <div className="confession-inline-media">
-            {renderVisualSlot('inline-meme-image', 'Inline meme image')}
+            {renderVisualSlot('inline-meme-image')}
           </div>
 
           <div className="confession-media">
@@ -147,14 +131,10 @@ export function ConfessionPage() {
               <video className="confession-video" controls playsInline preload="metadata">
                 <source src={slotMap['closing-video'].url} type="video/mp4" />
               </video>
-            ) : (
-              <RestorationSlot label="Closing video" status={slotStatusCopy(slotMap['closing-video'])} />
-            )}
+            ) : null}
             {slotMap['background-audio']?.status === 'mapped' && slotMap['background-audio']?.url ? (
               <audio className="confession-audio" controls preload="metadata" src={slotMap['background-audio'].url} />
-            ) : (
-              <RestorationSlot label="Background audio" status={slotStatusCopy(slotMap['background-audio'])} />
-            )}
+            ) : null}
           </div>
 
           {recoveryToolsEnabled && user?.uid && showOwnerTools ? (
@@ -193,7 +173,7 @@ export function ConfessionPage() {
                         </p>
                       </div>
                       <div className="confession-owner-slot-actions">
-                        <span className="confession-owner-slot-state">{slotStatusCopy(slot)}</span>
+                        <span className="confession-owner-slot-state">{slot.status === 'mapped' ? 'Mapped' : 'Unmapped'}</span>
                         {slot.current ? (
                           <button
                             className="confession-owner-button subtle"

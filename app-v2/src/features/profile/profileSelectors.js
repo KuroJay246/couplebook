@@ -109,6 +109,7 @@ export function selectProfilePeople(profileSource) {
       const anniversaryView = toTrimmedString(profile.anniversaryView) || null
       const joinedDate = toTrimmedString(profile.joinedDate) || null
       const birthday = toTrimmedString(profile.birthday) || null
+      const importantDates = normalizeProfileImportantDates(profile.importantDates)
       const revision = Number.isInteger(profile.revision) && profile.revision > 0 ? profile.revision : 0
 
       return [{
@@ -125,6 +126,7 @@ export function selectProfilePeople(profileSource) {
         joinedDateLabel: formatDateLabel(joinedDate),
         birthday,
         birthdayLabel: formatDateLabel(birthday),
+        importantDates,
         revision,
         details: [
           {
@@ -201,6 +203,32 @@ export function selectRelationshipAnniversaries(people) {
   }]
 }
 
+function normalizeProfileImportantDates(value) {
+  if (!Array.isArray(value)) return []
+  return value.slice(0, 12).flatMap((entry, index) => {
+    if (!entry || typeof entry !== 'object') return []
+    const date = toTrimmedString(entry.date)
+    const label = toTrimmedString(entry.label)
+    if (!date || !label) return []
+    const id = toTrimmedString(entry.id) || `${date}-${index}`
+    const kind = toTrimmedString(entry.type) || 'custom'
+    const dateLabel = formatDateLabel(date)
+    const daysUntil = entry.repeatsAnnually === true ? daysUntilAnnualDate(date) : daysSince(date) === 0 ? 0 : null
+    return [{
+      id,
+      kind,
+      label,
+      date,
+      dateLabel,
+      repeatsAnnually: entry.repeatsAnnually === true,
+      note: toTrimmedString(entry.note),
+      daysUntil,
+      countdownLabel: entry.repeatsAnnually === true ? formatDaysUntil(daysUntil) : dateLabel,
+      status: 'ready',
+    }]
+  })
+}
+
 export function selectRelationshipMilestones(people, contractSource) {
   const milestones = people
     .flatMap((person) => {
@@ -256,8 +284,16 @@ export function selectImportantDates(people, contractSource) {
       primary: false,
     }]
   })
+  const customDates = people.flatMap((person) => (person.importantDates || []).map((item) => ({
+    ...item,
+    id: `${person.id}-${item.id}`,
+    sourcePersonId: person.id,
+    sourcePersonName: person.shortName,
+    type: item.kind,
+    primary: item.kind === 'primary-anniversary',
+  })))
 
-  return [...anniversaryDates, ...milestoneDates].toSorted((left, right) => {
+  return [...anniversaryDates, ...milestoneDates, ...customDates].toSorted((left, right) => {
     const leftDays = Number.isFinite(left.daysUntil) ? left.daysUntil : 9999
     const rightDays = Number.isFinite(right.daysUntil) ? right.daysUntil : 9999
     return leftDays - rightDays || left.label.localeCompare(right.label)

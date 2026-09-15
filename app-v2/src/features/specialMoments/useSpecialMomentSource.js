@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from 'react'
 import { DATA_SOURCE_MODES } from '../../data/dataSourceMode.js'
+import { createSpecialMomentBridgeConfig } from '../../data/legacySpecialMomentAdapter.js'
 import { getBrowserTestCompatibilityState } from '../../lib/browserTestMode.js'
 import { getFirestoreSpecialMoment, getLegacySpecialMoment } from '../../services/specialMomentService.js'
 import { useCoupleScopedSource } from '../domain/useCoupleScopedSource.js'
@@ -24,6 +25,11 @@ export function useSpecialMomentSource(momentKey) {
 
   const loadSource = useCallback(
     ({ coupleId, sourceMode }) => {
+      const bridgeConfig = createSpecialMomentBridgeConfig()
+      if (bridgeConfig.enabled) {
+        return getLegacySpecialMoment(momentKey, { bridgeConfig })
+      }
+
       if (sourceMode === DATA_SOURCE_MODES.firestore) {
         if (!coupleId) {
           throw new Error('Special moment data requires an approved couple membership.')

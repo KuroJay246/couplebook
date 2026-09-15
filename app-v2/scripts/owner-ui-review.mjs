@@ -63,22 +63,22 @@ const VIEWPORTS = Object.freeze([
 ])
 
 const DEFAULT_ROUTE_SET = Object.freeze([
-  { path: '/dashboard', slug: 'dashboard', heading: 'Our memories, plans, and special moments in one place.' },
+  { path: '/dashboard', slug: 'dashboard', heading: /Omia & Jaylan/ },
   { path: '/timeline', slug: 'timeline', heading: /Our Story/ },
-  { path: '/gallery', slug: 'gallery', heading: /Our Memories/ },
+  { path: '/gallery', slug: 'gallery', heading: /Album/ },
   { path: '/profile', slug: 'profile', heading: /^Us$/ },
   { path: '/favorites', slug: 'favorites', heading: /Favorite Things/ },
-  { path: '/plans', slug: 'plans', heading: 'Things we want to do together' },
+  { path: '/plans', slug: 'plans', heading: /Plans/ },
   { path: '/settings', slug: 'settings', heading: /Settings/ },
   { path: '/contract', slug: 'contract', heading: /Shared Relationship Contract/ },
-  { path: '/birthday', slug: 'birthday', heading: 'Birthday chapter' },
-  { path: '/valentine', slug: 'valentine', heading: 'Valentine chapter' },
-  { path: '/confession', slug: 'confession', heading: 'Confession chapter' },
+  { path: '/birthday', slug: 'birthday', heading: /Birthday/ },
+  { path: '/valentine', slug: 'valentine', heading: /Valentine/ },
+  { path: '/confession', slug: 'confession', heading: /Confession/ },
 ])
 
 const THEME_ROUTES = Object.freeze([
-  { path: '/dashboard', slug: 'dashboard', heading: 'Our memories, plans, and special moments in one place.' },
-  { path: '/gallery', slug: 'gallery', heading: /Our Memories/ },
+  { path: '/dashboard', slug: 'dashboard', heading: /Omia & Jaylan/ },
+  { path: '/gallery', slug: 'gallery', heading: /Album/ },
   { path: '/settings', slug: 'settings', heading: /Settings/ },
 ])
 
@@ -450,7 +450,8 @@ function themeTile(page, themeId) {
 
 async function openAppearance(page, baseUrl) {
   await openRoute(page, baseUrl, DEFAULT_ROUTE_SET.find((route) => route.path === '/settings'))
-  await page.getByRole('heading', { name: 'Appearance' }).waitFor({ state: 'visible', timeout: 10000 })
+  await page.getByRole('button', { name: /^Appearance$/ }).click()
+  await page.getByRole('heading', { name: 'Appearance' }).first().waitFor({ state: 'visible', timeout: 10000 })
 }
 
 async function waitForSettingsSave(page, timeoutMs = 20000) {
@@ -534,25 +535,38 @@ function storyCard(page, title) {
   return page.locator('article').filter({ has: page.getByText(title) }).first()
 }
 
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
 function galleryTile(page, title) {
-  return page.locator('.gallery-item').filter({ has: page.getByText(title) }).first()
+  return page.getByRole('button', { name: new RegExp(`^${escapeRegExp(title)},`) }).first()
 }
 
 async function ensureDriveConnected(page) {
   const baseUrl = new globalThis.URL(page.url()).origin
   await page.goto(`${baseUrl}/settings`, { waitUntil: 'domcontentloaded' })
-  await page.getByRole('heading', { name: 'Settings' }).waitFor({ state: 'visible', timeout: 15000 })
-  await page.getByLabel('Media and sync settings').waitFor({ state: 'visible', timeout: 10000 })
-  if (!(await page.getByText('Connected', { exact: true }).first().isVisible().catch(() => false))) {
+  await page.getByRole('heading', { name: 'Settings' }).first().waitFor({ state: 'visible', timeout: 15000 })
+  await page.getByRole('button', { name: /^Media & Sync$/ }).click()
+  const mediaPanel = page.getByLabel('Media and sync settings')
+  await mediaPanel.waitFor({ state: 'visible', timeout: 10000 })
+  if (!(await mediaPanel.locator('button[aria-label="Connect Google Drive"]').filter({ hasText: 'Reconnect' }).isVisible().catch(() => false))) {
     await page.getByRole('button', { name: 'Connect Google Drive' }).click()
-    await page.getByText('Connected', { exact: true }).first().waitFor({ state: 'visible', timeout: 15000 })
+    await mediaPanel.locator('button[aria-label="Connect Google Drive"]').filter({ hasText: 'Reconnect' }).waitFor({ state: 'visible', timeout: 15000 })
   }
-  await page.goto(`${baseUrl}/gallery`, { waitUntil: 'domcontentloaded' })
-  await page.getByRole('heading', { name: 'Our Memories' }).waitFor({ state: 'visible', timeout: 15000 })
+  await page.getByRole('link', { name: /Album/i }).first().click()
+  await page.getByRole('heading', { name: 'Album' }).first().waitFor({ state: 'visible', timeout: 15000 })
 }
 
 async function setFiles(page, filePaths) {
   await page.locator('input[type="file"]').first().setInputFiles(filePaths)
+}
+
+async function openUploadTools(page) {
+  if (await page.getByLabel('Album management tools').count()) return
+  await page.getByRole('button', { name: /Manage/i }).click()
+  await page.getByLabel('Album management tools').waitFor({ state: 'visible', timeout: 10000 })
+  await page.getByLabel('Upload queue').waitFor({ state: 'visible', timeout: 10000 })
 }
 
 async function currentStatus(card) {
@@ -899,8 +913,7 @@ async function runGalleryWorkflows(summary, page, baseUrl, fixtures, networkCont
   const cancelTitle = `Owner Review Cancel Upload ${uniqueSuffix()}`
   await openRoute(page, baseUrl, DEFAULT_ROUTE_SET.find((route) => route.path === '/gallery'))
   await ensureDriveConnected(page)
-  await page.getByRole('button', { name: /Add details/i }).click()
-  await page.getByRole('region', { name: 'Upload queue' }).waitFor({ state: 'visible', timeout: 5000 })
+  await openUploadTools(page)
   await recordControl(summary, { controlName: 'Upload queue disabled state', route: '/gallery', action: 'Check empty queue', expectedResult: 'Start uploads stays disabled without queued files.' }, async () => {
     assert.equal(await page.getByRole('button', { name: /Start uploads/i }).isDisabled(), true)
     await captureShot(summary, page, { captureType: 'disabled', group: 'buttons', label: 'Start uploads disabled', locator: page.getByRole('button', { name: /Start uploads/i }), route: '/gallery', routeSlug: 'start-uploads-disabled', themeId: 'midnight-rose', viewport: VIEWPORTS[0] })
@@ -959,7 +972,7 @@ async function runGalleryWorkflows(summary, page, baseUrl, fixtures, networkCont
   })
   await recordControl(summary, { controlName: 'Gallery viewer', route: '/gallery', action: 'Open the saved Album item and close the viewer', expectedResult: 'The viewer opens and closes cleanly.' }, async () => {
     await page.getByRole('searchbox', { name: 'Search Album' }).fill(savedTitle)
-    await galleryTile(page, savedTitle).getByRole('button', { name: 'Open item', exact: true }).click()
+    await galleryTile(page, savedTitle).click()
     const dialog = page.getByRole('dialog')
     await dialog.waitFor({ state: 'visible', timeout: 5000 })
     await captureShot(summary, page, { captureType: 'open', group: 'dialogs', label: 'Gallery viewer', route: '/gallery', routeSlug: 'gallery-viewer', themeId: 'midnight-rose', viewport: VIEWPORTS[0] })
@@ -967,10 +980,10 @@ async function runGalleryWorkflows(summary, page, baseUrl, fixtures, networkCont
     await dialog.waitFor({ state: 'hidden', timeout: 5000 })
   })
   await recordControl(summary, { controlName: 'Media removal cancel', route: '/gallery', action: 'Open Remove from Album and cancel it', expectedResult: 'The saved Album item remains visible.' }, async () => {
-    await galleryTile(page, savedTitle).getByRole('button', { name: 'Open item', exact: true }).click()
+    await galleryTile(page, savedTitle).click()
     const dialog = page.getByRole('dialog')
     await dialog.waitFor({ state: 'visible', timeout: 5000 })
-    await dialog.getByRole('button', { name: 'Remove from Album' }).click()
+    await dialog.getByRole('button', { name: 'Remove', exact: true }).click()
     const confirmDialog = page.getByRole('dialog', { name: 'Remove this Album item?' })
     await confirmDialog.waitFor({ state: 'visible', timeout: 5000 })
     await captureShot(summary, page, { captureType: 'cancel', group: 'dialogs', label: 'Media removal cancel', route: '/gallery', routeSlug: 'remove-cancel', themeId: 'midnight-rose', viewport: VIEWPORTS[0] })
@@ -978,13 +991,13 @@ async function runGalleryWorkflows(summary, page, baseUrl, fixtures, networkCont
     await confirmDialog.waitFor({ state: 'hidden', timeout: 5000 })
     await dialog.getByRole('button', { name: 'Close', exact: true }).click()
     await dialog.waitFor({ state: 'hidden', timeout: 5000 })
-    await page.getByText(savedTitle).first().waitFor({ state: 'visible', timeout: 5000 })
+    await galleryTile(page, savedTitle).waitFor({ state: 'visible', timeout: 5000 })
   })
   await recordControl(summary, { controlName: 'Media removal confirm', route: '/gallery', action: 'Confirm Remove from Album', expectedResult: 'The Drive test file is removed and the item leaves Album.' }, async () => {
-    await galleryTile(page, savedTitle).getByRole('button', { name: 'Open item', exact: true }).click()
+    await galleryTile(page, savedTitle).click()
     const dialog = page.getByRole('dialog')
     await dialog.waitFor({ state: 'visible', timeout: 5000 })
-    await dialog.getByRole('button', { name: 'Remove from Album' }).click()
+    await dialog.getByRole('button', { name: 'Remove', exact: true }).click()
     const confirmDialog = page.getByRole('dialog', { name: 'Remove this Album item?' })
     await confirmDialog.waitFor({ state: 'visible', timeout: 5000 })
     await confirmDialog.getByRole('button', { name: 'Remove from Album' }).click()
@@ -1053,7 +1066,7 @@ async function runSignOutChecks(summary, page, baseUrl) {
   async function openAdvancedAccountControls() {
     const button = routeButton(page, 'settings', /^Sign out$/)
     if (!(await button.isVisible().catch(() => false))) {
-      await page.getByText('System health and account controls').click()
+      await page.getByRole('button', { name: /^Advanced$/ }).click()
     }
     await button.waitFor({ state: 'visible', timeout: 5000 })
   }
@@ -1088,15 +1101,18 @@ async function captureCards(summary, browser, baseUrl, ownerEmail, ownerPassword
     await signIn(desktopPage, baseUrl, ownerEmail, ownerPassword)
     await signIn(mobilePage, baseUrl, ownerEmail, ownerPassword)
     const targets = [
-      ['Home relationship hero', '/dashboard', async (page) => page.locator('.cb-editorial-hero').first()],
-      ['Featured memory', '/dashboard', async (page) => page.locator('article').filter({ has: page.getByText('Featured memory') }).first()],
+      ['Home relationship hero', '/dashboard', async (page) => page.locator('[data-route="dashboard"] .cb-home-layout').first()],
+      ['Featured memory', '/dashboard', async (page) => page.locator('[data-route="dashboard"] .cb-home-lead').first()],
       ['Story text memory', '/timeline', async (page) => page.locator('article').filter({ has: page.getByText('First harbor walk') }).first()],
       ['Album tile', '/gallery', async (page) => page.locator('.gallery-item').first()],
-      ['Us profile section', '/profile', async (page) => page.locator('[data-route="profile"] .cb-surface').first()],
+      ['Us profile section', '/profile', async (page) => page.locator('[data-route="profile"] .cb-us-panel').first()],
       ['Plan card', '/plans', async (page) => page.locator('article').filter({ has: page.getByText('Bookstore date') }).first()],
-      ['Theme tile', '/settings', async (page) => themeTile(page, 'paper-hearts')],
+      ['Theme tile', '/settings', async (page) => {
+        await page.getByRole('button', { name: /^Appearance$/ }).click()
+        return themeTile(page, 'paper-hearts')
+      }],
       ['Contract section', '/contract', async (page) => page.locator('article').first()],
-      ['Special-moment section', '/settings', async (page) => page.locator('.cb-page-frame').filter({ has: page.getByRole('heading', { name: 'Birthday, Valentine, and Confession' }) }).first()],
+      ['Special-moment section', '/birthday', async (page) => page.locator('.birthday-card').first()],
     ]
     for (const [label, routePath, locatorFn] of targets) {
       const route = DEFAULT_ROUTE_SET.find((entry) => entry.path === routePath)

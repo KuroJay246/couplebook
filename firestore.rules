@@ -213,7 +213,7 @@ service cloud.firestore {
 
     function isValidProfile(uid) {
       return isOwnUser(uid)
-        && hasOnly(['schemaVersion', 'revision', 'name', 'bio', 'anniversaryView', 'joinedDate', 'birthday', 'createdAt', 'createdBy', 'updatedAt', 'updatedBy'])
+        && hasOnly(['schemaVersion', 'revision', 'name', 'bio', 'anniversaryView', 'joinedDate', 'birthday', 'importantDates', 'createdAt', 'createdBy', 'updatedAt', 'updatedBy'])
         && hasAll(['schemaVersion', 'revision', 'name'])
         && request.resource.data.schemaVersion == 1
         && hasNextRevision()
@@ -222,7 +222,38 @@ service cloud.firestore {
         && (!('anniversaryView' in request.resource.data) || isSafeString(request.resource.data.anniversaryView, 40))
         && (!('joinedDate' in request.resource.data) || isDateOrEmpty(request.resource.data.joinedDate))
         && (!('birthday' in request.resource.data) || isDateOrEmpty(request.resource.data.birthday))
+        && (!('importantDates' in request.resource.data) || isImportantDateList(request.resource.data.importantDates))
         && hasOptionalMetadata();
+    }
+
+    function isImportantDateList(value) {
+      return value is list
+        && value.size() <= 12
+        && (value.size() < 1 || isImportantDate(value[0]))
+        && (value.size() < 2 || isImportantDate(value[1]))
+        && (value.size() < 3 || isImportantDate(value[2]))
+        && (value.size() < 4 || isImportantDate(value[3]))
+        && (value.size() < 5 || isImportantDate(value[4]))
+        && (value.size() < 6 || isImportantDate(value[5]))
+        && (value.size() < 7 || isImportantDate(value[6]))
+        && (value.size() < 8 || isImportantDate(value[7]))
+        && (value.size() < 9 || isImportantDate(value[8]))
+        && (value.size() < 10 || isImportantDate(value[9]))
+        && (value.size() < 11 || isImportantDate(value[10]))
+        && (value.size() < 12 || isImportantDate(value[11]));
+    }
+
+    function isImportantDate(value) {
+      return value is map
+        && value.keys().hasOnly(['id', 'label', 'date', 'type', 'repeatsAnnually', 'note'])
+        && value.keys().hasAll(['id', 'label', 'date', 'type', 'repeatsAnnually'])
+        && isRequiredSafeString(value.id, 80)
+        && isRequiredSafeString(value.label, 80)
+        && isDateOrEmpty(value.date)
+        && value.date != ''
+        && value.type in ['first-date', 'primary-anniversary', 'anniversary', 'milestone', 'custom']
+        && value.repeatsAnnually is bool
+        && (!('note' in value) || isSafeString(value.note, 160));
     }
 
     function isValidFavorites(uid) {

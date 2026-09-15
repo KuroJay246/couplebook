@@ -26,6 +26,10 @@ function createSnapshot(overrides = {}) {
               anniversaryView: 'dual',
               joinedDate: '2025-12-28',
               birthday: '1999-03-02',
+              importantDates: [
+                { id: 'first-date', label: 'First date', date: '2025-12-24', type: 'first-date', repeatsAnnually: true },
+                { id: 'move-day', label: 'Move day', date: '2026-01-15', type: 'milestone', repeatsAnnually: false },
+              ],
             },
             Omia: {
               name: 'Omia',
@@ -116,6 +120,8 @@ test('profile read model keeps two-person content, highlights, and contract summ
   assert.equal(model.relationship.anniversaries.length, 1)
   assert.equal(model.relationship.primaryAnniversary.label, 'Relationship date')
   assert.equal(model.relationship.primaryAnniversary.scope, 'couple')
+  assert.equal(model.relationship.importantDates.some((item) => item.label === 'First date' && item.type === 'first-date'), true)
+  assert.equal(model.relationship.importantDates.some((item) => item.label === 'Move day' && item.type === 'milestone'), true)
   assert.equal(model.relationship.milestones.some((item) => item.kind === 'contract'), true)
   assert.equal(model.sharedHighlights.length, 4)
   assert.equal(model.entries.contract.description, '1 of 2 preserved signatures are already visible from the migrated Contract page.')
@@ -168,9 +174,9 @@ test('birthday closer than relationship anniversary does not become next anniver
 
   assert.equal(model.relationship.primaryAnniversary.label, 'Relationship date')
   assert.equal(model.relationship.primaryAnniversary.date, '2025-12-28')
-  assert.equal(model.relationship.primaryAnniversary.countdownLabel, '108 days')
+  assert.equal(model.relationship.primaryAnniversary.countdownLabel, '104 days')
   assert.equal(model.relationship.nextImportantDate.label, "Omia's birthday")
-  assert.equal(model.relationship.nextImportantDate.countdownLabel, '4 days')
+  assert.equal(model.relationship.nextImportantDate.countdownLabel, 'Today')
 })
 
 test('profile read model stays unavailable when no safe profile content is accessible', () => {

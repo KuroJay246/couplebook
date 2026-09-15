@@ -35,12 +35,14 @@ test('special routes use dedicated protected experiences instead of placeholders
   const valentinePageSource = await readSource('../pages/ValentinePage.jsx')
   const confessionPageSource = await readSource('../pages/ConfessionPage.jsx')
   const hookSource = await readSource('../features/specialMoments/useSpecialMomentContent.js')
+  const sourceHookSource = await readSource('../features/specialMoments/useSpecialMomentSource.js')
   const adapterSource = await readSource('../data/legacySpecialMomentAdapter.js')
   const mainSource = await readSource('../main.jsx')
 
   assert.match(birthdayPageSource, /special-birthday-page/)
   assert.match(valentinePageSource, /special-valentine-page/)
   assert.match(confessionPageSource, /special-confession-page/)
+  assert.match(confessionPageSource, /For Omia/)
 
   for (const source of [birthdayPageSource, valentinePageSource, confessionPageSource]) {
     assert.match(source, /useSpecialMomentContent/)
@@ -48,10 +50,13 @@ test('special routes use dedicated protected experiences instead of placeholders
   }
 
   assert.match(hookSource, /useSpecialMomentSource/)
+  assert.match(sourceHookSource, /createSpecialMomentBridgeConfig/)
+  assert.match(sourceHookSource, /getLegacySpecialMoment\(momentKey, \{ bridgeConfig \}\)/)
   assert.match(adapterSource, /VITE_ENABLE_LEGACY_LOCAL_BRIDGE/)
   assert.match(adapterSource, /createLocalApiPath\('special-moment', momentKey\)/)
   assert.match(mainSource, /import '\.\/styles\/pages\/special-moments\.css'/)
   assert.doesNotMatch(`${birthdayPageSource}\n${valentinePageSource}\n${confessionPageSource}\n${hookSource}`, /dangerouslySetInnerHTML|legacy\.html|OUR MEMORIES|pages\/confession|pages\/valentine|omnia-happy-birthday/)
+  assert.doesNotMatch(confessionPageSource, /For Mara|Photo awaiting restoration|Refresh local candidates[^]*recoveryToolsEnabled === false/)
   assert.doesNotMatch(`${birthdayPageSource}\n${valentinePageSource}\n${confessionPageSource}\n${hookSource}\n${adapterSource}`, /\bsetItem\s*\(|\bupdateDoc\s*\(|\baddDoc\s*\(|\bdeleteDoc\s*\(|collectionGroup\(|collection\([^)]*users/)
 })
 

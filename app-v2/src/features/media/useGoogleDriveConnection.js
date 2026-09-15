@@ -151,6 +151,18 @@ export function createDriveConnectionController({
     previewUrlsRef.current.clear()
   }
 
+  function revokePreviewForFile(fileId) {
+    const url = renderRef.current.previews[fileId]
+    if (!url) return false
+    if (!providerRef.current?.revokePreview?.(url)) {
+      revokeObjectUrl(url)
+    }
+    previewUrlsRef.current.delete(url)
+    const { [fileId]: _removed, ...remainingPreviews } = renderRef.current.previews
+    apply({ previews: remainingPreviews })
+    return true
+  }
+
   function reset(nextGeneration) {
     revokeSessionPreviews()
     previewRequestsRef.current.clear()
@@ -322,6 +334,7 @@ export function createDriveConnectionController({
     loadMoreFiles,
     openExternally,
     refreshListing,
+    revokePreviewForFile,
     retryAccess,
   }
 }
@@ -362,6 +375,7 @@ export function useGoogleDriveConnection() {
   const retryAccess = useCallback(async () => controller.retryAccess(), [controller])
   const getPreview = useCallback(async (fileId) => controller.getPreview(fileId), [controller])
   const openExternally = useCallback((fileId) => controller.openExternally(fileId), [controller])
+  const revokePreview = useCallback((fileId) => controller.revokePreviewForFile(fileId), [controller])
 
   return {
     connect,
@@ -377,6 +391,7 @@ export function useGoogleDriveConnection() {
     previews: renderState.previews,
     provider: controller.getProvider(),
     refreshListing,
+    revokePreview,
     retryAccess,
     state: renderState.state,
   }

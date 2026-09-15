@@ -233,31 +233,43 @@ async function signIn(page, baseUrl, email, password) {
   await page.locator('input[type="password"]').fill(password)
   await page.getByRole('button', { name: /Enter Couple Book/i }).click()
   await page.waitForURL((url) => url.pathname === '/dashboard', { timeout: 20000 })
-  await page.getByRole('heading', { name: /Our memories, plans, and special moments/i }).waitFor({ state: 'visible', timeout: 15000 })
+  await page.getByRole('heading', { name: /Omia & Jaylan/i }).waitFor({ state: 'visible', timeout: 15000 })
 }
 
 async function openGallery(page, baseUrl) {
+  if (page.url().startsWith(baseUrl)) {
+    const albumLink = page.getByRole('link', { name: /Album/i }).first()
+    if (await albumLink.count()) {
+      await albumLink.click()
+      await page.getByRole('heading', { name: 'Album' }).first().waitFor({ state: 'visible', timeout: 15000 })
+      return
+    }
+  }
   await page.goto(`${baseUrl}/gallery`, { waitUntil: 'domcontentloaded' })
-  await page.getByRole('heading', { name: 'Our Memories' }).waitFor({ state: 'visible', timeout: 15000 })
+  await page.getByRole('heading', { name: 'Album' }).first().waitFor({ state: 'visible', timeout: 15000 })
 }
 
 async function openUploadTools(page) {
   if (await page.getByLabel('Album management tools').count()) return
-  await page.getByRole('button', { name: /Add details/i }).click()
+  await page.getByRole('button', { name: /Manage/i }).click()
   await page.getByLabel('Album management tools').waitFor({ state: 'visible', timeout: 10000 })
 }
 
 async function ensureDriveConnected(page) {
   const baseUrl = new globalThis.URL(page.url()).origin
   await page.goto(`${baseUrl}/settings`, { waitUntil: 'domcontentloaded' })
-  await page.getByRole('heading', { name: 'Settings' }).waitFor({ state: 'visible', timeout: 15000 })
+  await page.getByRole('heading', { name: 'Settings' }).first().waitFor({ state: 'visible', timeout: 15000 })
+  await page.getByRole('button', { name: 'Media & Sync' }).click()
   await page.getByLabel('Media and sync settings').waitFor({ state: 'visible', timeout: 10000 })
-  if (!(await page.getByText('Connected', { exact: true }).count())) {
-    await page.getByRole('button', { name: 'Connect Google Drive' }).click()
-    await page.getByText('Connected', { exact: true }).waitFor({ state: 'visible', timeout: 10000 })
+  const connectButton = page.getByRole('button', { name: /Connect Google Drive|Reconnect/i })
+  if (await connectButton.count()) {
+    await connectButton.first().click()
   }
+  const mediaPanel = page.getByLabel('Media and sync settings')
+  await mediaPanel.locator('button[aria-label="Connect Google Drive"]').filter({ hasText: 'Reconnect' }).waitFor({ state: 'visible', timeout: 10000 })
   await openGallery(page, baseUrl)
   await openUploadTools(page)
+  await page.getByRole('button', { name: /^Start uploads$/ }).waitFor({ state: 'visible', timeout: 10000 })
 }
 
 async function setFiles(page, filePaths) {
@@ -279,9 +291,11 @@ async function currentStatus(card) {
 async function collectStatusHistory(card, doneStatuses, timeoutMs = 30000) {
   const startedAt = Date.now()
   const history = []
+  let lastText = ''
 
   while (Date.now() - startedAt < timeoutMs) {
     const status = await currentStatus(card)
+    lastText = await card.innerText().catch(() => '')
     if (status && history[history.length - 1] !== status) {
       history.push(status)
     }
@@ -289,7 +303,7 @@ async function collectStatusHistory(card, doneStatuses, timeoutMs = 30000) {
     await new Promise((resolve) => setTimeout(resolve, 80))
   }
 
-  throw new Error(`Timed out waiting for statuses: ${doneStatuses.join(', ')}`)
+  throw new Error(`Timed out waiting for statuses: ${doneStatuses.join(', ')}. History: ${history.join(', ') || 'none'}. Card text: ${lastText}`)
 }
 
 async function fillQueueTitle(card, title) {
@@ -298,7 +312,26 @@ async function fillQueueTitle(card, title) {
 }
 
 async function startUploads(page) {
-  await page.getByRole('button', { name: /^Start uploads$/ }).click()
+  const startButton = page.getByRole('button', { name: /^Start uploads$/ })
+  await startButton.waitFor({ state: 'visible', timeout: 10000 })
+  const startedAt = Date.now()
+  let disabledDetails = ''
+  while (Date.now() - startedAt < 10000) {
+    const isDisabled = await startButton.evaluate((button) => {
+      return button.disabled || button.getAttribute('aria-disabled') === 'true'
+    })
+    if (!isDisabled) {
+      await startButton.click()
+      return
+    }
+    disabledDetails = await startButton.evaluate((button) => {
+      const selectButton = Array.from(globalThis.document.querySelectorAll('button')).find((candidate) => (candidate.textContent || '').includes('Select files'))
+      const alerts = Array.from(globalThis.document.querySelectorAll('[role="alert"], [role="status"]')).map((node) => node.textContent || '').join(' | ')
+      return `Button text: ${button.textContent || ''}. Select disabled: ${Boolean(selectButton?.disabled)}. Notices: ${alerts}`
+    })
+    await new Promise((resolve) => setTimeout(resolve, 100))
+  }
+  throw new Error(`Start uploads is disabled. ${disabledDetails}`)
 }
 
 async function assertPreviewExists(card, kind) {
@@ -326,6 +359,18 @@ async function getMemoryDocsByTitle(db, coupleId, title) {
   return snapshot.docs.map((doc) => ({ id: doc.id, data: doc.data() }))
 }
 
+async function waitForMemoryDocsByTitle(db, coupleId, title, expectedCount = 1, timeoutMs = 15000) {
+  const startedAt = Date.now()
+  let docs = []
+  while (Date.now() - startedAt < timeoutMs) {
+    docs = await getMemoryDocsByTitle(db, coupleId, title)
+    if (docs.length === expectedCount) return docs
+    await new Promise((resolve) => setTimeout(resolve, 150))
+  }
+  assert.equal(docs.length, expectedCount, `Expected ${expectedCount} memory docs titled ${title}.`)
+  return docs
+}
+
 async function listStorageObjects(bucket, prefix) {
   const [files] = await bucket.getFiles({ prefix })
   return files.map((file) => file.name).sort()
@@ -344,6 +389,10 @@ function assertDriveVerifiedMedia(memory, kind) {
   }
 }
 
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
 async function saveScreenshot(page, fileName) {
   const filePath = path.join(OUTPUT_ROOT, 'screenshots', fileName)
   await page.screenshot({ path: filePath, fullPage: true })
@@ -351,11 +400,11 @@ async function saveScreenshot(page, fileName) {
 }
 
 async function assertTileVisible(page, title) {
-  await page.getByRole('heading', { name: title }).first().waitFor({ state: 'visible', timeout: 15000 })
+  await page.getByRole('button', { name: new RegExp(`^${escapeRegExp(title)},`) }).first().waitFor({ state: 'visible', timeout: 15000 })
 }
 
 async function assertTileAbsent(page, title) {
-  await expectCount(page.getByRole('heading', { name: title }).first(), 0, 5000)
+  await expectCount(page.getByRole('button', { name: new RegExp(`^${escapeRegExp(title)},`) }).first(), 0, 5000)
 }
 
 async function expectCount(locator, count, timeoutMs = 7000) {
@@ -379,7 +428,7 @@ async function clearGallerySearch(page) {
 
 async function openGalleryItem(page, title) {
   await searchGallery(page, title)
-  await page.getByRole('button', { name: 'Open item' }).first().click()
+  await page.getByRole('button', { name: new RegExp(`^${escapeRegExp(title)},`) }).first().click()
   await page.getByRole('dialog').first().waitFor({ state: 'visible', timeout: 10000 })
 }
 
@@ -391,7 +440,7 @@ async function closeGalleryItem(page) {
 
 async function removeAlbumItem(page, title, confirm = true) {
   await openGalleryItem(page, title)
-  await page.getByRole('button', { name: 'Remove from Album' }).click()
+  await page.getByRole('button', { name: 'Remove', exact: true }).click()
   const confirmDialog = page.getByRole('dialog', { name: 'Remove this Album item?' })
   await confirmDialog.waitFor({ state: 'visible', timeout: 5000 })
   if (confirm) {
@@ -476,9 +525,8 @@ async function run() {
     await assertPreviewExists(imageCard, 'image')
     await fillQueueTitle(imageCard, imageTitle)
     networkController.delayMs = 300
-    const imageStatusesPromise = collectStatusHistory(imageCard, ['Saved'])
     await startUploads(page)
-    const imageStatuses = await imageStatusesPromise
+    const imageStatuses = await collectStatusHistory(imageCard, ['Saved'])
     networkController.delayMs = 0
     assert.deepEqual(
       ['Validating', 'Hashing', 'Uploading', 'Finalizing', 'Saved'].every((label) => imageStatuses.includes(label)),
@@ -487,15 +535,17 @@ async function run() {
     )
     await waitForNotice(page, /saved to Album|saved\./i)
     await clearGallerySearch(page)
+    const imageDocs = await waitForMemoryDocsByTitle(db, coupleId, imageTitle)
+    await page.reload({ waitUntil: 'domcontentloaded' })
+    await page.getByRole('heading', { name: 'Album' }).first().waitFor({ state: 'visible', timeout: 15000 })
     await assertTileVisible(page, imageTitle)
     await saveScreenshot(page, 'image-saved.png')
     await openGalleryItem(page, imageTitle)
     await saveScreenshot(page, 'image-opened.png')
     await closeGalleryItem(page)
     await page.reload({ waitUntil: 'domcontentloaded' })
-    await page.getByRole('heading', { name: 'Our Memories' }).waitFor({ state: 'visible', timeout: 15000 })
+    await page.getByRole('heading', { name: 'Album' }).first().waitFor({ state: 'visible', timeout: 15000 })
     await assertTileVisible(page, imageTitle)
-    const imageDocs = await getMemoryDocsByTitle(db, coupleId, imageTitle)
     assert.equal(imageDocs.length, 1, 'Expected one saved image memory.')
     const imageDrive = assertDriveVerifiedMedia(imageDocs[0].data, 'image')
     const imageStorageAfterSave = await listStorageObjects(bucket, storagePrefix)
@@ -537,8 +587,8 @@ async function run() {
     await page.evaluate(() => {
       globalThis.__COUPLEBOOK_DRIVE_TEST__.uploadDelayMs = 1200
     })
-    const cancelStatusesPromise = collectStatusHistory(cancelCard, ['Cancelled'])
     await startUploads(page)
+    const cancelStatusesPromise = collectStatusHistory(cancelCard, ['Cancelled'])
     await cancelCard.getByText('Uploading', { exact: true }).waitFor({ state: 'visible', timeout: 15000 })
     await cancelCard.getByRole('button', { name: /Cancel upload for/i }).evaluate((button) => button.click())
     const cancelStatuses = await cancelStatusesPromise
@@ -567,17 +617,15 @@ async function run() {
     await page.evaluate(() => {
       globalThis.__COUPLEBOOK_DRIVE_TEST__.failUploadsRemaining = 1
     })
-    const retryFailureStatusesPromise = collectStatusHistory(retryCard, ['Needs review'])
     await startUploads(page)
-    const retryFailureStatuses = await retryFailureStatusesPromise
+    const retryFailureStatuses = await collectStatusHistory(retryCard, ['Needs review'])
     await retryCard.getByRole('button', { name: new RegExp(`Retry upload for ${path.basename(fixtures.imageRetry).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`) }).waitFor({ state: 'visible', timeout: 10000 })
     await saveScreenshot(page, 'image-retry-failed.png')
     await page.evaluate(() => {
       globalThis.__COUPLEBOOK_DRIVE_TEST__.failUploadsRemaining = 0
     })
-    const retrySuccessStatusesPromise = collectStatusHistory(retryCard, ['Saved'])
     await retryCard.getByRole('button', { name: new RegExp(`Retry upload for ${path.basename(fixtures.imageRetry).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`) }).click()
-    const retrySuccessStatuses = await retrySuccessStatusesPromise
+    const retrySuccessStatuses = await collectStatusHistory(retryCard, ['Saved'])
     const retryDocs = await getMemoryDocsByTitle(db, coupleId, retryTitle)
     assert.equal(retryDocs.length, 1, 'Retry flow should end with exactly one memory.')
     const retryDrive = assertDriveVerifiedMedia(retryDocs[0].data, 'image')
@@ -596,9 +644,8 @@ async function run() {
     const duplicateCard = queueCard(page, path.basename(fixtures.imageDuplicate))
     await duplicateCard.waitFor({ state: 'visible', timeout: 10000 })
     await fillQueueTitle(duplicateCard, duplicateTitle)
-    const duplicateStatusesPromise = collectStatusHistory(duplicateCard, ['Saved'])
     await startUploads(page)
-    const duplicateStatuses = await duplicateStatusesPromise
+    const duplicateStatuses = await collectStatusHistory(duplicateCard, ['Saved'])
     const duplicateDocs = await getMemoryDocsByTitle(db, coupleId, duplicateTitle)
     assert.equal(duplicateDocs.length, 1, 'Duplicate-in-selection flow should save one memory only.')
     await setFiles(page, fixtures.imageDuplicate)
@@ -619,9 +666,8 @@ async function run() {
     await assertPreviewExists(videoCard, 'video')
     await fillQueueTitle(videoCard, videoTitle)
     networkController.delayMs = 300
-    const videoStatusesPromise = collectStatusHistory(videoCard, ['Saved'])
     await startUploads(page)
-    const videoStatuses = await videoStatusesPromise
+    const videoStatuses = await collectStatusHistory(videoCard, ['Saved'])
     networkController.delayMs = 0
     assert.deepEqual(
       ['Validating', 'Hashing', 'Uploading', 'Finalizing', 'Saved'].every((label) => videoStatuses.includes(label)),
@@ -629,7 +675,7 @@ async function run() {
       `Video upload should show every queue phase. Got: ${videoStatuses.join(', ')}`,
     )
     await page.reload({ waitUntil: 'domcontentloaded' })
-    await page.getByRole('heading', { name: 'Our Memories' }).waitFor({ state: 'visible', timeout: 15000 })
+    await page.getByRole('heading', { name: 'Album' }).first().waitFor({ state: 'visible', timeout: 15000 })
     await assertTileVisible(page, videoTitle)
     const videoDocs = await getMemoryDocsByTitle(db, coupleId, videoTitle)
     assert.equal(videoDocs.length, 1, 'Expected one saved video memory.')
@@ -656,7 +702,7 @@ async function run() {
     await removeAlbumItem(page, imageTitle, true)
     await waitForNotice(page, /was removed from Album|was removed, but Album refresh still needs attention/i, 15000)
     await page.reload({ waitUntil: 'domcontentloaded' })
-    await page.getByRole('heading', { name: 'Our Memories' }).waitFor({ state: 'visible', timeout: 15000 })
+    await page.getByRole('heading', { name: 'Album' }).first().waitFor({ state: 'visible', timeout: 15000 })
     await searchGallery(page, imageTitle)
     await assertTileAbsent(page, imageTitle)
     const removedImageDoc = (await getMemoryDocsByTitle(db, coupleId, imageTitle))[0]
@@ -679,9 +725,8 @@ async function run() {
     const removeVideoCard = queueCard(page, path.basename(fixtures.videoRemove))
     await removeVideoCard.waitFor({ state: 'visible', timeout: 10000 })
     await fillQueueTitle(removeVideoCard, removeVideoTitle)
-    const removeVideoStatusesPromise = collectStatusHistory(removeVideoCard, ['Saved'])
     await startUploads(page)
-    await removeVideoStatusesPromise
+    await collectStatusHistory(removeVideoCard, ['Saved'])
     const removeVideoDocs = await getMemoryDocsByTitle(db, coupleId, removeVideoTitle)
     assert.equal(removeVideoDocs.length, 1, 'Expected one removable saved video memory.')
     await removeAlbumItem(page, removeVideoTitle, false)
@@ -690,7 +735,7 @@ async function run() {
     await removeAlbumItem(page, removeVideoTitle, true)
     await waitForNotice(page, /was removed from Album|was removed, but Album refresh still needs attention/i, 15000)
     await page.reload({ waitUntil: 'domcontentloaded' })
-    await page.getByRole('heading', { name: 'Our Memories' }).waitFor({ state: 'visible', timeout: 15000 })
+    await page.getByRole('heading', { name: 'Album' }).first().waitFor({ state: 'visible', timeout: 15000 })
     await searchGallery(page, removeVideoTitle)
     await assertTileAbsent(page, removeVideoTitle)
     const removedVideoDoc = (await getMemoryDocsByTitle(db, coupleId, removeVideoTitle))[0]

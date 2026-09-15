@@ -98,7 +98,16 @@ test('write services reject inactive couple membership before writing', async ()
 test('write services validate text, categories, settings, memories, contract, and special moments', async () => {
   const firestore = createFirestoreStub()
 
-  await saveOwnProfile({ name: 'Member One', bio: 'Safe bio', joinedDate: '2026-01-01' }, { ...context, firestore, ...firestore })
+  await saveOwnProfile({
+    name: 'Member One',
+    bio: 'Safe bio',
+    joinedDate: '2026-01-01',
+    importantDates: [
+      { label: 'First date', date: '2026-02-14', type: 'first-date', repeatsAnnually: true, note: 'Safe note' },
+      { label: 'Launch day', date: '2026-03-01', type: 'milestone', repeatsAnnually: false },
+      { label: '', date: '2026-04-01', type: 'custom', repeatsAnnually: true },
+    ],
+  }, { ...context, firestore, ...firestore })
   await saveOwnFavorites({ food: ['cake', 'cake'] }, { ...context, firestore, ...firestore })
   await saveOwnSettings({
     appearanceTheme: 'moonlit',
@@ -121,6 +130,10 @@ test('write services validate text, categories, settings, memories, contract, an
   assert.equal(writes.length, 9)
   assert.equal(auditWrites(firestore).length, 9)
   assert.equal(writes[0].data.revision, 1)
+  assert.deepEqual(writes[0].data.importantDates, [
+    { id: '2026-02-14-0', label: 'First date', date: '2026-02-14', type: 'first-date', repeatsAnnually: true, note: 'Safe note' },
+    { id: '2026-03-01-1', label: 'Launch day', date: '2026-03-01', type: 'milestone', repeatsAnnually: false, note: '' },
+  ])
   assert.deepEqual(writes[1].data.food, ['cake'])
   assert.equal(writes[1].data.revision, 1)
   assert.equal(writes[2].data.revision, 1)

@@ -275,6 +275,23 @@ test('active members can perform valid emulator writes', { skip: !hasEmulator },
     anniversaryView: 'shared',
     joinedDate: '2026-01-01',
     birthday: '',
+    importantDates: [
+      {
+        id: 'first-date',
+        label: 'First date',
+        date: '2026-02-14',
+        type: 'first-date',
+        repeatsAnnually: true,
+        note: 'Safe fictional note.',
+      },
+      {
+        id: 'one-time-milestone',
+        label: 'One-time milestone',
+        date: '2026-03-01',
+        type: 'milestone',
+        repeatsAnnually: false,
+      },
+    ],
   }))
   await assertSucceeds(setDoc(doc(db, 'couples', ids.couple, 'favorites', ids.memberOne), {
     schemaVersion: 1,

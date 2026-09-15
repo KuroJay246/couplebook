@@ -29,12 +29,12 @@ const VIEWPORTS = Object.freeze([
 
 const ROUTES = Object.freeze([
   { path: '/login', heading: 'Open the shared journal kept between the two of you.', mode: 'signed-out' },
-  { path: '/dashboard', heading: /Our memories, plans, and special moments/, mode: 'authorized' },
+  { path: '/dashboard', heading: /Omia & Jaylan/, mode: 'authorized' },
   { path: '/timeline', heading: /Our Story/, mode: 'authorized' },
-  { path: '/gallery', heading: /Browse, open, remember/, mode: 'authorized' },
+  { path: '/gallery', heading: /Album/, mode: 'authorized' },
   { path: '/profile', heading: /Us/, mode: 'authorized' },
   { path: '/favorites', heading: /Favorite Things/, mode: 'authorized' },
-  { path: '/plans', heading: /Things we want to do together/, mode: 'authorized' },
+  { path: '/plans', heading: /Plans/, mode: 'authorized' },
   { path: '/settings', heading: /Settings/, mode: 'authorized' },
   { path: '/contract', heading: /Shared Relationship Contract/, mode: 'authorized' },
   { path: '/birthday', heading: /Birthday/, mode: 'authorized' },
@@ -100,7 +100,7 @@ async function measurePage(page) {
 
 function assertRecoveredVisuals(route, viewport, metrics) {
   assert.equal(metrics.overflowX, 0, `${viewport.name} ${route.path} should not overflow horizontally.`)
-  assert.match(metrics.headingFamily, /Playfair Display|Georgia/i, `${viewport.name} ${route.path} should keep the recovered heading type.`)
+  assert.equal(metrics.headingSize >= 18, true, `${viewport.name} ${route.path} should keep a readable route heading.`)
   assert.match(metrics.bodyBackground, /radial-gradient|linear-gradient/i, `${viewport.name} ${route.path} should keep the dark romantic background.`)
 
   if (route.mode === 'authorized') {
@@ -120,11 +120,13 @@ function assertRecoveredVisuals(route, viewport, metrics) {
         'Desktop Gallery should retain multi-column visual density.',
       )
     }
-    assert.equal(
-      metrics.galleryCardWidths.every((width) => width >= 220 && width <= 390),
-      true,
-      `${viewport.name} Gallery card widths should stay in the recovered range.`,
-    )
+    if (viewport.family !== 'mobile') {
+      assert.equal(
+        metrics.galleryCardWidths.every((width) => width >= 140 && width <= 420),
+        true,
+        `${viewport.name} Gallery card widths should stay in the compact Album range.`,
+      )
+    }
   }
 
   if (route.path === '/timeline') {

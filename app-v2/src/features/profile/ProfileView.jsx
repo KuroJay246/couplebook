@@ -1,6 +1,6 @@
 import { useId, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { CalendarDays, HeartHandshake, Star } from 'lucide-react'
+import { CalendarDays, HeartHandshake, Plus, Star, Trash2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { PrimaryButton, SecondaryButton, TextButton } from '../../components/ui/Button.jsx'
 import { EmptyState } from '../../components/ui/EmptyState.jsx'
@@ -25,12 +25,27 @@ function relationshipDisplayName(value, index = 0) {
 }
 
 function isOwnerProfile(person, approvedUser) {
-  const currentNames = [approvedUser?.username, approvedUser?.displayName, approvedUser?.profileName].map(normalizeName).filter(Boolean)
+  const currentNames = [approvedUser?.username, approvedUser?.displayName, approvedUser?.profileName].flatMap((value) => {
+    const normalized = normalizeName(value)
+    return normalized ? [normalized] : []
+  })
   return currentNames.includes(normalizeName(person.id)) || currentNames.includes(normalizeName(person.displayName))
 }
 
+function createImportantDateId() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID()
+  return `date-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+}
+
+function createImportantDateDraft() {
+  return { id: createImportantDateId(), label: '', date: '', type: 'custom', repeatsAnnually: true, note: '' }
+}
+
 function relationshipTitle(people) {
-  const names = people.map((person, index) => relationshipDisplayName(person.displayName, index)).filter(Boolean)
+  const names = people.flatMap((person, index) => {
+    const displayName = relationshipDisplayName(person.displayName, index)
+    return displayName ? [displayName] : []
+  })
   return names.length >= 2 ? `${names[0]} & ${names[1]}` : names[0] || 'Us'
 }
 
@@ -44,11 +59,27 @@ function ProfileEditDialog({ onClose, onSave, person, status }) {
     anniversaryView: person?.anniversaryView || 'dual',
     joinedDate: person?.joinedDate || '',
     birthday: person?.birthday || '',
+    importantDates: Array.isArray(person?.importantDates) && person.importantDates.length > 0 ? person.importantDates : [],
     revision: person?.revision || 0,
   }))
 
   function updateField(key, value) {
     setForm((current) => ({ ...current, [key]: value }))
+  }
+
+  function updateImportantDate(index, key, value) {
+    setForm((current) => ({
+      ...current,
+      importantDates: current.importantDates.map((entry, entryIndex) => (entryIndex === index ? { ...entry, [key]: value } : entry)),
+    }))
+  }
+
+  function addImportantDate() {
+    setForm((current) => ({ ...current, importantDates: [...current.importantDates, createImportantDateDraft()] }))
+  }
+
+  function removeImportantDate(index) {
+    setForm((current) => ({ ...current, importantDates: current.importantDates.filter((_, entryIndex) => entryIndex !== index) }))
   }
 
   async function handleSubmit(event) {
@@ -88,6 +119,48 @@ function ProfileEditDialog({ onClose, onSave, person, status }) {
             <TextField onChange={(event) => updateField('birthday', event.target.value)} type="date" value={form.birthday || ''} />
           </FormField>
         </div>
+        <section className="mt-6 rounded-2xl border border-[var(--cb-border)] bg-[var(--cb-bg-soft)]/45 p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h4 className="text-base font-semibold text-[var(--cb-text)]">Important dates</h4>
+              <p className="cb-body-copy text-sm">First dates, anniversaries, milestones, and custom dates tied to this profile.</p>
+            </div>
+            <SecondaryButton onClick={addImportantDate} type="button"><Plus className="size-4" />Add date</SecondaryButton>
+          </div>
+          <div className="mt-4 space-y-4">
+            {form.importantDates.length > 0 ? form.importantDates.map((entry, index) => (
+              <div className="grid gap-3 rounded-xl border border-[var(--cb-border)] bg-[var(--cb-surface)] p-3 sm:grid-cols-2" key={entry.id || `date-${entry.date || entry.label || 'draft'}`}>
+                <FormField label="Label">
+                  <TextField onChange={(event) => updateImportantDate(index, 'label', event.target.value)} placeholder="First date" value={entry.label || ''} />
+                </FormField>
+                <FormField label="Date">
+                  <TextField onChange={(event) => updateImportantDate(index, 'date', event.target.value)} type="date" value={entry.date || ''} />
+                </FormField>
+                <FormField label="Type">
+                  <SelectField onChange={(event) => updateImportantDate(index, 'type', event.target.value)} value={entry.type || 'custom'}>
+                    <option value="first-date">First date</option>
+                    <option value="primary-anniversary">Primary anniversary</option>
+                    <option value="anniversary">Other anniversary</option>
+                    <option value="milestone">Milestone</option>
+                    <option value="custom">Custom</option>
+                  </SelectField>
+                </FormField>
+                <FormField label="Repeats">
+                  <SelectField onChange={(event) => updateImportantDate(index, 'repeatsAnnually', event.target.value === 'annual')} value={entry.repeatsAnnually === false ? 'once' : 'annual'}>
+                    <option value="annual">Every year</option>
+                    <option value="once">One time</option>
+                  </SelectField>
+                </FormField>
+                <FormField label="Private note" className="sm:col-span-2">
+                  <TextField onChange={(event) => updateImportantDate(index, 'note', event.target.value)} value={entry.note || ''} />
+                </FormField>
+                <div className="sm:col-span-2">
+                  <TextButton onClick={() => removeImportantDate(index)} type="button"><Trash2 className="size-4" />Remove date</TextButton>
+                </div>
+              </div>
+            )) : <p className="cb-body-copy text-sm">No extra dates added yet.</p>}
+          </div>
+        </section>
         {status?.message ? <div className="mt-5"><InlineAlert description={status.message} tone={status.kind === 'error' ? 'error' : 'success'} /></div> : null}
         <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
           <SecondaryButton onClick={onClose}>Cancel</SecondaryButton>
@@ -117,7 +190,7 @@ export function ProfileView({ compatibilityError, compatibilityState, model, onR
     const basePeople = model.people || []
     if (!writer.approvedUser || basePeople.some((person) => isOwnerProfile(person, writer.approvedUser))) return basePeople
     const displayName = writer.approvedUser.displayName || writer.approvedUser.username || 'Jaylan'
-    return [{ id: writer.approvedUser.username || displayName, displayName, bio: '', anniversaryView: 'dual', joinedDate: '', birthday: '', revision: 0, details: [] }, ...basePeople]
+    return [{ id: writer.approvedUser.username || displayName, displayName, bio: '', anniversaryView: 'dual', joinedDate: '', birthday: '', importantDates: [], revision: 0, details: [] }, ...basePeople]
   }, [model.people, writer.approvedUser])
 
   const primaryAnniversary = model.relationship?.primaryAnniversary || null

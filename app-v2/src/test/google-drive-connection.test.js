@@ -22,6 +22,10 @@ function makeProvider(id, events, previewDelay = 0) {
     openExternally(fileId) {
       events.push(`${id}:open:${fileId}`)
     },
+    revokePreview(url) {
+      events.push(`${id}:revoke-preview:${url}`)
+      return true
+    },
     disconnect() {
       events.push(`${id}:disconnect`)
     },
@@ -76,6 +80,25 @@ test('concurrent Drive preview requests are deduplicated per session', async () 
   assert.equal(first, 'blob:dedupe:dedupe-image')
   assert.equal(second, first)
   assert.deepEqual(events.filter((event) => event === 'dedupe:preview:dedupe-image'), ['dedupe:preview:dedupe-image'])
+})
+
+test('Drive controller revokes individual previews without disconnecting active Drive session', async () => {
+  const events = []
+  const controller = createDriveConnectionController({
+    createProvider: () => makeProvider('single', events),
+    loadIdentityScript: async () => {},
+    revokeObjectUrl: (url) => events.push(`fallback-revoke:${url}`),
+  })
+  controller.bindReact(() => {})
+  await controller.connect()
+  await controller.getPreview('single-image')
+
+  assert.equal(controller.revokePreviewForFile('single-image'), true)
+  assert.equal(controller.revokePreviewForFile('single-image'), false)
+  assert.deepEqual(controller.getSnapshot().previews, {})
+  assert.equal(controller.getSnapshot().state, DRIVE_STATE.connected)
+  assert.ok(events.includes('single:revoke-preview:blob:single:single-image'))
+  assert.equal(events.includes('fallback-revoke:blob:single:single-image'), false)
 })
 
 test('Drive listing loads the first page before additional pages are requested', async () => {

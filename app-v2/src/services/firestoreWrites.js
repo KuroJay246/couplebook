@@ -19,6 +19,7 @@ import {
 export const FAVORITE_WRITE_CATEGORIES = Object.freeze(['food', 'songs', 'movies', 'places', 'memories', 'notes'])
 export const APPEARANCE_THEMES = Object.freeze(THEME_REGISTRY.map((theme) => theme.id))
 export const MEMORY_TYPES = Object.freeze(['ordinary', 'birthday', 'valentine', 'confession'])
+const IMPORTANT_DATE_TYPES = Object.freeze(['first-date', 'primary-anniversary', 'anniversary', 'milestone', 'custom'])
 export const MEMORY_KIND_LABELS = Object.freeze([
   'Everyday Moment',
   'Date',
@@ -291,6 +292,30 @@ function buildMemoryDocument(payload, nextRevision, uid, verifiedMedia = null) {
   return next
 }
 
+function cleanImportantDates(value) {
+  if (!Array.isArray(value)) return []
+  const seen = new Set()
+  return value.slice(0, 12).flatMap((entry, index) => {
+    if (!entry || typeof entry !== 'object') return []
+    const date = entry.date ? cleanDate(entry.date) : ''
+    const label = cleanText(entry.label, 80, 'Important date label')
+    if (!date || !label) return []
+    const rawId = cleanText(entry.id, 80, 'Important date ID') || `${date}-${index}`
+    const id = rawId.toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80) || `date-${index}`
+    if (seen.has(id)) return []
+    seen.add(id)
+    const type = IMPORTANT_DATE_TYPES.includes(entry.type) ? entry.type : 'custom'
+    return [{
+      id,
+      label,
+      date,
+      type,
+      repeatsAnnually: entry.repeatsAnnually === true,
+      note: cleanText(entry.note, 160, 'Important date note'),
+    }]
+  })
+}
+
 export async function saveOwnProfile(payload, context) {
   const { coupleId, createDoc, firestore, getDocument, uid } = await assertWriteContext(context)
   const reference = docRef(firestore, profilePath(coupleId, uid), createDoc)
@@ -303,6 +328,7 @@ export async function saveOwnProfile(payload, context) {
     anniversaryView: cleanText(payload.anniversaryView, 40, 'Anniversary view'),
     joinedDate: payload.joinedDate ? cleanDate(payload.joinedDate) : '',
     birthday: payload.birthday ? cleanDate(payload.birthday) : '',
+    importantDates: cleanImportantDates(payload.importantDates),
   }
   return writeDocumentWithAudit(reference, next, undefined, {
     coupleId,

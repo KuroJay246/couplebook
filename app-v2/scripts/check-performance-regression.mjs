@@ -16,12 +16,12 @@ const REPO_ROOT = path.resolve(APP_ROOT, '..')
 const OUTPUT_ROOT = path.join(REPO_ROOT, '.visual-audit', 'performance-current')
 
 const ROUTES = Object.freeze([
-  { path: '/dashboard', heading: /Our memories, plans, and special moments/ },
+  { path: '/dashboard', heading: /Omia & Jaylan/ },
   { path: '/timeline', heading: /Our Story/ },
-  { path: '/gallery', heading: /Browse, open, remember/ },
+  { path: '/gallery', heading: /Album/ },
   { path: '/profile', heading: /Us/ },
   { path: '/favorites', heading: /Favorite Things/ },
-  { path: '/plans', heading: /Things we want to do together/ },
+  { path: '/plans', heading: /Plans/ },
   { path: '/settings', heading: /Settings/ },
   { path: '/contract', heading: /Shared Relationship Contract/ },
   { path: '/birthday', heading: /Birthday/ },

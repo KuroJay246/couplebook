@@ -167,6 +167,17 @@ export function createGoogleDriveMediaProvider({ clientId, fetchImpl = globalThi
     return url
   }
 
+  function revokePreview(url) {
+    if (!url || !previewUrls.has(url)) return false
+    try {
+      URL.revokeObjectURL(url)
+    } catch {
+      // Best-effort cleanup only.
+    }
+    previewUrls.delete(url)
+    return true
+  }
+
   async function getFile(fileId) {
     const params = new URLSearchParams({
       fields: `${DRIVE_FILE_FIELDS},trashed`,
@@ -203,5 +214,5 @@ export function createGoogleDriveMediaProvider({ clientId, fetchImpl = globalThi
     return true
   }
 
-  return Object.freeze({ connect, disconnect, fetchPreview, getConnectionState, getFile, listFiles, openExternally, remove, upload, validateFolder })
+  return Object.freeze({ connect, disconnect, fetchPreview, getConnectionState, getFile, listFiles, openExternally, remove, revokePreview, upload, validateFolder })
 }

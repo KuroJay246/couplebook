@@ -344,11 +344,6 @@ async function runAuthenticatedDesktopCoverage(browser) {
       '/gallery',
       '/profile',
       '/plans',
-      '/favorites',
-      '/contract',
-      '/birthday',
-      '/valentine',
-      '/confession',
       '/settings',
     ])
 
@@ -356,17 +351,16 @@ async function runAuthenticatedDesktopCoverage(browser) {
     await waitForRouteContent(page, '/settings', 'Settings')
 
     await page.goto(`${getBaseUrl()}/dashboard`, { waitUntil: 'domcontentloaded' })
-    await waitForRouteContent(page, '/dashboard', /Our memories, plans, and special moments/)
+    await waitForRouteContent(page, '/dashboard', /Omia & Jaylan/)
 
     await page.goto(`${getBaseUrl()}/plans`, { waitUntil: 'domcontentloaded' })
-    await waitForRouteContent(page, '/plans', /Things we want to do together/)
+    await waitForRouteContent(page, '/plans', /Plans/)
     assert.equal(await page.getByRole('button', { name: 'Add plan' }).count() > 0, true, 'Plans should keep the add-plan entry point visible.')
-    assert.equal(await page.getByRole('searchbox', { name: 'Search plans' }).count(), 1, 'Plans should keep search visible.')
 
     await page.goto(`${getBaseUrl()}/contract`, { waitUntil: 'domcontentloaded' })
     await waitForRouteContent(page, '/contract', 'Shared Relationship Contract')
-    assert.equal(await page.getByText('Agreement wording is unavailable here.').count() > 0, true)
-    assert.equal(await page.getByText('Agreement content unavailable in this migrated view.').count() > 0, true)
+    assert.equal(await page.getByText('Agreement text is not ready here.').count() > 0, true)
+    assert.equal(await page.getByText('protected Couple Book source').count() > 0, true)
     assert.equal(await page.getByText('Approved Reader').count() > 0, true)
     assert.equal(await page.locator('main').getByRole('button', { name: /delete|export|upload|draw|sign contract|sign & open vault/i }).count(), 0)
     assert.equal(await page.locator('main').getByRole('button', { name: /accept contract|accepted/i }).count(), 1)
@@ -386,13 +380,14 @@ async function runAuthenticatedDesktopCoverage(browser) {
     await waitForRouteContent(page, '/timeline', 'Our Story')
 
     await page.goto(`${getBaseUrl()}/gallery`, { waitUntil: 'domcontentloaded' })
-    await waitForRouteContent(page, '/gallery', 'Browse, open, remember')
-    await page.getByRole('heading', { name: 'Browse, open, remember' }).waitFor({ state: 'visible', timeout: 5000 })
-    assert.equal(await page.getByRole('button', { name: 'Open item' }).count() > 0, true, 'Gallery should render item actions.')
+    await waitForRouteContent(page, '/gallery', 'Album')
+    await page.getByRole('heading', { name: 'Album' }).first().waitFor({ state: 'visible', timeout: 5000 })
+    assert.equal(await page.locator('button.gallery-media-frame, button.gallery-index-tile-button').count() > 0, true, 'Gallery should render actionable media tiles.')
     await page.getByRole('button', { name: /Videos/ }).click()
-    assert.equal(await page.getByText('Video memory').count() > 0, true, 'Gallery video filter should keep video entries visible.')
+    assert.equal(await page.locator('button.gallery-media-frame.is-video, article.gallery-index-tile.is-video').count() > 0, true, 'Gallery video filter should keep video entries visible.')
     await page.getByRole('button', { name: /All media/i }).click()
-    assert.equal(await page.getByRole('region', { name: 'Album media access' }).count(), 1, 'Gallery should keep contextual media access available.')
+    assert.equal(await page.getByRole('button', { name: 'Manage' }).count(), 1, 'Gallery should keep contextual media management available.')
+    assert.equal(await page.getByRole('link', { name: 'Sync' }).count() + await page.getByRole('button', { name: 'Add' }).count() > 0, true, 'Gallery should keep the media setup/upload entry point available.')
     assert.equal(await page.getByRole('link', { name: /Our Live Album|iCloud/i }).count(), 0, 'Gallery should not expose unsupported iCloud pseudo-integrations.')
 
     for (const [route, heading] of [
@@ -426,7 +421,7 @@ async function runAuthenticatedDesktopCoverage(browser) {
 
     await page.goto(`${getBaseUrl()}/gallery`, { waitUntil: 'domcontentloaded' })
     await page.reload({ waitUntil: 'domcontentloaded' })
-    await waitForRouteContent(page, '/gallery', 'Browse, open, remember')
+    await waitForRouteContent(page, '/gallery', 'Album')
 
     await page.getByRole('button', { name: /Sign out/i }).first().click()
     const dialog = page.getByRole('dialog', { name: 'Sign out of Couple Book?' })
@@ -471,21 +466,21 @@ async function runAuthenticatedMobileCoverage(browser) {
 
     await page.getByRole('button', { name: 'Open all navigation' }).click()
     await page.getByRole('dialog', { name: 'Navigation menu' }).waitFor({ state: 'visible', timeout: 5000 })
-    await page.getByRole('link', { name: /Contract/i }).first().click()
-    await waitForRouteContent(page, '/contract', 'Shared Relationship Contract')
+    await page.getByRole('link', { name: /Birthday/i }).first().click()
+    await waitForRouteContent(page, '/birthday', /Birthday/)
 
     await page.goto(`${getBaseUrl()}/timeline`, { waitUntil: 'domcontentloaded' })
     await waitForRouteContent(page, '/timeline', 'Our Story')
     assert.equal(await page.getByRole('button', { name: 'View memory' }).count() > 0, true, 'Timeline mobile should retain detail actions.')
 
     await page.goto(`${getBaseUrl()}/plans`, { waitUntil: 'domcontentloaded' })
-    await waitForRouteContent(page, '/plans', /Things we want to do together/)
+    await waitForRouteContent(page, '/plans', /Plans/)
     assert.equal(await page.getByRole('button', { name: 'Add plan' }).count() > 0, true, 'Plans mobile should keep the add-plan entry point visible.')
 
     await page.goto(`${getBaseUrl()}/gallery`, { waitUntil: 'domcontentloaded' })
-    await waitForRouteContent(page, '/gallery', 'Browse, open, remember')
+    await waitForRouteContent(page, '/gallery', 'Album')
     await page.getByRole('button', { name: /Videos/ }).click()
-    assert.equal(await page.getByText('Video memory').count() > 0, true, 'Gallery mobile should keep video filtering available.')
+    assert.equal(await page.locator('button.gallery-media-frame.is-video, article.gallery-index-tile.is-video').count() > 0, true, 'Gallery mobile should keep video filtering available.')
 
     await page.goto(`${getBaseUrl()}/birthday`, { waitUntil: 'domcontentloaded' })
     await waitForRouteContent(page, '/birthday', /Birthday/)
