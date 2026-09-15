@@ -42,9 +42,10 @@ Raw local paths, `file://` URLs, public arbitrary URLs, and unverified private m
 Persistent Google Drive sync has an approved trusted backend path. The current repository includes:
 
 - `packages/drive-backend`: contract and pure handlers for OAuth state binding, active membership validation, sync planning, upload finalization, removal, webhooks, watch renewal, disconnect, and credential-field rejection.
-- `functions/`: deployable Firebase Functions wrapper for `/api/drive/**`, using Admin SDK authorization and backend-only credential storage.
+- `packages/drive-worker`: selected Cloudflare Workers Free adapter for `/api/drive/**`, using Firebase ID-token verification, active membership checks through Firestore REST, encrypted Workers KV refresh-token storage, Drive reconciliation, and protected media proxying.
+- `functions/`: legacy Firebase Functions wrapper from the rejected paid path. It is retained as historical code only and is not selected by `firebase.json`.
 
-Current external blocker: Firebase requires Blaze billing before the required Functions runtime APIs can be enabled for `couplebook-97830`. The attempted API enablement failed with `Billing account for project '520837866446' is not found`.
+Current external blocker: Wrangler is not authenticated for Cloudflare, so the Worker/KV resources cannot yet be created or verified. Do not enable Firebase Blaze for this media backend.
 
 Firebase Storage/private media migration remains historical/deferred and must not become the production original-media path without separate approval. Use `storage.app-v2.rules` and `npm --prefix app-v2 run test:storage-rules` for local rule validation only.
 

@@ -92,10 +92,10 @@ test('media backend readiness stays blocked until trusted Drive endpoints exist'
   assert.equal(report.env.missingKeys.length, 0)
   assert.ok(report.backend.missingEndpoints.includes('/api/drive/media/upload'))
   assert.ok(report.backend.missingCapabilities.includes('drive-webhook-handler'))
-  assert.match(report.backend.costBoundary, /requires Blaze billing/)
+  assert.match(report.backend.costBoundary, /Cloudflare Workers Free/)
 })
 
-test('media backend readiness reports local handler capabilities separately from billing readiness', () => {
+test('media backend readiness reports local handler capabilities separately from Worker deployment readiness', () => {
   const capabilities = [
     'firebase-id-token-validation',
     'active-couple-membership-validation',
@@ -146,10 +146,10 @@ test('media backend readiness reports local handler capabilities separately from
   assert.equal(report.status, 'blocked')
   assert.equal(report.backend.missingCapabilities.length, 0)
   assert.equal(report.backend.missingEndpoints.length, 0)
-  assert.ok(report.blockers.some((blocker) => /Firebase Blaze billing is required/.test(blocker)))
+  assert.ok(report.blockers.some((blocker) => /Wrangler login is required/.test(blocker)))
 })
 
-test('media backend readiness is ready when rules, local handlers, endpoints, and billing are ready', () => {
+test('media backend readiness is ready when rules, local handlers, endpoints, and Worker deployment are verified', () => {
   const capabilities = [
     'firebase-id-token-validation',
     'active-couple-membership-validation',
@@ -193,9 +193,14 @@ test('media backend readiness is ready when rules, local handlers, endpoints, an
     },
     backendCapabilitiesImplemented: capabilities,
     backendEndpointsImplemented: endpoints,
-    billingReady: true,
     firebaseProject: { ok: true, errors: [] },
     rulesDrift: { exactMatch: true, missingMediaCoverage: false },
+    worker: {
+      authenticated: true,
+      configPresent: true,
+      deployed: true,
+      packagePresent: true,
+    },
   })
 
   assert.equal(report.status, 'ready')

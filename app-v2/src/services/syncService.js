@@ -57,7 +57,7 @@ export async function getDeferredMediaSyncStatus() {
       requiredEndpoints: Object.values(getMediaSyncBackendContract().endpoints),
     },
     warnings: [
-      'Drive media indexing contract exists, but persistent OAuth refresh and Drive Changes processing require Firebase backend billing setup before deployment.',
+      'Drive media indexing contract exists, but persistent OAuth refresh and Drive Changes processing require the private media service before shared background sync can stay connected.',
     ],
   })
 }

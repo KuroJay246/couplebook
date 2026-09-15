@@ -141,8 +141,8 @@ export function buildDriveBackendContract({
       drive: Object.freeze(['original-binary', 'drive-file-existence', 'drive-file-metadata']),
       firestore: Object.freeze(['couple-membership', 'caption', 'favorite', 'linked-memory', 'app-organization', 'sync-health']),
     }),
-    deploymentStatus: 'billing-required',
-    zeroCostBoundary: 'A persistent Drive sync backend is approved for deployment, but Firebase requires Blaze billing before Cloud Functions, Cloud Build, Artifact Registry, and Secret Manager can be enabled.',
+    deploymentStatus: 'cloudflare-worker-required',
+    zeroCostBoundary: 'A persistent Drive sync backend is approved for the zero-cost path through Cloudflare Workers Free, Workers KV, Firebase Auth, Firestore REST, and Google Drive. Firebase Blaze and Cloud Functions are not part of the selected production path.',
   })
 }
 
@@ -163,7 +163,7 @@ export function buildDriveArchitectureContract(options = {}) {
     backendRequiredFor: DRIVE_BACKEND_REQUIRED_FOR,
     localHandlerCapabilities: DRIVE_BACKEND_CAPABILITIES,
     localHandlerCapabilityCount: DRIVE_BACKEND_CAPABILITIES.length,
-    deploymentStatus: 'billing-required',
-    zeroCostBoundary: 'Owner approval is present; Firebase Blaze billing is the remaining account-level prerequisite for the persistent Drive backend.',
+    deploymentStatus: 'cloudflare-worker-required',
+    zeroCostBoundary: 'Owner approval is present for a zero-cost trusted media service on Cloudflare Workers Free. Firebase Blaze and Cloud Functions are not required for the selected production path.',
   })
 }

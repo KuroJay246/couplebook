@@ -71,7 +71,7 @@ For the broader Drive media backend boundary, run:
 npm run media:backend:readiness
 ```
 
-This is a read-only gate. A nonzero result is expected until live Firestore rules include media-index coverage, trusted backend endpoints/capabilities are complete, and the Firebase project is on Blaze so Cloud Functions, Cloud Build, Artifact Registry, and Secret Manager can be enabled. The command must not print `.env` values or OAuth credentials.
+This is a read-only gate. A nonzero result is expected until live Firestore rules include media-index coverage, trusted backend endpoints/capabilities are complete, Wrangler is authenticated, and the Cloudflare Worker media service is deployed and health-checked on the Free plan. The command must not print `.env` values, OAuth credentials, service-account secrets, or Drive refresh tokens.
 
 Do not use generic `firebase deploy` for normal Couple Book releases. Roll back Hosting from the Firebase Hosting release history for `couplebook-97830` to the last verified good version.
 

@@ -51,7 +51,7 @@ couples/{coupleId}/media/{mediaId}/poster
 
 The Album queue retains the tested state machine for validation, duplicate protection, preview, hashing, upload, finalizing, saved, cancel, retry, orphan recovery, and remove. Production media writes must stay Drive-first; Firebase Storage must not silently become the production original-media destination.
 
-Approved members may prepare local files in the Album upload queue without authorizing Google Drive in the browser. Actual Drive storage for normal partner uploads requires the trusted couple-level media backend so the browser does not receive the owner's Google refresh credential or a reusable Drive access token. The backend deployment is approved, but Firebase currently requires Blaze billing before the required Cloud Functions, Cloud Build, Artifact Registry, and Secret Manager APIs can be enabled. Until that account-level billing action is complete and the backend is deployed, the queue must show a backend-required state instead of opening a Google OAuth popup in Album.
+Approved members may prepare local files in the Album upload queue without authorizing Google Drive in the browser. Actual Drive storage for normal partner uploads requires the trusted couple-level media backend so the browser does not receive the owner's Google refresh credential or a reusable Drive access token. The selected production path is Cloudflare Workers Free plus Workers KV, Firebase Auth, Firestore REST, and Google Drive. Until that Worker is deployed and verified, the queue must show a backend-required state instead of opening a Google OAuth popup in Album.
 
 ## Persistent Drive Sync Boundary
 
@@ -59,7 +59,9 @@ The frontend may render the Firestore media index and request a session Drive co
 
 `packages/drive-backend` contains the trusted-backend contract and pure request handlers used to prove the backend boundary before deployment. It validates Firebase bearer-token identity, active couple membership, OAuth state binding to `uid` and `coupleId`, indexed-media couple scope for thumbnail/stream/remove requests, and Drive sync planning for Firestore media-index writes.
 
-`functions/` is the deployable Firebase Functions wrapper for that contract. It is configured as the Hosting `/api/drive/**` target through `driveApi`, verifies Firebase ID tokens with Admin SDK, checks active couple membership server-side, keeps OAuth refresh credentials in backend-only Firestore documents, and rewrites Drive media index records through Admin SDK. Deployment is blocked until Blaze billing is enabled for `couplebook-97830`.
+`packages/drive-worker/` is the selected zero-cost Cloudflare Worker adapter for that contract. It verifies Firebase ID tokens server-side, checks active couple membership through Firestore REST, stores the Drive refresh credential encrypted in Workers KV, reconciles stable Drive metadata into Firestore, and proxies private media without persisting temporary Drive URLs.
+
+`functions/` is a legacy Firebase Functions adapter from the previous deployment path. It is not selected for production, `firebase.json` does not route `/api/drive/**` to it, and it must not be deployed unless the architecture is explicitly changed later.
 
 The local sync planner accepts already-authorized Drive metadata from an injected backend reader, compares it with indexed Firestore media records, and produces only stable `upsert`, `tombstone`, sync-state, and privacy-minimal audit writes. It rejects cross-couple records and temporary URL or credential-shaped fields such as Drive `thumbnailLink`, `webContentLink`, access tokens, refresh tokens, signed URLs, preview URLs, and download URLs. This proves the write contract; it does not replace the still-required persistent token host, Drive Changes processor, webhook receiver, or thumbnail/original streaming proxy.
 
@@ -67,9 +69,9 @@ The local upload handler validates Firebase identity and active membership, reje
 
 The local removal handler defaults to "Remove from Couple Book" semantics by tombstoning the media index record and leaving the original Drive file intact. Permanent Drive-original deletion is a separate destructive path that requires an explicit `delete-drive-original-{mediaId}` confirmation and a configured backend Drive remover. Both paths write privacy-minimal audit events and never expose raw Drive credentials.
 
-The local Drive Changes/webhook handler validates Google Drive watch-channel headers against an injected channel registry, rejects expired or unknown channels, handles Drive `sync` handshakes by updating safe sync health only, and processes change batches from an injected Drive Changes reader. It advances only a safe change cursor, writes media-index upserts/tombstones through the same sync planner, and keeps audit events counts-only. The deployable wrapper exposes the webhook path, but full live watch/channel validation cannot be proven until the Functions APIs can be enabled and deployed.
+The local Drive Changes/webhook handler validates Google Drive watch-channel headers against an injected channel registry, rejects expired or unknown channels, handles Drive `sync` handshakes by updating safe sync health only, and processes change batches from an injected Drive Changes reader. It advances only a safe change cursor, writes media-index upserts/tombstones through the same sync planner, and keeps audit events counts-only. The Worker contract exposes the webhook path, but full live watch/channel validation cannot be proven until the Worker is deployed and connected to Drive watch state.
 
-The local watch-renewal handler decides whether a Drive watch channel is healthy, expiring, expired, or missing, then replaces expiring/missing channels through injected Drive watch operations. The local disconnect handler stops the active watch channel when present, writes a disconnected provider state, and audits the action without deleting Drive files or exposing credential values. Actual watch creation, stopping, and credential revocation still require the trusted backend to be deployed after billing is enabled.
+The local watch-renewal handler decides whether a Drive watch channel is healthy, expiring, expired, or missing, then replaces expiring/missing channels through injected Drive watch operations. The local disconnect handler stops the active watch channel when present, writes a disconnected provider state, and audits the action without deleting Drive files or exposing credential values. Actual watch creation, stopping, and credential revocation still require the trusted Worker to be deployed.
 
 Required backend responsibilities:
 
@@ -83,4 +85,4 @@ Required backend responsibilities:
 - write privacy-minimal audit events;
 - serve thumbnail/original previews through short-lived backend mediation or a safe cache without persisting stale URLs.
 
-Deployment approval has been granted. Current blocker: Firebase returned `Billing account for project '520837866446' is not found` when enabling `cloudfunctions.googleapis.com`, `cloudbuild.googleapis.com`, `artifactregistry.googleapis.com`, `run.googleapis.com`, and `secretmanager.googleapis.com`. The next action is upgrading `couplebook-97830` to Blaze, then rerunning the Functions/API deployment.
+Deployment approval for paid Firebase infrastructure is withdrawn. Do not upgrade `couplebook-97830` to Blaze for Couple Book media. Current external blocker for the selected path is Cloudflare account authentication and Worker/KV deployment on the Free plan.

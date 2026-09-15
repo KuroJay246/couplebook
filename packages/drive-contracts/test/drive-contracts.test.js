@@ -53,7 +53,7 @@ test('drive backend contract is couple-scoped and contains no credential values'
   assert.equal(contract.previewStrategy.staleUrlPolicy, 'do-not-store-or-replay')
   assert.equal(contract.uploadStrategy.directPartnerUpload, 'firebase-authenticated-member-to-trusted-backend-to-drive')
   assert.equal(contract.uploadStrategy.browserDriveSession, 'owner-review-only-not-required-for-normal-partners')
-  assert.match(contract.zeroCostBoundary, /requires Blaze billing/)
+  assert.match(contract.zeroCostBoundary, /Cloudflare Workers Free/)
   assert.doesNotMatch(serialized, /clientSecretValue|refreshTokenValue|accessTokenValue|Bearer\s/i)
 })
 
@@ -70,5 +70,5 @@ test('drive architecture contract keeps Firestore index fast and backend work ex
   assert.ok(contract.backendRequiredFor.includes('drive-access-token-refresh'))
   assert.ok(contract.backendRequiredFor.includes('fast-thumbnail-proxy-or-cache'))
   assert.equal(contract.localHandlerCapabilityCount, DRIVE_BACKEND_CAPABILITIES.length)
-  assert.equal(contract.deploymentStatus, 'billing-required')
+  assert.equal(contract.deploymentStatus, 'cloudflare-worker-required')
 })
