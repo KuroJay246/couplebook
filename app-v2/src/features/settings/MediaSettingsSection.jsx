@@ -82,10 +82,10 @@ function MediaConnectionSummary({ drive, media }) {
         value={backendReadiness?.statusLabel || 'Not verified'}
       />
       <MediaStatusCard
-        description="Automatic Drive refresh, protected playback links, and continuous updates still need owner-approved service setup before both partners can rely on them."
+        description="Automatic Drive refresh, protected playback links, and continuous updates still need Firebase backend setup before both partners can rely on them."
         label="Setup still needed"
         tone="warning"
-        value={backendReadiness?.deploymentLabel || 'Owner approval needed'}
+        value={backendReadiness?.deploymentLabel || 'Backend setup needed'}
       />
     </div>
   )
@@ -192,7 +192,7 @@ export function MediaSettingsSection({ media }) {
       <InlineAlert
         className="mt-5"
         tone="warning"
-        title="Automatic media sync needs owner approval"
+        title="Automatic media sync needs backend setup"
         description={media?.backendBoundary || 'Couple Book can verify Drive access in this browser, but automatic refresh, background updates, and protected preview delivery need an approved private service before they can stay connected for both partners.'}
       />
 

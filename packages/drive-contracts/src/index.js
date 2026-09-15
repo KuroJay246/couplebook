@@ -141,8 +141,8 @@ export function buildDriveBackendContract({
       drive: Object.freeze(['original-binary', 'drive-file-existence', 'drive-file-metadata']),
       firestore: Object.freeze(['couple-membership', 'caption', 'favorite', 'linked-memory', 'app-organization', 'sync-health']),
     }),
-    deploymentStatus: 'owner-approval-required',
-    zeroCostBoundary: 'A persistent Drive sync backend may require Cloud Functions or equivalent trusted hosting. Do not deploy, enable billing, or store refresh tokens until the owner approves that exact deployment plan.',
+    deploymentStatus: 'billing-required',
+    zeroCostBoundary: 'A persistent Drive sync backend is approved for deployment, but Firebase requires Blaze billing before Cloud Functions, Cloud Build, Artifact Registry, and Secret Manager can be enabled.',
   })
 }
 
@@ -163,7 +163,7 @@ export function buildDriveArchitectureContract(options = {}) {
     backendRequiredFor: DRIVE_BACKEND_REQUIRED_FOR,
     localHandlerCapabilities: DRIVE_BACKEND_CAPABILITIES,
     localHandlerCapabilityCount: DRIVE_BACKEND_CAPABILITIES.length,
-    deploymentStatus: 'owner-approval-required',
-    zeroCostBoundary: 'Do not enable billing or deploy a persistent token backend without owner approval.',
+    deploymentStatus: 'billing-required',
+    zeroCostBoundary: 'Owner approval is present; Firebase Blaze billing is the remaining account-level prerequisite for the persistent Drive backend.',
   })
 }

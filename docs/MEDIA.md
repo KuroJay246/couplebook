@@ -37,9 +37,14 @@ couples/{coupleId}/media/{mediaId}/poster
 
 Raw local paths, `file://` URLs, public arbitrary URLs, and unverified private media references are not valid app-v2 write targets.
 
-## Deferred Work
+## Backend Deployment State
 
-Persistent Google Drive sync is deferred until an owner-approved trusted backend exists for OAuth code exchange, refresh-token storage, Drive Changes processing, webhook handling, watch renewal, reconciliation, thumbnail mediation, and privacy-minimal audit writes.
+Persistent Google Drive sync has an approved trusted backend path. The current repository includes:
+
+- `packages/drive-backend`: contract and pure handlers for OAuth state binding, active membership validation, sync planning, upload finalization, removal, webhooks, watch renewal, disconnect, and credential-field rejection.
+- `functions/`: deployable Firebase Functions wrapper for `/api/drive/**`, using Admin SDK authorization and backend-only credential storage.
+
+Current external blocker: Firebase requires Blaze billing before the required Functions runtime APIs can be enabled for `couplebook-97830`. The attempted API enablement failed with `Billing account for project '520837866446' is not found`.
 
 Firebase Storage/private media migration remains historical/deferred and must not become the production original-media path without separate approval. Use `storage.app-v2.rules` and `npm --prefix app-v2 run test:storage-rules` for local rule validation only.
 

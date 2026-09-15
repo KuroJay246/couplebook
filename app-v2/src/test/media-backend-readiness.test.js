@@ -92,10 +92,10 @@ test('media backend readiness stays blocked until trusted Drive endpoints exist'
   assert.equal(report.env.missingKeys.length, 0)
   assert.ok(report.backend.missingEndpoints.includes('/api/drive/media/upload'))
   assert.ok(report.backend.missingCapabilities.includes('drive-webhook-handler'))
-  assert.match(report.backend.costBoundary, /Do not deploy trusted Drive backend hosting/)
+  assert.match(report.backend.costBoundary, /requires Blaze billing/)
 })
 
-test('media backend readiness reports local handler capabilities separately from deployment approval', () => {
+test('media backend readiness reports local handler capabilities separately from billing readiness', () => {
   const capabilities = [
     'firebase-id-token-validation',
     'active-couple-membership-validation',
@@ -146,5 +146,58 @@ test('media backend readiness reports local handler capabilities separately from
   assert.equal(report.status, 'blocked')
   assert.equal(report.backend.missingCapabilities.length, 0)
   assert.equal(report.backend.missingEndpoints.length, 0)
-  assert.ok(report.blockers.some((blocker) => /approved trusted backend deployment plan/.test(blocker)))
+  assert.ok(report.blockers.some((blocker) => /Firebase Blaze billing is required/.test(blocker)))
+})
+
+test('media backend readiness is ready when rules, local handlers, endpoints, and billing are ready', () => {
+  const capabilities = [
+    'firebase-id-token-validation',
+    'active-couple-membership-validation',
+    'oauth-state-binding',
+    'oauth-code-exchange-boundary',
+    'indexed-media-authorization',
+    'sync-reconciliation-planning',
+    'sync-now-handler',
+    'media-upload-finalization',
+    'exact-duplicate-preflight',
+    'orphan-recovery-recording',
+    'media-removal-tombstone',
+    'drive-original-delete-confirmation',
+    'drive-change-cursor-planning',
+    'drive-webhook-handler',
+    'drive-watch-renewal',
+    'drive-disconnect-cleanup',
+    'privacy-minimal-audit-events',
+    'credential-field-rejection',
+  ]
+  const endpoints = [
+    '/api/drive/oauth/begin',
+    '/api/drive/oauth/callback',
+    '/api/drive/disconnect',
+    '/api/drive/sync',
+    '/api/drive/media/upload',
+    '/api/drive/media/:mediaId',
+    '/api/drive/webhook',
+    '/api/drive/media/:mediaId/thumbnail',
+    '/api/drive/media/:mediaId/stream',
+  ]
+  const report = evaluateMediaBackendReadiness({
+    appEnv: {
+      VITE_FIREBASE_API_KEY: 'set',
+      VITE_FIREBASE_AUTH_DOMAIN: 'couplebook-97830.firebaseapp.com',
+      VITE_FIREBASE_PROJECT_ID: 'couplebook-97830',
+      VITE_FIREBASE_STORAGE_BUCKET: 'couplebook-97830.appspot.com',
+      VITE_FIREBASE_MESSAGING_SENDER_ID: 'set',
+      VITE_FIREBASE_APP_ID: 'set',
+      VITE_GOOGLE_CLIENT_ID: 'set',
+    },
+    backendCapabilitiesImplemented: capabilities,
+    backendEndpointsImplemented: endpoints,
+    billingReady: true,
+    firebaseProject: { ok: true, errors: [] },
+    rulesDrift: { exactMatch: true, missingMediaCoverage: false },
+  })
+
+  assert.equal(report.status, 'ready')
+  assert.equal(report.blockers.length, 0)
 })

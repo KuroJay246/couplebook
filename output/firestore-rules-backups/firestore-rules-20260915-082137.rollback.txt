@@ -1,0 +1,7 @@
+Project: couplebook-97830
+CapturedAt: 2026-09-15T08:21:56.0281191-04:00
+PreviousRuleset: projects/couplebook-97830/rulesets/802567ff-dbe8-407c-b5c4-d884847b4a33
+CurrentRulesetAfterDeploy: projects/couplebook-97830/rulesets/3ea79528-5745-4308-85a5-41810372c157
+BackupFile: output/firestore-rules-backups/firestore-rules-20260915-082137.rules
+RollbackCommand: copy this backup over firestore.rules, run npm --prefix app-v2 run test:rules, then run npx -y firebase-tools@14.19.0 deploy --only firestore:rules --project couplebook-97830 --non-interactive
+RollbackProcess: this restores the previous deployed Firestore ruleset; do not deploy unrelated Firebase products during rollback

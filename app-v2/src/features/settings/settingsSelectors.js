@@ -352,9 +352,9 @@ export function selectSettingsMedia(mediaSync = null, { env = {}, settingsSource
       requiredCapabilities: localHandlerCapabilityCount,
       statusLabel: localHandlersReady ? 'Prepared locally' : 'Setup incomplete',
       description: localHandlersReady
-        ? 'The media service pieces are prepared locally. Turning on automatic Drive refresh, protected playback, and shared updates still requires owner approval.'
+        ? 'The media service pieces are prepared locally. Turning on automatic Drive refresh, protected playback, and shared updates still requires account-level Firebase setup.'
         : 'The shared media service is not fully prepared locally yet.',
-      deploymentLabel: mediaSync?.deploymentStatus === 'owner-approval-required' ? 'Owner approval needed' : 'Private service setup needed',
+      deploymentLabel: mediaSync?.deploymentStatus === 'billing-required' ? 'Billing setup needed' : 'Private service setup needed',
       rulesLabel: 'Firestore rules action required',
     },
     sharedAlbum: selectSharedAlbumConfig({ env, settingsSource }),
@@ -379,9 +379,9 @@ export function selectSettingsMedia(mediaSync = null, { env = {}, settingsSource
       {
         label: 'Continuous Drive sync',
         description: localHandlersReady
-          ? 'Automatic updates are prepared locally. They still need owner approval before Couple Book keeps Drive connected in the background.'
+          ? 'Automatic updates are prepared locally. They still need Firebase backend setup before Couple Book keeps Drive connected in the background.'
           : 'Background Drive updates require an approved private media service before they can run persistently.',
-        meta: mediaSync?.deploymentStatus === 'owner-approval-required' ? 'Owner approval needed' : 'Setup needed',
+        meta: mediaSync?.deploymentStatus === 'billing-required' ? 'Billing setup needed' : 'Setup needed',
       },
       {
         label: 'Album access',

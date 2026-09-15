@@ -78,6 +78,7 @@ export function evaluateMediaBackendReadiness({
   backendCapabilitiesImplemented = [],
   appEnv = {},
   backendEndpointsImplemented = [],
+  billingReady = false,
   firebaseProject = { ok: false, errors: ['Firebase project guard was not run.'] },
   rulesDrift = {},
 } = {}) {
@@ -111,7 +112,9 @@ export function evaluateMediaBackendReadiness({
     blockers.push(`Trusted Drive backend local handlers are incomplete: ${missingBackendCapabilities.join(', ')}`)
   }
 
-  blockers.push('Persistent Drive OAuth refresh storage, Drive Changes processing, webhook handling, and partner upload mediation require an approved trusted backend deployment plan.')
+  if (billingReady !== true) {
+    blockers.push('Firebase Blaze billing is required before Cloud Functions, Cloud Build, Artifact Registry, Secret Manager, and the trusted Drive backend can be enabled and deployed.')
+  }
 
   return Object.freeze({
     status: blockers.length ? 'blocked' : 'ready',
@@ -136,7 +139,9 @@ export function evaluateMediaBackendReadiness({
       requiredEndpoints: TRUSTED_BACKEND_ENDPOINTS,
       implementedEndpoints: Object.freeze([...implementedEndpoints]),
       missingEndpoints: Object.freeze(missingBackendEndpoints),
-      costBoundary: 'Do not deploy trusted Drive backend hosting, enable billing, or store Google refresh credentials until the owner approves the exact plan.',
+      costBoundary: billingReady === true
+        ? 'Trusted Drive backend deployment is approved for this run.'
+        : 'Owner approval is present, but Firebase requires Blaze billing before the trusted Drive backend can be deployed.',
     }),
     blockers: Object.freeze(blockers),
     warnings: Object.freeze(warnings),
@@ -162,7 +167,7 @@ function printReport(report) {
   }
 
   if (report.blockers.length) {
-    console.log('\nOWNER DECISION REQUIRED / Blockers:')
+    console.log('\nBlocking prerequisites:')
     for (const blocker of report.blockers) console.log(`- ${blocker}`)
   }
 
@@ -183,6 +188,7 @@ export function runMediaBackendReadinessCheck() {
     appEnv,
     backendCapabilitiesImplemented: listDriveBackendCapabilities(),
     backendEndpointsImplemented: listDriveBackendEndpointPaths(),
+    billingReady: process.env.COUPLEBOOK_BLAZE_BILLING_READY === 'true',
     firebaseProject: projectGuard,
     rulesDrift,
   })

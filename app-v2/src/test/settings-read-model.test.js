@@ -130,7 +130,7 @@ test('settings read model keeps approved identity, appearance notes, and migrati
   assert.equal(model.media.items[1].label, 'Temporary previews')
   assert.equal(model.media.items[2].label, 'Fast Album index')
   assert.equal(model.media.items[3].label, 'Continuous Drive sync')
-  assert.equal(model.media.items[3].meta, 'Owner approval needed')
+  assert.equal(model.media.items[3].meta, 'Billing setup needed')
   assert.equal(model.media.backendReadiness.localHandlersReady, true)
   assert.equal(model.media.backendReadiness.implementedCapabilities, 18)
   assert.equal(model.media.backendReadiness.requiredCapabilities, 18)
