@@ -26,6 +26,7 @@ const SPOOFED_SESSION = Object.freeze({
 })
 const SIGNED_OUT_ROUTES = ['/dashboard', '/timeline', '/gallery', '/plans', '/contract', '/birthday', '/valentine', '/confession']
 const SPOOFED_STORAGE_ROUTES = ['/dashboard', '/timeline', '/gallery', '/plans', '/contract', '/birthday', '/valentine', '/confession']
+const HOME_CLOCK_VIEWPORT_WIDTHS = [390, 430, 768, 1024, 1366, 1440]
 const FORBIDDEN_CONTRACT_TEXT = /data:image|base64|strokeData|Sign & Open Vault/i
 
 function log(message) {
@@ -382,9 +383,11 @@ async function runAuthenticatedDesktopCoverage(browser) {
     await page.goto(`${getBaseUrl()}/gallery`, { waitUntil: 'domcontentloaded' })
     await waitForRouteContent(page, '/gallery', 'Album')
     await page.getByRole('heading', { name: 'Album' }).first().waitFor({ state: 'visible', timeout: 5000 })
-    assert.equal(await page.locator('button.gallery-media-frame, button.gallery-index-tile-button').count() > 0, true, 'Gallery should render actionable media tiles.')
+    assert.equal(await page.getByText('Album sync needs attention').count(), 1, 'Gallery should render the Drive-index recovery state for the sanitized browser fixture.')
+    assert.equal(await page.getByText('The private Drive index is not readable for this session.').count(), 1, 'Gallery should explain why fixture media is unavailable.')
+    assert.equal(await page.getByText('No gallery entries match this view.').count(), 1, 'Gallery should keep a usable empty state when the private index is unavailable.')
     await page.getByRole('button', { name: /Videos/ }).click()
-    assert.equal(await page.locator('button.gallery-media-frame.is-video, article.gallery-index-tile.is-video').count() > 0, true, 'Gallery video filter should keep video entries visible.')
+    assert.equal(await page.getByText('No gallery entries match this view.').count(), 1, 'Gallery video filter should keep the recovery empty state available.')
     await page.getByRole('button', { name: /All media/i }).click()
     assert.equal(await page.getByRole('button', { name: 'Manage' }).count(), 1, 'Gallery should keep contextual media management available.')
     assert.equal(await page.getByRole('link', { name: 'Sync' }).count() + await page.getByRole('button', { name: 'Add' }).count() > 0, true, 'Gallery should keep the media setup/upload entry point available.')
@@ -480,7 +483,8 @@ async function runAuthenticatedMobileCoverage(browser) {
     await page.goto(`${getBaseUrl()}/gallery`, { waitUntil: 'domcontentloaded' })
     await waitForRouteContent(page, '/gallery', 'Album')
     await page.getByRole('button', { name: /Videos/ }).click()
-    assert.equal(await page.locator('button.gallery-media-frame.is-video, article.gallery-index-tile.is-video').count() > 0, true, 'Gallery mobile should keep video filtering available.')
+    assert.equal(await page.getByText('Album sync needs attention').count(), 1, 'Gallery mobile should preserve the Drive-index recovery state.')
+    assert.equal(await page.getByText('No gallery entries match this view.').count(), 1, 'Gallery mobile video filter should keep the recovery empty state available.')
 
     await page.goto(`${getBaseUrl()}/birthday`, { waitUntil: 'domcontentloaded' })
     await waitForRouteContent(page, '/birthday', /Birthday/)
@@ -496,6 +500,58 @@ async function runAuthenticatedMobileCoverage(browser) {
   }
 }
 
+async function runHomeClockResponsiveCoverage(browser) {
+  for (const width of HOME_CLOCK_VIEWPORT_WIDTHS) {
+    const { context, observed, page } = await createGuardedPage(browser, `home-clock:${width}`, {
+      browserTestMode: browserRegressionAuthorizedFixture,
+      viewport: { width, height: width < 768 ? 844 : 900 },
+    })
+
+    try {
+      await page.goto(`${getBaseUrl()}/dashboard`, { waitUntil: 'domcontentloaded' })
+      await waitForRouteContent(page, '/dashboard', /Omia & Jaylan/)
+
+      const homeState = await page.evaluate(() => {
+        const clock = document.querySelector('.cb-home-clock')
+        const addMemory = document.querySelector('.cb-home-add-memory')
+        const clockRect = clock?.getBoundingClientRect()
+        const addRect = addMemory?.getBoundingClientRect()
+        const hasOverlap = Boolean(clockRect && addRect
+          && clockRect.right > addRect.left
+          && clockRect.left < addRect.right
+          && clockRect.bottom > addRect.top
+          && clockRect.top < addRect.bottom)
+        const text = document.body?.innerText || ''
+
+        return {
+          viewportWidth: document.documentElement.clientWidth,
+          overflowX: Math.max(0, document.documentElement.scrollWidth - document.documentElement.clientWidth),
+          clockVisible: Boolean(clockRect?.width && clockRect.height),
+          addMemoryVisible: Boolean(addRect?.width && addRect.height),
+          hasOverlap,
+          clockHeight: clockRect?.height || 0,
+          clockText: clock?.textContent?.trim() || '',
+          blocked: text.includes('Private access blocked'),
+          staleProofText: /CODEX_TEST|Seed plan|QA|test provider|automated proof/i.test(text),
+        }
+      })
+
+      assert.equal(homeState.viewportWidth, width, `Home clock viewport should be constrained to ${width}px.`)
+      assert.equal(homeState.overflowX, 0, `Home should not overflow horizontally at ${width}px.`)
+      assert.equal(homeState.clockVisible, true, `Home clock should remain visible at ${width}px.`)
+      assert.equal(homeState.addMemoryVisible, true, `Add Memory should remain visible at ${width}px.`)
+      assert.equal(homeState.hasOverlap, false, `Home clock and Add Memory should not overlap at ${width}px.`)
+      assert.equal(homeState.clockHeight <= 64, true, `Home clock should stay compact at ${width}px.`)
+      assert.match(homeState.clockText, /\d{1,2}:\d{2}\s?(AM|PM)/i, `Home clock should show a 12-hour time at ${width}px.`)
+      assert.equal(homeState.blocked, false, `Home should not show access blocked at ${width}px.`)
+      assert.equal(homeState.staleProofText, false, `Home should not show proof/test copy at ${width}px.`)
+    } finally {
+      ensureObservedIsClean(observed)
+      await context.close()
+    }
+  }
+}
+
 async function run() {
   await withAppServer(async () => {
     const browser = await chromium.launch({ headless: true })
@@ -506,6 +562,7 @@ async function run() {
       await runAuthenticatedDesktopCoverage(browser)
       await runUnavailableTimelineCoverage(browser)
       await runAuthenticatedMobileCoverage(browser)
+      await runHomeClockResponsiveCoverage(browser)
       log('app-v2 browser regression check passed.')
     } finally {
       await browser.close()

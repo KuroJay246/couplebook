@@ -98,6 +98,8 @@ test('dashboard read model keeps the approved section order and filters mileston
   assert.equal(model.milestones.anniversaryCards.length, 1)
   assert.equal(model.milestones.anniversaryCards[0].label, "Omia's view")
   assert.equal(model.milestones.birthdayCards.length, 2)
+  assert.match(model.hero.timestampLabel, /^\d{1,2}:34 (AM|PM)$/)
+  assert.doesNotMatch(model.milestones.birthdayCards[0].countdownLabel, /\d+s$/)
   assert.equal(model.sourceState.items[4].key, 'memories')
 })
 

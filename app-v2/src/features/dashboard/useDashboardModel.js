@@ -6,6 +6,8 @@ import { useProfileSource } from '../profile/useProfileSource.js'
 import { useSettingsSource } from '../settings/useSettingsSource.js'
 import { buildDashboardReadModel } from './dashboardReadModel.js'
 
+const MINUTE_MS = 60 * 1000
+
 function combineState(states) {
   if (states.includes('error')) return 'error'
   if (states.includes('loading')) return 'loading'
@@ -21,12 +23,17 @@ export function useDashboardModel() {
   const [now, setNow] = useState(() => new Date())
 
   useEffect(() => {
-    const timer = window.setInterval(() => {
+    let interval = 0
+    const timeout = window.setTimeout(() => {
       setNow(new Date())
-    }, 1000)
+      interval = window.setInterval(() => {
+        setNow(new Date())
+      }, MINUTE_MS)
+    }, Math.max(1000, MINUTE_MS - (Date.now() % MINUTE_MS)))
 
     return () => {
-      window.clearInterval(timer)
+      window.clearTimeout(timeout)
+      if (interval) window.clearInterval(interval)
     }
   }, [])
 

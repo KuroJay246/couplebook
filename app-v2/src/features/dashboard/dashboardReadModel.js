@@ -370,7 +370,7 @@ function buildMilestonesSection({ participants, settingsSource, now }) {
         dateLabel: formatDateLabel(participant.birthday),
         countdownLabel: details.isToday
           ? 'Today'
-          : `${details.days}d ${details.hours}h ${details.minutes}m ${details.seconds}s`,
+          : `${details.days}d ${details.hours}h ${details.minutes}m`,
         ageLabel: details.nextAge ? `Turning ${details.nextAge}` : 'Birthday not available',
         isToday: details.isToday,
       }]
