@@ -14,6 +14,10 @@ export function resolveWriteMode(env = readRuntimeEnv()) {
     return requested
   }
 
+  if (getRuntimeMode(env) === 'production' && env.VITE_DATA_SOURCE_MODE === 'firestore') {
+    return WRITE_MODES.firestoreProductionWrite
+  }
+
   return WRITE_MODES.productionWriteDisabled
 }
 

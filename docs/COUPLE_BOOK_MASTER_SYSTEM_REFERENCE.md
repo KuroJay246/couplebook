@@ -30,7 +30,7 @@ The active Firestore rules source is `firestore.rules`. The app-v2 emulator conf
 
 ## Write Model
 
-Client writes default to disabled. `app-v2/.env.example` uses `VITE_WRITE_MODE=production-write-disabled`; local write testing should use `firestore-emulator-write`. Production writes require explicit approval and `firestore-production-write` in a production build. The write service verifies:
+Client writes flow through the central Firestore write service. Production builds using `VITE_DATA_SOURCE_MODE=firestore` default to normal production Firestore writes; local write testing should use `VITE_WRITE_MODE=firestore-emulator-write`. Set `VITE_WRITE_MODE=production-write-disabled` only for deliberate read-only reviews. The write service verifies:
 
 - Firestore is configured.
 - The authenticated user matches the approved user.
@@ -60,7 +60,7 @@ V1.2 routes add an active consumer-app layer:
 - Required project: `couplebook-97830`
 - Prohibited Firebase project: `gathervibeshub`
 - Hosting publishes `app-v2/dist`
-- No production writes or deployments without explicit current authorization.
+- No manual production data mutations, rules deploys, or frontend deploys without explicit current authorization.
 
 ## Distinct Identity Update
 

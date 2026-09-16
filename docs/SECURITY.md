@@ -6,7 +6,7 @@ Last updated: 2026-08-22
 
 - Required Firebase project: `couplebook-97830`
 - Prohibited Firebase project: `gathervibeshub`
-- Do not use production writes without explicit approval and `VITE_WRITE_MODE=firestore-production-write`
+- Do not perform manual production data mutations, rules deploys, or frontend deploys without explicit approval. Normal production app writes must go through the central write service, Firebase Auth, active couple membership, validation, audit events, and Firestore Rules.
 
 ## Access Boundary
 

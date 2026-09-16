@@ -69,20 +69,20 @@ function auditWrites(firestore) {
   return firestore.writes.filter((write) => write.path.includes('/auditEvents/'))
 }
 
-test('write services reject production-disabled mode before writing', async () => {
+test('write services reject explicitly disabled mode before writing', async () => {
   const firestore = createFirestoreStub()
   await assert.rejects(
-    saveOwnProfile({ name: 'Member One' }, { ...context, env: { MODE: 'production', VITE_WRITE_MODE: 'firestore-emulator-write' }, firestore, ...firestore }),
+    saveOwnProfile({ name: 'Member One' }, { ...context, env: { MODE: 'production', VITE_DATA_SOURCE_MODE: 'firestore', VITE_WRITE_MODE: 'production-write-disabled' }, firestore, ...firestore }),
     /disabled/,
   )
   assert.equal(firestore.writes.length, 0)
 })
 
-test('write services allow explicit production Firestore write mode with active membership', async () => {
+test('write services allow production Firestore writes with active membership by default', async () => {
   const firestore = createFirestoreStub()
   await saveOwnProfile(
     { name: 'Member One', bio: 'Production-safe bio' },
-    { ...context, env: { MODE: 'production', VITE_WRITE_MODE: 'firestore-production-write' }, firestore, ...firestore },
+    { ...context, env: { MODE: 'production', VITE_DATA_SOURCE_MODE: 'firestore' }, firestore, ...firestore },
   )
 
   assert.equal(dataWrites(firestore).length, 1)

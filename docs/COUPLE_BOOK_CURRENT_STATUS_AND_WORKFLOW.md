@@ -59,7 +59,7 @@ Write rules:
 - Partner-private writes are rejected.
 - Writes require safe shapes and integer revision handling.
 - Legacy V1 documents without `revision` must be replaceable by active members.
-- Production writes require an explicit production-write build: `VITE_WRITE_MODE=firestore-production-write`.
+- Production builds using `VITE_DATA_SOURCE_MODE=firestore` default to normal Firestore writes through the central write service. Use `VITE_WRITE_MODE=production-write-disabled` only for deliberate read-only reviews, and `VITE_WRITE_MODE=firestore-emulator-write` only for local emulator write testing.
 
 Important recent backend fixes:
 
@@ -125,7 +125,7 @@ Automated checks that passed after the release fixes:
 - `npm --prefix app-v2 run health:react` with advisory-only findings
 - `npm run release:preflight`
 - `npm run check:all`
-- Production-write Vite build with `VITE_WRITE_MODE=firestore-production-write`
+- Production Firestore-mode Vite build using the normal central write-service path
 
 Production browser evidence:
 
