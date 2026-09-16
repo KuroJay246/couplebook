@@ -228,10 +228,11 @@ async function createContext(browser, networkController) {
 
 async function signIn(page, baseUrl, email, password) {
   await page.goto(`${baseUrl}/login`, { waitUntil: 'domcontentloaded' })
-  await page.getByRole('heading', { name: 'Sign in with your Couple Book email' }).waitFor({ state: 'visible', timeout: 15000 })
+  await page.getByRole('heading', { name: 'Continue with Google' }).waitFor({ state: 'visible', timeout: 15000 })
+  await page.getByText('Other sign-in options').click()
   await page.getByRole('textbox', { name: 'Email' }).fill(email)
   await page.locator('input[type="password"]').fill(password)
-  await page.getByRole('button', { name: /Enter Couple Book/i }).click()
+  await page.getByRole('button', { name: /Sign in with email/i }).click()
   await page.waitForURL((url) => url.pathname === '/dashboard', { timeout: 20000 })
   await page.getByRole('heading', { name: /Omia & Jaylan/i }).waitFor({ state: 'visible', timeout: 15000 })
 }

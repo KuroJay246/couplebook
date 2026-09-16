@@ -16,6 +16,7 @@ export function LoginPage() {
   const [submitError, setSubmitError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [googleSubmitting, setGoogleSubmitting] = useState(false)
+  const [showOtherOptions, setShowOtherOptions] = useState(false)
 
   if (loading && !authInitialized) {
     return (
@@ -68,12 +69,12 @@ export function LoginPage() {
           <div>
             <BrandMark />
             <div className="mt-12 max-w-2xl">
-              <span className="cb-shell-meta-pill">Private entry</span>
+              <span className="cb-shell-meta-pill">Couple Book</span>
               <h1 className="cb-page-title mt-5 text-5xl leading-[0.95]">
-                Open the shared journal kept between the two of you.
+                A private memory book for Omia and Jaylan.
               </h1>
               <p className="cb-body-copy mt-5 max-w-xl text-sm">
-                Couple Book opens only after Firebase sign-in and approved-user verification. The archive stays protected while the rebuilt shell keeps the product feeling calm, personal, and readable.
+                Sign in with the approved Google account to open your shared story, photos, plans, and special moments.
               </p>
             </div>
           </div>
@@ -98,54 +99,14 @@ export function LoginPage() {
         </section>
 
         <section className="cb-surface p-8 sm:p-10">
-          <span className="cb-kicker">Approved accounts only</span>
-          <h2 className="cb-page-title mt-3 text-4xl">Sign in with your Couple Book email</h2>
+          <span className="cb-kicker">Couple Book</span>
+          <h2 className="cb-page-title mt-3 text-4xl">Continue with Google</h2>
           <p className="cb-body-copy mt-3 text-sm">
-            Approval still depends on a targeted <code>users/{'{uid}'}</code> lookup after Firebase Auth succeeds.
+            Your private book opens only after the account is signed in and approved for this couple.
           </p>
 
-          <form className="mt-8 grid gap-5" onSubmit={handleSubmit}>
-            <label className="grid gap-2">
-              <span className="cb-field-label">Email</span>
-              <input
-                autoComplete="email"
-                onChange={(event) => setEmail(event.target.value)}
-                placeholder="approved-account@example.com"
-                type="email"
-                value={email}
-                className="cb-input-surface px-4 text-sm"
-              />
-            </label>
-
-            <label className="grid gap-2">
-              <span className="cb-field-label">Password</span>
-              <input
-                autoComplete="current-password"
-                onChange={(event) => setPassword(event.target.value)}
-                placeholder="Enter your password"
-                type="password"
-                value={password}
-                className="cb-input-surface px-4 text-sm"
-              />
-            </label>
-
-            <button
-              className="cb-button cb-button-primary inline-flex min-h-12 items-center justify-center rounded-xl px-5 text-sm font-bold disabled:opacity-50"
-              disabled={!isConfigured || loading || submitting}
-              type="submit"
-            >
-              {submitting || loading ? 'Verifying private access...' : 'Enter Couple Book'}
-            </button>
-          </form>
-
-          <div className="my-6 flex items-center gap-3" aria-hidden="true">
-            <span className="h-px flex-1" style={{ background: 'var(--cb-border)' }} />
-            <span className="cb-kicker">or</span>
-            <span className="h-px flex-1" style={{ background: 'var(--cb-border)' }} />
-          </div>
-
           <button
-            className="cb-button cb-button-secondary inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl px-5 text-sm font-bold disabled:opacity-50"
+            className="cb-button cb-button-primary mt-8 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl px-5 text-sm font-bold disabled:opacity-50"
             disabled={!isConfigured || loading || submitting || googleSubmitting}
             onClick={handleGoogleSignIn}
             type="button"
@@ -153,6 +114,56 @@ export function LoginPage() {
             <KeyRound className="size-4" aria-hidden="true" />
             {googleSubmitting || loading ? 'Opening Google...' : 'Continue with Google'}
           </button>
+
+          <div className="mt-6 rounded-2xl border p-4" style={{ borderColor: 'var(--cb-border)', background: 'var(--cb-surface)' }}>
+            <button
+              aria-expanded={showOtherOptions}
+              className="min-h-10 w-full text-left text-sm font-bold"
+              onClick={() => setShowOtherOptions((isOpen) => !isOpen)}
+              style={{ color: 'var(--cb-text)' }}
+              type="button"
+            >
+              Other sign-in options
+            </button>
+            {showOtherOptions ? (
+            <form className="mt-5 grid gap-5" onSubmit={handleSubmit}>
+              <label className="grid gap-2">
+                <span className="cb-field-label">Email</span>
+                <input
+                  aria-label="Email"
+                  autoComplete="email"
+                  onChange={(event) => setEmail(event.target.value)}
+                  placeholder="approved-account@example.com"
+                  type="email"
+                  value={email}
+                  className="cb-input-surface px-4 text-sm"
+                />
+              </label>
+
+              <label className="grid gap-2">
+                <span className="cb-field-label">Password</span>
+                <input
+                  aria-label="Password"
+                  autoComplete="current-password"
+                  onChange={(event) => setPassword(event.target.value)}
+                  placeholder="Enter your password"
+                  type="password"
+                  value={password}
+                  className="cb-input-surface px-4 text-sm"
+                />
+              </label>
+
+              <button
+                aria-label="Sign in with email"
+                className="cb-button cb-button-secondary inline-flex min-h-12 items-center justify-center rounded-xl px-5 text-sm font-bold disabled:opacity-50"
+                disabled={!isConfigured || loading || submitting || googleSubmitting}
+                type="submit"
+              >
+                {submitting || loading ? 'Verifying private access...' : 'Sign in with email'}
+              </button>
+            </form>
+            ) : null}
+          </div>
 
           {(submitError || authError) ? (
             <p aria-live="polite" className="mt-4 text-sm" style={{ color: 'var(--cb-error-text)' }}>

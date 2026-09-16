@@ -58,9 +58,9 @@ test('shared states and login shell keep the Event Hub-family framing explicit',
   const errorSource = await readSource('../components/ErrorState.jsx')
   const pageLayoutSource = await readSource('../components/PageLayout.jsx')
 
-  assert.match(loginSource, /Open the shared journal kept between the two of you\./)
-  assert.match(loginSource, /Enter Couple Book/)
-  assert.match(loginSource, /Approved accounts only/)
+  assert.match(loginSource, /A private memory book for Omia and Jaylan\./)
+  assert.match(loginSource, /Continue with Google/)
+  assert.match(loginSource, /Other sign-in options/)
   assert.match(loginSource, /BrandMark/)
   assert.match(loadingSource, /SharedLoadingState/)
   assert.match(errorSource, /SharedErrorState/)

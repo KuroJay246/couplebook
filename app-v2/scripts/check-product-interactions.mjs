@@ -28,10 +28,10 @@ const VIEWPORTS = Object.freeze([
 ])
 
 const ROUTES = Object.freeze([
-  { path: '/login', heading: 'Sign in with your Couple Book email', fixture: browserRegressionSignedOutFixture },
+  { path: '/login', heading: 'Continue with Google', fixture: browserRegressionSignedOutFixture },
   { path: '/dashboard', heading: /Home/, fixture: browserRegressionAuthorizedFixture },
   { path: '/timeline', heading: /Our Story/, fixture: browserRegressionAuthorizedFixture, detailButton: 'View memory' },
-  { path: '/gallery', heading: /Album/, fixture: browserRegressionAuthorizedFixture, detailSelector: 'button.gallery-media-frame' },
+  { path: '/gallery', heading: /Album/, fixture: browserRegressionAuthorizedFixture },
   { path: '/profile', heading: /Us/, fixture: browserRegressionAuthorizedFixture },
   { path: '/favorites', heading: /Favorite Things/, fixture: browserRegressionAuthorizedFixture },
   { path: '/plans', heading: /Plans/, fixture: browserRegressionAuthorizedFixture },

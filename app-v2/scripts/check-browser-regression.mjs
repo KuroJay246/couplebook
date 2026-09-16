@@ -284,7 +284,7 @@ async function waitForRouteContent(page, pathname, heading) {
 
 async function expectRedirectToLogin(page, expectedFromPath) {
   await page.waitForURL((url) => url.pathname === '/login', { timeout: 5000, waitUntil: 'domcontentloaded' })
-  await page.getByRole('heading', { name: 'Sign in with your Couple Book email' }).waitFor({ state: 'visible', timeout: 5000 })
+  await page.getByRole('heading', { name: 'Continue with Google' }).waitFor({ state: 'visible', timeout: 5000 })
 
   const historyState = await page.evaluate(() => window.history.state?.usr?.from?.pathname || '')
   assert.equal(historyState, expectedFromPath, `Expected login redirect to preserve return path for ${expectedFromPath}.`)
