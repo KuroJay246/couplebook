@@ -10,6 +10,7 @@ test('plans read model sorts active plans before completed and supports filters'
         { id: 'done', title: 'Finished date', status: 'completed', category: 'Date Idea', targetDate: '2026-08-12' },
         { id: 'movie', title: 'Movie night', status: 'planned', category: 'Movie or Show', targetDate: '2026-08-16' },
         { id: 'trip', title: 'Beach trip', status: 'idea', category: 'Place to Visit', targetDate: '' },
+        { id: 'cancelled', title: 'Cancelled dinner', status: 'archived', category: 'Restaurant', targetDate: '2026-08-10' },
       ],
     },
   }, { search: 'movie', status: 'planned' })
@@ -17,6 +18,7 @@ test('plans read model sorts active plans before completed and supports filters'
   assert.equal(model.counts.total, 3)
   assert.equal(model.counts.completed, 1)
   assert.deepEqual(model.filtered.map((plan) => plan.id), ['movie'])
+  assert.deepEqual(buildPlansReadModel({ status: 'ready', data: { plans: model.plans } }).filtered.map((plan) => plan.id), ['movie', 'trip', 'done'])
 })
 
 test('plans read model preserves finite unavailable state for failed loads', () => {

@@ -10,13 +10,13 @@ function sortPlans(plans) {
 
 export function buildPlansReadModel(source, { search = '', status = 'all' } = {}) {
   const plans = sortPlans(source?.data?.plans || [])
+  const active = plans.filter((plan) => plan.status !== 'archived')
   const normalizedSearch = search.trim().toLowerCase()
-  const filtered = plans.filter((plan) => {
+  const filtered = active.filter((plan) => {
     if (status !== 'all' && plan.status !== status) return false
     if (!normalizedSearch) return true
     return [plan.title, plan.category, plan.notes, plan.targetDate].join(' ').toLowerCase().includes(normalizedSearch)
   })
-  const active = plans.filter((plan) => plan.status !== 'archived')
   return {
     status: source?.status || 'empty',
     warnings: source?.warnings || [],

@@ -95,7 +95,7 @@ function PlanForm({ initialPlan, onCancel, onSave, saving }) {
   )
 }
 
-function PlanCard({ onConvert, onEdit, onStatus, plan, saving }) {
+function PlanCard({ onCancelPlan, onConvert, onEdit, onStatus, plan, saving }) {
   return (
     <article className={`cb-plan-row cb-plan-card-${plan.status}`}>
       <div className="flex items-start justify-between gap-3">
@@ -109,6 +109,7 @@ function PlanCard({ onConvert, onEdit, onStatus, plan, saving }) {
             { label: 'Edit plan', onSelect: () => onEdit(plan) },
             ...(plan.status !== 'completed' ? [{ label: 'Mark completed', onSelect: () => onStatus(plan, 'completed') }] : []),
             ...(plan.status === 'completed' && !plan.convertedMemoryId ? [{ label: 'Turn into memory', onSelect: () => onConvert(plan) }] : []),
+            { label: 'Cancel plan', onSelect: () => onCancelPlan(plan) },
           ]}
         />
       </div>
@@ -121,6 +122,7 @@ function PlanCard({ onConvert, onEdit, onStatus, plan, saving }) {
         {plan.status !== 'completed' ? <PrimaryButton disabled={saving} onClick={() => onStatus(plan, 'completed')}><CheckCircle2 className="size-4" />Complete</PrimaryButton> : null}
         {plan.status === 'completed' && !plan.convertedMemoryId ? <PrimaryButton disabled={saving} onClick={() => onConvert(plan)}>Turn into memory</PrimaryButton> : null}
         {plan.convertedMemoryId ? <StatusBadge tone="success">Memory created</StatusBadge> : null}
+        <SecondaryButton disabled={saving} onClick={() => onCancelPlan(plan)}>Cancel plan</SecondaryButton>
       </div>
     </article>
   )
@@ -157,6 +159,7 @@ export function PlansView({ model, onRefresh, search, setSearch, setStatus, stat
   const [showForm, setShowForm] = useState(false)
   const [feedback, setFeedback] = useState({ kind: '', message: '', saving: false })
   const [convertCandidate, setConvertCandidate] = useState(null)
+  const [cancelCandidate, setCancelCandidate] = useState(null)
 
   const statusOptions = useMemo(
     () => STATUS_FILTERS.map((option) => ({ value: option, label: option === 'all' ? 'All' : statusLabel(option) })),
@@ -189,6 +192,18 @@ export function PlansView({ model, onRefresh, search, setSearch, setStatus, stat
       setConvertCandidate(null)
     } catch (error) {
       setFeedback({ kind: 'error', message: error?.message || 'Plan could not become a memory.', saving: false })
+    }
+  }
+
+  async function cancelPlan() {
+    if (!cancelCandidate) return
+    setFeedback({ kind: '', message: '', saving: true })
+    try {
+      await writer.updatePlan(cancelCandidate.id, { ...cancelCandidate, status: 'archived' })
+      setFeedback({ kind: 'success', message: 'Plan cancelled.', saving: false })
+      setCancelCandidate(null)
+    } catch (error) {
+      setFeedback({ kind: 'error', message: error?.message || 'Plan could not be cancelled.', saving: false })
     }
   }
 
@@ -246,6 +261,7 @@ export function PlansView({ model, onRefresh, search, setSearch, setStatus, stat
           {model.filtered.map((plan) => (
             <PlanCard
               key={plan.id}
+              onCancelPlan={(selectedPlan) => setCancelCandidate(selectedPlan)}
               onConvert={(selectedPlan) => setConvertCandidate(selectedPlan)}
               onEdit={(selected) => { setEditing(selected); setShowForm(true) }}
               onStatus={updateStatus}
@@ -273,6 +289,16 @@ export function PlansView({ model, onRefresh, search, setSearch, setStatus, stat
         pending={feedback.saving}
         recordName={convertCandidate?.title}
         title="Turn this plan into a memory?"
+      />
+      <ConfirmDialog
+        confirmLabel="Cancel plan"
+        message="This hides the plan from active planning without deleting the historical record."
+        onCancel={() => setCancelCandidate(null)}
+        onConfirm={cancelPlan}
+        open={Boolean(cancelCandidate)}
+        pending={feedback.saving}
+        recordName={cancelCandidate?.title}
+        title="Cancel this plan?"
       />
     </section>
   )
