@@ -6,6 +6,15 @@ import {
   summarizeRulesDrift,
 } from '../../../scripts/check-media-backend-readiness.mjs'
 
+const requiredWorkerSecretNames = Object.freeze([
+  'FIREBASE_SERVICE_ACCOUNT_CLIENT_EMAIL',
+  'FIREBASE_SERVICE_ACCOUNT_PRIVATE_KEY',
+  'GOOGLE_OAUTH_CLIENT_ID',
+  'GOOGLE_OAUTH_CLIENT_SECRET',
+  'GOOGLE_OAUTH_REDIRECT_URI',
+  'TOKEN_ENCRYPTION_KEY',
+])
+
 test('media backend readiness reports stale deployed media-index rules without leaking env values', () => {
   const drift = summarizeRulesDrift(`
 Firestore rules drift check for couplebook-97830
@@ -27,6 +36,7 @@ Owner approval is required before deploying updated Firestore rules.
       VITE_FIREBASE_MESSAGING_SENDER_ID: 'redacted',
       VITE_FIREBASE_APP_ID: 'redacted',
       VITE_GOOGLE_CLIENT_ID: 'redacted',
+      VITE_MEDIA_BACKEND_URL: 'https://worker.example',
     },
     backendCapabilitiesImplemented: [
       'firebase-id-token-validation',
@@ -82,6 +92,7 @@ test('media backend readiness stays blocked until trusted Drive endpoints exist'
       VITE_FIREBASE_MESSAGING_SENDER_ID: 'set',
       VITE_FIREBASE_APP_ID: 'set',
       VITE_GOOGLE_CLIENT_ID: 'set',
+      VITE_MEDIA_BACKEND_URL: 'https://worker.example',
     },
     backendEndpointsImplemented: ['/api/drive/oauth/begin'],
     firebaseProject: { ok: true, errors: [] },
@@ -136,6 +147,7 @@ test('media backend readiness reports local handler capabilities separately from
       VITE_FIREBASE_MESSAGING_SENDER_ID: 'set',
       VITE_FIREBASE_APP_ID: 'set',
       VITE_GOOGLE_CLIENT_ID: 'set',
+      VITE_MEDIA_BACKEND_URL: 'https://worker.example',
     },
     backendCapabilitiesImplemented: capabilities,
     backendEndpointsImplemented: endpoints,
@@ -149,7 +161,7 @@ test('media backend readiness reports local handler capabilities separately from
   assert.ok(report.blockers.some((blocker) => /Wrangler login is required/.test(blocker)))
 })
 
-test('media backend readiness is ready when rules, local handlers, endpoints, and Worker deployment are verified', () => {
+test('media backend readiness stays blocked when the Worker OAuth client secret is not configured', () => {
   const capabilities = [
     'firebase-id-token-validation',
     'active-couple-membership-validation',
@@ -190,6 +202,7 @@ test('media backend readiness is ready when rules, local handlers, endpoints, an
       VITE_FIREBASE_MESSAGING_SENDER_ID: 'set',
       VITE_FIREBASE_APP_ID: 'set',
       VITE_GOOGLE_CLIENT_ID: 'set',
+      VITE_MEDIA_BACKEND_URL: 'https://worker.example',
     },
     backendCapabilitiesImplemented: capabilities,
     backendEndpointsImplemented: endpoints,
@@ -200,6 +213,68 @@ test('media backend readiness is ready when rules, local handlers, endpoints, an
       configPresent: true,
       deployed: true,
       packagePresent: true,
+      secretNames: requiredWorkerSecretNames.filter((name) => name !== 'GOOGLE_OAUTH_CLIENT_SECRET'),
+    },
+  })
+
+  assert.equal(report.status, 'blocked')
+  assert.ok(report.worker.missingSecrets.includes('GOOGLE_OAUTH_CLIENT_SECRET'))
+  assert.ok(report.blockers.some((blocker) => /GOOGLE_OAUTH_CLIENT_SECRET/.test(blocker)))
+})
+
+test('media backend readiness is ready when rules, local handlers, endpoints, Worker deployment, and secrets are verified', () => {
+  const capabilities = [
+    'firebase-id-token-validation',
+    'active-couple-membership-validation',
+    'oauth-state-binding',
+    'oauth-code-exchange-boundary',
+    'indexed-media-authorization',
+    'sync-reconciliation-planning',
+    'sync-now-handler',
+    'media-upload-finalization',
+    'exact-duplicate-preflight',
+    'orphan-recovery-recording',
+    'media-removal-tombstone',
+    'drive-original-delete-confirmation',
+    'drive-change-cursor-planning',
+    'drive-webhook-handler',
+    'drive-watch-renewal',
+    'drive-disconnect-cleanup',
+    'privacy-minimal-audit-events',
+    'credential-field-rejection',
+  ]
+  const endpoints = [
+    '/api/drive/oauth/begin',
+    '/api/drive/oauth/callback',
+    '/api/drive/disconnect',
+    '/api/drive/sync',
+    '/api/drive/media/upload',
+    '/api/drive/media/:mediaId',
+    '/api/drive/webhook',
+    '/api/drive/media/:mediaId/thumbnail',
+    '/api/drive/media/:mediaId/stream',
+  ]
+  const report = evaluateMediaBackendReadiness({
+    appEnv: {
+      VITE_FIREBASE_API_KEY: 'set',
+      VITE_FIREBASE_AUTH_DOMAIN: 'couplebook-97830.firebaseapp.com',
+      VITE_FIREBASE_PROJECT_ID: 'couplebook-97830',
+      VITE_FIREBASE_STORAGE_BUCKET: 'couplebook-97830.appspot.com',
+      VITE_FIREBASE_MESSAGING_SENDER_ID: 'set',
+      VITE_FIREBASE_APP_ID: 'set',
+      VITE_GOOGLE_CLIENT_ID: 'set',
+      VITE_MEDIA_BACKEND_URL: 'https://worker.example',
+    },
+    backendCapabilitiesImplemented: capabilities,
+    backendEndpointsImplemented: endpoints,
+    firebaseProject: { ok: true, errors: [] },
+    rulesDrift: { exactMatch: true, missingMediaCoverage: false },
+    worker: {
+      authenticated: true,
+      configPresent: true,
+      deployed: true,
+      packagePresent: true,
+      secretNames: requiredWorkerSecretNames,
     },
   })
 

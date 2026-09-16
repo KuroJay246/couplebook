@@ -22,12 +22,21 @@ const REQUIRED_ENV_KEYS = Object.freeze([
   'VITE_FIREBASE_MESSAGING_SENDER_ID',
   'VITE_FIREBASE_APP_ID',
   'VITE_GOOGLE_CLIENT_ID',
+  'VITE_MEDIA_BACKEND_URL',
 ])
 
 const TRUSTED_BACKEND_ENDPOINTS = Object.freeze(Object.values(DRIVE_BACKEND_ENDPOINTS))
 const TRUSTED_BACKEND_CAPABILITIES = DRIVE_BACKEND_CAPABILITIES
 const WORKER_PACKAGE_PATH = 'packages/drive-worker/package.json'
 const WORKER_CONFIG_PATH = 'packages/drive-worker/wrangler.toml'
+const REQUIRED_WORKER_SECRET_NAMES = Object.freeze([
+  'FIREBASE_SERVICE_ACCOUNT_CLIENT_EMAIL',
+  'FIREBASE_SERVICE_ACCOUNT_PRIVATE_KEY',
+  'GOOGLE_OAUTH_CLIENT_ID',
+  'GOOGLE_OAUTH_CLIENT_SECRET',
+  'GOOGLE_OAUTH_REDIRECT_URI',
+  'TOKEN_ENCRYPTION_KEY',
+])
 
 function parseDotEnv(text) {
   const values = {}
@@ -64,6 +73,26 @@ function runCommand(command, args) {
   }
 }
 
+function runShellCommand(command) {
+  try {
+    const stdout = execFileSync(process.platform === 'win32' ? 'cmd.exe' : 'sh', [
+      process.platform === 'win32' ? '/c' : '-lc',
+      command,
+    ], {
+      cwd: repoRoot,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    })
+    return { ok: true, output: stdout.trim() }
+  } catch (error) {
+    const output = [error.stdout, error.stderr]
+      .map((value) => String(value || '').trim())
+      .filter(Boolean)
+      .join('\n')
+    return { ok: false, output }
+  }
+}
+
 async function checkWorkerHealth(healthUrl) {
   if (!healthUrl) return { ok: false }
   try {
@@ -72,6 +101,21 @@ async function checkWorkerHealth(healthUrl) {
     return { ok: response.ok && body?.ok === true }
   } catch {
     return { ok: false }
+  }
+}
+
+function parseWorkerSecretNames(output = '') {
+  try {
+    const parsed = JSON.parse(output)
+    if (!Array.isArray(parsed)) return []
+    return parsed
+      .map((entry) => String(entry?.name || '').trim())
+      .filter(Boolean)
+  } catch {
+    return String(output || '')
+      .split(/\r?\n/)
+      .map((line) => /^"?([A-Z0-9_]+)"?/.exec(line.trim())?.[1] || '')
+      .filter(Boolean)
   }
 }
 
@@ -106,6 +150,8 @@ export function evaluateMediaBackendReadiness({
   const workerConfigPresent = worker.configPresent === true
   const wranglerAuthenticated = worker.authenticated === true
   const workerDeployed = worker.deployed === true
+  const configuredWorkerSecrets = new Set(worker.secretNames || [])
+  const missingWorkerSecrets = REQUIRED_WORKER_SECRET_NAMES.filter((name) => !configuredWorkerSecrets.has(name))
 
   if (!firebaseProject.ok) {
     blockers.push(...firebaseProject.errors.map((error) => `Firebase project guard: ${error}`))
@@ -145,6 +191,10 @@ export function evaluateMediaBackendReadiness({
     blockers.push('Cloudflare Worker media service is not deployed or its health endpoint has not been verified.')
   }
 
+  if (missingWorkerSecrets.length) {
+    blockers.push(`Cloudflare Worker secrets are missing: ${missingWorkerSecrets.join(', ')}`)
+  }
+
   return Object.freeze({
     status: blockers.length ? 'blocked' : 'ready',
     projectId: REQUIRED_PROJECT_ID,
@@ -176,6 +226,9 @@ export function evaluateMediaBackendReadiness({
       authenticated: wranglerAuthenticated,
       deployed: workerDeployed,
       healthUrl: worker.healthUrl || '',
+      requiredSecretCount: REQUIRED_WORKER_SECRET_NAMES.length,
+      configuredSecretCount: REQUIRED_WORKER_SECRET_NAMES.length - missingWorkerSecrets.length,
+      missingSecrets: Object.freeze(missingWorkerSecrets),
     }),
     blockers: Object.freeze(blockers),
     warnings: Object.freeze(warnings),
@@ -198,6 +251,7 @@ function printReport(report) {
   console.log(`Cloudflare Worker config: ${report.worker.configPresent ? 'present' : 'missing'}`)
   console.log(`Cloudflare Wrangler login: ${report.worker.authenticated ? 'yes' : 'no'}`)
   console.log(`Cloudflare Worker health: ${report.worker.deployed ? 'verified' : 'not verified'}`)
+  console.log(`Cloudflare Worker secrets: ${report.worker.configuredSecretCount}/${report.worker.requiredSecretCount}`)
 
   if (report.warnings.length) {
     console.log('\nWarnings:')
@@ -221,7 +275,8 @@ export async function runMediaBackendReadinessCheck() {
   })
   const rulesCommand = runCommand(process.execPath, ['scripts/check-firestore-rules-drift.mjs', '--project', REQUIRED_PROJECT_ID])
   const rulesDrift = summarizeRulesDrift(rulesCommand.output)
-  const wranglerCommand = runCommand(process.platform === 'win32' ? 'npx.cmd' : 'npx', ['wrangler', 'whoami'])
+  const wranglerCommand = runShellCommand('npx wrangler whoami')
+  const workerSecretCommand = runShellCommand('npx wrangler secret list --config packages/drive-worker/wrangler.toml')
   const workerHealthUrl = process.env.COUPLEBOOK_WORKER_HEALTH_URL || ''
   const workerHealth = await checkWorkerHealth(workerHealthUrl)
 
@@ -237,6 +292,7 @@ export async function runMediaBackendReadinessCheck() {
       deployed: process.env.COUPLEBOOK_WORKER_DEPLOYED === 'true' || workerHealth.ok,
       healthUrl: workerHealthUrl,
       packagePresent: existsSync(join(repoRoot, WORKER_PACKAGE_PATH)),
+      secretNames: workerSecretCommand.ok ? parseWorkerSecretNames(workerSecretCommand.output) : [],
     },
   })
 }

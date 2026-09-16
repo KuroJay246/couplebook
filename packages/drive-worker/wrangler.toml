@@ -6,10 +6,10 @@ workers_dev = true
 
 [[kv_namespaces]]
 binding = "DRIVE_TOKEN_KV"
-id = "REPLACE_WITH_COUPLEBOOK_DRIVE_TOKEN_KV_ID"
+id = "670438b7221a499b9a91497983d428ef"
 
 [vars]
 FIREBASE_PROJECT_ID = "couplebook-97830"
 GOOGLE_DRIVE_FOLDER_ID = "17Ar4UK5_puORz9TE1dijIk2-qHgh7oIa"
 GOOGLE_DRIVE_OWNER_EMAIL = "jaylanspencer99@gmail.com"
-ALLOWED_ORIGINS = "http://localhost:5173"
+ALLOWED_ORIGINS = "http://localhost:5173,https://couplebook-97830.web.app,https://couplebook-97830.firebaseapp.com"

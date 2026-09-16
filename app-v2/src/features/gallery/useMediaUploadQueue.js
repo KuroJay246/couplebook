@@ -11,6 +11,11 @@ import {
   sha256ForFile,
   validateMediaFile,
 } from '../../services/mediaUploadService.js'
+import {
+  isTrustedMediaBackendConfigured,
+  removeMediaViaTrustedBackend,
+  uploadMediaViaTrustedBackend,
+} from '../../services/trustedMediaBackendClient.js'
 import { ACTIVE_STATUSES, isRetryableFailurePhase, QUEUE_STATUS, summarizeQueueItems } from './mediaUploadQueueDomain.js'
 
 export { QUEUE_STATUS, summarizeQueueItems, isRetryableFailurePhase, queueStatusLabel, queueStatusTone } from './mediaUploadQueueDomain.js'
@@ -33,7 +38,7 @@ const FINISHED_STATUSES = new Set([
   QUEUE_STATUS.backendRequired,
 ])
 const env = readRuntimeEnv()
-const TRUSTED_MEDIA_BACKEND_AVAILABLE = false
+const TRUSTED_MEDIA_BACKEND_AVAILABLE = isTrustedMediaBackendConfigured(env)
 
 const initialState = Object.freeze({
   items: [],
@@ -197,6 +202,26 @@ function buildDriveVerifiedMedia({
   }
 }
 
+function buildTrustedBackendVerifiedMedia({
+  checksum,
+  contentType,
+  file,
+  kind,
+  mediaId,
+  uploaded,
+}) {
+  return {
+    provider: 'google-drive',
+    id: mediaId,
+    kind,
+    driveFileId: uploaded.driveFileId,
+    driveFolderId: uploaded.driveFolderId,
+    contentType,
+    sizeBytes: Number(uploaded.sizeBytes || file.size || 0),
+    checksum,
+  }
+}
+
 export function useMediaUploadQueue(onRefresh, drive) {
   const writer = useOwnerWrite(onRefresh)
   const [state, dispatch] = useReducer(mediaUploadQueueReducer, initialState)
@@ -271,10 +296,17 @@ export function useMediaUploadQueue(onRefresh, drive) {
     }
 
     if (item.media.status === 'drive-verified') {
-      if (!driveProvider || driveState !== 'connected' || !item.media.driveFileId) {
+      if (TRUSTED_MEDIA_BACKEND_AVAILABLE) {
+        await removeMediaViaTrustedBackend({
+          coupleId: writer.approvedUser.coupleId,
+          mediaId: item.media.id,
+          user: writer.user,
+        })
+      } else if (!driveProvider || driveState !== 'connected' || !item.media.driveFileId) {
         throw new Error('Reconnect Google Drive before removing this Album item.')
+      } else {
+        await driveProvider.remove(item.media.driveFileId)
       }
-      await driveProvider.remove(item.media.driveFileId)
     }
     return writer.removeMemoryMedia(memoryId, memoryRevision)
   }, [driveProvider, driveState, writer])
@@ -416,18 +448,37 @@ export function useMediaUploadQueue(onRefresh, drive) {
       failurePhase = QUEUE_STATUS.uploading
       await waitForUploadTestDelay('uploading')
       const safeFilename = `${mediaId}.${details.extension}`
-      const uploadedFile = latest.driveFileId
-        ? await driveProvider.getFile(latest.driveFileId)
-        : await driveProvider.upload(latest.file, { mimeType: details.contentType, name: safeFilename })
-      const verifiedDriveFile = await driveProvider.getFile(uploadedFile.id)
-      const verifiedMedia = buildDriveVerifiedMedia({
-        checksum,
-        contentType: details.contentType,
-        driveFile: verifiedDriveFile,
-        file: latest.file,
-        kind: details.kind,
-        mediaId,
-      })
+      let verifiedMedia = null
+      if (TRUSTED_MEDIA_BACKEND_AVAILABLE) {
+        const uploaded = await uploadMediaViaTrustedBackend({
+          checksum,
+          coupleId: writer.approvedUser.coupleId,
+          file: latest.file,
+          mediaId,
+          user: writer.user,
+        })
+        verifiedMedia = buildTrustedBackendVerifiedMedia({
+          checksum,
+          contentType: details.contentType,
+          file: latest.file,
+          kind: details.kind,
+          mediaId,
+          uploaded,
+        })
+      } else {
+        const uploadedFile = latest.driveFileId
+          ? await driveProvider.getFile(latest.driveFileId)
+          : await driveProvider.upload(latest.file, { mimeType: details.contentType, name: safeFilename })
+        const verifiedDriveFile = await driveProvider.getFile(uploadedFile.id)
+        verifiedMedia = buildDriveVerifiedMedia({
+          checksum,
+          contentType: details.contentType,
+          driveFile: verifiedDriveFile,
+          file: latest.file,
+          kind: details.kind,
+          mediaId,
+        })
+      }
       updateItem(itemId, {
         bytesTransferred: verifiedMedia.sizeBytes,
         driveFileId: verifiedMedia.driveFileId,
@@ -437,7 +488,13 @@ export function useMediaUploadQueue(onRefresh, drive) {
       })
 
       if (abortController.signal.aborted) {
-        if (verifiedMedia.driveFileId) {
+        if (verifiedMedia.driveFileId && TRUSTED_MEDIA_BACKEND_AVAILABLE) {
+          await removeMediaViaTrustedBackend({
+            coupleId: writer.approvedUser.coupleId,
+            mediaId: verifiedMedia.id,
+            user: writer.user,
+          })
+        } else if (verifiedMedia.driveFileId && driveProvider) {
           await driveProvider.remove(verifiedMedia.driveFileId)
         }
         finalizeCancelledItem(itemId)
@@ -456,7 +513,15 @@ export function useMediaUploadQueue(onRefresh, drive) {
 
       if (operation.cancelRequested) {
         updateItem(itemId, { status: QUEUE_STATUS.cancelling })
-        await driveProvider.remove(verifiedMedia.driveFileId)
+        if (TRUSTED_MEDIA_BACKEND_AVAILABLE) {
+          await removeMediaViaTrustedBackend({
+            coupleId: writer.approvedUser.coupleId,
+            mediaId: verifiedMedia.id,
+            user: writer.user,
+          })
+        } else {
+          await driveProvider.remove(verifiedMedia.driveFileId)
+        }
         await writer.removeMemoryMedia(result.memoryId, result.revision || 1)
         finalizeCancelledItem(itemId, 'Upload was cancelled after finalization and removed from Album.')
         return

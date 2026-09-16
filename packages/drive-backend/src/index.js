@@ -612,9 +612,11 @@ export async function runDriveMediaUpload({
 
   const response = Object.freeze({
     ok: true,
+    driveFolderId: mediaRecord.driveFolderId,
     status: 200,
     driveFileId: mediaRecord.driveFileId,
     mediaId: upload.mediaId,
+    sizeBytes: mediaRecord.sizeBytes,
   })
   assertNoCredentialValues(response)
   return response
