@@ -12,12 +12,14 @@ import { FormField, SelectField, TextAreaField, TextField } from '../../componen
 import { InlineAlert } from '../../components/ui/InlineAlert.jsx'
 import { LoadingSkeleton } from '../../components/ui/LoadingSkeleton.jsx'
 import { LoadingState } from '../../components/ui/LoadingState.jsx'
+import { MediaPreview } from '../../components/ui/MediaPreview.jsx'
 import { PageHeader } from '../../components/ui/PageHeader.jsx'
 import { SearchField } from '../../components/ui/SearchField.jsx'
 import { SegmentedControl } from '../../components/ui/SegmentedControl.jsx'
 import { StatusBadge } from '../../components/ui/StatusBadge.jsx'
 import { ContentCard, Surface } from '../../components/ui/Surface.jsx'
 import { useOwnerWrite } from '../editing/useOwnerWrite.js'
+import { useTrustedStoryPreviews } from './useTrustedStoryPreviews.js'
 
 function allMemories(model) {
   return (model.chapters || []).flatMap((chapter) => chapter.groups.flatMap((group) => group.memories))
@@ -207,6 +209,8 @@ function DetailModal({ memory, onArchive, onClose, onEdit, status }) {
   }, [memory])
 
   if (!memory) return null
+  const previewUrl = memory.media?.previewUrl || memory.media?.thumbnailUrl || ''
+  const previewKind = memory.media?.previewKind || memory.media?.kind || 'image'
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -231,16 +235,28 @@ function DetailModal({ memory, onArchive, onClose, onEdit, status }) {
         <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(18rem,0.9fr)]">
           <ContentCard className="min-h-72 bg-[linear-gradient(180deg,#fff9fb_0%,#fdf4f8_100%)]">
             <div className="flex h-full flex-col justify-between gap-6">
+              {previewUrl ? (
+                <div className="overflow-hidden rounded-[20px] border border-[var(--cb-border)] bg-[var(--cb-accent-soft)]">
+                  <MediaPreview
+                    alt={memory.displayTitle}
+                    className={memory.media.kind === 'video' ? 'aspect-video w-full' : 'aspect-[4/3] w-full'}
+                    controls={memory.media.kind === 'video' && previewKind === 'video'}
+                    kind={previewKind}
+                    objectFit={memory.media.kind === 'video' ? 'contain' : 'cover'}
+                    src={previewUrl}
+                  />
+                </div>
+              ) : null}
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--cb-accent)]">Story preview</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--cb-accent)]">Story memory</p>
                 <h4 className="mt-2 text-lg font-bold text-[var(--cb-text)]">{memory.displayTitle}</h4>
                 <p className="mt-3 text-sm leading-6 text-[var(--cb-text-secondary)]">{memory.displayDescription}</p>
               </div>
               <InlineAlert
-                tone={['storage-verified', 'drive-verified'].includes(memory.media.status) ? 'success' : 'info'}
-                title={['storage-verified', 'drive-verified'].includes(memory.media.status) ? 'Private media verified' : 'Private media stays protected'}
+                tone={['storage-verified', 'drive-verified', 'drive-indexed'].includes(memory.media.status) ? 'success' : 'info'}
+                title={['storage-verified', 'drive-verified', 'drive-indexed'].includes(memory.media.status) ? 'Private media verified' : 'Private media stays protected'}
                 description={
-                  ['storage-verified', 'drive-verified'].includes(memory.media.status)
+                  ['storage-verified', 'drive-verified', 'drive-indexed'].includes(memory.media.status)
                     ? 'Album can safely reference the private media provider metadata without exposing the original file in public assets.'
                     : 'This entry preserves the story and metadata even when the original private file is not available in the current device view.'
                 }
@@ -283,11 +299,24 @@ function DetailModal({ memory, onArchive, onClose, onEdit, status }) {
 }
 
 function TimelineCard({ memory, onArchive, onEdit, onSelect }) {
+  const previewUrl = memory.media?.previewUrl || memory.media?.thumbnailUrl || ''
+  const previewKind = memory.media?.previewKind || memory.media?.kind || 'image'
   return (
     <ContentCard className={`timeline-card timeline-card-${memory.media.kind || 'none'} relative max-w-[58rem] overflow-hidden`}>
       <div className={`absolute inset-y-4 left-0 w-1 rounded-full ${accentStripeClass(memory)}`} aria-hidden="true" />
       <div className="timeline-card-visual" aria-hidden="true">
-        <span>{memory.media.kind === 'video' ? 'Video' : memory.media.kind === 'image' ? 'Photo' : memory.specialMoment.isSpecial ? 'Special' : 'Note'}</span>
+        {previewUrl ? (
+          <MediaPreview
+            alt=""
+            className="h-full w-full"
+            controls={false}
+            kind={previewKind}
+            objectFit="cover"
+            src={previewUrl}
+          />
+        ) : (
+          <span>{memory.media.kind === 'video' ? 'Video' : memory.media.kind === 'image' ? 'Photo' : memory.specialMoment.isSpecial ? 'Special' : 'Note'}</span>
+        )}
       </div>
       <div className="flex flex-col gap-4 pl-4">
         <div className="flex items-start justify-between gap-3">
@@ -393,6 +422,8 @@ export function TimelineView({ compatibilityError, compatibilityState, model, on
     )
   }, [memories, search, selectedMonth, selectedTag, selectedType, selectedYear, sortOrder])
 
+  const { memoriesWithPreviews: filteredWithPreviews, selectedMemoryWithPreview } = useTrustedStoryPreviews(filtered, selectedMemory)
+
   async function saveForm(payload) {
     setStatus({ kind: '', message: '', saving: true })
     try {
@@ -480,14 +511,6 @@ export function TimelineView({ compatibilityError, compatibilityState, model, on
       />
 
       {status.message && !formMode ? <InlineAlert description={status.message} tone={status.kind === 'error' ? 'error' : 'success'} /> : null}
-      {model.warnings?.length ? (
-        <InlineAlert
-          tone="info"
-          title="Story bridge notes"
-          description={`The current Story view loaded with ${model.warnings.length} compatibility note${model.warnings.length === 1 ? '' : 's'}.`}
-        />
-      ) : null}
-
       <Surface>
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_repeat(3,minmax(0,0.6fr))]">
           <SearchField
@@ -558,10 +581,10 @@ export function TimelineView({ compatibilityError, compatibilityState, model, on
         </Surface>
       ) : null}
 
-      {filtered.length > 0 ? (
+      {filteredWithPreviews.length > 0 ? (
         <div className="cb-story-rail space-y-8">
-          {filtered.map((memory, index) => {
-            const previous = filtered[index - 1]
+          {filteredWithPreviews.map((memory, index) => {
+            const previous = filteredWithPreviews[index - 1]
             const currentChapter = chapterLabel(memory)
             const previousChapter = previous ? chapterLabel(previous) : null
             const currentMonth = monthLabel(memory)
@@ -622,7 +645,7 @@ export function TimelineView({ compatibilityError, compatibilityState, model, on
         </Surface>
       ) : null}
 
-      <DetailModal memory={selectedMemory} onArchive={(candidate) => setConfirmState({ mode: 'archive', memory: candidate })} onClose={() => setSelectedMemory(null)} onEdit={openEditForm} status={status} />
+      <DetailModal memory={selectedMemoryWithPreview} onArchive={(candidate) => setConfirmState({ mode: 'archive', memory: candidate })} onClose={() => setSelectedMemory(null)} onEdit={openEditForm} status={status} />
       {formMode ? (
         <MemoryFormDialog
           memory={editingMemory}

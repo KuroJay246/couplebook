@@ -24,6 +24,7 @@ export function AppRoutes() {
         <Route element={<AppShell />}>
           <Route index element={<Navigate replace to={DEFAULT_AUTHENTICATED_PATH} />} />
           <Route path={DEFAULT_AUTHENTICATED_PATH} element={<DashboardPage />} />
+          <Route path="/story" element={<Navigate replace to="/timeline" />} />
           <Route path="/timeline" element={<TimelinePage />} />
           <Route path="/gallery" element={<GalleryPage />} />
           <Route path="/profile" element={<ProfilePage />} />

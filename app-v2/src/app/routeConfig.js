@@ -1,5 +1,8 @@
 export const LOGIN_PATH = '/login'
 export const DEFAULT_AUTHENTICATED_PATH = '/dashboard'
+export const PROTECTED_ROUTE_ALIASES = Object.freeze({
+  '/story': '/timeline',
+})
 
 export const ROUTE_GROUPS = Object.freeze({
   primary: 'primary',
@@ -130,7 +133,8 @@ export function normalizePathname(pathname) {
   if (!pathname || pathname === '/') return DEFAULT_AUTHENTICATED_PATH
   const [basePath] = String(pathname).split(/[?#]/)
   if (!basePath || basePath === '/') return DEFAULT_AUTHENTICATED_PATH
-  return basePath.endsWith('/') && basePath.length > 1 ? basePath.slice(0, -1) : basePath
+  const normalizedBasePath = basePath.endsWith('/') && basePath.length > 1 ? basePath.slice(0, -1) : basePath
+  return PROTECTED_ROUTE_ALIASES[normalizedBasePath] || normalizedBasePath
 }
 
 export function isProtectedPath(pathname) {

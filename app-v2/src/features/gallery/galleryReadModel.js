@@ -41,6 +41,7 @@ function buildPhysicalMediaKey(item) {
 function reconcileGalleryItems(indexedItems, memoryItems) {
   const authoritativeKeys = new Set()
   const duplicates = []
+  const archiveReferenceItems = []
   const items = []
 
   for (const item of indexedItems) {
@@ -55,10 +56,15 @@ function reconcileGalleryItems(indexedItems, memoryItems) {
       duplicates.push(item)
       continue
     }
+    if (!['drive-indexed', 'drive-verified', 'storage-verified'].includes(item.media?.status)) {
+      archiveReferenceItems.push(item)
+      continue
+    }
     items.push(item)
   }
 
   return freezeClone({
+    archiveReferenceItems,
     duplicateHistoricalItems: duplicates.length,
     items,
   })
@@ -90,7 +96,9 @@ function buildSourceStatus(memorySource, mediaIndexSource, indexedItems, memoryI
       warningCount: Array.isArray(memorySource?.warnings) ? memorySource.warnings.length : 0,
     },
     reconciliation: {
+      activeAlbumItems: reconciliation.items.length,
       authoritativeIndexedCount: indexedItems.length,
+      historicalArchiveReferences: reconciliation.archiveReferenceItems.length,
       historicalMemoryCount: memoryItems.length,
       duplicateHistoricalItems: reconciliation.duplicateHistoricalItems,
       totalItems: reconciliation.items.length,
@@ -142,6 +150,7 @@ export function buildGalleryReadModelWithMediaIndex({ compatibilitySnapshot = nu
   return freezeClone({
     status: deriveGalleryStatus(resolvedMemorySource, resolvedMediaIndexSource, items),
     items,
+    archiveReferenceItems: reconciliation.archiveReferenceItems,
     memoryItems,
     indexedItems,
     library: buildMediaLibrary(items),

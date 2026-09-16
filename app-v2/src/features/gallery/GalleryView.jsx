@@ -362,10 +362,7 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
   const years = model.filters?.availableYears || []
   const mediaInventory = model.sourceStatus?.mediaInventory || {}
   const reconciliation = model.sourceStatus?.reconciliation || {}
-  const archivedReferenceCount = Math.max(
-    0,
-    Number(reconciliation.historicalMemoryCount || 0) - Number(reconciliation.duplicateHistoricalItems || 0),
-  )
+  const archivedReferenceCount = Number(reconciliation.historicalArchiveReferences || model.archiveReferenceItems?.length || 0)
   const mediaWarnings = Array.isArray(mediaInventory.warnings) ? mediaInventory.warnings : []
   const userFacingMediaWarning = mediaInventory.status === 'unavailable' && mediaWarnings.length > 0
     ? 'The private Drive index is not readable for this session. Open Media & Sync and refresh after reconnecting.'
@@ -593,8 +590,8 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
           <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Private media index</p>
           <h3 className="mt-2 font-serif text-2xl text-[var(--cb-text)]">Album sources are reconciled</h3>
           <p className="mt-2 text-sm leading-6 text-[var(--cb-text-secondary)]">
-            {Number(reconciliation.totalItems || 0)} items are shown from {Number(reconciliation.authoritativeIndexedCount || 0)} trusted Drive records
-            {archivedReferenceCount > 0 ? ` and ${archivedReferenceCount} archived story references` : ''}.
+            {Number(reconciliation.activeAlbumItems || reconciliation.totalItems || 0)} Album items are shown from {Number(reconciliation.authoritativeIndexedCount || 0)} trusted Drive records.
+            {archivedReferenceCount > 0 ? ` ${archivedReferenceCount} archived Story references are kept out of the Album grid until they are linked to trusted private media.` : ''}
             {Number(reconciliation.duplicateHistoricalItems || 0) > 0 ? ` ${Number(reconciliation.duplicateHistoricalItems)} older duplicate ${Number(reconciliation.duplicateHistoricalItems) === 1 ? 'reference is' : 'references are'} hidden behind the Drive index.` : ''}
           </p>
           <div className="mt-5 grid gap-3 sm:grid-cols-3">

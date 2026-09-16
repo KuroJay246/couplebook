@@ -22,6 +22,24 @@ function createMemoryRecord(overrides = {}) {
   }
 }
 
+function createVerifiedDriveMemory(overrides = {}) {
+  const id = overrides.id || 'verified-drive-memory'
+  const kind = overrides.mediaKind === 'video' || overrides.kind === 'video' ? 'video' : 'image'
+  return createMemoryRecord({
+    mediaKind: kind,
+    mediaPath: '',
+    media: {
+      provider: 'google-drive',
+      kind,
+      driveFileId: `drive_${id}_file`,
+      driveFolderId: '17Ar4UK5_puORz9TE1dijIk2-qHgh7oIa',
+      contentType: kind === 'video' ? 'video/mp4' : 'image/jpeg',
+      sizeBytes: 100,
+    },
+    ...overrides,
+  })
+}
+
 function createSnapshot(memorySource) {
   return {
     status: memorySource.status === 'unavailable' ? 'empty' : 'ready',
@@ -32,7 +50,7 @@ function createSnapshot(memorySource) {
   }
 }
 
-test('gallery read model classifies photos, videos, special moments, and unavailable media safely', () => {
+test('gallery read model separates active Album media from archived Story references safely', () => {
   const model = buildGalleryReadModel({
     compatibilitySnapshot: createSnapshot({
       status: 'ready',
@@ -60,18 +78,21 @@ test('gallery read model classifies photos, videos, special moments, and unavail
     }),
   })
 
-  assert.equal(model.status, 'ready')
-  assert.equal(model.summary.photos, 2)
-  assert.equal(model.summary.videos, 1)
-  assert.equal(model.summary.specialMoments, 1)
-  assert.equal(model.summary.unavailableMedia, 2)
-  assert.equal(model.summary.invalidMedia, 1)
-  assert.equal(model.summary.noMedia, 2)
-  assert.equal(model.items.length, 5)
-  assert.equal(model.photos.length, 2)
-  assert.equal(model.videos.length, 1)
-  assert.equal(model.unavailableMedia.length, 3)
-  assert.ok(model.collections.featured.some((collection) => collection.key === 'special-moments' && collection.count === 1))
+  assert.equal(model.status, 'empty')
+  assert.equal(model.summary.totalMemories, 0)
+  assert.equal(model.summary.photos, 0)
+  assert.equal(model.summary.videos, 0)
+  assert.equal(model.summary.specialMoments, 0)
+  assert.equal(model.summary.unavailableMedia, 0)
+  assert.equal(model.summary.invalidMedia, 0)
+  assert.equal(model.summary.noMedia, 0)
+  assert.equal(model.items.length, 0)
+  assert.equal(model.archiveReferenceItems.length, 5)
+  assert.equal(model.sourceStatus.reconciliation.historicalArchiveReferences, 5)
+  assert.equal(model.photos.length, 0)
+  assert.equal(model.videos.length, 0)
+  assert.equal(model.unavailableMedia.length, 0)
+  assert.ok(model.collections.featured.some((collection) => collection.key === 'special-moments' && collection.count === 0))
 })
 
 test('gallery read model exposes no raw private paths and keeps deterministic grouping and filters', () => {
@@ -84,8 +105,8 @@ test('gallery read model exposes no raw private paths and keeps deterministic gr
       overriddenMemoryCount: 0,
       deletedMemoryCount: 0,
       memories: [
-        createMemoryRecord({ id: 'older', title: 'Older fictional photo', dateLabel: '2025-06-10', mediaPath: '/assets/photos/older.jpg' }),
-        createMemoryRecord({ id: 'newer', title: 'Newer fictional video', dateLabel: '2026-05-10', mediaKind: 'video', mediaPath: '/assets/videos/newer.mp4' }),
+        createVerifiedDriveMemory({ id: 'older', title: 'Older fictional photo', dateLabel: '2025-06-10' }),
+        createVerifiedDriveMemory({ id: 'newer', title: 'Newer fictional video', dateLabel: '2026-05-10', mediaKind: 'video' }),
       ],
     },
     warnings: [],
@@ -235,8 +256,8 @@ test('gallery read model excludes archived memories from active collections', ()
       data: {
         hasBaseDataset: true,
         memories: [
-          createMemoryRecord({ id: 'active-gallery-memory', title: 'Fictional active gallery', status: 'active' }),
-          createMemoryRecord({ id: 'archived-gallery-memory', title: 'Fictional archived gallery', status: 'archived' }),
+          createVerifiedDriveMemory({ id: 'active-gallery-memory', title: 'Fictional active gallery', status: 'active' }),
+          createVerifiedDriveMemory({ id: 'archived-gallery-memory', title: 'Fictional archived gallery', status: 'archived' }),
         ],
       },
       warnings: [],
@@ -246,6 +267,52 @@ test('gallery read model excludes archived memories from active collections', ()
   assert.equal(model.summary.totalMemories, 1)
   assert.equal(model.photos.length, 1)
   assert.doesNotMatch(JSON.stringify(model), /archived-gallery-memory|Fictional archived gallery/)
+})
+
+test('gallery read model keeps legacy-only Story references out of Album counts', () => {
+  const model = buildGalleryReadModelWithMediaIndex({
+    memorySource: {
+      status: 'ready',
+      source: 'legacy-local-dev',
+      data: {
+        hasBaseDataset: true,
+        memories: [
+          createMemoryRecord({ id: 'legacy-photo-reference', title: 'Legacy photo reference', mediaPath: '/assets/photos/legacy.jpg' }),
+          createMemoryRecord({ id: 'legacy-video-reference', title: 'Legacy video reference', mediaKind: 'video', mediaPath: '/assets/videos/legacy.mp4' }),
+        ],
+      },
+      warnings: [],
+    },
+    mediaIndexSource: {
+      status: 'ready',
+      source: 'firestore',
+      data: {
+        entries: [
+          {
+            schemaVersion: 1,
+            mediaId: 'drive_active_photo',
+            provider: 'google-drive',
+            driveFileId: '1activePhotoDriveFileId',
+            driveFolderId: '17Ar4UK5_puORz9TE1dijIk2-qHgh7oIa',
+            mimeType: 'image/jpeg',
+            mediaType: 'image',
+            fileName: 'CB_IMG_ACTIVE.jpg',
+            capturedAt: '2026-09-06T15:00:00.000Z',
+          },
+        ],
+      },
+      warnings: [],
+    },
+  })
+
+  assert.equal(model.items.length, 1)
+  assert.equal(model.summary.totalMemories, 1)
+  assert.equal(model.summary.indexedDriveMedia, 1)
+  assert.equal(model.archiveReferenceItems.length, 2)
+  assert.equal(model.sourceStatus.reconciliation.activeAlbumItems, 1)
+  assert.equal(model.sourceStatus.reconciliation.historicalMemoryCount, 2)
+  assert.equal(model.sourceStatus.reconciliation.historicalArchiveReferences, 2)
+  assert.equal(model.sourceStatus.reconciliation.totalItems, 1)
 })
 
 test('gallery read model distinguishes unavailable from empty and partial states', () => {
@@ -288,10 +355,10 @@ test('gallery read model distinguishes unavailable from empty and partial states
 
   assert.equal(unavailableModel.status, 'unavailable')
   assert.equal(emptyModel.status, 'empty')
-  assert.equal(partialModel.status, 'partial')
+  assert.equal(partialModel.status, 'empty')
 })
 
-test('gallery read model counts Firestore private media references with the same media semantics as timeline', () => {
+test('gallery read model keeps Firestore private legacy references out of active Album counts', () => {
   const model = buildGalleryReadModel({
     compatibilitySnapshot: createSnapshot({
       status: 'ready',
@@ -323,13 +390,14 @@ test('gallery read model counts Firestore private media references with the same
     }),
   })
 
-  assert.equal(model.summary.totalMemories, 2)
-  assert.equal(model.summary.photos, 1)
-  assert.equal(model.summary.videos, 1)
-  assert.equal(model.summary.unavailableMedia, 2)
-  assert.equal(model.items.length, 2)
-  assert.equal(model.photos[0].media.status, 'private-legacy-reference')
-  assert.equal(model.videos[0].media.status, 'private-legacy-reference')
+  assert.equal(model.summary.totalMemories, 0)
+  assert.equal(model.summary.photos, 0)
+  assert.equal(model.summary.videos, 0)
+  assert.equal(model.summary.unavailableMedia, 0)
+  assert.equal(model.items.length, 0)
+  assert.equal(model.archiveReferenceItems.length, 2)
+  assert.equal(model.archiveReferenceItems[0].media.status, 'private-legacy-reference')
+  assert.equal(model.archiveReferenceItems[1].media.status, 'private-legacy-reference')
 })
 
 test('gallery selectors own Album filtering, search, and year grouping', () => {
@@ -340,9 +408,9 @@ test('gallery selectors own Album filtering, search, and year grouping', () => {
       data: {
         hasBaseDataset: true,
         memories: [
-          createMemoryRecord({ id: 'photo-2026', title: 'Fictional rose garden', dateLabel: '2026-02-14', mediaKind: 'image', mediaPath: '/assets/photos/rose.jpg', tags: ['garden'] }),
-          createMemoryRecord({ id: 'video-2025', title: 'Fictional boardwalk clip', dateLabel: '2025-07-01', mediaKind: 'video', mediaPath: '/assets/videos/boardwalk.mp4', tags: ['summer'] }),
-          createMemoryRecord({ id: 'photo-2025', title: 'Fictional quiet dinner', dateLabel: '2025-01-15', mediaKind: 'image', mediaPath: '/assets/photos/dinner.jpg', tags: ['dinner'] }),
+          createVerifiedDriveMemory({ id: 'photo-2026', title: 'Fictional rose garden', dateLabel: '2026-02-14', mediaKind: 'image', tags: ['garden'] }),
+          createVerifiedDriveMemory({ id: 'video-2025', title: 'Fictional boardwalk clip', dateLabel: '2025-07-01', mediaKind: 'video', tags: ['summer'] }),
+          createVerifiedDriveMemory({ id: 'photo-2025', title: 'Fictional quiet dinner', dateLabel: '2025-01-15', mediaKind: 'image', tags: ['dinner'] }),
         ],
       },
       warnings: [],
@@ -369,7 +437,7 @@ test('gallery read model can consume memory source directly without the full com
     data: {
       hasBaseDataset: true,
       memories: [
-        createMemoryRecord({ id: 'direct-memory-source', title: 'Direct memory source', dateLabel: '2026-03-01', mediaKind: 'image', mediaPath: '/assets/photos/direct.jpg' }),
+        createVerifiedDriveMemory({ id: 'direct-memory-source', title: 'Direct memory source', dateLabel: '2026-03-01', mediaKind: 'image' }),
       ],
     },
     warnings: [],
@@ -456,7 +524,9 @@ test('gallery read model can render Firestore media index records before Drive p
   assert.equal(model.library.favoriteCount, 1)
   assert.equal(model.library.unlinkedCount, 2)
   assert.deepEqual(model.sourceStatus.reconciliation, {
+    activeAlbumItems: 2,
     authoritativeIndexedCount: 2,
+    historicalArchiveReferences: 0,
     historicalMemoryCount: 0,
     duplicateHistoricalItems: 0,
     totalItems: 2,
@@ -515,12 +585,14 @@ test('gallery read model reconciles indexed Drive media ahead of duplicate histo
 
   assert.equal(model.indexedItems.length, 1)
   assert.equal(model.memoryItems.length, 2)
-  assert.equal(model.items.length, 2)
+  assert.equal(model.items.length, 1)
+  assert.equal(model.archiveReferenceItems.length, 1)
   assert.equal(model.summary.indexedDriveMedia, 1)
   assert.equal(model.sourceStatus.reconciliation.authoritativeIndexedCount, 1)
   assert.equal(model.sourceStatus.reconciliation.historicalMemoryCount, 2)
+  assert.equal(model.sourceStatus.reconciliation.historicalArchiveReferences, 1)
   assert.equal(model.sourceStatus.reconciliation.duplicateHistoricalItems, 1)
-  assert.equal(model.sourceStatus.reconciliation.totalItems, 2)
+  assert.equal(model.sourceStatus.reconciliation.totalItems, 1)
   assert.equal(model.items.filter((item) => item.media.driveFileId === driveFileId).length, 1)
 })
 
@@ -531,7 +603,7 @@ test('Album keeps memories available when optional media index reads are unavail
       status: 'ready',
       source: 'firestore',
       data: {
-        memories: [createMemoryRecord({ id: 'memory-safe', title: 'Saved chapter remains visible' })],
+        memories: [createVerifiedDriveMemory({ id: 'memory-safe', title: 'Saved chapter remains visible' })],
       },
       warnings: [],
     },

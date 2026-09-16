@@ -179,3 +179,56 @@ test('timeline read model does not mutate compatibility inputs and preserves war
   assert.equal(model.warnings.length, 1)
   assert.equal(model.summary.invalidMedia, 1)
 })
+
+test('timeline read model enriches linked memories with trusted Drive index metadata', () => {
+  const model = buildTimelineReadModel({
+    memorySource: {
+      status: 'ready',
+      source: 'firestore',
+      data: {
+        hasBaseDataset: true,
+        customMemoryCount: 0,
+        overriddenMemoryCount: 0,
+        deletedMemoryCount: 0,
+        memories: [
+          createMemoryRecord({
+            id: 'memory-linked-to-drive',
+            title: 'Fictional linked memory',
+            mediaKind: 'image',
+            mediaPath: '',
+          }),
+        ],
+      },
+      warnings: [],
+    },
+    mediaIndexSource: {
+      status: 'ready',
+      source: 'firestore',
+      data: {
+        entries: [
+          {
+            schemaVersion: 1,
+            mediaId: 'drive_linked_story_photo',
+            provider: 'google-drive',
+            driveFileId: '1linkedStoryPhotoFileId',
+            driveFolderId: '17Ar4UK5_puORz9TE1dijIk2-qHgh7oIa',
+            mimeType: 'image/jpeg',
+            mediaType: 'image',
+            fileName: 'CB_LINKED_STORY.jpg',
+            capturedAt: '2026-09-06T15:00:00.000Z',
+            linkedMemoryId: 'memory-linked-to-drive',
+          },
+        ],
+      },
+      warnings: [],
+    },
+  })
+
+  const memory = model.chapters[0].groups[0].memories[0]
+  assert.equal(memory.media.status, 'drive-indexed')
+  assert.equal(memory.media.id, 'drive_linked_story_photo')
+  assert.equal(memory.media.provider, 'google-drive')
+  assert.equal(memory.media.linkedMemoryId, 'memory-linked-to-drive')
+  assert.equal(model.sourceStatus.mediaIndex.linkedCount, 1)
+  assert.equal(model.summary.photoMemories, 1)
+})

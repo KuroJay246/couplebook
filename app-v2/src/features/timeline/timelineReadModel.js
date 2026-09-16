@@ -9,6 +9,7 @@ import {
   selectTimelineDisplayTitle,
   selectTimelineTypeLabel,
 } from '../memories/memorySelectors.js'
+import { selectMediaIndexGalleryItems } from '../gallery/gallerySelectors.js'
 
 function createEmptySnapshot() {
   return {
@@ -18,7 +19,7 @@ function createEmptySnapshot() {
   }
 }
 
-function buildSourceStatus(memorySource) {
+function buildSourceStatus(memorySource, mediaIndexSource, linkedMediaCount) {
   const hasBaseDataset = memorySource?.data?.hasBaseDataset === true
   const totalMemories = Array.isArray(memorySource?.data?.memories) ? memorySource.data.memories.length : 0
   const customCount = memorySource?.data?.customMemoryCount || 0
@@ -52,6 +53,12 @@ function buildSourceStatus(memorySource) {
       hasBaseDataset,
       source: memorySource?.source || 'unknown',
       warningCount: Array.isArray(memorySource?.warnings) ? memorySource.warnings.length : 0,
+    },
+    mediaIndex: {
+      status: mediaIndexSource?.status || 'empty',
+      linkedCount: linkedMediaCount,
+      source: mediaIndexSource?.source || 'unknown',
+      warningCount: Array.isArray(mediaIndexSource?.warnings) ? mediaIndexSource.warnings.length : 0,
     },
     deferred: [
       {
@@ -100,10 +107,47 @@ const EMPTY_MEMORY_SOURCE = Object.freeze({
   warnings: [],
 })
 
-export function buildTimelineReadModel({ compatibilitySnapshot = null, memorySource = null } = {}) {
+const EMPTY_MEDIA_INDEX_SOURCE = Object.freeze({
+  status: 'empty',
+  source: 'firestore',
+  data: null,
+  warnings: [],
+})
+
+function enrichMemoriesWithIndexedMedia(memories, indexedItems) {
+  const byMemoryId = new Map()
+  for (const item of indexedItems) {
+    const memoryId = item?.memoryId || item?.media?.linkedMemoryId || ''
+    if (memoryId && !byMemoryId.has(memoryId)) byMemoryId.set(memoryId, item)
+  }
+
+  let linkedMediaCount = 0
+  const enrichedMemories = memories.map((memory) => {
+    const indexedItem = byMemoryId.get(memory.id)
+    if (!indexedItem?.media) return memory
+    linkedMediaCount += 1
+    return {
+      ...memory,
+      media: {
+        ...memory.media,
+        ...indexedItem.media,
+        linkedMemoryId: indexedItem.memoryId || memory.id,
+        status: 'drive-indexed',
+      },
+      mediaIndexId: indexedItem.mediaIndexId || indexedItem.media?.id || '',
+    }
+  })
+
+  return { enrichedMemories, linkedMediaCount }
+}
+
+export function buildTimelineReadModel({ compatibilitySnapshot = null, memorySource = null, mediaIndexSource = null } = {}) {
   const snapshot = compatibilitySnapshot || createEmptySnapshot()
   const resolvedMemorySource = memorySource || snapshot.sources?.memories || EMPTY_MEMORY_SOURCE
+  const resolvedMediaIndexSource = mediaIndexSource || snapshot.sources?.mediaIndex || EMPTY_MEDIA_INDEX_SOURCE
   const normalizedMemories = normalizeTimelineMemories(resolvedMemorySource?.data?.memories || [])
+  const indexedItems = selectMediaIndexGalleryItems(resolvedMediaIndexSource?.data?.entries || [])
+  const { enrichedMemories, linkedMediaCount } = enrichMemoriesWithIndexedMedia(normalizedMemories, indexedItems)
   const archivedMemories = normalizedMemories.flatMap((memory) => (memory.status === 'archived' ? [{
       id: memory.id,
       status: memory.status,
@@ -121,12 +165,15 @@ export function buildTimelineReadModel({ compatibilitySnapshot = null, memorySou
 
   return freezeClone({
     status: deriveTimelineStatus(resolvedMemorySource, normalizedMemories),
-    summary: buildTimelineSummary(normalizedMemories),
+    summary: buildTimelineSummary(enrichedMemories),
     featured: null,
-    chapters: buildTimelineChapters(normalizedMemories),
+    chapters: buildTimelineChapters(enrichedMemories),
     archivedMemories,
-    filters: buildTimelineFilters(normalizedMemories),
-    sourceStatus: buildSourceStatus(resolvedMemorySource),
-    warnings: Array.isArray(resolvedMemorySource?.warnings) ? [...resolvedMemorySource.warnings] : [],
+    filters: buildTimelineFilters(enrichedMemories),
+    sourceStatus: buildSourceStatus(resolvedMemorySource, resolvedMediaIndexSource, linkedMediaCount),
+    warnings: [
+      ...(Array.isArray(resolvedMemorySource?.warnings) ? resolvedMemorySource.warnings : []),
+      ...(Array.isArray(resolvedMediaIndexSource?.warnings) ? resolvedMediaIndexSource.warnings : []),
+    ],
   })
 }
