@@ -227,6 +227,7 @@ export async function beginDriveAuthorization({
     stateId,
     uid: request.uid,
     coupleId: request.coupleId,
+    returnUrl: typeof body.returnUrl === 'string' && /^https?:\/\/[^#\s]+$/i.test(body.returnUrl) ? body.returnUrl : '',
     status: 'pending',
     createdAtMs: nowMs,
     expiresAtMs: nowMs + DEFAULT_STATE_TTL_MS,
@@ -238,6 +239,7 @@ export async function beginDriveAuthorization({
     ok: true,
     status: 200,
     authorizationUrl: String(authorizationUrl || ''),
+    returnUrl: stateRecord.returnUrl,
     stateId,
   })
 }
@@ -290,6 +292,7 @@ export async function completeDriveAuthorization({
     coupleId: stateRecord.coupleId,
     connectedAccount: connection.connectedAccount,
     provider: connection.provider,
+    returnUrl: stateRecord.returnUrl || '',
   })
 }
 
@@ -371,11 +374,14 @@ export function planDriveSyncWrites({
       coupleId: existing.coupleId,
       driveFileId: existing.driveFileId,
       durationMs: existing.durationMs || null,
+      durationMillis: existing.durationMillis || null,
+      fileName: existing.fileName || '',
       height: existing.height || null,
       mediaId: existing.mediaId,
       mimeType: existing.mimeType || '',
       name: existing.name || '',
       provider: existing.provider,
+      schemaVersion: existing.schemaVersion || null,
       sizeBytes: existing.sizeBytes || null,
       width: existing.width || null,
     }) !== stableJson({
@@ -383,11 +389,14 @@ export function planDriveSyncWrites({
       coupleId: nextRecord.coupleId,
       driveFileId: nextRecord.driveFileId,
       durationMs: nextRecord.durationMs || null,
+      durationMillis: nextRecord.durationMillis || null,
+      fileName: nextRecord.fileName || '',
       height: nextRecord.height || null,
       mediaId: nextRecord.mediaId,
       mimeType: nextRecord.mimeType || '',
       name: nextRecord.name || '',
       provider: nextRecord.provider,
+      schemaVersion: nextRecord.schemaVersion || null,
       sizeBytes: nextRecord.sizeBytes || null,
       width: nextRecord.width || null,
     })) {

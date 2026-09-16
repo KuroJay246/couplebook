@@ -18,10 +18,11 @@ import { ContentCard, Surface } from '../../components/ui/Surface.jsx'
 import { Toast } from '../../components/ui/Toast.jsx'
 import { useDialogAccessibility } from '../../components/ui/useDialogAccessibility.js'
 import { formatBytes } from '../../services/mediaUploadService.js'
+import { fetchMediaBlobViaTrustedBackend, isTrustedMediaBackendConfigured } from '../../services/trustedMediaBackendClient.js'
 import { groupGalleryItemsByDate, selectFilteredGalleryItems } from './gallerySelectors.js'
 import { QUEUE_STATUS, queueStatusLabel, queueStatusTone } from './useMediaUploadQueue.js'
 import { useMediaUploadQueue } from './useMediaUploadQueue.js'
-import { useGoogleDriveConnection } from '../media/useGoogleDriveConnection.js'
+import { useAuth } from '../../auth/useAuth.js'
 
 const FILTERS = [
   { key: 'all', label: 'All media' },
@@ -84,10 +85,21 @@ function GalleryTile({ item, onSelect, onToggleSelection, selected = false, sele
           style={mediaTileAspectStyle(item)}
           type="button"
         >
-          <span className="gallery-index-placeholder" aria-hidden="true">
-            {isVideo ? <Film className="size-7" /> : <ImageIcon className="size-7" />}
-            <span>{isVideo ? 'Video preview needs Drive access' : 'Photo preview needs Drive access'}</span>
-          </span>
+          {previewUrl ? (
+            <MediaPreview
+              alt=""
+              className="h-full w-full"
+              controls={false}
+              kind={isVideo ? 'video' : 'image'}
+              objectFit="cover"
+              src={previewUrl}
+            />
+          ) : (
+            <span className="gallery-index-placeholder" aria-hidden="true">
+              {isVideo ? <Film className="size-7" /> : <ImageIcon className="size-7" />}
+              <span>{isVideo ? 'Drive video ready' : 'Photo preview loading'}</span>
+            </span>
+          )}
           {showTitle ? <span className="gallery-index-overlay"><span className="gallery-index-title">{item.title}</span></span> : null}
           {selectionMode ? <span className="gallery-index-selection" aria-hidden="true">{selected ? 'Selected' : 'Select'}</span> : null}
           {item.media.favorite ? <span className="gallery-index-favorite" aria-hidden="true"><Heart className="size-3.5" fill="currentColor" /></span> : null}
@@ -130,6 +142,20 @@ function GalleryTile({ item, onSelect, onToggleSelection, selected = false, sele
       </button>
     </article>
   )
+}
+
+function withTrustedPreview(item, previewUrls) {
+  const mediaId = item?.media?.id || item?.mediaIndexId || ''
+  const previewUrl = mediaId ? previewUrls[mediaId] || '' : ''
+  if (!previewUrl) return item
+  return {
+    ...item,
+    media: {
+      ...item.media,
+      previewUrl,
+      thumbnailUrl: previewUrl,
+    },
+  }
 }
 
 function GalleryLightbox({ item, items, onClose, onNext, onPrevious, onRemove }) {
@@ -286,6 +312,7 @@ function UploadQueueCard({ item, onCancel, onChange, onRemove, onRetry }) {
 }
 
 export function GalleryView({ compatibilityError, compatibilityState, model, onRefresh }) {
+  const { approvedUser, user } = useAuth()
   const [filter, setFilter] = useState('all')
   const [year, setYear] = useState('all')
   const [search, setSearch] = useState('')
@@ -294,17 +321,90 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
   const [selectionMode, setSelectionMode] = useState(false)
   const [removeState, setRemoveState] = useState({ item: null, pending: false })
   const [manageUploadsOpen, setManageUploadsOpen] = useState(false)
+  const [previewUrls, setPreviewUrls] = useState({})
   const fileInputRef = useRef(null)
-  const drive = useGoogleDriveConnection()
-  const uploadQueue = useMediaUploadQueue(onRefresh, drive)
+  const previewUrlsRef = useRef(new Map())
+  const uploadQueue = useMediaUploadQueue(onRefresh, null)
   const items = useMemo(() => (Array.isArray(model.items) ? model.items : []), [model])
   const years = model.filters?.availableYears || []
   const mediaInventory = model.sourceStatus?.mediaInventory || {}
   const mediaWarnings = Array.isArray(mediaInventory.warnings) ? mediaInventory.warnings : []
   const userFacingMediaWarning = mediaWarnings.length > 0 ? 'Some photos could not be loaded. Try again from Media & Sync.' : ''
 
-  const filtered = useMemo(() => selectFilteredGalleryItems(items, { filter, search, year }), [filter, items, search, year])
+  useEffect(() => () => {
+    for (const url of previewUrlsRef.current.values()) URL.revokeObjectURL(url)
+    previewUrlsRef.current.clear()
+  }, [])
+
+  useEffect(() => {
+    if (!user || !approvedUser?.coupleId || !isTrustedMediaBackendConfigured()) return undefined
+    const indexedItems = items
+      .filter((item) => item.media?.status === 'drive-indexed' && item.media?.kind === 'image' && item.media?.id && !previewUrlsRef.current.has(item.media.id))
+      .slice(0, 36)
+    if (!indexedItems.length) return undefined
+
+    const controller = new AbortController()
+    let cancelled = false
+
+    async function loadPreviews() {
+      for (const item of indexedItems) {
+        if (cancelled || controller.signal.aborted) return
+        try {
+          const blob = await fetchMediaBlobViaTrustedBackend({
+            coupleId: approvedUser.coupleId,
+            mediaId: item.media.id,
+            mode: 'thumbnail',
+            user,
+          })
+          if (cancelled || controller.signal.aborted) return
+          const objectUrl = URL.createObjectURL(blob)
+          previewUrlsRef.current.set(item.media.id, objectUrl)
+          setPreviewUrls(Object.fromEntries(previewUrlsRef.current.entries()))
+        } catch {
+          // Individual private previews can fail without blocking the Album index.
+        }
+      }
+    }
+
+    void loadPreviews()
+    return () => {
+      cancelled = true
+      controller.abort()
+    }
+  }, [approvedUser?.coupleId, items, user])
+
+  useEffect(() => {
+    const mediaId = selectedItem?.media?.id
+    if (!user || !approvedUser?.coupleId || !mediaId || selectedItem?.media?.status !== 'drive-indexed' || previewUrlsRef.current.has(mediaId) || !isTrustedMediaBackendConfigured()) return undefined
+
+    let cancelled = false
+    async function loadSelectedPreview() {
+      try {
+        const blob = await fetchMediaBlobViaTrustedBackend({
+          coupleId: approvedUser.coupleId,
+          mediaId,
+          mode: selectedItem.media.kind === 'video' ? 'stream' : 'thumbnail',
+          user,
+        })
+        if (cancelled) return
+        const objectUrl = URL.createObjectURL(blob)
+        previewUrlsRef.current.set(mediaId, objectUrl)
+        setPreviewUrls(Object.fromEntries(previewUrlsRef.current.entries()))
+      } catch {
+        // The selected metadata remains usable even if protected playback is unavailable.
+      }
+    }
+
+    void loadSelectedPreview()
+    return () => {
+      cancelled = true
+    }
+  }, [approvedUser?.coupleId, selectedItem, user])
+
+  const itemsWithPreviews = useMemo(() => items.map((item) => withTrustedPreview(item, previewUrls)), [items, previewUrls])
+  const filtered = useMemo(() => selectFilteredGalleryItems(itemsWithPreviews, { filter, search, year }), [filter, itemsWithPreviews, search, year])
   const grouped = useMemo(() => groupGalleryItemsByDate(filtered), [filtered])
+  const selectedItemWithPreview = useMemo(() => withTrustedPreview(selectedItem, previewUrls), [previewUrls, selectedItem])
   const selectedCount = selectedKeys.size
 
   function toggleSelectionMode() {
@@ -534,7 +634,7 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
       </div>
 
       <GalleryLightbox
-        item={selectedItem}
+        item={selectedItemWithPreview}
         items={filtered}
         onClose={() => setSelectedItem(null)}
         onNext={() => showNeighbor(1)}

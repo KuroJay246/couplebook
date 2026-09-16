@@ -67,6 +67,56 @@ test('Firestore conversion keeps stable media metadata without temporary URL fie
   assert.equal('thumbnailLink' in restored, false)
 })
 
+test('Firestore batch write builds document updates without leaking temporary fields', async () => {
+  const calls = []
+  const originalFetch = globalThis.fetch
+  const keyPair = await crypto.subtle.generateKey(
+    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256', modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]) },
+    true,
+    ['sign', 'verify'],
+  )
+  const pkcs8 = Buffer.from(await crypto.subtle.exportKey('pkcs8', keyPair.privateKey)).toString('base64')
+  globalThis.fetch = async (url, options = {}) => {
+    calls.push({ body: options.body, url: String(url) })
+    if (String(url).includes('oauth2.googleapis.com/token')) {
+      return new Response(JSON.stringify({ access_token: 'service-access-token', expires_in: 3600 }), { status: 200 })
+    }
+    if (String(url).includes(':batchWrite')) {
+      return new Response(JSON.stringify({ writeResults: [{ updateTime: 'now' }] }), { status: 200 })
+    }
+    return new Response('{}', { status: 404 })
+  }
+
+  try {
+    const result = await internals.firestoreBatchWrite({
+      FIREBASE_PROJECT_ID: 'couplebook-97830',
+      FIREBASE_SERVICE_ACCOUNT_CLIENT_EMAIL: 'service@example.test',
+      FIREBASE_SERVICE_ACCOUNT_PRIVATE_KEY: [
+        '-----BEGIN PRIVATE KEY-----',
+        pkcs8,
+        '-----END PRIVATE KEY-----',
+      ].join('\n'),
+    }, [{
+      path: 'couples/couple_alpha/mediaItems/media_one',
+      record: {
+        coupleId: 'couple_alpha',
+        deleted: false,
+        driveFileId: 'drive_file_one',
+        mediaId: 'media_one',
+        provider: 'google-drive',
+      },
+    }])
+
+    const batchCall = calls.find((call) => call.url.includes(':batchWrite'))
+    assert.equal(result.writeResults.length, 1)
+    assert.ok(batchCall)
+    assert.match(batchCall.body, /projects\/couplebook-97830\/databases\/\(default\)\/documents\/couples\/couple_alpha\/mediaItems\/media_one/)
+    assert.doesNotMatch(batchCall.body, /accessToken|refreshToken|thumbnailLink|downloadUrl/i)
+  } finally {
+    globalThis.fetch = originalFetch
+  }
+})
+
 test('protected routes fail closed without Firebase bearer token', async () => {
   const response = await worker.fetch(new Request('https://worker.example/api/drive/sync', {
     method: 'POST',

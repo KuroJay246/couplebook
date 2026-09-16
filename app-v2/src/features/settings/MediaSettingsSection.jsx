@@ -1,14 +1,22 @@
+import { useEffect, useMemo, useState } from 'react'
 import { ExternalLink, Images, RefreshCw, Unplug } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { PrimaryButton, SecondaryButton } from '../../components/ui/Button.jsx'
 import { InlineAlert } from '../../components/ui/InlineAlert.jsx'
 import { StatusBadge } from '../../components/ui/StatusBadge.jsx'
 import { ContentCard, Surface } from '../../components/ui/Surface.jsx'
-import { useGoogleDriveConnection } from '../media/useGoogleDriveConnection.js'
+import { useAuth } from '../../auth/useAuth.js'
+import {
+  beginDriveOAuthViaTrustedBackend,
+  disconnectDriveViaTrustedBackend,
+  isTrustedMediaBackendConfigured,
+  syncDriveViaTrustedBackend,
+} from '../../services/trustedMediaBackendClient.js'
+import { readRuntimeEnv } from '../../data/adapterUtils.js'
 
 function toneForDriveState(state) {
   if (state === 'connected') return 'success'
-  if (state === 'connecting') return 'info'
+  if (state === 'connecting' || state === 'syncing') return 'info'
   if (state === 'disconnected') return 'warning'
   return 'warning'
 }
@@ -16,10 +24,8 @@ function toneForDriveState(state) {
 function labelForDriveState(state) {
   if (state === 'connected') return 'Connected'
   if (state === 'connecting') return 'Connecting'
-  if (state === 'wrong-account') return 'Wrong account'
-  if (state === 'folder-inaccessible') return 'Folder inaccessible'
-  if (state === 'reconnect-required') return 'Reconnect required'
-  if (state === 'token-expired') return 'Authorization expired'
+  if (state === 'syncing') return 'Syncing'
+  if (state === 'needs-attention') return 'Needs attention'
   if (state === 'temporary-failure') return 'Action required'
   return 'Not connected'
 }
@@ -42,27 +48,30 @@ function MediaStatusCard({ description, label, tone = 'info', value }) {
   )
 }
 
-function mediaCountDescription(drive) {
-  if (drive.state !== 'connected') return 'Loaded from the shared Album index when media sync is available'
-  return `${drive.files.length}${drive.hasMoreFiles ? '+' : ''} files listed in this owner session`
+function mediaCountDescription(mediaService) {
+  if (mediaService.lastSyncCounts) {
+    const { added = 0, unchanged = 0, removed = 0 } = mediaService.lastSyncCounts
+    return `${added} added, ${unchanged} unchanged, ${removed} removed in the last sync.`
+  }
+  return 'Loaded from the shared Album index after Drive sync runs.'
 }
 
-function MediaConnectionSummary({ drive, media }) {
-  const connected = drive.state === 'connected'
+function MediaConnectionSummary({ media, mediaService }) {
+  const connected = mediaService.state === 'connected'
   const backendReadiness = media?.backendReadiness
   return (
     <div className="mt-5 grid gap-3 sm:grid-cols-2">
       <MediaStatusCard
         description="Owner-managed media provider for the couple, separate from normal Couple Book sign-in."
         label="Google Drive"
-        tone={toneForDriveState(drive.state)}
-        value={labelForDriveState(drive.state)}
+        tone={toneForDriveState(mediaService.state)}
+        value={labelForDriveState(mediaService.state)}
       />
       <MediaStatusCard
-        description={media?.connectedAccount || 'Owner account required'}
+        description={mediaService.connectedAccount || media?.connectedAccount || 'Owner account required'}
         label="Connected account"
         tone={connected ? 'success' : 'warning'}
-        value={connected ? 'Verified this session' : 'Owner setup'}
+        value={connected ? 'Connected' : 'Setup required'}
       />
       <MediaStatusCard
         description={media?.approvedFolderLabel || 'Couple Book media folder'}
@@ -70,10 +79,10 @@ function MediaConnectionSummary({ drive, media }) {
         value="Private Drive"
       />
       <MediaStatusCard
-        description={mediaCountDescription(drive)}
+        description={mediaCountDescription(mediaService)}
         label="Media count"
         tone={connected ? 'success' : 'warning'}
-        value={connected ? 'Session list' : 'Index first'}
+        value={connected ? 'Synced index' : 'Index first'}
       />
       <MediaStatusCard
         description={backendReadiness?.description || 'The shared media service still needs final setup before it can sync automatically.'}
@@ -82,31 +91,27 @@ function MediaConnectionSummary({ drive, media }) {
         value={backendReadiness?.statusLabel || 'Not verified'}
       />
       <MediaStatusCard
-        description="Automatic Drive refresh, protected playback links, and continuous updates still need Firebase backend setup before both partners can rely on them."
-        label="Setup still needed"
-        tone="warning"
+        description="Connect once, then use Sync now when you add or change files in the private Drive folder."
+        label="Drive sync"
+        tone={connected ? 'success' : 'warning'}
         value={backendReadiness?.deploymentLabel || 'Backend setup needed'}
       />
     </div>
   )
 }
 
-function MediaSyncActions({ drive }) {
+function MediaSyncActions({ mediaService }) {
   async function syncNow() {
-    if (drive.state === 'connected') {
-      await drive.refreshListing()
-      return
-    }
-    await drive.retryAccess()
+    await mediaService.sync()
   }
 
   return (
     <div className="mt-5 flex flex-wrap gap-2">
-      <PrimaryButton aria-label="Connect Google Drive" loading={drive.state === 'connecting'} onClick={() => void drive.connect().catch(absorbDriveError)}>
-        {drive.state === 'connected' ? 'Reconnect' : drive.state === 'connecting' ? 'Connecting' : 'Connect Google Drive'}
+      <PrimaryButton aria-label="Connect Google Drive" loading={mediaService.state === 'connecting'} disabled={!mediaService.canUseService} onClick={() => void mediaService.connect().catch(absorbDriveError)}>
+        {mediaService.state === 'connected' ? 'Reconnect' : mediaService.state === 'connecting' ? 'Connecting' : 'Connect Google Drive'}
       </PrimaryButton>
-      <SecondaryButton disabled={drive.state !== 'connected'} onClick={() => void syncNow().catch(absorbDriveError)}><RefreshCw className="size-4" />Sync now</SecondaryButton>
-      <SecondaryButton disabled={drive.state !== 'connected'} onClick={drive.disconnect}><Unplug className="size-4" />Disconnect</SecondaryButton>
+      <SecondaryButton disabled={!mediaService.canUseService || mediaService.state === 'syncing'} onClick={() => void syncNow().catch(absorbDriveError)}><RefreshCw className="size-4" />Sync now</SecondaryButton>
+      <SecondaryButton disabled={!mediaService.canUseService || mediaService.state !== 'connected'} onClick={() => void mediaService.disconnect().catch(absorbDriveError)}><Unplug className="size-4" />Disconnect</SecondaryButton>
     </div>
   )
 }
@@ -155,7 +160,99 @@ function SharedAlbumShortcut({ sharedAlbum }) {
 }
 
 export function MediaSettingsSection({ media }) {
-  const drive = useGoogleDriveConnection()
+  const { approvedUser, user } = useAuth()
+  const env = useMemo(() => readRuntimeEnv(), [])
+  const canUseService = Boolean(user && approvedUser?.coupleId && isTrustedMediaBackendConfigured(env))
+  const [mediaService, setMediaService] = useState({
+    connectedAccount: '',
+    lastSyncCounts: null,
+    message: '',
+    state: canUseService ? 'disconnected' : 'needs-attention',
+  })
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const url = new URL(window.location.href)
+    if (url.searchParams.get('media') !== 'connected') return
+    setMediaService((current) => ({
+      ...current,
+      connectedAccount: media?.connectedAccount || current.connectedAccount,
+      message: 'Google Drive is connected. Run Sync now to refresh Album.',
+      state: 'connected',
+    }))
+    url.searchParams.delete('media')
+    window.history.replaceState({}, '', url.toString())
+  }, [media?.connectedAccount])
+
+  async function connectTrustedDrive() {
+    setMediaService((current) => ({ ...current, message: '', state: 'connecting' }))
+    try {
+      const returnUrl = `${window.location.origin}/settings`
+      const result = await beginDriveOAuthViaTrustedBackend({
+        coupleId: approvedUser.coupleId,
+        returnUrl,
+        user,
+      })
+      if (!result.authorizationUrl) throw new Error('Google Drive authorization could not start.')
+      window.location.assign(result.authorizationUrl)
+    } catch (error) {
+      setMediaService((current) => ({
+        ...current,
+        message: error?.message || 'Google Drive authorization could not start.',
+        state: 'needs-attention',
+      }))
+      throw error
+    }
+  }
+
+  async function syncTrustedDrive() {
+    setMediaService((current) => ({ ...current, message: '', state: 'syncing' }))
+    try {
+      const result = await syncDriveViaTrustedBackend({ coupleId: approvedUser.coupleId, user })
+      setMediaService((current) => ({
+        ...current,
+        lastSyncCounts: result.counts || null,
+        message: 'Drive sync finished.',
+        state: 'connected',
+      }))
+    } catch (error) {
+      setMediaService((current) => ({
+        ...current,
+        message: error?.message || 'Drive sync could not finish.',
+        state: 'needs-attention',
+      }))
+      throw error
+    }
+  }
+
+  async function disconnectTrustedDrive() {
+    setMediaService((current) => ({ ...current, message: '', state: 'syncing' }))
+    try {
+      await disconnectDriveViaTrustedBackend({ coupleId: approvedUser.coupleId, user })
+      setMediaService((current) => ({
+        ...current,
+        connectedAccount: '',
+        lastSyncCounts: null,
+        message: 'Google Drive was disconnected.',
+        state: 'disconnected',
+      }))
+    } catch (error) {
+      setMediaService((current) => ({
+        ...current,
+        message: error?.message || 'Google Drive could not be disconnected.',
+        state: 'needs-attention',
+      }))
+      throw error
+    }
+  }
+
+  const trustedMediaService = {
+    ...mediaService,
+    canUseService,
+    connect: connectTrustedDrive,
+    disconnect: disconnectTrustedDrive,
+    sync: syncTrustedDrive,
+  }
 
   return (
     <Surface tone="soft" aria-label="Media and sync settings">
@@ -176,25 +273,27 @@ export function MediaSettingsSection({ media }) {
         </div>
       </div>
 
-      <MediaConnectionSummary drive={drive} media={media} />
-      <MediaSyncActions drive={drive} />
+      <MediaConnectionSummary media={media} mediaService={trustedMediaService} />
+      <MediaSyncActions mediaService={trustedMediaService} />
       <SharedAlbumShortcut sharedAlbum={media?.sharedAlbum} />
 
-      {drive.message ? (
+      {trustedMediaService.message ? (
         <InlineAlert
           className="mt-4"
-          tone={drive.state === 'wrong-account' || drive.state === 'folder-inaccessible' ? 'warning' : 'error'}
-          title="Google Drive needs owner attention"
-          description={drive.message}
+          tone={trustedMediaService.state === 'connected' || trustedMediaService.state === 'disconnected' ? 'success' : 'warning'}
+          title={trustedMediaService.state === 'connected' ? 'Media sync updated' : 'Google Drive needs owner attention'}
+          description={trustedMediaService.message}
         />
       ) : null}
 
-      <InlineAlert
-        className="mt-5"
-        tone="warning"
-        title="Automatic media sync needs backend setup"
-        description={media?.backendBoundary || 'Couple Book can verify Drive access in this browser, but automatic refresh, background updates, and protected preview delivery need an approved private service before they can stay connected for both partners.'}
-      />
+      {!canUseService ? (
+        <InlineAlert
+          className="mt-5"
+          tone="warning"
+          title="Media service needs attention"
+          description="Sign in with an approved Couple Book account before connecting Google Drive."
+        />
+      ) : null}
 
       <MediaArchitectureItems items={media?.items} />
     </Surface>

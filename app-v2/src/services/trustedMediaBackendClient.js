@@ -41,6 +41,29 @@ async function callMediaBackend(path, { body, method = 'POST', user } = {}) {
   return readJsonResponse(response)
 }
 
+async function fetchMediaBackendBlob(path, { body, user } = {}) {
+  const baseUrl = resolveTrustedMediaBackendUrl()
+  if (!baseUrl) throw new Error('Private media service is not configured.')
+  const idToken = await idTokenForUser(user)
+  const url = new URL(`${baseUrl}${path}`)
+  for (const [key, value] of Object.entries(body || {})) {
+    if (value !== undefined && value !== null && value !== '') url.searchParams.set(key, String(value))
+  }
+  const response = await fetch(url.toString(), {
+    headers: {
+      Authorization: `Bearer ${idToken}`,
+    },
+  })
+  if (!response.ok) {
+    const fallback = `http-${response.status}`
+    const message = response.headers.get('Content-Type')?.includes('application/json')
+      ? (await response.json().catch(() => ({})))?.code || fallback
+      : fallback
+    throw Object.assign(new Error(message), { code: message, status: response.status })
+  }
+  return response.blob()
+}
+
 function bytesToBase64(bytes) {
   let binary = ''
   const chunkSize = 0x8000
@@ -72,11 +95,40 @@ export async function uploadMediaViaTrustedBackend({ checksum, coupleId, file, m
   })
 }
 
+export async function beginDriveOAuthViaTrustedBackend({ coupleId, returnUrl, user }) {
+  return callMediaBackend('/api/drive/oauth/begin', {
+    body: { coupleId, returnUrl },
+    user,
+  })
+}
+
+export async function syncDriveViaTrustedBackend({ coupleId, user }) {
+  return callMediaBackend('/api/drive/sync', {
+    body: { coupleId },
+    user,
+  })
+}
+
+export async function disconnectDriveViaTrustedBackend({ coupleId, user }) {
+  return callMediaBackend('/api/drive/disconnect', {
+    body: { coupleId },
+    user,
+  })
+}
+
 export async function removeMediaViaTrustedBackend({ coupleId, deleteOriginal = false, mediaId, user }) {
   const body = { coupleId, deleteOriginal }
   if (deleteOriginal) body.confirmDeleteOriginal = `delete-drive-original-${mediaId}`
   return callMediaBackend(`/api/drive/media/${encodeURIComponent(mediaId)}`, {
     body,
+    user,
+  })
+}
+
+export async function fetchMediaBlobViaTrustedBackend({ coupleId, mediaId, mode = 'thumbnail', user }) {
+  const safeMode = mode === 'stream' ? 'stream' : 'thumbnail'
+  return fetchMediaBackendBlob(`/api/drive/media/${encodeURIComponent(mediaId)}/${safeMode}`, {
+    body: { coupleId },
     user,
   })
 }

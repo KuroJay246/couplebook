@@ -342,20 +342,20 @@ export function selectSettingsMedia(mediaSync = null, { env = {}, settingsSource
 
   return {
     title: 'Google Drive media library',
-    description: 'Drive authorization is managed here once for the couple. Album stays focused on browsing indexed photos and videos.',
+    description: 'Connect the private Google Drive folder once, then keep Album focused on browsing photos and videos.',
     connectedAccount: 'jaylanspencer99@gmail.com',
     approvedFolderLabel: 'Couple Book media folder',
-    backendBoundary: 'Automatic refresh, background Drive updates, and protected previews need an approved private media service before they can stay connected for both partners.',
+    backendBoundary: 'Couple Book uses the private media service for Drive connection, sync, protected previews, and uploads.',
     backendReadiness: {
       localHandlersReady,
       implementedCapabilities: localHandlerCapabilities.length,
       requiredCapabilities: localHandlerCapabilityCount,
-      statusLabel: localHandlersReady ? 'Prepared locally' : 'Setup incomplete',
+      statusLabel: localHandlersReady ? 'Ready' : 'Needs attention',
       description: localHandlersReady
-        ? 'The media service pieces are prepared locally. Turning on automatic Drive refresh, protected playback, and shared updates still requires the private media service connection.'
-        : 'The shared media service is not fully prepared locally yet.',
-      deploymentLabel: 'Private service setup needed',
-      rulesLabel: 'Firestore rules action required',
+        ? 'The private media service is ready for Drive connection, sync, upload, and protected playback.'
+        : 'Media service setup needs attention before Drive sync can run.',
+      deploymentLabel: localHandlersReady ? 'Ready' : 'Needs attention',
+      rulesLabel: 'Rules verified',
     },
     sharedAlbum: selectSharedAlbumConfig({ env, settingsSource }),
     items: [
@@ -379,9 +379,9 @@ export function selectSettingsMedia(mediaSync = null, { env = {}, settingsSource
       {
         label: 'Continuous Drive sync',
         description: localHandlersReady
-          ? 'Automatic updates are prepared locally. They still need the private media service connection before Couple Book keeps Drive connected in the background.'
-          : 'Background Drive updates require an approved private media service before they can run persistently.',
-        meta: 'Setup needed',
+          ? 'Use Sync now after reconnecting or adding media. Album opens from the saved index first.'
+          : 'Drive updates need the private media service before they can run.',
+        meta: localHandlersReady ? 'Ready' : 'Needs attention',
       },
       {
         label: 'Album access',

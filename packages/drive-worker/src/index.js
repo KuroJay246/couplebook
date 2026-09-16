@@ -14,6 +14,7 @@ const JSON_HEADERS = Object.freeze({
   'X-Content-Type-Options': 'nosniff',
 })
 const SAFE_ID = /^[A-Za-z0-9_-]{1,160}$/
+const serviceAccessTokenCache = new Map()
 
 function textEncoder() {
   return new TextEncoder()
@@ -51,11 +52,10 @@ function parseJwt(jwt) {
   }
 }
 
-async function importGoogleCertificate(pem) {
-  const body = String(pem || '').replace(/-----BEGIN CERTIFICATE-----|-----END CERTIFICATE-----|\s/g, '')
+async function importGoogleJwk(jwk) {
   return crypto.subtle.importKey(
-    'spki',
-    base64ToBytes(body),
+    'jwk',
+    jwk,
     { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
     false,
     ['verify'],
@@ -65,12 +65,14 @@ async function importGoogleCertificate(pem) {
 async function verifyFirebaseToken(idToken, env, fetchImpl = fetch) {
   const parsed = parseJwt(idToken)
   if (parsed.header.alg !== 'RS256' || !parsed.header.kid) throw new Error('invalid-firebase-token-header')
-  const certResponse = await fetchImpl('https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com')
+  const certResponse = await fetchImpl('https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com')
   if (!certResponse.ok) throw new Error('firebase-certificates-unavailable')
-  const certificates = await certResponse.json()
-  const cert = certificates[parsed.header.kid]
-  if (!cert) throw new Error('firebase-certificate-not-found')
-  const key = await importGoogleCertificate(cert)
+  const certificateSet = await certResponse.json()
+  const jwk = Array.isArray(certificateSet?.keys)
+    ? certificateSet.keys.find((entry) => entry?.kid === parsed.header.kid)
+    : null
+  if (!jwk) throw new Error('firebase-certificate-not-found')
+  const key = await importGoogleJwk(jwk)
   const ok = await crypto.subtle.verify('RSASSA-PKCS1-v1_5', key, parsed.signature, textEncoder().encode(parsed.signed))
   if (!ok) throw new Error('invalid-firebase-token-signature')
   const now = Math.floor(Date.now() / 1000)
@@ -110,6 +112,9 @@ async function createServiceJwt(env, scope) {
 }
 
 async function getGoogleAccessToken(env, scope = 'https://www.googleapis.com/auth/datastore') {
+  const cacheKey = `${env.FIREBASE_PROJECT_ID || ''}:${env.FIREBASE_SERVICE_ACCOUNT_CLIENT_EMAIL || ''}:${scope}`
+  const cached = serviceAccessTokenCache.get(cacheKey)
+  if (cached && cached.expiresAtMs > Date.now() + 60_000) return cached.accessToken
   const assertion = await createServiceJwt(env, scope)
   const response = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
@@ -121,6 +126,10 @@ async function getGoogleAccessToken(env, scope = 'https://www.googleapis.com/aut
   })
   const token = await response.json()
   if (!response.ok || !token.access_token) throw new Error('google-service-account-token-failed')
+  serviceAccessTokenCache.set(cacheKey, {
+    accessToken: token.access_token,
+    expiresAtMs: Date.now() + Math.max(60, Number(token.expires_in || 3600) - 60) * 1000,
+  })
   return token.access_token
 }
 
@@ -179,6 +188,35 @@ async function firestorePatch(env, path, record) {
   return response.json()
 }
 
+function firestoreDocumentName(env, path) {
+  return `projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents/${path}`
+}
+
+async function firestoreBatchWrite(env, writes = []) {
+  if (!writes.length) return { writeResults: [] }
+  const accessToken = await getGoogleAccessToken(env)
+  const results = []
+  for (let index = 0; index < writes.length; index += 100) {
+    const batch = writes.slice(index, index + 100)
+    const response = await fetch(`https://firestore.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents:batchWrite`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        writes: batch.map(({ path, record }) => ({
+          update: {
+            name: firestoreDocumentName(env, path),
+            fields: toFirestoreFields(record),
+          },
+        })),
+      }),
+    })
+    if (!response.ok) throw new Error('firestore-batch-write-failed')
+    const data = await response.json()
+    results.push(...(data.writeResults || []))
+  }
+  return { writeResults: results }
+}
+
 async function firestoreList(env, collectionPath) {
   const accessToken = await getGoogleAccessToken(env)
   const response = await fetch(firestoreDocUrl(env, collectionPath), { headers: { Authorization: `Bearer ${accessToken}` } })
@@ -234,6 +272,32 @@ function corsHeaders(request, env) {
     'Access-Control-Allow-Origin': origin,
     'Vary': 'Origin',
   }
+}
+
+function allowedOriginSet(env) {
+  return new Set(String(env.ALLOWED_ORIGINS || '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean))
+}
+
+function isAllowedReturnUrl(env, value) {
+  try {
+    const url = new URL(String(value || ''))
+    return allowedOriginSet(env).has(url.origin)
+  } catch {
+    return false
+  }
+}
+
+function redirectResponse(request, env, url) {
+  return new Response(null, {
+    status: 302,
+    headers: {
+      ...corsHeaders(request, env),
+      Location: url,
+    },
+  })
 }
 
 function jsonResponse(request, env, status, body) {
@@ -294,18 +358,26 @@ async function mediaIdForDriveFile(fileId) {
 
 async function driveFileToMediaRecord(env, coupleId, file) {
   const mimeType = String(file.mimeType || '')
+  const imageMetadata = file.imageMediaMetadata || {}
+  const videoMetadata = file.videoMediaMetadata || {}
   return {
+    schemaVersion: 1,
     coupleId,
     createdTime: file.createdTime || '',
     deleted: false,
     driveFileId: file.id,
     driveFolderId: env.GOOGLE_DRIVE_FOLDER_ID,
+    durationMillis: videoMetadata.durationMillis ? Number(videoMetadata.durationMillis) : null,
+    fileName: file.name || '',
+    height: imageMetadata.height || videoMetadata.height ? Number(imageMetadata.height || videoMetadata.height) : null,
     mediaId: await mediaIdForDriveFile(file.id),
     mediaType: mimeType.startsWith('video/') ? 'video' : 'image',
     mimeType,
+    modifiedTime: file.modifiedTime || '',
     name: file.name || '',
     provider: 'google-drive',
     sizeBytes: file.size ? Number(file.size) : null,
+    width: imageMetadata.width || videoMetadata.width ? Number(imageMetadata.width || videoMetadata.width) : null,
   }
 }
 
@@ -419,7 +491,11 @@ async function exchangeCode(env, { code, coupleId }) {
     }),
   })
   const token = await response.json()
-  if (!response.ok || !token.refresh_token || !token.access_token) throw new Error('drive-oauth-exchange-failed')
+  if (!response.ok) {
+    const reason = safeId(token.error || response.status)
+    throw new Error(`drive-oauth-exchange-failed-${reason}`)
+  }
+  if (!token.access_token) throw new Error('drive-oauth-exchange-missing-access-token')
   const profileResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
     headers: { Authorization: `Bearer ${token.access_token}` },
   })
@@ -428,10 +504,15 @@ async function exchangeCode(env, { code, coupleId }) {
   if (env.GOOGLE_DRIVE_OWNER_EMAIL && connectedAccount.toLowerCase() !== String(env.GOOGLE_DRIVE_OWNER_EMAIL).toLowerCase()) {
     throw new Error('drive-owner-account-required')
   }
-  await kvPutJson(env, `drive-refresh:${safeId(coupleId)}`, await encryptJson(env, {
-    refreshToken: token.refresh_token,
-    scope: token.scope || DRIVE_SCOPE,
-  }))
+  const refreshKey = `drive-refresh:${safeId(coupleId)}`
+  const existingCredential = await kvGetJson(env, refreshKey)
+  if (!token.refresh_token && !existingCredential) throw new Error('drive-oauth-refresh-token-required')
+  if (token.refresh_token) {
+    await kvPutJson(env, refreshKey, await encryptJson(env, {
+      refreshToken: token.refresh_token,
+      scope: token.scope || DRIVE_SCOPE,
+    }))
+  }
   return { connectedAccount, credentialHandle: 'cloudflare-kv-encrypted', scope: token.scope || DRIVE_SCOPE }
 }
 
@@ -485,21 +566,34 @@ async function dispatch(request, env) {
       stateReader: (stateId) => kvGetJson(env, `oauth-state:${safeId(stateId)}`),
       stateWriter: (state) => kvPutJson(env, `oauth-state:${state.stateId}`, state, { expirationTtl: 600 }),
     })
+    if (result.ok && isAllowedReturnUrl(env, result.returnUrl)) {
+      const returnUrl = new URL(result.returnUrl)
+      returnUrl.searchParams.set('media', 'connected')
+      return redirectResponse(request, env, returnUrl.toString())
+    }
     return jsonResponse(request, env, result.status || 500, result)
   }
 
   if (request.method === 'POST' && path === '/api/drive/sync') {
+    const firestoreWrites = []
     const result = await runDriveSyncNow({
       activeMembershipReader,
-      auditWriter: async ({ coupleId, record }) => firestorePatch(env, `couples/${safeId(coupleId)}/auditEvents/${crypto.randomUUID()}`, record),
+      auditWriter: async ({ coupleId, record }) => {
+        firestoreWrites.push({ path: `couples/${safeId(coupleId)}/auditEvents/${crypto.randomUUID()}`, record })
+      },
       body,
       driveRecordReader: ({ coupleId }) => listDriveRecords(env, coupleId),
       headers,
       indexedMediaReader: ({ coupleId }) => firestoreList(env, `couples/${safeId(coupleId)}/mediaItems`),
-      mediaWriter: ({ coupleId, mediaId, record }) => firestorePatch(env, `couples/${safeId(coupleId)}/mediaItems/${safeId(mediaId)}`, record),
-      syncStateWriter: ({ coupleId, record }) => firestorePatch(env, `couples/${safeId(coupleId)}/mediaSync/google-drive`, record),
+      mediaWriter: async ({ coupleId, mediaId, record }) => {
+        firestoreWrites.push({ path: `couples/${safeId(coupleId)}/mediaItems/${safeId(mediaId)}`, record })
+      },
+      syncStateWriter: async ({ coupleId, record }) => {
+        firestoreWrites.push({ path: `couples/${safeId(coupleId)}/mediaSync/google-drive`, record })
+      },
       tokenVerifier,
     })
+    if (result.ok) await firestoreBatchWrite(env, firestoreWrites)
     return jsonResponse(request, env, result.status || 500, result)
   }
 
@@ -581,6 +675,8 @@ export const internals = {
   corsHeaders,
   decryptJson,
   encryptJson,
+  firestoreBatchWrite,
+  firestoreDocumentName,
   mediaIdForDriveFile,
   parseJwt,
   toFirestoreFields,
