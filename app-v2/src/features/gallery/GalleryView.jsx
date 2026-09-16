@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Film, Heart, ImageIcon, Images, RotateCcw, SlidersHorizontal, Upload, XCircle } from 'lucide-react'
 import { Link } from 'react-router-dom'
@@ -189,7 +189,7 @@ function withTrustedPreview(item, previewUrls) {
   }
 }
 
-function GalleryLightbox({ item, items, onClose, onNext, onPrevious, onRemove }) {
+function GalleryLightbox({ item, items, onClose, onLoadStream, onNext, onPrevious, onRemove, streamStatus }) {
   const titleId = useId()
   const onNextRef = useRef(onNext)
   const onPreviousRef = useRef(onPrevious)
@@ -222,6 +222,10 @@ function GalleryLightbox({ item, items, onClose, onNext, onPrevious, onRemove })
   const isVideo = item.media.kind === 'video'
   const previewKind = item.media.previewKind || (isVideo ? 'video' : 'image')
   const mediaUrl = item.media.previewUrl || item.media.thumbnailUrl || ''
+  const hasVideoStream = isVideo && previewKind === 'video' && mediaUrl
+  const posterUrl = isVideo && !hasVideoStream ? mediaUrl : ''
+  const viewerKind = isVideo ? 'video' : previewKind
+  const viewerSrc = isVideo ? (hasVideoStream ? mediaUrl : '') : mediaUrl
   const currentIndex = items.findIndex((entry) => entry.key === item.key)
   const canStep = items.length > 1 && currentIndex >= 0
 
@@ -236,8 +240,20 @@ function GalleryLightbox({ item, items, onClose, onNext, onPrevious, onRemove })
         className="cb-media-viewer relative h-[calc(100vh-1.5rem)] w-full max-w-7xl overflow-hidden text-white"
       >
         <div className="cb-media-viewer-stage">
-          {mediaUrl ? (
-            <MediaPreview alt={item.title} className="cb-media-viewer-media" controls={isVideo && previewKind === 'video'} kind={previewKind} objectFit="contain" src={mediaUrl} />
+          {mediaUrl || isVideo ? (
+            <MediaPreview
+              alt={item.title}
+              className="cb-media-viewer-media"
+              controls={isVideo && hasVideoStream}
+              description={streamStatus?.error || (isVideo ? 'The video original is private. Open a temporary playback session when you want to watch it.' : '')}
+              kind={viewerKind}
+              loading={Boolean(streamStatus?.loading)}
+              objectFit="contain"
+              onLoadRequest={isVideo ? onLoadStream : undefined}
+              poster={posterUrl}
+              src={viewerSrc}
+              title={isVideo ? 'Private video preview' : ''}
+            />
           ) : (
             <div className="cb-media-viewer-empty">{isVideo ? <Film className="size-10" /> : <ImageIcon className="size-10" />}</div>
           )}
@@ -355,6 +371,7 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
   const [removeState, setRemoveState] = useState({ deleteOriginal: false, item: null, pending: false })
   const [manageUploadsOpen, setManageUploadsOpen] = useState(false)
   const [previewUrls, setPreviewUrls] = useState({})
+  const [streamStatus, setStreamStatus] = useState({ error: '', loading: false, mediaId: '' })
   const fileInputRef = useRef(null)
   const previewUrlsRef = useRef(new Map())
   const uploadQueue = useMediaUploadQueue(onRefresh, null)
@@ -421,41 +438,50 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
     }
   }, [approvedUser?.coupleId, items, user])
 
-  useEffect(() => {
-    const mediaId = selectedItem?.media?.id
+  const loadSelectedPreview = useCallback(async (item, { force = false } = {}) => {
+    const mediaId = item?.media?.id
     const cached = previewUrlsRef.current.get(mediaId)
-    const needsStream = selectedItem?.media?.kind === 'video' && cached?.mode !== 'stream'
-    if (!user || !approvedUser?.coupleId || !mediaId || selectedItem?.media?.status !== 'drive-indexed' || (!needsStream && previewUrlsRef.current.has(mediaId)) || !isTrustedMediaBackendConfigured()) return undefined
+    const isVideo = item?.media?.kind === 'video'
+    const needsStream = isVideo && cached?.mode !== 'stream'
+    if (!user || !approvedUser?.coupleId || !mediaId || item?.media?.status !== 'drive-indexed' || (!force && !needsStream && previewUrlsRef.current.has(mediaId)) || !isTrustedMediaBackendConfigured()) return
 
-    let cancelled = false
-    async function loadSelectedPreview() {
-      try {
-        const blob = await fetchMediaBlobViaTrustedBackend({
-          coupleId: approvedUser.coupleId,
+    if (isVideo) setStreamStatus({ error: '', loading: true, mediaId })
+    try {
+      const blob = await fetchMediaBlobViaTrustedBackend({
+        coupleId: approvedUser.coupleId,
+        mediaId,
+        mode: isVideo ? 'stream' : 'thumbnail',
+        user,
+      })
+      const objectUrl = URL.createObjectURL(blob)
+      if (cached?.url && cached.url !== objectUrl) URL.revokeObjectURL(cached.url)
+      previewUrlsRef.current.set(mediaId, { kind: isVideo ? 'video' : 'image', mode: isVideo ? 'stream' : 'thumbnail', url: objectUrl })
+      setPreviewUrls(Object.fromEntries(previewUrlsRef.current.entries()))
+      if (isVideo) setStreamStatus({ error: '', loading: false, mediaId })
+    } catch {
+      if (isVideo) {
+        setStreamStatus({
+          error: 'Video playback is unavailable right now. The private thumbnail is still shown, and you can retry the protected playback session.',
+          loading: false,
           mediaId,
-          mode: selectedItem.media.kind === 'video' ? 'stream' : 'thumbnail',
-          user,
         })
-        if (cancelled) return
-        const objectUrl = URL.createObjectURL(blob)
-        if (cached?.url && cached.url !== objectUrl) URL.revokeObjectURL(cached.url)
-        previewUrlsRef.current.set(mediaId, { kind: selectedItem.media.kind === 'video' ? 'video' : 'image', mode: selectedItem.media.kind === 'video' ? 'stream' : 'thumbnail', url: objectUrl })
-        setPreviewUrls(Object.fromEntries(previewUrlsRef.current.entries()))
-      } catch {
-        // The selected metadata remains usable even if protected playback is unavailable.
       }
     }
+  }, [approvedUser, user])
 
-    void loadSelectedPreview()
-    return () => {
-      cancelled = true
-    }
-  }, [approvedUser?.coupleId, selectedItem, user])
+  useEffect(() => {
+    if (!selectedItem) return
+    const timer = window.setTimeout(() => {
+      void loadSelectedPreview(selectedItem)
+    }, 0)
+    return () => window.clearTimeout(timer)
+  }, [loadSelectedPreview, selectedItem])
 
   const itemsWithPreviews = useMemo(() => items.map((item) => withTrustedPreview(item, previewUrls)), [items, previewUrls])
   const filtered = useMemo(() => selectFilteredGalleryItems(itemsWithPreviews, { filter, search, year }), [filter, itemsWithPreviews, search, year])
   const grouped = useMemo(() => groupGalleryItemsByDate(filtered), [filtered])
   const selectedItemWithPreview = useMemo(() => withTrustedPreview(selectedItem, previewUrls), [previewUrls, selectedItem])
+  const selectedStreamStatus = selectedItemWithPreview?.media?.id && selectedItemWithPreview.media.id === streamStatus.mediaId ? streamStatus : null
   const selectedCount = selectedKeys.size
 
   function toggleSelectionMode() {
@@ -711,9 +737,11 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
         item={selectedItemWithPreview}
         items={filtered}
         onClose={() => setSelectedItem(null)}
+        onLoadStream={() => loadSelectedPreview(selectedItem, { force: true })}
         onNext={() => showNeighbor(1)}
         onPrevious={() => showNeighbor(-1)}
         onRemove={(item, options = {}) => setRemoveState({ deleteOriginal: options.deleteOriginal === true, item, pending: false })}
+        streamStatus={selectedStreamStatus}
       />
       <ConfirmDialog
         confirmLabel={removeState.deleteOriginal ? 'Delete original from Drive' : 'Remove from Album'}
