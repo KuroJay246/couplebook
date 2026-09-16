@@ -180,6 +180,50 @@ test('timeline read model does not mutate compatibility inputs and preserves war
   assert.equal(model.summary.invalidMedia, 1)
 })
 
+test('timeline read model quarantines automated proof memories from owner-facing Story views', () => {
+  const model = buildTimelineReadModel({
+    memorySource: {
+      status: 'ready',
+      source: 'firestore',
+      data: {
+        hasBaseDataset: true,
+        customMemoryCount: 1,
+        overriddenMemoryCount: 0,
+        deletedMemoryCount: 0,
+        memories: [
+          createMemoryRecord({
+            id: 'codex-proof-memory',
+            title: 'CODEX_TEST Release acceptance probe',
+            status: 'archived',
+          }),
+          createMemoryRecord({
+            id: 'launch-smoke-proof-memory',
+            title: 'Temporary launch smoke test',
+            status: 'archived',
+          }),
+          createMemoryRecord({
+            id: 'launch-smoke-note-memory',
+            title: 'Launch smoke temporary note',
+            status: 'archived',
+          }),
+          createMemoryRecord({
+            id: 'real-story-memory',
+            title: 'Fictional owner-facing story memory',
+          }),
+        ],
+      },
+      warnings: [],
+    },
+  })
+
+  const visibleTitles = model.chapters.flatMap((chapter) => chapter.groups.flatMap((group) => group.memories.map((memory) => memory.displayTitle)))
+  assert.deepEqual(visibleTitles, ['Fictional owner-facing story memory'])
+  assert.equal(model.archivedMemories.length, 0)
+  assert.equal(model.summary.totalMemories, 1)
+  assert.equal(JSON.stringify(model).includes('CODEX_TEST'), false)
+  assert.equal(JSON.stringify(model).includes('smoke'), false)
+})
+
 test('timeline read model enriches linked memories with trusted Drive index metadata', () => {
   const model = buildTimelineReadModel({
     memorySource: {

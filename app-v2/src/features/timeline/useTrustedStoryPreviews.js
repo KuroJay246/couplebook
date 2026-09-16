@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useAuth } from '../../auth/useAuth.js'
 import { fetchMediaBlobViaTrustedBackend, isTrustedMediaBackendConfigured } from '../../services/trustedMediaBackendClient.js'
 
@@ -26,6 +26,7 @@ function withTrustedPreview(memory, previewUrls) {
 export function useTrustedStoryPreviews(memories = [], selectedMemory = null) {
   const { approvedUser, user } = useAuth()
   const [previewUrls, setPreviewUrls] = useState({})
+  const [streamStatus, setStreamStatus] = useState({ error: '', loading: false, mediaId: '' })
   const previewUrlsRef = useRef(new Map())
 
   useEffect(() => () => {
@@ -81,39 +82,54 @@ export function useTrustedStoryPreviews(memories = [], selectedMemory = null) {
     }
   }, [approvedUser?.coupleId, memories, user])
 
-  useEffect(() => {
-    const mediaId = selectedMemory?.media?.id
+  const loadSelectedPreview = useCallback(async (memory, { force = false } = {}) => {
+    const mediaId = memory?.media?.id
     const cached = previewUrlsRef.current.get(mediaId)
-    const needsStream = selectedMemory?.media?.kind === 'video' && cached?.mode !== 'stream'
-    if (!user || !approvedUser?.coupleId || !mediaId || selectedMemory?.media?.status !== 'drive-indexed' || (!needsStream && previewUrlsRef.current.has(mediaId)) || !isTrustedMediaBackendConfigured()) return undefined
+    const isVideo = memory?.media?.kind === 'video'
+    const needsStream = isVideo && cached?.mode !== 'stream'
+    if (!user || !approvedUser?.coupleId || !mediaId || memory?.media?.status !== 'drive-indexed' || (!force && !needsStream && previewUrlsRef.current.has(mediaId)) || !isTrustedMediaBackendConfigured()) return
 
-    let cancelled = false
-    async function loadSelectedPreview() {
-      try {
-        const blob = await fetchMediaBlobViaTrustedBackend({
-          coupleId: approvedUser.coupleId,
+    if (isVideo) setStreamStatus({ error: '', loading: true, mediaId })
+    try {
+      const blob = await fetchMediaBlobViaTrustedBackend({
+        coupleId: approvedUser.coupleId,
+        mediaId,
+        mode: isVideo ? 'stream' : 'thumbnail',
+        user,
+      })
+      const objectUrl = URL.createObjectURL(blob)
+      if (cached?.url && cached.url !== objectUrl) URL.revokeObjectURL(cached.url)
+      previewUrlsRef.current.set(mediaId, { kind: isVideo ? 'video' : 'image', mode: isVideo ? 'stream' : 'thumbnail', url: objectUrl })
+      setPreviewUrls(Object.fromEntries(previewUrlsRef.current.entries()))
+      if (isVideo) setStreamStatus({ error: '', loading: false, mediaId })
+    } catch {
+      if (isVideo) {
+        setStreamStatus({
+          error: 'Video playback is unavailable right now. The private thumbnail is still shown, and you can retry the protected playback session.',
+          loading: false,
           mediaId,
-          mode: selectedMemory.media.kind === 'video' ? 'stream' : 'thumbnail',
-          user,
         })
-        if (cancelled) return
-        const objectUrl = URL.createObjectURL(blob)
-        if (cached?.url && cached.url !== objectUrl) URL.revokeObjectURL(cached.url)
-        previewUrlsRef.current.set(mediaId, { kind: selectedMemory.media.kind === 'video' ? 'video' : 'image', mode: selectedMemory.media.kind === 'video' ? 'stream' : 'thumbnail', url: objectUrl })
-        setPreviewUrls(Object.fromEntries(previewUrlsRef.current.entries()))
-      } catch {
-        // The selected memory remains readable even if protected playback is unavailable.
       }
     }
+  }, [approvedUser, user])
 
-    void loadSelectedPreview()
+  useEffect(() => {
+    if (!selectedMemory) return undefined
+    const timer = window.setTimeout(() => {
+      void loadSelectedPreview(selectedMemory)
+    }, 0)
     return () => {
-      cancelled = true
+      window.clearTimeout(timer)
     }
-  }, [approvedUser?.coupleId, selectedMemory, user])
+  }, [loadSelectedPreview, selectedMemory])
+
+  const selectedMemoryWithPreview = useMemo(() => withTrustedPreview(selectedMemory, previewUrls), [previewUrls, selectedMemory])
+  const selectedStreamStatus = selectedMemoryWithPreview?.media?.id && selectedMemoryWithPreview.media.id === streamStatus.mediaId ? streamStatus : null
 
   return {
     memoriesWithPreviews: useMemo(() => memories.map((memory) => withTrustedPreview(memory, previewUrls)), [memories, previewUrls]),
-    selectedMemoryWithPreview: useMemo(() => withTrustedPreview(selectedMemory, previewUrls), [previewUrls, selectedMemory]),
+    loadSelectedPreview,
+    selectedMemoryWithPreview,
+    streamStatus: selectedStreamStatus,
   }
 }

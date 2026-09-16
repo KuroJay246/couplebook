@@ -198,7 +198,7 @@ function MemoryFormDialog({ memory = null, mode, onClose, onSave, status }) {
   )
 }
 
-function DetailModal({ memory, onArchive, onClose, onEdit, status }) {
+function DetailModal({ memory, onArchive, onClose, onEdit, onLoadStream, status, streamStatus }) {
   const closeButtonRef = useRef(null)
   const titleId = useId()
 
@@ -211,6 +211,11 @@ function DetailModal({ memory, onArchive, onClose, onEdit, status }) {
   if (!memory) return null
   const previewUrl = memory.media?.previewUrl || memory.media?.thumbnailUrl || ''
   const previewKind = memory.media?.previewKind || memory.media?.kind || 'image'
+  const isVideo = memory.media?.kind === 'video'
+  const hasVideoStream = isVideo && previewKind === 'video' && previewUrl
+  const posterUrl = isVideo && !hasVideoStream ? previewUrl : ''
+  const viewerKind = isVideo ? 'video' : previewKind
+  const viewerSrc = isVideo ? (hasVideoStream ? previewUrl : '') : previewUrl
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -235,15 +240,20 @@ function DetailModal({ memory, onArchive, onClose, onEdit, status }) {
         <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(18rem,0.9fr)]">
           <ContentCard className="min-h-72 bg-[linear-gradient(180deg,#fff9fb_0%,#fdf4f8_100%)]">
             <div className="flex h-full flex-col justify-between gap-6">
-              {previewUrl ? (
+              {previewUrl || isVideo ? (
                 <div className="overflow-hidden rounded-[20px] border border-[var(--cb-border)] bg-[var(--cb-accent-soft)]">
                   <MediaPreview
                     alt={memory.displayTitle}
                     className={memory.media.kind === 'video' ? 'aspect-video w-full' : 'aspect-[4/3] w-full'}
-                    controls={memory.media.kind === 'video' && previewKind === 'video'}
-                    kind={previewKind}
+                    controls={isVideo && hasVideoStream}
+                    description={streamStatus?.error || (isVideo ? 'The video original is private. Open a temporary playback session when you want to watch it.' : '')}
+                    kind={viewerKind}
+                    loading={Boolean(streamStatus?.loading)}
                     objectFit={memory.media.kind === 'video' ? 'contain' : 'cover'}
-                    src={previewUrl}
+                    onLoadRequest={isVideo ? onLoadStream : undefined}
+                    poster={posterUrl}
+                    src={viewerSrc}
+                    title={isVideo ? 'Private video preview' : ''}
                   />
                 </div>
               ) : null}
@@ -422,7 +432,12 @@ export function TimelineView({ compatibilityError, compatibilityState, model, on
     )
   }, [memories, search, selectedMonth, selectedTag, selectedType, selectedYear, sortOrder])
 
-  const { memoriesWithPreviews: filteredWithPreviews, selectedMemoryWithPreview } = useTrustedStoryPreviews(filtered, selectedMemory)
+  const {
+    loadSelectedPreview,
+    memoriesWithPreviews: filteredWithPreviews,
+    selectedMemoryWithPreview,
+    streamStatus,
+  } = useTrustedStoryPreviews(filtered, selectedMemory)
 
   async function saveForm(payload) {
     setStatus({ kind: '', message: '', saving: true })
@@ -645,7 +660,15 @@ export function TimelineView({ compatibilityError, compatibilityState, model, on
         </Surface>
       ) : null}
 
-      <DetailModal memory={selectedMemoryWithPreview} onArchive={(candidate) => setConfirmState({ mode: 'archive', memory: candidate })} onClose={() => setSelectedMemory(null)} onEdit={openEditForm} status={status} />
+      <DetailModal
+        memory={selectedMemoryWithPreview}
+        onArchive={(candidate) => setConfirmState({ mode: 'archive', memory: candidate })}
+        onClose={() => setSelectedMemory(null)}
+        onEdit={openEditForm}
+        onLoadStream={() => loadSelectedPreview(selectedMemory, { force: true })}
+        status={status}
+        streamStatus={streamStatus}
+      />
       {formMode ? (
         <MemoryFormDialog
           memory={editingMemory}

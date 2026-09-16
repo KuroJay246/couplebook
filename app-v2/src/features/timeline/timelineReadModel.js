@@ -114,6 +114,22 @@ const EMPTY_MEDIA_INDEX_SOURCE = Object.freeze({
   warnings: [],
 })
 
+function isProofOrAutomationMemory(memory) {
+  const values = [
+    memory?.id,
+    memory?.title,
+    memory?.displayTitle,
+    memory?.description,
+    memory?.displayDescription,
+    memory?.kindLabel,
+    memory?.typeLabel,
+  ]
+  return values.some((value) => {
+    const normalized = String(value || '').trim()
+    return /^CODEX_TEST\b/i.test(normalized) || /\b(?:temporary\s+launch\s+smoke|launch\s+smoke\s+temporary|smoke\s+test)\b/i.test(normalized)
+  })
+}
+
 function enrichMemoriesWithIndexedMedia(memories, indexedItems) {
   const byMemoryId = new Map()
   for (const item of indexedItems) {
@@ -146,9 +162,10 @@ export function buildTimelineReadModel({ compatibilitySnapshot = null, memorySou
   const resolvedMemorySource = memorySource || snapshot.sources?.memories || EMPTY_MEMORY_SOURCE
   const resolvedMediaIndexSource = mediaIndexSource || snapshot.sources?.mediaIndex || EMPTY_MEDIA_INDEX_SOURCE
   const normalizedMemories = normalizeTimelineMemories(resolvedMemorySource?.data?.memories || [])
+  const productMemories = normalizedMemories.filter((memory) => !isProofOrAutomationMemory(memory))
   const indexedItems = selectMediaIndexGalleryItems(resolvedMediaIndexSource?.data?.entries || [])
-  const { enrichedMemories, linkedMediaCount } = enrichMemoriesWithIndexedMedia(normalizedMemories, indexedItems)
-  const archivedMemories = normalizedMemories.flatMap((memory) => (memory.status === 'archived' ? [{
+  const { enrichedMemories, linkedMediaCount } = enrichMemoriesWithIndexedMedia(productMemories, indexedItems)
+  const archivedMemories = productMemories.flatMap((memory) => (memory.status === 'archived' ? [{
       id: memory.id,
       status: memory.status,
       revision: memory.revision,
@@ -164,7 +181,7 @@ export function buildTimelineReadModel({ compatibilitySnapshot = null, memorySou
     }] : []))
 
   return freezeClone({
-    status: deriveTimelineStatus(resolvedMemorySource, normalizedMemories),
+    status: deriveTimelineStatus(resolvedMemorySource, productMemories),
     summary: buildTimelineSummary(enrichedMemories),
     featured: null,
     chapters: buildTimelineChapters(enrichedMemories),
