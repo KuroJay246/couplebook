@@ -78,6 +78,8 @@ function SpecialMoments({ section }) {
 
 export function DashboardView({ model }) {
   const featuredMemory = model.todayInUs?.featured || model.recentMemories?.items?.[0] || null
+  const timestampLabel = model.hero?.timestampLabel || ''
+  const dateLabel = model.hero?.dateLabel || ''
 
   return (
     <section className="cb-home-redesign" data-route="dashboard">
@@ -86,10 +88,18 @@ export function DashboardView({ model }) {
           <h2>Omia & Jaylan</h2>
           <p>{model.todayInUs?.currentMilestone || 'Your memories, dates, and plans in one place.'}</p>
         </div>
-        <PrimaryButton as={Link} className="cb-home-add-memory" to="/timeline">
-          <Plus className="size-4" />
-          Add Memory
-        </PrimaryButton>
+        <div className="cb-home-topline-actions">
+          {timestampLabel ? (
+            <div className="cb-home-clock" aria-label={`Current time ${timestampLabel}${dateLabel ? `, ${dateLabel}` : ''}`}>
+              <span>{timestampLabel}</span>
+              {dateLabel ? <small>{dateLabel}</small> : null}
+            </div>
+          ) : null}
+          <PrimaryButton as={Link} className="cb-home-add-memory" to="/timeline">
+            <Plus className="size-4" />
+            Add Memory
+          </PrimaryButton>
+        </div>
       </div>
 
       <div className="cb-home-layout">

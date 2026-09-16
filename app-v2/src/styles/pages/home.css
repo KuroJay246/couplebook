@@ -14,6 +14,35 @@
   gap: 1rem;
 }
 
+.cb-home-topline-actions {
+  display: flex;
+  align-items: center;
+  justify-content: end;
+  gap: 0.75rem;
+}
+
+.cb-home-clock {
+  min-width: 8.5rem;
+  display: grid;
+  justify-items: end;
+  gap: 0.15rem;
+  color: var(--cb-text);
+  text-align: right;
+}
+
+.cb-home-clock span {
+  font-family: var(--cb-font-serif);
+  font-size: clamp(1.35rem, 2.2vw, 1.8rem);
+  line-height: 1;
+}
+
+.cb-home-clock small {
+  color: var(--cb-text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
 .cb-home-topline h2 {
   color: var(--cb-text);
   font-family: var(--cb-font-serif);
@@ -187,5 +216,15 @@
   .cb-home-topline {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .cb-home-topline-actions {
+    align-items: stretch;
+    justify-content: space-between;
+  }
+
+  .cb-home-clock {
+    justify-items: start;
+    text-align: left;
   }
 }
