@@ -141,3 +141,25 @@ test('Drive file media IDs are deterministic and do not expose raw Drive IDs', a
   assert.match(first, /^drive_[A-Za-z0-9_-]+$/)
   assert.doesNotMatch(first, /drive_file_private_123/)
 })
+
+test('Drive thumbnail helper requests transient thumbnail metadata without alt media', () => {
+  const url = internals.driveThumbnailUrl('drive_file_private_123')
+
+  assert.match(url, /fields=hasThumbnail%2CthumbnailLink/)
+  assert.match(url, /supportsAllDrives=true/)
+  assert.doesNotMatch(url, /alt=media/)
+})
+
+test('Drive thumbnail helper upgrades Google thumbnail size without persisting the URL', () => {
+  const upgraded = internals.upgradedThumbnailUrl('https://lh3.googleusercontent.com/private=s220')
+
+  assert.equal(upgraded, 'https://lh3.googleusercontent.com/private=s1600')
+})
+
+test('Drive thumbnail fallback only treats browser-native images as original-safe', () => {
+  assert.equal(internals.isBrowserNativeImage('image/jpeg'), true)
+  assert.equal(internals.isBrowserNativeImage('image/png'), true)
+  assert.equal(internals.isBrowserNativeImage('image/webp'), true)
+  assert.equal(internals.isBrowserNativeImage('image/heic'), false)
+  assert.equal(internals.isBrowserNativeImage('video/mp4'), false)
+})

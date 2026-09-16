@@ -139,6 +139,7 @@ test('profile read model keeps two-person content, highlights, and contract summ
 test('birthday closer than relationship anniversary does not become next anniversary', () => {
   const baseSnapshot = createSnapshot()
   const model = buildProfileReadModel({
+    nowValue: '2026-09-15',
     compatibilitySnapshot: createSnapshot({
       sources: {
         ...baseSnapshot.sources,

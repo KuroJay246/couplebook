@@ -89,6 +89,18 @@ test('write services allow explicit production Firestore write mode with active 
   assert.equal(dataWrites(firestore)[0].path, 'couples/couple_alpha/profiles/member_one')
 })
 
+test('write services allow explicit production Firestore write mode during localhost owner review', async () => {
+  const firestore = createFirestoreStub()
+  await saveOwnSettings(
+    { appearanceTheme: 'paper-hearts', reducedMotion: true },
+    { ...context, env: { MODE: 'development', VITE_WRITE_MODE: 'firestore-production-write' }, firestore, ...firestore },
+  )
+
+  assert.equal(dataWrites(firestore).length, 1)
+  assert.equal(dataWrites(firestore)[0].path, 'couples/couple_alpha/settings/member_one')
+  assert.equal(dataWrites(firestore)[0].data.appearanceTheme, 'paper-hearts')
+})
+
 test('write services reject inactive couple membership before writing', async () => {
   const firestore = createFirestoreStub({ active: false })
   await assert.rejects(saveOwnFavorites({ food: ['cake'] }, { ...context, firestore, ...firestore }), /membership/)

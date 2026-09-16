@@ -370,6 +370,7 @@ async function driveFileToMediaRecord(env, coupleId, file) {
     durationMillis: videoMetadata.durationMillis ? Number(videoMetadata.durationMillis) : null,
     fileName: file.name || '',
     height: imageMetadata.height || videoMetadata.height ? Number(imageMetadata.height || videoMetadata.height) : null,
+    hasThumbnail: file.hasThumbnail === true,
     mediaId: await mediaIdForDriveFile(file.id),
     mediaType: mimeType.startsWith('video/') ? 'video' : 'image',
     mimeType,
@@ -384,7 +385,7 @@ async function driveFileToMediaRecord(env, coupleId, file) {
 async function listDriveRecords(env, coupleId) {
   const accessToken = await driveAccessToken(env, coupleId)
   const params = new URLSearchParams({
-    fields: 'files(id,name,mimeType,size,createdTime,modifiedTime,imageMediaMetadata(width,height)),nextPageToken',
+    fields: 'files(id,name,mimeType,size,createdTime,modifiedTime,hasThumbnail,imageMediaMetadata(width,height,time),videoMediaMetadata(width,height,durationMillis,time)),nextPageToken',
     pageSize: '1000',
     q: `'${env.GOOGLE_DRIVE_FOLDER_ID}' in parents and trashed = false and (mimeType contains 'image/' or mimeType contains 'video/')`,
   })
@@ -428,11 +429,26 @@ function filteredDriveHeaders(response) {
   return headers
 }
 
-async function proxyDriveMedia(request, env, { coupleId, media }, thumbnail = false) {
-  const accessToken = await driveAccessToken(env, coupleId)
-  const url = thumbnail
-    ? `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(media.driveFileId)}?alt=media`
-    : `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(media.driveFileId)}?alt=media`
+function driveThumbnailUrl(fileId) {
+  const params = new URLSearchParams({
+    fields: 'hasThumbnail,thumbnailLink',
+    supportsAllDrives: 'true',
+  })
+  return `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}?${params}`
+}
+
+function upgradedThumbnailUrl(value) {
+  const raw = String(value || '')
+  if (!raw) return ''
+  return raw.replace(/=s\d+(?:-[a-z]+)?$/i, '=s1600')
+}
+
+function isBrowserNativeImage(mimeType) {
+  return ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif', 'image/bmp'].includes(String(mimeType || '').toLowerCase())
+}
+
+async function proxyDriveOriginal(request, env, { accessToken, media }) {
+  const url = `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(media.driveFileId)}?alt=media`
   const headers = { Authorization: `Bearer ${accessToken}` }
   const range = request.headers.get('Range')
   if (range) headers.Range = range
@@ -441,6 +457,36 @@ async function proxyDriveMedia(request, env, { coupleId, media }, thumbnail = fa
   const proxyHeaders = filteredDriveHeaders(response)
   for (const [key, value] of Object.entries(corsHeaders(request, env))) proxyHeaders.set(key, value)
   return new Response(response.body, { status: response.status, headers: proxyHeaders })
+}
+
+async function proxyDriveThumbnail(request, env, { coupleId, media }) {
+  const accessToken = await driveAccessToken(env, coupleId)
+  const metadataResponse = await fetch(driveThumbnailUrl(media.driveFileId), {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  })
+  if (!metadataResponse.ok) throw new Error('drive-thumbnail-metadata-failed')
+  const metadata = await metadataResponse.json()
+  if (metadata?.hasThumbnail !== true || !metadata?.thumbnailLink) {
+    if (isBrowserNativeImage(media.mimeType)) {
+      return proxyDriveOriginal(request, env, { accessToken, media })
+    }
+    throw new Error('drive-thumbnail-unavailable')
+  }
+
+  const response = await fetch(upgradedThumbnailUrl(metadata.thumbnailLink), {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  })
+  if (!response.ok) throw new Error('drive-thumbnail-proxy-failed')
+  const proxyHeaders = filteredDriveHeaders(response)
+  proxyHeaders.set('Content-Type', response.headers.get('Content-Type') || 'image/jpeg')
+  for (const [key, value] of Object.entries(corsHeaders(request, env))) proxyHeaders.set(key, value)
+  return new Response(response.body, { status: response.status, headers: proxyHeaders })
+}
+
+async function proxyDriveMedia(request, env, { coupleId, media }, thumbnail = false) {
+  if (thumbnail) return proxyDriveThumbnail(request, env, { coupleId, media })
+  const accessToken = await driveAccessToken(env, coupleId)
+  return proxyDriveOriginal(request, env, { accessToken, media })
 }
 
 function base64ContentToBytes(value) {
@@ -465,7 +511,7 @@ async function uploadDriveMultipart(env, { base64Content, coupleId, upload }) {
     bytes,
     `\r\n--${boundary}--\r\n`,
   ])
-  const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,mimeType,size,parents,md5Checksum,createdTime', {
+  const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,mimeType,size,parents,md5Checksum,createdTime,modifiedTime,imageMediaMetadata(width,height),videoMediaMetadata(width,height,durationMillis)', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -475,7 +521,31 @@ async function uploadDriveMultipart(env, { base64Content, coupleId, upload }) {
   })
   if (!response.ok) throw new Error('drive-upload-failed')
   const data = await response.json()
-  return { driveFileId: data.id, driveFolderId: env.GOOGLE_DRIVE_FOLDER_ID }
+  return {
+    checksum: data.md5Checksum || '',
+    createdTime: data.createdTime || '',
+    driveFileId: data.id,
+    driveFolderId: env.GOOGLE_DRIVE_FOLDER_ID,
+    durationMillis: Number(data.videoMediaMetadata?.durationMillis || 0) || null,
+    fileName: data.name || upload.fileName,
+    height: Number(data.imageMediaMetadata?.height || data.videoMediaMetadata?.height || 0) || null,
+    mimeType: data.mimeType || upload.mimeType,
+    modifiedTime: data.modifiedTime || data.createdTime || '',
+    sizeBytes: Number(data.size || upload.sizeBytes || 0),
+    width: Number(data.imageMediaMetadata?.width || data.videoMediaMetadata?.width || 0) || null,
+  }
+}
+
+async function deleteDriveFile(env, { coupleId, driveFileId }) {
+  const accessToken = await driveAccessToken(env, coupleId)
+  const response = await fetch(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(driveFileId)}`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+  if (!response.ok && response.status !== 404) throw new Error('drive-delete-failed')
+  return { ok: true }
 }
 
 async function exchangeCode(env, { code, coupleId }) {
@@ -648,6 +718,7 @@ async function dispatch(request, env) {
       activeMembershipReader,
       auditWriter: async ({ coupleId, record }) => firestorePatch(env, `couples/${safeId(coupleId)}/auditEvents/${crypto.randomUUID()}`, record),
       body: { ...body, mediaId: mediaMatch[1] },
+      driveRemover: ({ coupleId, driveFileId }) => deleteDriveFile(env, { coupleId, driveFileId }),
       headers,
       mediaReader: ({ coupleId, mediaId }) => firestoreGet(env, `couples/${safeId(coupleId)}/mediaItems/${safeId(mediaId)}`),
       mediaWriter: ({ coupleId, mediaId, record }) => firestorePatch(env, `couples/${safeId(coupleId)}/mediaItems/${safeId(mediaId)}`, record),
@@ -674,11 +745,14 @@ export const internals = {
   allowedOrigins,
   corsHeaders,
   decryptJson,
+  driveThumbnailUrl,
   encryptJson,
   firestoreBatchWrite,
   firestoreDocumentName,
+  isBrowserNativeImage,
   mediaIdForDriveFile,
   parseJwt,
   toFirestoreFields,
   fromFirestoreFields,
+  upgradedThumbnailUrl,
 }

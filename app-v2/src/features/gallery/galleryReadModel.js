@@ -28,14 +28,54 @@ function deriveGalleryStatus(memorySource, mediaIndexSource, items) {
   return 'ready'
 }
 
-function buildSourceStatus(memorySource, mediaIndexSource, indexedItems) {
+function buildPhysicalMediaKey(item) {
+  const media = item?.media || {}
+  if (media.driveFileId) return `drive:${media.driveFileId}`
+  if (media.providerFileId && media.provider === 'google-drive') return `drive:${media.providerFileId}`
+  if (media.storagePath) return `storage:${media.storagePath}`
+  if (media.id && media.provider) return `${media.provider}:${media.id}`
+  if (media.id && ['drive-indexed', 'drive-verified', 'storage-verified'].includes(media.status)) return `media:${media.id}`
+  return ''
+}
+
+function reconcileGalleryItems(indexedItems, memoryItems) {
+  const authoritativeKeys = new Set()
+  const duplicates = []
+  const items = []
+
+  for (const item of indexedItems) {
+    const key = buildPhysicalMediaKey(item)
+    if (key) authoritativeKeys.add(key)
+    items.push(item)
+  }
+
+  for (const item of memoryItems) {
+    const key = buildPhysicalMediaKey(item)
+    if (key && authoritativeKeys.has(key)) {
+      duplicates.push(item)
+      continue
+    }
+    items.push(item)
+  }
+
+  return freezeClone({
+    duplicateHistoricalItems: duplicates.length,
+    items,
+  })
+}
+
+function buildSourceStatus(memorySource, mediaIndexSource, indexedItems, memoryItems, reconciliation) {
   const totalMemories = Array.isArray(memorySource?.data?.memories) ? memorySource.data.memories.length : 0
   const hasBaseDataset = memorySource?.data?.hasBaseDataset === true
+  const memoryVisualItems = Array.isArray(memoryItems)
+    ? memoryItems.filter((item) => item.media?.kind === 'image' || item.media?.kind === 'video').length
+    : 0
 
   return freezeClone({
     memoryArchive: {
       status: hasBaseDataset ? 'ready' : memorySource?.status === 'unavailable' ? 'unavailable' : 'empty',
       count: totalMemories,
+      visualCount: memoryVisualItems,
       label: 'Private story archive',
     },
     mediaInventory: {
@@ -48,6 +88,12 @@ function buildSourceStatus(memorySource, mediaIndexSource, indexedItems) {
     bridge: {
       status: memorySource?.status || 'empty',
       warningCount: Array.isArray(memorySource?.warnings) ? memorySource.warnings.length : 0,
+    },
+    reconciliation: {
+      authoritativeIndexedCount: indexedItems.length,
+      historicalMemoryCount: memoryItems.length,
+      duplicateHistoricalItems: reconciliation.duplicateHistoricalItems,
+      totalItems: reconciliation.items.length,
     },
   })
 }
@@ -65,11 +111,11 @@ function buildMediaBackendStatus(coupleId = 'couple') {
     localHandlersReady,
     implementedCapabilities: capabilities.length,
     requiredCapabilities: requiredCapabilityCount,
-    statusLabel: localHandlersReady ? 'Media service prepared' : 'Media service pending',
-    deploymentLabel: contract.deploymentStatus === 'owner-approval-required' ? 'Deployment approval required' : 'Trusted deployment required',
-    uploadLabel: localHandlersReady ? 'Media saving is prepared locally' : 'Media saving is pending',
+    statusLabel: localHandlersReady ? 'Media service ready' : 'Media service pending',
+    deploymentLabel: contract.deploymentStatus === 'cloudflare-worker-deployed' ? 'Trusted service live' : 'Trusted service pending',
+    uploadLabel: localHandlersReady ? 'Drive saving ready' : 'Media saving is pending',
     description: localHandlersReady
-      ? 'Album can prepare photos and videos now. Saving new files to the shared Drive library, thumbnails, video playback, and background sync still need the owner-approved media service to go live.'
+      ? 'Album can sync, upload, preview, stream, and remove private media through the trusted Drive service without exposing Google credentials in the browser.'
       : 'Album can browse available memories, but shared Drive saving and background sync still need the trusted media service.',
   })
 }
@@ -84,7 +130,8 @@ export function buildGalleryReadModelWithMediaIndex({ compatibilitySnapshot = nu
   const normalizedMemories = normalizeTimelineMemories(resolvedMemorySource?.data?.memories || [])
   const memoryItems = selectGalleryItems(normalizedMemories)
   const indexedItems = selectMediaIndexGalleryItems(resolvedMediaIndexSource?.data?.entries || [])
-  const items = freezeClone([...indexedItems, ...memoryItems])
+  const reconciliation = reconcileGalleryItems(indexedItems, memoryItems)
+  const items = reconciliation.items
   const photos = items.filter((item) => item.media.kind === 'image')
   const videos = items.filter((item) => item.media.kind === 'video')
   const unavailableMedia = items.filter((item) =>
@@ -105,7 +152,7 @@ export function buildGalleryReadModelWithMediaIndex({ compatibilitySnapshot = nu
     verifiedMedia,
     unavailableMedia,
     filters: buildGalleryFilters(items),
-    sourceStatus: buildSourceStatus(resolvedMemorySource, resolvedMediaIndexSource, indexedItems),
+    sourceStatus: buildSourceStatus(resolvedMemorySource, resolvedMediaIndexSource, indexedItems, memoryItems, reconciliation),
     mediaBackend: buildMediaBackendStatus(coupleId),
     warnings: [
       ...(Array.isArray(resolvedMemorySource?.warnings) ? resolvedMemorySource.warnings : []),

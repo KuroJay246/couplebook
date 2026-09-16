@@ -13,10 +13,10 @@ import {
 } from './profileSelectors.js'
 
 export function buildProfileReadModel({
-  approvedUser = null,
   compatibilitySnapshot = null,
   contractSource = null,
   favoritesSource = null,
+  nowValue = undefined,
   profileSource = null,
 } = {}) {
   const snapshot = compatibilitySnapshot || {
@@ -34,9 +34,9 @@ export function buildProfileReadModel({
     },
   }
 
-  const people = selectProfilePeople(resolvedSnapshot.sources?.profile, approvedUser)
-  const importantDates = selectImportantDates(people, resolvedSnapshot.sources?.contract)
-  const primaryAnniversary = selectRelationshipAnniversaries(people)[0] || null
+  const people = selectProfilePeople(resolvedSnapshot.sources?.profile, nowValue)
+  const importantDates = selectImportantDates(people, resolvedSnapshot.sources?.contract, nowValue)
+  const primaryAnniversary = selectRelationshipAnniversaries(people, nowValue)[0] || null
   const nextImportantDate = importantDates[0] || null
   const relationship = {
     title: selectRelationshipTitle(people),
@@ -44,9 +44,9 @@ export function buildProfileReadModel({
       people.length >= 2
         ? `${people.map((person) => person.shortName || person.displayName).join(' + ')}`
         : 'Add the second profile to complete this page.',
-    anniversaries: selectRelationshipAnniversaries(people),
+    anniversaries: selectRelationshipAnniversaries(people, nowValue),
     importantDates,
-    milestones: selectRelationshipMilestones(people, resolvedSnapshot.sources?.contract),
+    milestones: selectRelationshipMilestones(people, resolvedSnapshot.sources?.contract, nowValue),
     nextImportantDate,
     primaryAnniversary,
   }

@@ -29,6 +29,7 @@ firebase-service-account*.json
 coverage/
 test-results/
 playwright-report/
+.playwright-cli/
 blob-report/
 playwright/.cache/
 playwright-traces/

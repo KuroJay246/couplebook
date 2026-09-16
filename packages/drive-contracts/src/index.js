@@ -141,7 +141,7 @@ export function buildDriveBackendContract({
       drive: Object.freeze(['original-binary', 'drive-file-existence', 'drive-file-metadata']),
       firestore: Object.freeze(['couple-membership', 'caption', 'favorite', 'linked-memory', 'app-organization', 'sync-health']),
     }),
-    deploymentStatus: 'cloudflare-worker-required',
+    deploymentStatus: 'cloudflare-worker-deployed',
     zeroCostBoundary: 'A persistent Drive sync backend is approved for the zero-cost path through Cloudflare Workers Free, Workers KV, Firebase Auth, Firestore REST, and Google Drive. Firebase Blaze and Cloud Functions are not part of the selected production path.',
   })
 }
@@ -163,7 +163,7 @@ export function buildDriveArchitectureContract(options = {}) {
     backendRequiredFor: DRIVE_BACKEND_REQUIRED_FOR,
     localHandlerCapabilities: DRIVE_BACKEND_CAPABILITIES,
     localHandlerCapabilityCount: DRIVE_BACKEND_CAPABILITIES.length,
-    deploymentStatus: 'cloudflare-worker-required',
-    zeroCostBoundary: 'Owner approval is present for a zero-cost trusted media service on Cloudflare Workers Free. Firebase Blaze and Cloud Functions are not required for the selected production path.',
+    deploymentStatus: 'cloudflare-worker-deployed',
+    zeroCostBoundary: 'The selected trusted media service runs on Cloudflare Workers Free with Workers KV, Firebase Auth, Firestore REST, and Google Drive. Firebase Blaze and Cloud Functions are not required for the selected production path.',
   })
 }

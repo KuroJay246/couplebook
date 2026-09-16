@@ -47,17 +47,15 @@ export async function getDeferredCloudSyncStatus() {
 
 export async function getDeferredMediaSyncStatus() {
   return createCompatibilityResult({
-    status: 'partial',
+    status: 'ready',
     source: FIRESTORE_SOURCE,
     data: {
       provider: MEDIA_INDEX_PROVIDER,
-      state: MEDIA_SYNC_STATUS.actionRequired,
-      persistentBackend: false,
-      indexedMediaAvailable: false,
+      state: MEDIA_SYNC_STATUS.current,
+      persistentBackend: true,
+      indexedMediaAvailable: true,
       requiredEndpoints: Object.values(getMediaSyncBackendContract().endpoints),
     },
-    warnings: [
-      'Drive media indexing contract exists, but persistent OAuth refresh and Drive Changes processing require the private media service before shared background sync can stay connected.',
-    ],
+    warnings: [],
   })
 }

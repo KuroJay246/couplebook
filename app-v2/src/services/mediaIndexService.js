@@ -101,7 +101,7 @@ export function mediaIndexSourceFromError(error) {
     }),
     warnings: Object.freeze([
       isPermission
-        ? 'Firestore media index is unavailable for this account until backend-owned records are readable.'
+        ? 'Media index is unavailable for this account until active couple access is restored.'
         : 'Firestore media index could not be loaded right now. Album can still show saved memories.',
     ]),
   })

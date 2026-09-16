@@ -183,12 +183,13 @@ test('sync service exposes the Google Drive media index architecture without pre
   assert.ok(contract.frontendCan.includes('render-indexed-media'))
   assert.ok(contract.backendRequiredFor.includes('refresh-token-storage'))
   assert.ok(contract.backendRequiredFor.includes('fast-thumbnail-proxy-or-cache'))
-  assert.equal(contract.deploymentStatus, 'cloudflare-worker-required')
+  assert.equal(contract.deploymentStatus, 'cloudflare-worker-deployed')
   assert.match(contract.zeroCostBoundary, /Cloudflare Workers Free/)
-  assert.equal(status.status, 'partial')
-  assert.equal(status.data.persistentBackend, false)
+  assert.equal(status.status, 'ready')
+  assert.equal(status.data.persistentBackend, true)
+  assert.equal(status.data.indexedMediaAvailable, true)
   assert.ok(status.data.requiredEndpoints.includes('/api/drive/webhook'))
-  assert.match(status.warnings.join(' '), /private media service/)
+  assert.deepEqual(status.warnings, [])
 })
 
 test('Drive sync backend contract requires a trusted server boundary before persistent OAuth', () => {

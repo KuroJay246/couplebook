@@ -109,6 +109,21 @@
     linear-gradient(180deg, color-mix(in srgb, var(--cb-accent-soft) 76%, transparent), color-mix(in srgb, var(--cb-surface-raised) 86%, transparent));
 }
 
+[data-route="gallery"] .gallery-tile-art-empty {
+  display: grid;
+  place-items: center;
+  padding: 0.75rem;
+  text-align: center;
+}
+
+[data-route="gallery"] .gallery-tile-art-empty span {
+  max-width: 9rem;
+  color: var(--cb-text-secondary);
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
 [data-route="gallery"] .gallery-index-placeholder span {
   max-width: 9rem;
   color: var(--cb-text-secondary);

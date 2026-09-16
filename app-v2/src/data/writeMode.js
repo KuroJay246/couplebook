@@ -22,7 +22,7 @@ export function isFirestoreEmulatorWriteMode(env = readRuntimeEnv()) {
 }
 
 export function isFirestoreProductionWriteMode(env = readRuntimeEnv()) {
-  return resolveWriteMode(env) === WRITE_MODES.firestoreProductionWrite && getRuntimeMode(env) === 'production'
+  return resolveWriteMode(env) === WRITE_MODES.firestoreProductionWrite
 }
 
 export function isFirestoreWriteMode(env = readRuntimeEnv()) {

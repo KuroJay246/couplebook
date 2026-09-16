@@ -85,8 +85,8 @@ function MediaConnectionSummary({ media, mediaService }) {
         value={connected ? 'Synced index' : 'Index first'}
       />
       <MediaStatusCard
-        description={backendReadiness?.description || 'The shared media service still needs final setup before it can sync automatically.'}
-        label="Shared media service"
+        description={backendReadiness?.description || 'Private media sync, upload, previews, and playback are available through the trusted Drive service.'}
+        label="Private media service"
         tone={backendReadiness?.localHandlersReady ? 'success' : 'warning'}
         value={backendReadiness?.statusLabel || 'Not verified'}
       />
@@ -94,7 +94,7 @@ function MediaConnectionSummary({ media, mediaService }) {
         description="Connect once, then use Sync now when you add or change files in the private Drive folder."
         label="Drive sync"
         tone={connected ? 'success' : 'warning'}
-        value={backendReadiness?.deploymentLabel || 'Backend setup needed'}
+        value={backendReadiness?.deploymentLabel || 'Trusted service live'}
       />
     </div>
   )

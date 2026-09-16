@@ -361,8 +361,14 @@ test('drive media upload finalizes stable media metadata and privacy-minimal aud
       sizeBytes: 4096,
     },
     driveUploader: async () => ({
+      createdTime: '2026-09-16T12:00:00.000Z',
       driveFileId: 'drive_uploaded_2',
       driveFolderId: 'folder_alpha',
+      durationMillis: 5000,
+      fileName: 'movie-night.mp4',
+      height: 720,
+      modifiedTime: '2026-09-16T12:00:01.000Z',
+      width: 1280,
     }),
     duplicateReader: async () => ({}),
     headers: { authorization: 'Bearer local-test-token' },
@@ -375,8 +381,15 @@ test('drive media upload finalizes stable media metadata and privacy-minimal aud
   assert.equal(result.mediaId, 'media_upload_2')
   assert.equal(result.driveFileId, 'drive_uploaded_2')
   assert.equal(mediaWrites.length, 1)
+  assert.equal(mediaWrites[0].record.schemaVersion, 1)
   assert.equal(mediaWrites[0].record.mediaType, 'video')
   assert.equal(mediaWrites[0].record.createdByUid, 'member_one')
+  assert.equal(mediaWrites[0].record.fileName, 'movie-night.mp4')
+  assert.equal(mediaWrites[0].record.createdTime, '2026-09-16T12:00:00.000Z')
+  assert.equal(mediaWrites[0].record.modifiedTime, '2026-09-16T12:00:01.000Z')
+  assert.equal(mediaWrites[0].record.width, 1280)
+  assert.equal(mediaWrites[0].record.height, 720)
+  assert.equal(mediaWrites[0].record.durationMillis, 5000)
   assert.equal(auditEvents[0].record.action, 'media.upload')
   assertNoCredentialValues(result)
   assertNoCredentialValues(mediaWrites[0])

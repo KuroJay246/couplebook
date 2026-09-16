@@ -31,6 +31,8 @@ const FILTERS = [
   { key: 'favorites', label: 'Favorites' },
   { key: 'unlinked', label: 'Unlinked' },
 ]
+const MAX_THUMBNAIL_PRELOAD_ITEMS = 160
+const THUMBNAIL_PRELOAD_CONCURRENCY = 8
 
 function galleryTileLabel(item) {
   return [
@@ -60,10 +62,34 @@ function formatDuration(durationMillis) {
   return `${minutes}:${seconds}`
 }
 
+function getPreviewPlaceholder(item) {
+  const media = item?.media || {}
+  const isVideo = media.kind === 'video'
+  if (media.status === 'private-legacy-reference') {
+    return {
+      icon: isVideo ? Film : ImageIcon,
+      label: isVideo ? 'Archived video reference' : 'Archived photo reference',
+    }
+  }
+  if (media.status === 'drive-indexed') {
+    return {
+      icon: isVideo ? Film : ImageIcon,
+      label: isVideo ? 'Private video indexed' : 'Private photo indexed',
+    }
+  }
+  return {
+    icon: isVideo ? Film : ImageIcon,
+    label: isVideo ? 'Video memory' : 'Photo memory',
+  }
+}
+
 function GalleryTile({ item, onSelect, onToggleSelection, selected = false, selectionMode = false }) {
   const isVideo = item.media.kind === 'video'
   const previewUrl = item.media.previewUrl || item.media.thumbnailUrl || ''
+  const previewKind = item.media.previewKind || (isVideo ? 'video' : 'image')
   const isIndexedDriveMedia = item.media.status === 'drive-indexed'
+  const previewPlaceholder = getPreviewPlaceholder(item)
+  const PreviewIcon = previewPlaceholder.icon
   const duration = formatDuration(item.media.durationMillis)
   const showTitle = item.titleKind === 'authored' || item.descriptionKind === 'authored'
   const tileAction = () => {
@@ -90,14 +116,14 @@ function GalleryTile({ item, onSelect, onToggleSelection, selected = false, sele
               alt=""
               className="h-full w-full"
               controls={false}
-              kind={isVideo ? 'video' : 'image'}
+              kind={previewKind}
               objectFit="cover"
               src={previewUrl}
             />
           ) : (
             <span className="gallery-index-placeholder" aria-hidden="true">
-              {isVideo ? <Film className="size-7" /> : <ImageIcon className="size-7" />}
-              <span>{isVideo ? 'Drive video ready' : 'Photo preview loading'}</span>
+              <PreviewIcon className="size-7" />
+              <span>{previewPlaceholder.label}</span>
             </span>
           )}
           {showTitle ? <span className="gallery-index-overlay"><span className="gallery-index-title">{item.title}</span></span> : null}
@@ -125,13 +151,14 @@ function GalleryTile({ item, onSelect, onToggleSelection, selected = false, sele
               alt=""
               className="h-full w-full"
               controls={false}
-              kind={isVideo ? 'video' : 'image'}
+              kind={previewKind}
               objectFit="cover"
               src={previewUrl}
             />
           ) : (
             <div className="gallery-tile-art-empty">
-              {isVideo ? <Film className="size-8" /> : <ImageIcon className="size-8" />}
+              <PreviewIcon className="size-8" />
+              <span>{previewPlaceholder.label}</span>
             </div>
           )}
         </div>
@@ -146,12 +173,16 @@ function GalleryTile({ item, onSelect, onToggleSelection, selected = false, sele
 
 function withTrustedPreview(item, previewUrls) {
   const mediaId = item?.media?.id || item?.mediaIndexId || ''
-  const previewUrl = mediaId ? previewUrls[mediaId] || '' : ''
+  const preview = mediaId ? previewUrls[mediaId] || null : null
+  const previewUrl = typeof preview === 'string' ? preview : preview?.url || ''
   if (!previewUrl) return item
+  const previewKind = typeof preview === 'string' ? item.media?.kind || 'image' : preview.kind || item.media?.kind || 'image'
   return {
     ...item,
     media: {
       ...item.media,
+      previewKind,
+      previewMode: typeof preview === 'string' ? 'stream' : preview.mode || 'thumbnail',
       previewUrl,
       thumbnailUrl: previewUrl,
     },
@@ -168,7 +199,7 @@ function GalleryLightbox({ item, items, onClose, onNext, onPrevious, onRemove })
     initialFocusRef: closeButtonRef,
     onClose,
   })
-  const hasVerifiedPrivateMedia = ['storage-verified', 'drive-verified'].includes(item?.media?.status)
+  const hasVerifiedPrivateMedia = ['storage-verified', 'drive-verified', 'drive-indexed'].includes(item?.media?.status)
 
   useEffect(() => {
     onNextRef.current = onNext
@@ -189,6 +220,7 @@ function GalleryLightbox({ item, items, onClose, onNext, onPrevious, onRemove })
 
   if (!item) return null
   const isVideo = item.media.kind === 'video'
+  const previewKind = item.media.previewKind || (isVideo ? 'video' : 'image')
   const mediaUrl = item.media.previewUrl || item.media.thumbnailUrl || ''
   const currentIndex = items.findIndex((entry) => entry.key === item.key)
   const canStep = items.length > 1 && currentIndex >= 0
@@ -205,7 +237,7 @@ function GalleryLightbox({ item, items, onClose, onNext, onPrevious, onRemove })
       >
         <div className="cb-media-viewer-stage">
           {mediaUrl ? (
-            <MediaPreview alt={item.title} className="cb-media-viewer-media" controls={isVideo} kind={isVideo ? 'video' : 'image'} objectFit="contain" src={mediaUrl} />
+            <MediaPreview alt={item.title} className="cb-media-viewer-media" controls={isVideo && previewKind === 'video'} kind={previewKind} objectFit="contain" src={mediaUrl} />
           ) : (
             <div className="cb-media-viewer-empty">{isVideo ? <Film className="size-10" /> : <ImageIcon className="size-10" />}</div>
           )}
@@ -221,7 +253,8 @@ function GalleryLightbox({ item, items, onClose, onNext, onPrevious, onRemove })
           <div className="flex flex-wrap gap-2">
             {canStep ? <SecondaryButton className="border-white/20 bg-white/5 text-white hover:bg-white/10" onClick={onPrevious}>Previous</SecondaryButton> : null}
             {canStep ? <SecondaryButton className="border-white/20 bg-white/5 text-white hover:bg-white/10" onClick={onNext}>Next</SecondaryButton> : null}
-            {hasVerifiedPrivateMedia ? <DangerButton onClick={() => onRemove(item)}>Remove</DangerButton> : null}
+            {hasVerifiedPrivateMedia ? <SecondaryButton className="border-white/20 bg-white/5 text-white hover:bg-white/10" onClick={() => onRemove(item)}>Remove</SecondaryButton> : null}
+            {item.media.status === 'drive-indexed' ? <DangerButton onClick={() => onRemove(item, { deleteOriginal: true })}>Delete original</DangerButton> : null}
           </div>
         </div>
       </div>
@@ -319,7 +352,7 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
   const [selectedItem, setSelectedItem] = useState(null)
   const [selectedKeys, setSelectedKeys] = useState(() => new Set())
   const [selectionMode, setSelectionMode] = useState(false)
-  const [removeState, setRemoveState] = useState({ item: null, pending: false })
+  const [removeState, setRemoveState] = useState({ deleteOriginal: false, item: null, pending: false })
   const [manageUploadsOpen, setManageUploadsOpen] = useState(false)
   const [previewUrls, setPreviewUrls] = useState({})
   const fileInputRef = useRef(null)
@@ -328,42 +361,60 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
   const items = useMemo(() => (Array.isArray(model.items) ? model.items : []), [model])
   const years = model.filters?.availableYears || []
   const mediaInventory = model.sourceStatus?.mediaInventory || {}
+  const reconciliation = model.sourceStatus?.reconciliation || {}
+  const archivedReferenceCount = Math.max(
+    0,
+    Number(reconciliation.historicalMemoryCount || 0) - Number(reconciliation.duplicateHistoricalItems || 0),
+  )
   const mediaWarnings = Array.isArray(mediaInventory.warnings) ? mediaInventory.warnings : []
-  const userFacingMediaWarning = mediaWarnings.length > 0 ? 'Some photos could not be loaded. Try again from Media & Sync.' : ''
+  const userFacingMediaWarning = mediaInventory.status === 'unavailable' && mediaWarnings.length > 0
+    ? 'The private Drive index is not readable for this session. Open Media & Sync and refresh after reconnecting.'
+    : ''
 
   useEffect(() => () => {
-    for (const url of previewUrlsRef.current.values()) URL.revokeObjectURL(url)
+    for (const preview of previewUrlsRef.current.values()) {
+      const url = typeof preview === 'string' ? preview : preview?.url
+      if (url) URL.revokeObjectURL(url)
+    }
     previewUrlsRef.current.clear()
   }, [])
 
   useEffect(() => {
     if (!user || !approvedUser?.coupleId || !isTrustedMediaBackendConfigured()) return undefined
     const indexedItems = items
-      .filter((item) => item.media?.status === 'drive-indexed' && item.media?.kind === 'image' && item.media?.id && !previewUrlsRef.current.has(item.media.id))
-      .slice(0, 36)
+      .filter((item) => item.media?.status === 'drive-indexed' && ['image', 'video'].includes(item.media?.kind) && item.media?.id && !previewUrlsRef.current.has(item.media.id))
+      .slice(0, MAX_THUMBNAIL_PRELOAD_ITEMS)
     if (!indexedItems.length) return undefined
 
     const controller = new AbortController()
     let cancelled = false
 
-    async function loadPreviews() {
-      for (const item of indexedItems) {
+    async function loadPreviewItem(item) {
+      try {
         if (cancelled || controller.signal.aborted) return
-        try {
-          const blob = await fetchMediaBlobViaTrustedBackend({
-            coupleId: approvedUser.coupleId,
-            mediaId: item.media.id,
-            mode: 'thumbnail',
-            user,
-          })
-          if (cancelled || controller.signal.aborted) return
-          const objectUrl = URL.createObjectURL(blob)
-          previewUrlsRef.current.set(item.media.id, objectUrl)
-          setPreviewUrls(Object.fromEntries(previewUrlsRef.current.entries()))
-        } catch {
-          // Individual private previews can fail without blocking the Album index.
-        }
+        const blob = await fetchMediaBlobViaTrustedBackend({
+          coupleId: approvedUser.coupleId,
+          mediaId: item.media.id,
+          mode: 'thumbnail',
+          user,
+        })
+        if (cancelled || controller.signal.aborted) return
+        const objectUrl = URL.createObjectURL(blob)
+        previewUrlsRef.current.set(item.media.id, { kind: 'image', mode: 'thumbnail', url: objectUrl })
+        setPreviewUrls(Object.fromEntries(previewUrlsRef.current.entries()))
+      } catch {
+        // Individual private previews can fail without blocking the Album index.
       }
+    }
+
+    async function loadPreviews() {
+      const workers = Array.from({ length: Math.min(THUMBNAIL_PRELOAD_CONCURRENCY, indexedItems.length) }, async (_, workerIndex) => {
+        for (let index = workerIndex; index < indexedItems.length; index += THUMBNAIL_PRELOAD_CONCURRENCY) {
+          if (cancelled || controller.signal.aborted) return
+          await loadPreviewItem(indexedItems[index])
+        }
+      })
+      await Promise.all(workers)
     }
 
     void loadPreviews()
@@ -375,7 +426,9 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
 
   useEffect(() => {
     const mediaId = selectedItem?.media?.id
-    if (!user || !approvedUser?.coupleId || !mediaId || selectedItem?.media?.status !== 'drive-indexed' || previewUrlsRef.current.has(mediaId) || !isTrustedMediaBackendConfigured()) return undefined
+    const cached = previewUrlsRef.current.get(mediaId)
+    const needsStream = selectedItem?.media?.kind === 'video' && cached?.mode !== 'stream'
+    if (!user || !approvedUser?.coupleId || !mediaId || selectedItem?.media?.status !== 'drive-indexed' || (!needsStream && previewUrlsRef.current.has(mediaId)) || !isTrustedMediaBackendConfigured()) return undefined
 
     let cancelled = false
     async function loadSelectedPreview() {
@@ -388,7 +441,8 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
         })
         if (cancelled) return
         const objectUrl = URL.createObjectURL(blob)
-        previewUrlsRef.current.set(mediaId, objectUrl)
+        if (cached?.url && cached.url !== objectUrl) URL.revokeObjectURL(cached.url)
+        previewUrlsRef.current.set(mediaId, { kind: selectedItem.media.kind === 'video' ? 'video' : 'image', mode: selectedItem.media.kind === 'video' ? 'stream' : 'thumbnail', url: objectUrl })
         setPreviewUrls(Object.fromEntries(previewUrlsRef.current.entries()))
       } catch {
         // The selected metadata remains usable even if protected playback is unavailable.
@@ -438,9 +492,9 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
     if (!removeState.item) return
     setRemoveState((current) => ({ ...current, pending: true }))
     try {
-      await uploadQueue.removeSavedItem(removeState.item)
+      await uploadQueue.removeSavedItem(removeState.item, { deleteOriginal: removeState.deleteOriginal })
       setSelectedItem(null)
-      setRemoveState({ item: null, pending: false })
+      setRemoveState({ deleteOriginal: false, item: null, pending: false })
     } catch {
       setRemoveState((current) => ({ ...current, pending: false }))
     }
@@ -532,9 +586,32 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
       ) : null}
 
       {userFacingMediaWarning ? (
-        <InlineAlert tone="warning" title="Some photos could not be loaded" description="Try again from Media & Sync." />
+        <InlineAlert tone="warning" title="Album sync needs attention" description={userFacingMediaWarning} />
       ) : null}
       {manageUploadsOpen ? <div className="grid gap-5" aria-label="Album management tools">
+        <Surface aria-label="Album source reconciliation" tone="soft">
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Private media index</p>
+          <h3 className="mt-2 font-serif text-2xl text-[var(--cb-text)]">Album sources are reconciled</h3>
+          <p className="mt-2 text-sm leading-6 text-[var(--cb-text-secondary)]">
+            {Number(reconciliation.totalItems || 0)} items are shown from {Number(reconciliation.authoritativeIndexedCount || 0)} trusted Drive records
+            {archivedReferenceCount > 0 ? ` and ${archivedReferenceCount} archived story references` : ''}.
+            {Number(reconciliation.duplicateHistoricalItems || 0) > 0 ? ` ${Number(reconciliation.duplicateHistoricalItems)} older duplicate ${Number(reconciliation.duplicateHistoricalItems) === 1 ? 'reference is' : 'references are'} hidden behind the Drive index.` : ''}
+          </p>
+          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            <ContentCard>
+              <p className="text-3xl font-bold text-[var(--cb-text)]">{Number(reconciliation.authoritativeIndexedCount || 0)}</p>
+              <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[var(--cb-text-muted)]">Drive-indexed</p>
+            </ContentCard>
+            <ContentCard>
+              <p className="text-3xl font-bold text-[var(--cb-text)]">{archivedReferenceCount}</p>
+              <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[var(--cb-text-muted)]">Archived references</p>
+            </ContentCard>
+            <ContentCard>
+              <p className="text-3xl font-bold text-[var(--cb-text)]">{Number(reconciliation.duplicateHistoricalItems || 0)}</p>
+              <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[var(--cb-text-muted)]">Duplicates hidden</p>
+            </ContentCard>
+          </div>
+        </Surface>
         <Surface aria-label="Upload queue" tone="soft">
           <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Add memories</p>
           <h3 className="mt-2 font-serif text-2xl text-[var(--cb-text)]">Prepare photos and videos</h3>
@@ -569,8 +646,8 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
             <InlineAlert
               className="mt-5"
               tone="warning"
-              title="Upload setup required"
-              description="Files can be prepared here, but saving them to the shared Album needs owner media setup in Settings."
+              title="Media connection needed"
+              description="Files can be prepared here, but saving them to the shared Album needs Media & Sync connected."
             />
           ) : null}
           <div className="mt-5">
@@ -639,17 +716,19 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
         onClose={() => setSelectedItem(null)}
         onNext={() => showNeighbor(1)}
         onPrevious={() => showNeighbor(-1)}
-        onRemove={(item) => setRemoveState({ item, pending: false })}
+        onRemove={(item, options = {}) => setRemoveState({ deleteOriginal: options.deleteOriginal === true, item, pending: false })}
       />
       <ConfirmDialog
-        confirmLabel="Remove from Album"
-        message="This removes the item from the active Album by archiving the linked memory. It does not delete the original file from the private folder."
-        onCancel={() => setRemoveState({ item: null, pending: false })}
+        confirmLabel={removeState.deleteOriginal ? 'Delete original from Drive' : 'Remove from Album'}
+        message={removeState.deleteOriginal
+          ? 'This permanently deletes only this disposable original file from Google Drive, then removes it from Couple Book. Use this only for test or unwanted media.'
+          : 'This removes the item from the active Album index. It does not delete the original file from the private Google Drive folder.'}
+        onCancel={() => setRemoveState({ deleteOriginal: false, item: null, pending: false })}
         onConfirm={confirmRemoval}
         open={Boolean(removeState.item)}
         pending={removeState.pending}
         recordName={removeState.item?.title}
-        title="Remove this Album item?"
+        title={removeState.deleteOriginal ? 'Delete this original from Drive?' : 'Remove this Album item?'}
       />
       {uploadQueue.notice.message && ['success', 'error'].includes(uploadQueue.notice.kind) ? (
         <Toast

@@ -449,13 +449,79 @@ test('gallery read model can render Firestore media index records before Drive p
   assert.equal(model.mediaBackend.localHandlersReady, true)
   assert.equal(model.mediaBackend.implementedCapabilities, 18)
   assert.equal(model.mediaBackend.requiredCapabilities, 18)
-  assert.equal(model.mediaBackend.statusLabel, 'Media service prepared')
-  assert.match(model.mediaBackend.description, /Saving new files to the shared Drive library/i)
+  assert.equal(model.mediaBackend.statusLabel, 'Media service ready')
+  assert.match(model.mediaBackend.description, /trusted Drive service/i)
   assert.doesNotMatch(model.mediaBackend.description, /18\/18|handler capabilities|backend contract/i)
   assert.equal(model.library.groups.length, 1)
   assert.equal(model.library.favoriteCount, 1)
   assert.equal(model.library.unlinkedCount, 2)
+  assert.deepEqual(model.sourceStatus.reconciliation, {
+    authoritativeIndexedCount: 2,
+    historicalMemoryCount: 0,
+    duplicateHistoricalItems: 0,
+    totalItems: 2,
+  })
   assert.doesNotMatch(JSON.stringify(model), /thumbnailLink|previewUrl|objectUrl|accessToken|blob:/)
+})
+
+test('gallery read model reconciles indexed Drive media ahead of duplicate historical memories', () => {
+  const driveFileId = '1F_USpYY9Qi2sIoftCWVjp_uYPdZAnRaa'
+  const model = buildGalleryReadModelWithMediaIndex({
+    memorySource: {
+      status: 'ready',
+      source: 'firestore',
+      data: {
+        hasBaseDataset: true,
+        memories: [
+          createMemoryRecord({
+            id: 'historical-drive-memory',
+            mediaPath: '',
+            mediaKind: 'image',
+            media: {
+              provider: 'google-drive',
+              kind: 'image',
+              driveFileId,
+              driveFolderId: '17Ar4UK5_puORz9TE1dijIk2-qHgh7oIa',
+              contentType: 'image/jpeg',
+              sizeBytes: 100,
+            },
+          }),
+          createMemoryRecord({ id: 'separate-memory', title: 'Separate historical memory', mediaPath: '/assets/photos/separate.jpg' }),
+        ],
+      },
+      warnings: [],
+    },
+    mediaIndexSource: {
+      status: 'ready',
+      source: 'firestore',
+      data: {
+        entries: [
+          {
+            schemaVersion: 1,
+            mediaId: 'drive_1F_USpYY9Qi2sIoftCWVjp_uYPdZAnRaa',
+            provider: 'google-drive',
+            driveFileId,
+            driveFolderId: '17Ar4UK5_puORz9TE1dijIk2-qHgh7oIa',
+            mimeType: 'image/jpeg',
+            mediaType: 'image',
+            fileName: 'CB_IMG_0075.jpg',
+            capturedAt: '2026-07-22T13:57:17.827Z',
+          },
+        ],
+      },
+      warnings: [],
+    },
+  })
+
+  assert.equal(model.indexedItems.length, 1)
+  assert.equal(model.memoryItems.length, 2)
+  assert.equal(model.items.length, 2)
+  assert.equal(model.summary.indexedDriveMedia, 1)
+  assert.equal(model.sourceStatus.reconciliation.authoritativeIndexedCount, 1)
+  assert.equal(model.sourceStatus.reconciliation.historicalMemoryCount, 2)
+  assert.equal(model.sourceStatus.reconciliation.duplicateHistoricalItems, 1)
+  assert.equal(model.sourceStatus.reconciliation.totalItems, 2)
+  assert.equal(model.items.filter((item) => item.media.driveFileId === driveFileId).length, 1)
 })
 
 test('Album keeps memories available when optional media index reads are unavailable', () => {
@@ -475,7 +541,7 @@ test('Album keeps memories available when optional media index reads are unavail
   assert.equal(model.status, 'partial')
   assert.equal(model.items.length, 1)
   assert.equal(model.sourceStatus.mediaInventory.status, 'unavailable')
-  assert.match(model.sourceStatus.mediaInventory.warnings.join(' '), /backend-owned records/)
+  assert.match(model.sourceStatus.mediaInventory.warnings.join(' '), /active couple access/)
   assert.doesNotMatch(JSON.stringify(mediaIndexSource), /FirebaseError|permission-denied|Missing or insufficient permissions/)
 })
 

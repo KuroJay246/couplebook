@@ -3,7 +3,7 @@ import {
   DRIVE_BACKEND_ENDPOINTS,
 } from '@couplebook/drive-contracts'
 
-export const DRIVE_BACKEND_DEPLOYMENT_STATUS = 'local-contract-only-owner-approval-required'
+export const DRIVE_BACKEND_DEPLOYMENT_STATUS = 'cloudflare-worker-deployed'
 
 export const DRIVE_BACKEND_ROUTES = Object.freeze([
   Object.freeze({ key: 'beginAuthorization', method: 'POST', path: DRIVE_BACKEND_ENDPOINTS.beginAuthorization, body: ['coupleId'], secretAccess: false }),
@@ -567,19 +567,26 @@ export async function runDriveMediaUpload({
     caption: '',
     checksum: upload.checksum,
     coupleId: request.coupleId,
+    createdTime: String(uploaded?.createdTime || ''),
     createdByUid: request.uid,
     deleted: false,
     driveFileId: uploaded?.driveFileId || uploaded?.id || '',
     driveFolderId: uploaded?.driveFolderId || '',
-    fileName: upload.fileName,
+    durationMillis: Number.isSafeInteger(Number(uploaded?.durationMillis)) && Number(uploaded.durationMillis) >= 0 ? Number(uploaded.durationMillis) : null,
+    favorite: false,
+    fileName: String(uploaded?.fileName || upload.fileName),
+    height: Number.isSafeInteger(Number(uploaded?.height)) && Number(uploaded.height) >= 0 ? Number(uploaded.height) : null,
     lastSyncedAtMs: nowMs,
     mediaId: upload.mediaId,
     mediaType: upload.mimeType.startsWith('video/') ? 'video' : 'image',
     mimeType: upload.mimeType,
+    modifiedTime: String(uploaded?.modifiedTime || uploaded?.createdTime || ''),
     provider: 'google-drive',
+    schemaVersion: 1,
     sizeBytes: upload.sizeBytes,
     syncStatus: 'active',
     updatedAtMs: nowMs,
+    width: Number.isSafeInteger(Number(uploaded?.width)) && Number(uploaded.width) >= 0 ? Number(uploaded.width) : null,
   })
 
   try {

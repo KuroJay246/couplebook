@@ -70,5 +70,5 @@ test('drive architecture contract keeps Firestore index fast and backend work ex
   assert.ok(contract.backendRequiredFor.includes('drive-access-token-refresh'))
   assert.ok(contract.backendRequiredFor.includes('fast-thumbnail-proxy-or-cache'))
   assert.equal(contract.localHandlerCapabilityCount, DRIVE_BACKEND_CAPABILITIES.length)
-  assert.equal(contract.deploymentStatus, 'cloudflare-worker-required')
+  assert.equal(contract.deploymentStatus, 'cloudflare-worker-deployed')
 })

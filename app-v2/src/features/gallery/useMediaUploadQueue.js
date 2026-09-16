@@ -287,18 +287,33 @@ export function useMediaUploadQueue(onRefresh, drive) {
     setNotice({ kind: 'info', message })
   }, [findItem, setNotice, updateItem])
 
-  const removeSavedAlbumItem = useCallback(async (item) => {
+  const removeSavedAlbumItem = useCallback(async (item, { deleteOriginal = false } = {}) => {
     const memoryId = item?.memoryId || item?.id
     const memoryRevision = item?.memoryRevision ?? item?.revision ?? 0
 
-    if (!memoryId || !['storage-verified', 'drive-verified'].includes(item?.media?.status)) {
+    if (!['storage-verified', 'drive-verified', 'drive-indexed'].includes(item?.media?.status)) {
       throw new Error('Only verified private media items can be removed from Album.')
+    }
+
+    if (item.media.status === 'drive-indexed') {
+      if (!TRUSTED_MEDIA_BACKEND_AVAILABLE) throw new Error('Reconnect Media & Sync before removing this Album item.')
+      return removeMediaViaTrustedBackend({
+        coupleId: writer.approvedUser.coupleId,
+        deleteOriginal,
+        mediaId: item.media.id,
+        user: writer.user,
+      })
+    }
+
+    if (!memoryId) {
+      throw new Error('Only linked private media memories can be removed from Album.')
     }
 
     if (item.media.status === 'drive-verified') {
       if (TRUSTED_MEDIA_BACKEND_AVAILABLE) {
         await removeMediaViaTrustedBackend({
           coupleId: writer.approvedUser.coupleId,
+          deleteOriginal,
           mediaId: item.media.id,
           user: writer.user,
         })
@@ -405,32 +420,34 @@ export function useMediaUploadQueue(onRefresh, drive) {
         return
       }
 
-      const duplicateLookup = await writer.findExistingMediaDuplicate({
-        checksum,
-        contentType: details.contentType,
-        sizeBytes: details.sizeBytes,
-      })
-      if (duplicateLookup.exact) {
-        updateItem(itemId, {
+      if (!TRUSTED_MEDIA_BACKEND_AVAILABLE) {
+        const duplicateLookup = await writer.findExistingMediaDuplicate({
           checksum,
-          error: `This file already exists in Album as "${duplicateLookup.exact.title || duplicateLookup.exact.memoryId}".`,
-          progress: 0,
-          retryable: false,
-          status: QUEUE_STATUS.duplicate,
+          contentType: details.contentType,
+          sizeBytes: details.sizeBytes,
         })
-        setNotice({ kind: 'error', message: 'Duplicate Drive media was blocked before upload.' })
-        return
+        if (duplicateLookup.exact) {
+          updateItem(itemId, {
+            checksum,
+            error: `This file already exists in Album as "${duplicateLookup.exact.title || duplicateLookup.exact.memoryId}".`,
+            progress: 0,
+            retryable: false,
+            status: QUEUE_STATUS.duplicate,
+          })
+          setNotice({ kind: 'error', message: 'Duplicate Drive media was blocked before upload.' })
+          return
+        }
       }
 
       if (!TRUSTED_MEDIA_BACKEND_AVAILABLE && (!driveProvider || driveState !== 'connected')) {
         updateItem(itemId, {
           checksum,
-          error: 'Owner media setup is required before this file can be saved to the shared Album.',
+          error: 'The private media connection is unavailable, so this file was not saved.',
           progress: 0,
           retryable: true,
           status: QUEUE_STATUS.backendRequired,
         })
-        setNotice({ kind: 'error', message: 'Upload is prepared. Finish media setup in Settings before saving it.' })
+        setNotice({ kind: 'error', message: 'Upload is prepared. Reconnect Media & Sync before saving it.' })
         return
       }
 
@@ -509,7 +526,16 @@ export function useMediaUploadQueue(onRefresh, drive) {
       await waitForUploadTestDelay('finalizing')
 
       const finalizedItem = findItem(itemId)
-      const result = await writer.finalizeMemoryWithMedia(finalizedItem.memoryId, toMemoryPayload(finalizedItem), verifiedMedia)
+      let result = { memoryId: finalizedItem.memoryId, refreshError: null, revision: 0, verifiedMedia }
+      if (TRUSTED_MEDIA_BACKEND_AVAILABLE) {
+        try {
+          if (typeof onRefresh === 'function') await onRefresh()
+        } catch (error) {
+          result = { ...result, refreshError: error }
+        }
+      } else {
+        result = await writer.finalizeMemoryWithMedia(finalizedItem.memoryId, toMemoryPayload(finalizedItem), verifiedMedia)
+      }
 
       if (operation.cancelRequested) {
         updateItem(itemId, { status: QUEUE_STATUS.cancelling })
@@ -521,8 +547,8 @@ export function useMediaUploadQueue(onRefresh, drive) {
           })
         } else {
           await driveProvider.remove(verifiedMedia.driveFileId)
+          await writer.removeMemoryMedia(result.memoryId, result.revision || 1)
         }
-        await writer.removeMemoryMedia(result.memoryId, result.revision || 1)
         finalizeCancelledItem(itemId, 'Upload was cancelled after finalization and removed from Album.')
         return
       }
@@ -562,6 +588,7 @@ export function useMediaUploadQueue(onRefresh, drive) {
     handleProcessingFailure,
     driveProvider,
     driveState,
+    onRefresh,
     setNotice,
     updateItem,
     writer,
@@ -668,16 +695,26 @@ export function useMediaUploadQueue(onRefresh, drive) {
     }), Promise.resolve())
   }, [processItem, setNotice, writer])
 
-  const removeSavedItem = useCallback(async (item) => {
-    setNotice({ kind: 'info', message: `Removing ${item.title} from Album…` })
+  const removeSavedItem = useCallback(async (item, options = {}) => {
+    setNotice({ kind: 'info', message: options.deleteOriginal ? `Deleting ${item.title} from Drive…` : `Removing ${item.title} from Album…` })
     try {
-      const result = await removeSavedAlbumItem(item)
+      const result = await removeSavedAlbumItem(item, options)
+      if (typeof onRefresh === 'function') {
+        try {
+          await onRefresh()
+        } catch (error) {
+          result.refreshError = error
+        }
+      }
       setNotice({
         kind: result?.refreshError ? 'info' : 'success',
         message: result?.refreshError
           ? `${item.title} was removed, but Album refresh still needs attention.`
-          : `${item.title} was removed from Album.`,
+          : options.deleteOriginal
+            ? `${item.title} was deleted from Drive and removed from Album.`
+            : `${item.title} was removed from Album.`,
       })
+      return result
     } catch (error) {
       setNotice({
         kind: 'error',
@@ -685,7 +722,7 @@ export function useMediaUploadQueue(onRefresh, drive) {
       })
       throw error
     }
-  }, [removeSavedAlbumItem, setNotice])
+  }, [onRefresh, removeSavedAlbumItem, setNotice])
 
   const summary = useMemo(() => summarizeQueueItems(state.items), [state.items])
   const isUploading = summary.active > 0

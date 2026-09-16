@@ -15,7 +15,7 @@ test('Album keeps management controls behind an explicit secondary action', () =
   assert.doesNotMatch(gallerySource, /Manage Media & Sync/)
   assert.doesNotMatch(gallerySource, /Metadata-first private album/)
   assert.doesNotMatch(gallerySource, /Connect Google Drive|Google Drive connection|DriveMediaGrid/)
-  assert.match(gallerySource, /Upload setup required/)
+  assert.match(gallerySource, /Media connection needed/)
   assert.doesNotMatch(gallerySource, /Trusted media backend required|partner uploads/)
 })
 
@@ -26,7 +26,8 @@ test('Settings owns Google Drive media library administration', () => {
   assert.match(mediaSettingsSource, /Sync now/)
   assert.match(mediaSettingsSource, /Shared iCloud Album shortcut/)
   assert.match(mediaSettingsSource, /Convenience link only/)
-  assert.match(mediaSettingsSource, /Automatic media sync needs backend setup/)
+  assert.match(mediaSettingsSource, /Private media sync, upload, previews, and playback are available through the trusted Drive service/)
+  assert.match(mediaSettingsSource, /Private media service/)
   assert.doesNotMatch(mediaSettingsSource, /Trusted backend/)
   assert.doesNotMatch(mediaSettingsSource, /Persistent background sync requires trusted backend approval/)
 })

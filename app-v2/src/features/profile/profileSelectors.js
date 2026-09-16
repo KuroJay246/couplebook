@@ -92,7 +92,7 @@ function summarizeSource(key, source) {
   }
 }
 
-export function selectProfilePeople(profileSource) {
+export function selectProfilePeople(profileSource, nowValue = undefined) {
   const data = profileSource?.data
   const order = Array.isArray(data?.participantOrder)
     ? data.participantOrder.flatMap((entry) => (entry ? [entry] : []))
@@ -109,7 +109,7 @@ export function selectProfilePeople(profileSource) {
       const anniversaryView = toTrimmedString(profile.anniversaryView) || null
       const joinedDate = toTrimmedString(profile.joinedDate) || null
       const birthday = toTrimmedString(profile.birthday) || null
-      const importantDates = normalizeProfileImportantDates(profile.importantDates)
+      const importantDates = normalizeProfileImportantDates(profile.importantDates, nowValue)
       const revision = Number.isInteger(profile.revision) && profile.revision > 0 ? profile.revision : 0
 
       return [{
@@ -164,7 +164,7 @@ export function selectRelationshipTitle(people) {
   return 'Shared profile'
 }
 
-export function selectRelationshipAnniversaries(people) {
+export function selectRelationshipAnniversaries(people, nowValue = undefined) {
   const candidates = people
     .flatMap((person) => {
       if (!person.joinedDate) return []
@@ -181,8 +181,8 @@ export function selectRelationshipAnniversaries(people) {
 
   const primary = candidates
     .toSorted((left, right) => left.date.localeCompare(right.date))[0]
-  const totalDays = daysSince(primary.date)
-  const daysUntil = daysUntilAnnualDate(primary.date)
+  const totalDays = daysSince(primary.date, nowValue)
+  const daysUntil = daysUntilAnnualDate(primary.date, nowValue)
 
   return [{
     id: 'couple-primary-anniversary',
@@ -203,7 +203,7 @@ export function selectRelationshipAnniversaries(people) {
   }]
 }
 
-function normalizeProfileImportantDates(value) {
+function normalizeProfileImportantDates(value, nowValue = undefined) {
   if (!Array.isArray(value)) return []
   return value.slice(0, 12).flatMap((entry, index) => {
     if (!entry || typeof entry !== 'object') return []
@@ -213,7 +213,7 @@ function normalizeProfileImportantDates(value) {
     const id = toTrimmedString(entry.id) || `${date}-${index}`
     const kind = toTrimmedString(entry.type) || 'custom'
     const dateLabel = formatDateLabel(date)
-    const daysUntil = entry.repeatsAnnually === true ? daysUntilAnnualDate(date) : daysSince(date) === 0 ? 0 : null
+    const daysUntil = entry.repeatsAnnually === true ? daysUntilAnnualDate(date, nowValue) : daysSince(date, nowValue) === 0 ? 0 : null
     return [{
       id,
       kind,
@@ -229,7 +229,7 @@ function normalizeProfileImportantDates(value) {
   })
 }
 
-export function selectRelationshipMilestones(people, contractSource) {
+export function selectRelationshipMilestones(people, contractSource, nowValue = undefined) {
   const milestones = people
     .flatMap((person) => {
       if (!person.birthday) return []
@@ -242,8 +242,8 @@ export function selectRelationshipMilestones(people, contractSource) {
       date: person.birthday,
       dateLabel: person.birthdayLabel,
       repeatsAnnually: true,
-      daysUntil: daysUntilAnnualDate(person.birthday),
-      countdownLabel: formatDaysUntil(daysUntilAnnualDate(person.birthday)),
+      daysUntil: daysUntilAnnualDate(person.birthday, nowValue),
+      countdownLabel: formatDaysUntil(daysUntilAnnualDate(person.birthday, nowValue)),
       status: 'ready',
       }]
     })
@@ -270,13 +270,13 @@ export function selectRelationshipMilestones(people, contractSource) {
   return milestones
 }
 
-export function selectImportantDates(people, contractSource) {
-  const anniversaryDates = selectRelationshipAnniversaries(people).map((item, index) => ({
+export function selectImportantDates(people, contractSource, nowValue = undefined) {
+  const anniversaryDates = selectRelationshipAnniversaries(people, nowValue).map((item, index) => ({
     ...item,
     type: 'relationship',
     primary: index === 0,
   }))
-  const milestoneDates = selectRelationshipMilestones(people, contractSource).flatMap((item) => {
+  const milestoneDates = selectRelationshipMilestones(people, contractSource, nowValue).flatMap((item) => {
     if (item.kind !== 'birthday') return []
     return [{
       ...item,
