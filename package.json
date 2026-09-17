@@ -39,6 +39,7 @@
     "schema:check": "node scripts/check-schema.mjs",
     "rules:drift": "node scripts/check-firestore-rules-drift.mjs --project couplebook-97830",
     "media:backend:readiness": "node scripts/check-media-backend-readiness.mjs",
+    "media:formats:check": "node scripts/check-real-media-format-inventory.mjs",
     "shared-contracts:check": "node scripts/workspaces/check-shared-contracts.mjs",
     "mobile:dev": "npm --workspace apps/mobile run start",
     "mobile:android": "npm --workspace apps/mobile run android",
