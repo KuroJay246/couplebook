@@ -30,9 +30,10 @@ export async function planMigrationOperations(db, migrationPackage) {
 
   const operations = []
   const summary = { create: 0, alreadyCorrect: 0, mergeUserAccessFields: 0, conflict: 0, invalid: 0 }
+  const snapshots = await Promise.all(migrationPackage.documents.map((document) => db.doc(document.path).get()))
 
-  for (const document of migrationPackage.documents) {
-    const snapshot = await db.doc(document.path).get()
+  for (const [index, document] of migrationPackage.documents.entries()) {
+    const snapshot = snapshots[index]
     if (!snapshot.exists) {
       operations.push({ type: 'CREATE', path: document.path, document })
       summary.create += 1
@@ -91,8 +92,9 @@ export async function applyCreateOperations(db, operations) {
 export async function verifyMigrationDocuments(db, migrationPackage) {
   const failures = []
   const counts = {}
-  for (const document of migrationPackage.documents) {
-    const snapshot = await db.doc(document.path).get()
+  const snapshots = await Promise.all(migrationPackage.documents.map((document) => db.doc(document.path).get()))
+  for (const [index, document] of migrationPackage.documents.entries()) {
+    const snapshot = snapshots[index]
     if (!snapshot.exists) {
       failures.push({ path: document.path, reason: 'missing' })
       continue
