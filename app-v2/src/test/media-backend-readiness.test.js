@@ -2,6 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 
 import {
+  deriveWorkerHealthUrl,
   evaluateMediaBackendReadiness,
   summarizeRulesDrift,
 } from '../../../scripts/check-media-backend-readiness.mjs'
@@ -14,6 +15,17 @@ const requiredWorkerSecretNames = Object.freeze([
   'GOOGLE_OAUTH_REDIRECT_URI',
   'TOKEN_ENCRYPTION_KEY',
 ])
+
+test('media backend readiness derives Worker health from the configured backend URL', () => {
+  assert.equal(
+    deriveWorkerHealthUrl({ VITE_MEDIA_BACKEND_URL: 'https://worker.example/' }),
+    'https://worker.example/api/drive/health',
+  )
+  assert.equal(
+    deriveWorkerHealthUrl({ VITE_MEDIA_BACKEND_URL: 'https://worker.example' }, 'https://health.example/status'),
+    'https://health.example/status',
+  )
+})
 
 test('media backend readiness reports stale deployed media-index rules without leaking env values', () => {
   const drift = summarizeRulesDrift(`

@@ -104,6 +104,15 @@ async function checkWorkerHealth(healthUrl) {
   }
 }
 
+export function deriveWorkerHealthUrl(appEnv = {}, explicitHealthUrl = '') {
+  const configured = String(explicitHealthUrl || '').trim()
+  if (configured) return configured
+
+  const backendUrl = String(appEnv.VITE_MEDIA_BACKEND_URL || '').trim().replace(/\/+$/, '')
+  if (!backendUrl) return ''
+  return `${backendUrl}/api/drive/health`
+}
+
 function parseWorkerSecretNames(output = '') {
   try {
     const parsed = JSON.parse(output)
@@ -277,7 +286,7 @@ export async function runMediaBackendReadinessCheck() {
   const rulesDrift = summarizeRulesDrift(rulesCommand.output)
   const wranglerCommand = runShellCommand('npx wrangler whoami')
   const workerSecretCommand = runShellCommand('npx wrangler secret list --config packages/drive-worker/wrangler.toml')
-  const workerHealthUrl = process.env.COUPLEBOOK_WORKER_HEALTH_URL || ''
+  const workerHealthUrl = deriveWorkerHealthUrl(appEnv, process.env.COUPLEBOOK_WORKER_HEALTH_URL)
   const workerHealth = await checkWorkerHealth(workerHealthUrl)
 
   return evaluateMediaBackendReadiness({
