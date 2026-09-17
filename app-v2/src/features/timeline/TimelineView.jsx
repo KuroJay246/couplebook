@@ -146,22 +146,21 @@ function MemoryFormDialog({ memory = null, mode, onClose, onSave, status }) {
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <button type="button" className="absolute inset-0 bg-[var(--cb-bg-soft)]/40 backdrop-blur-sm" onClick={onClose} aria-label="Close memory form" />
-      <form
-        role="dialog"
-        aria-modal="true"
+      <dialog
+        open
         aria-labelledby={titleId}
         className="relative w-full max-w-2xl rounded-[28px] border border-[var(--cb-border)] bg-[var(--cb-surface)] p-6 shadow-[0_24px_80px_rgba(36,19,29,0.18)] sm:p-8"
-        onSubmit={handleSubmit}
       >
-        <div className="flex items-start justify-between gap-4">
+        <form onSubmit={handleSubmit}>
+          <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--cb-accent)]">{mode === 'edit' ? 'Edit memory' : 'New memory'}</p>
             <h3 id={titleId} className="mt-2 font-serif text-3xl text-[var(--cb-text)]">{mode === 'edit' ? 'Update this part of the story' : 'Add the next memory'}</h3>
           </div>
           <TextButton aria-label="Close" onClick={onClose}>Close</TextButton>
-        </div>
+          </div>
 
-        <div className="mt-6 grid gap-4 sm:grid-cols-2">
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
           <FormField label="Title" className="sm:col-span-2">
             <TextField onChange={(event) => updateField('title', event.target.value)} ref={firstFieldRef} required value={form.title} />
           </FormField>
@@ -184,15 +183,16 @@ function MemoryFormDialog({ memory = null, mode, onClose, onSave, status }) {
           <FormField label="Media note" className="sm:col-span-2">
             <TextField onChange={(event) => updateField('mediaNote', event.target.value)} placeholder="Optional note about the photo or video for Album" value={form.mediaNote} />
           </FormField>
-        </div>
+          </div>
 
-        {status?.message ? <div className="mt-5"><InlineAlert description={status.message} tone={status.kind === 'error' ? 'error' : 'success'} /></div> : null}
+          {status?.message ? <div className="mt-5"><InlineAlert description={status.message} tone={status.kind === 'error' ? 'error' : 'success'} /></div> : null}
 
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
-          <SecondaryButton onClick={onClose}>Cancel</SecondaryButton>
-          <PrimaryButton loading={status?.saving} type="submit">{status?.saving ? 'Saving memory' : 'Save memory'}</PrimaryButton>
-        </div>
-      </form>
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
+            <SecondaryButton onClick={onClose}>Cancel</SecondaryButton>
+            <PrimaryButton loading={status?.saving} type="submit">{status?.saving ? 'Saving memory' : 'Save memory'}</PrimaryButton>
+          </div>
+        </form>
+      </dialog>
     </div>,
     document.body,
   )
@@ -220,9 +220,8 @@ function DetailModal({ memory, onArchive, onClose, onEdit, onLoadStream, status,
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <button type="button" className="absolute inset-0 bg-[var(--cb-bg-soft)]/40 backdrop-blur-sm" onClick={onClose} aria-label="Close memory details" />
-      <div
-        role="dialog"
-        aria-modal="true"
+      <dialog
+        open
         aria-labelledby={titleId}
         className="relative max-h-[calc(100vh-2rem)] w-full max-w-3xl overflow-auto rounded-[28px] border border-[var(--cb-border)] bg-[var(--cb-surface)] p-6 shadow-[0_24px_80px_rgba(36,19,29,0.18)] sm:p-8"
       >
@@ -302,7 +301,7 @@ function DetailModal({ memory, onArchive, onClose, onEdit, onLoadStream, status,
           </div>
           <SecondaryButton onClick={() => onArchive(memory)}><Archive className="size-4" />Archive memory</SecondaryButton>
         </div>
-      </div>
+      </dialog>
     </div>,
     document.body,
   )

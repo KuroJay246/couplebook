@@ -277,11 +277,12 @@ async function assertDialogInteraction(page, route, viewport) {
     : page.getByRole('button', { name: route.detailButton }).first()
   await trigger.focus()
   await page.keyboard.press('Enter')
-  const dialog = page.locator('[role="dialog"], .lightbox-overlay.active, .modal-overlay.active').first()
+  const dialogSelector = 'dialog[open], [role="dialog"], .lightbox-overlay.active, .modal-overlay.active'
+  const dialog = page.locator(dialogSelector).first()
   await dialog.waitFor({ state: 'visible', timeout: 5000 })
 
-  const state = await page.evaluate(() => {
-    const dialogElement = document.querySelector('[role="dialog"], .lightbox-overlay.active, .modal-overlay.active')
+  const state = await page.evaluate((selector) => {
+    const dialogElement = document.querySelector(selector)
     const active = document.activeElement
     const activeRect = active?.getBoundingClientRect()
     return {
@@ -290,7 +291,7 @@ async function assertDialogInteraction(page, route, viewport) {
       mediaElements: dialogElement?.querySelectorAll('img, video, audio, iframe').length || 0,
       closeButtonCount: dialogElement?.querySelectorAll('button[aria-label*="Close"], .lightbox-close, .modal-close, .modal-footer button').length || 0,
     }
-  })
+  }, dialogSelector)
   if (route.path === '/timeline') {
     assert.equal(state.activeInsideDialog, true, `${viewport.name} ${route.path} dialog should move focus inside the modal.`)
   }

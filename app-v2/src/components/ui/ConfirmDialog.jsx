@@ -40,10 +40,9 @@ export function ConfirmDialog({
         className="absolute inset-0 cursor-default bg-[#24131d]/40 backdrop-blur-sm"
         onClick={!pending ? onCancel : undefined}
       />
-      <div
+      <dialog
+        open
         ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={messageId}
         className="relative w-full max-w-md rounded-[24px] bg-white p-6 shadow-[0_24px_80px_rgba(36,19,29,0.18)] sm:p-8"
@@ -83,7 +82,7 @@ export function ConfirmDialog({
             {cancelLabel}
           </button>
         </div>
-      </div>
+      </dialog>
     </div>,
     document.body,
   )

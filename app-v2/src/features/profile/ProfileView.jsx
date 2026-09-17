@@ -90,7 +90,8 @@ function ProfileEditDialog({ onClose, onSave, person, status }) {
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <button type="button" className="absolute inset-0 bg-[var(--cb-bg-soft)]/40 backdrop-blur-sm" onClick={onClose} aria-label="Close profile form" />
-      <form ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby={titleId} className="relative w-full max-w-2xl rounded-2xl border border-[var(--cb-border)] bg-[var(--cb-surface)] p-6 shadow-[0_24px_80px_rgba(36,19,29,0.18)]" onSubmit={handleSubmit}>
+      <dialog open ref={dialogRef} aria-labelledby={titleId} className="relative w-full max-w-2xl rounded-2xl border border-[var(--cb-border)] bg-[var(--cb-surface)] p-6 shadow-[0_24px_80px_rgba(36,19,29,0.18)]">
+        <form onSubmit={handleSubmit}>
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="cb-kicker">Edit profile</p>
@@ -166,7 +167,8 @@ function ProfileEditDialog({ onClose, onSave, person, status }) {
           <SecondaryButton onClick={onClose}>Cancel</SecondaryButton>
           <PrimaryButton loading={status?.saving} type="submit">{status?.saving ? 'Saving' : 'Save'}</PrimaryButton>
         </div>
-      </form>
+        </form>
+      </dialog>
     </div>,
     document.body,
   )

@@ -233,10 +233,9 @@ function GalleryLightbox({ item, items, onClose, onLoadStream, onNext, onPreviou
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#080508] p-3">
       <button type="button" className="absolute inset-0" onClick={onClose} aria-label="Close Album viewer" />
-      <div
+      <dialog
+        open
         ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
         aria-labelledby={titleId}
         className="cb-media-viewer relative h-[calc(100vh-1.5rem)] w-full max-w-7xl overflow-hidden text-white"
       >
@@ -274,7 +273,7 @@ function GalleryLightbox({ item, items, onClose, onLoadStream, onNext, onPreviou
             {item.media.status === 'drive-indexed' ? <DangerButton onClick={() => onRemove(item, { deleteOriginal: true })}>Delete original</DangerButton> : null}
           </div>
         </div>
-      </div>
+      </dialog>
     </div>,
     document.body,
   )

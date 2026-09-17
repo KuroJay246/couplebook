@@ -262,12 +262,11 @@ export function AppShell() {
             aria-label="Close navigation"
             type="button"
           />
-          <aside
+          <dialog
+            open
             ref={mobilePanelRef}
             className="relative h-[100dvh] w-[min(20rem,calc(100vw-2rem))] overflow-hidden shadow-2xl"
             style={{ background: 'var(--cb-nav-bg)' }}
-            aria-modal="true"
-            role="dialog"
             aria-label="Navigation menu"
           >
             <button
@@ -284,7 +283,7 @@ export function AppShell() {
               onNavigate={() => setMenuOpen(false)}
               onRequestSignOut={() => setSignOutState({ open: true, pending: false })}
             />
-          </aside>
+          </dialog>
         </div>
       ) : null}
 

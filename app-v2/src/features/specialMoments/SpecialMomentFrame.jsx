@@ -118,22 +118,21 @@ function SpecialMomentEditDialog({ copy, model, momentKey, onClose, onSave, stat
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <button type="button" className="absolute inset-0 bg-[#24131d]/40 backdrop-blur-sm" onClick={onClose} aria-label="Close special page form" />
-      <form
+      <dialog
+        open
         ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
         aria-labelledby={titleId}
         className="relative max-h-[calc(100vh-2rem)] w-full max-w-3xl overflow-auto rounded-[28px] border border-[#ead7df] bg-white p-6 shadow-[0_24px_80px_rgba(36,19,29,0.18)] sm:p-8"
-        onSubmit={handleSubmit}
       >
-        <div className="flex items-start justify-between gap-4">
+        <form onSubmit={handleSubmit}>
+          <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#8f5168]">Edit {copy.badge}</p>
             <h3 id={titleId} className="mt-2 font-serif text-3xl text-[#24131d]">{copy.title}</h3>
           </div>
           <TextButton aria-label="Close" onClick={onClose}>Close</TextButton>
-        </div>
-        <div className="mt-6 grid gap-4">
+          </div>
+          <div className="mt-6 grid gap-4">
           <FormField label="Title">
             <TextField onChange={(event) => updateField('title', event.target.value)} ref={firstFieldRef} required value={form.title} />
           </FormField>
@@ -160,13 +159,14 @@ function SpecialMomentEditDialog({ copy, model, momentKey, onClose, onSave, stat
               </div>
             </ContentCard>
           ))}
-        </div>
-        {status?.message ? <div className="mt-5"><InlineAlert description={status.message} tone={status.kind === 'error' ? 'error' : 'success'} /></div> : null}
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
-          <SecondaryButton onClick={onClose}>Cancel</SecondaryButton>
-          <PrimaryButton loading={status?.saving} type="submit">{status?.saving ? 'Saving page' : 'Save page'}</PrimaryButton>
-        </div>
-      </form>
+          </div>
+          {status?.message ? <div className="mt-5"><InlineAlert description={status.message} tone={status.kind === 'error' ? 'error' : 'success'} /></div> : null}
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
+            <SecondaryButton onClick={onClose}>Cancel</SecondaryButton>
+            <PrimaryButton loading={status?.saving} type="submit">{status?.saving ? 'Saving page' : 'Save page'}</PrimaryButton>
+          </div>
+        </form>
+      </dialog>
     </div>,
     document.body,
   )
