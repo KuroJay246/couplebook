@@ -4,6 +4,7 @@ import {
   buildVerifiedMediaRecord,
   createMediaUploadDraft,
   formatBytes,
+  revokePreviewUrl,
   validateMediaFile,
 } from '../services/mediaUploadService.js'
 
@@ -16,6 +17,31 @@ test('client media upload service accepts supported private media files and crea
   assert.equal(draft.title, 'Our Trip Photo')
   assert.equal(draft.extension, 'jpg')
   assert.match(draft.date, /^\d{4}-\d{2}-\d{2}$/)
+})
+
+test('client media upload draft preview URLs can be revoked after queue cleanup', () => {
+  const originalUrl = globalThis.URL
+  const revoked = []
+  globalThis.URL = {
+    ...originalUrl,
+    createObjectURL() {
+      return 'blob:upload-draft-preview'
+    },
+    revokeObjectURL(url) {
+      revoked.push(url)
+    },
+  }
+
+  try {
+    const image = new File([new Uint8Array([1, 2, 3])], 'queue-photo.jpg', { type: 'image/jpeg' })
+    const draft = createMediaUploadDraft(image)
+
+    assert.equal(draft.previewUrl, 'blob:upload-draft-preview')
+    revokePreviewUrl(draft.previewUrl)
+    assert.deepEqual(revoked, ['blob:upload-draft-preview'])
+  } finally {
+    globalThis.URL = originalUrl
+  }
 })
 
 test('client media upload service rejects unsupported files and formats verified record metadata', () => {

@@ -1,3 +1,5 @@
+import { createObjectUrlRegistry } from './objectUrlLifecycle.js'
+
 export const COUPLE_BOOK_DRIVE_FOLDER_ID = '17Ar4UK5_puORz9TE1dijIk2-qHgh7oIa'
 export const GOOGLE_DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive'
 
@@ -82,17 +84,10 @@ export function createGoogleDriveMediaProvider({ clientId, fetchImpl = globalThi
   let accessToken = ''
   let state = DRIVE_STATE.disconnected
   let tokenClient = null
-  const previewUrls = new Set()
+  const previewUrls = createObjectUrlRegistry()
 
   function revokePreviewUrls() {
-    for (const url of previewUrls) {
-      try {
-        URL.revokeObjectURL(url)
-      } catch {
-        // Best-effort cleanup only.
-      }
-    }
-    previewUrls.clear()
+    previewUrls.revokeAll()
   }
 
   function getConnectionState() {
@@ -162,20 +157,12 @@ export function createGoogleDriveMediaProvider({ clientId, fetchImpl = globalThi
   async function fetchPreview(fileId) {
     const response = await driveFetch(fetchImpl, `${DRIVE_API}/files/${encodeURIComponent(fileId)}?alt=media`, accessToken)
     const blob = await response.blob()
-    const url = URL.createObjectURL(blob)
-    previewUrls.add(url)
-    return url
+    return previewUrls.create(blob)
   }
 
   function revokePreview(url) {
     if (!url || !previewUrls.has(url)) return false
-    try {
-      URL.revokeObjectURL(url)
-    } catch {
-      // Best-effort cleanup only.
-    }
-    previewUrls.delete(url)
-    return true
+    return previewUrls.revoke(url)
   }
 
   async function getFile(fileId) {

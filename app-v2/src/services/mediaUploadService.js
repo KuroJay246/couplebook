@@ -2,6 +2,7 @@ import { deleteObject, ref, uploadBytesResumable } from 'firebase/storage'
 import { isLocalHostname, readRuntimeEnv } from '../data/adapterUtils.js'
 import { storage } from '../lib/firebase.js'
 import { assertProductionMediaProvider } from './mediaProviderConfig.js'
+import { createManagedObjectUrl } from './objectUrlLifecycle.js'
 
 const IMAGE_CONTENT_TYPES = Object.freeze(['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
 const VIDEO_CONTENT_TYPES = Object.freeze(['video/mp4', 'video/webm'])
@@ -82,12 +83,7 @@ export function createMediaFingerprint(file) {
 
 export function createPreviewUrl(file) {
   if (!(file instanceof File)) return ''
-  if (typeof URL?.createObjectURL !== 'function') return ''
-  try {
-    return URL.createObjectURL(file)
-  } catch {
-    return ''
-  }
+  return createManagedObjectUrl(file).url
 }
 
 export function revokePreviewUrl(previewUrl) {
