@@ -176,13 +176,12 @@ export function MediaSettingsSection({ media }) {
     if (url.searchParams.get('media') !== 'connected') return
     setMediaService((current) => ({
       ...current,
-      connectedAccount: media?.connectedAccount || current.connectedAccount,
       message: 'Google Drive is connected. Run Sync now to refresh Album.',
       state: 'connected',
     }))
     url.searchParams.delete('media')
     window.history.replaceState({}, '', url.toString())
-  }, [media?.connectedAccount])
+  }, [])
 
   async function connectTrustedDrive() {
     setMediaService((current) => ({ ...current, message: '', state: 'connecting' }))
