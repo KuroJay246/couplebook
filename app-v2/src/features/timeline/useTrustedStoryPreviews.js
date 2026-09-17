@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useAuth } from '../../auth/useAuth.js'
+import { createObjectUrlRegistry } from '../../services/objectUrlLifecycle.js'
 import { fetchMediaBlobViaTrustedBackend, isTrustedMediaBackendConfigured } from '../../services/trustedMediaBackendClient.js'
 
 const STORY_THUMBNAIL_PRELOAD_ITEMS = 40
@@ -28,12 +29,11 @@ export function useTrustedStoryPreviews(memories = [], selectedMemory = null) {
   const [previewUrls, setPreviewUrls] = useState({})
   const [streamStatus, setStreamStatus] = useState({ error: '', loading: false, mediaId: '' })
   const previewUrlsRef = useRef(new Map())
+  const objectUrlsRef = useRef(null)
+  if (objectUrlsRef.current == null) objectUrlsRef.current = createObjectUrlRegistry()
 
   useEffect(() => () => {
-    for (const preview of previewUrlsRef.current.values()) {
-      const url = typeof preview === 'string' ? preview : preview?.url
-      if (url) URL.revokeObjectURL(url)
-    }
+    objectUrlsRef.current.revokeAll()
     previewUrlsRef.current.clear()
   }, [])
 
@@ -57,7 +57,7 @@ export function useTrustedStoryPreviews(memories = [], selectedMemory = null) {
           user,
         })
         if (cancelled || controller.signal.aborted) return
-        const objectUrl = URL.createObjectURL(blob)
+        const objectUrl = objectUrlsRef.current.create(blob)
         previewUrlsRef.current.set(memory.media.id, { kind: 'image', mode: 'thumbnail', url: objectUrl })
         setPreviewUrls(Object.fromEntries(previewUrlsRef.current.entries()))
       } catch {
@@ -66,12 +66,16 @@ export function useTrustedStoryPreviews(memories = [], selectedMemory = null) {
     }
 
     async function loadPreviews() {
-      const workers = Array.from({ length: Math.min(STORY_THUMBNAIL_PRELOAD_CONCURRENCY, previewMemories.length) }, async (_, workerIndex) => {
-        for (let index = workerIndex; index < previewMemories.length; index += STORY_THUMBNAIL_PRELOAD_CONCURRENCY) {
-          if (cancelled || controller.signal.aborted) return
-          await loadPreview(previewMemories[index])
-        }
-      })
+      let nextIndex = 0
+      async function loadNextPreview() {
+        const index = nextIndex
+        nextIndex += 1
+        const memory = previewMemories[index]
+        if (!memory || cancelled || controller.signal.aborted) return
+        await loadPreview(memory)
+        await loadNextPreview()
+      }
+      const workers = Array.from({ length: Math.min(STORY_THUMBNAIL_PRELOAD_CONCURRENCY, previewMemories.length) }, () => loadNextPreview())
       await Promise.all(workers)
     }
 
@@ -97,8 +101,8 @@ export function useTrustedStoryPreviews(memories = [], selectedMemory = null) {
         mode: isVideo ? 'stream' : 'thumbnail',
         user,
       })
-      const objectUrl = URL.createObjectURL(blob)
-      if (cached?.url && cached.url !== objectUrl) URL.revokeObjectURL(cached.url)
+      const objectUrl = objectUrlsRef.current.create(blob)
+      if (cached?.url && cached.url !== objectUrl) objectUrlsRef.current.revoke(cached.url)
       previewUrlsRef.current.set(mediaId, { kind: isVideo ? 'video' : 'image', mode: isVideo ? 'stream' : 'thumbnail', url: objectUrl })
       setPreviewUrls(Object.fromEntries(previewUrlsRef.current.entries()))
       if (isVideo) setStreamStatus({ error: '', loading: false, mediaId })

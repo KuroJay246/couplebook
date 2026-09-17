@@ -17,6 +17,7 @@ import { StatusBadge } from '../../components/ui/StatusBadge.jsx'
 import { ContentCard, Surface } from '../../components/ui/Surface.jsx'
 import { Toast } from '../../components/ui/Toast.jsx'
 import { useDialogAccessibility } from '../../components/ui/useDialogAccessibility.js'
+import { createObjectUrlRegistry } from '../../services/objectUrlLifecycle.js'
 import { formatBytes } from '../../services/mediaUploadService.js'
 import { fetchMediaBlobViaTrustedBackend, isTrustedMediaBackendConfigured } from '../../services/trustedMediaBackendClient.js'
 import { groupGalleryItemsByDate, selectFilteredGalleryItems } from './gallerySelectors.js'
@@ -374,6 +375,8 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
   const [streamStatus, setStreamStatus] = useState({ error: '', loading: false, mediaId: '' })
   const fileInputRef = useRef(null)
   const previewUrlsRef = useRef(new Map())
+  const objectUrlsRef = useRef(null)
+  if (objectUrlsRef.current == null) objectUrlsRef.current = createObjectUrlRegistry()
   const uploadQueue = useMediaUploadQueue(onRefresh, null)
   const items = useMemo(() => (Array.isArray(model.items) ? model.items : []), [model])
   const years = model.filters?.availableYears || []
@@ -386,10 +389,7 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
     : ''
 
   useEffect(() => () => {
-    for (const preview of previewUrlsRef.current.values()) {
-      const url = typeof preview === 'string' ? preview : preview?.url
-      if (url) URL.revokeObjectURL(url)
-    }
+    objectUrlsRef.current.revokeAll()
     previewUrlsRef.current.clear()
   }, [])
 
@@ -413,7 +413,7 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
           user,
         })
         if (cancelled || controller.signal.aborted) return
-        const objectUrl = URL.createObjectURL(blob)
+        const objectUrl = objectUrlsRef.current.create(blob)
         previewUrlsRef.current.set(item.media.id, { kind: 'image', mode: 'thumbnail', url: objectUrl })
         setPreviewUrls(Object.fromEntries(previewUrlsRef.current.entries()))
       } catch {
@@ -422,12 +422,16 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
     }
 
     async function loadPreviews() {
-      const workers = Array.from({ length: Math.min(THUMBNAIL_PRELOAD_CONCURRENCY, indexedItems.length) }, async (_, workerIndex) => {
-        for (let index = workerIndex; index < indexedItems.length; index += THUMBNAIL_PRELOAD_CONCURRENCY) {
-          if (cancelled || controller.signal.aborted) return
-          await loadPreviewItem(indexedItems[index])
-        }
-      })
+      let nextIndex = 0
+      async function loadNextPreview() {
+        const index = nextIndex
+        nextIndex += 1
+        const item = indexedItems[index]
+        if (!item || cancelled || controller.signal.aborted) return
+        await loadPreviewItem(item)
+        await loadNextPreview()
+      }
+      const workers = Array.from({ length: Math.min(THUMBNAIL_PRELOAD_CONCURRENCY, indexedItems.length) }, () => loadNextPreview())
       await Promise.all(workers)
     }
 
@@ -453,8 +457,8 @@ export function GalleryView({ compatibilityError, compatibilityState, model, onR
         mode: isVideo ? 'stream' : 'thumbnail',
         user,
       })
-      const objectUrl = URL.createObjectURL(blob)
-      if (cached?.url && cached.url !== objectUrl) URL.revokeObjectURL(cached.url)
+      const objectUrl = objectUrlsRef.current.create(blob)
+      if (cached?.url && cached.url !== objectUrl) objectUrlsRef.current.revoke(cached.url)
       previewUrlsRef.current.set(mediaId, { kind: isVideo ? 'video' : 'image', mode: isVideo ? 'stream' : 'thumbnail', url: objectUrl })
       setPreviewUrls(Object.fromEntries(previewUrlsRef.current.entries()))
       if (isVideo) setStreamStatus({ error: '', loading: false, mediaId })
