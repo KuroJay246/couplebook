@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useAuth } from '../../auth/useAuth.js'
 import { resolveDataSourceMode } from '../../data/dataSourceMode.js'
+import { withSourceTimeout } from './sourceTimeout.js'
 
 export function getApprovedUserCoupleId(approvedUser) {
   return approvedUser?.coupleId || approvedUser?.raw?.coupleId || ''
@@ -52,7 +53,7 @@ export function useCoupleScopedSource({ domainKey, emptySource, fixtureSource = 
     const requestOwnerKey = ownerKey
 
     Promise.resolve()
-      .then(() => loadSource({
+      .then(() => withSourceTimeout(Promise.resolve(loadSource({
         approvedUser,
         coupleId: getApprovedUserCoupleId(approvedUser),
         forceRefresh: refreshKey > 0,
@@ -60,7 +61,7 @@ export function useCoupleScopedSource({ domainKey, emptySource, fixtureSource = 
         sourceMode,
         uid: getApprovedUserUid(approvedUser),
         username: approvedUser.username,
-      }))
+      })), domainKey))
       .then((source) => {
         if (!active) return
         setState({
