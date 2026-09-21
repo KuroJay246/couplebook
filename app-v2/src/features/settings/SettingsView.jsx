@@ -163,6 +163,250 @@ function NotificationSettingsSection({ notifications, onToggle, values }) {
   )
 }
 
+function SettingsHeading({ dirty, onCancel, onSave, status }) {
+  return (
+    <div className="cb-settings-heading">
+      <div>
+        <h2>Settings</h2>
+        <p>Account, appearance, media, notifications, privacy, and private access.</p>
+      </div>
+      <div className="cb-settings-actions">
+        <StatusBadge tone={dirty ? 'warning' : 'success'}>
+          {dirty ? 'Unsaved changes' : 'Saved'}
+        </StatusBadge>
+        <SecondaryButton disabled={!dirty || status.saving} onClick={onCancel}>Cancel</SecondaryButton>
+        <PrimaryButton loading={status.saving} onClick={onSave}>{status.saving ? 'Saving' : 'Save changes'}</PrimaryButton>
+      </div>
+    </div>
+  )
+}
+
+function SettingsTabs({ activeCategory, onSelect }) {
+  return (
+    <nav aria-label="Settings categories" className="cb-settings-tabs">
+      {SETTINGS_CATEGORIES.map(([key, label]) => (
+        <button
+          aria-current={activeCategory === key ? 'page' : undefined}
+          className={activeCategory === key ? 'cb-settings-tab cb-settings-tab-active min-h-11' : 'cb-settings-tab min-h-11'}
+          key={key}
+          onClick={() => onSelect(key)}
+          type="button"
+        >
+          {label}
+        </button>
+      ))}
+    </nav>
+  )
+}
+
+function ProfileSettingsSection() {
+  return (
+    <Surface className="cb-page-frame">
+      <p className="cb-kicker">Profile & Relationship</p>
+      <h3 className="cb-page-title mt-2 text-2xl">Use Us for profile details</h3>
+      <p className="cb-body-copy mt-2 text-sm">Partner names, birthdays, shared relationship dates, and favorites live on the Us page so Settings stays focused on configuration.</p>
+    </Surface>
+  )
+}
+
+function DatesSettingsSection() {
+  return (
+    <Surface className="cb-page-frame">
+      <p className="cb-kicker">Important Dates</p>
+      <h3 className="cb-page-title mt-2 text-2xl">Dates are managed from Us</h3>
+      <p className="cb-body-copy mt-2 text-sm">Birthdays are partner dates. The primary anniversary is a couple-level relationship date.</p>
+    </Surface>
+  )
+}
+
+function AppearanceSettingsSection({ form, model, onUpdateField }) {
+  const currentThemeName = THEME_REGISTRY.find((theme) => theme.id === form.appearanceTheme)?.name || 'Midnight Rose'
+
+  return (
+    <Surface className="cb-page-frame">
+      <div className="flex flex-col gap-4 border-b pb-4 sm:flex-row sm:items-end sm:justify-between" style={{ borderColor: 'var(--cb-border)' }}>
+        <div>
+          <p className="cb-kicker">Appearance</p>
+          <h3 className="cb-page-title mt-2 text-3xl">Appearance</h3>
+          <p className="cb-body-copy mt-2 text-sm">Preview every supported theme instantly. Save only one allowed theme ID to your personal settings.</p>
+        </div>
+        <StatusBadge tone="info">Theme: {currentThemeName}</StatusBadge>
+      </div>
+
+      <div className="mt-5 grid gap-4 xl:grid-cols-3">
+        {THEME_REGISTRY.map((theme) => (
+          <ThemeTile active={form.appearanceTheme === theme.id} key={theme.id} onSelect={(themeId) => onUpdateField('appearanceTheme', themeId)} theme={theme} />
+        ))}
+      </div>
+
+      <div className="mt-5 grid gap-4 lg:grid-cols-2">
+        <FormField label="Relationship dates view">
+          <SelectField id="setting-anniversary-view" onChange={(event) => onUpdateField('anniversaryView', event.target.value)} value={form.anniversaryView}>
+            <option value="dual">Show both perspectives</option>
+            <option value="jaylan">Jaylan perspective</option>
+            <option value="omia">Omia perspective</option>
+          </SelectField>
+        </FormField>
+        <ContentCard>
+          <p className="cb-kicker">Current theme</p>
+          <p className="mt-2 text-sm font-semibold" style={{ color: 'var(--cb-text)' }}>{model.appearance?.preservedTheme?.label}</p>
+          <p className="cb-body-copy mt-2 text-sm">{model.appearance?.preservedTheme?.origin}</p>
+        </ContentCard>
+      </div>
+
+      <div className="mt-5 grid gap-4 lg:grid-cols-2">
+        <ToggleRow
+          checked={form.localOnlyMode}
+          description="Helpful when reviewing Couple Book on a trusted browser without changing the underlying auth boundary."
+          label="Keep private reads on this device"
+          onChange={(value) => onUpdateField('localOnlyMode', value)}
+        />
+        <ToggleRow
+          checked={form.reducedMotion}
+          description="Use quieter transitions while preserving the Couple Book layout and route structure."
+          label="Reduce motion"
+          onChange={(value) => onUpdateField('reducedMotion', value)}
+        />
+      </div>
+    </Surface>
+  )
+}
+
+function PrivacySettingsSection({ googleLinkState, googleLinked, model, onLinkGoogle }) {
+  return (
+    <Surface>
+      <div className="flex items-start gap-3">
+        <span
+          className="grid size-11 shrink-0 place-items-center rounded-2xl"
+          style={{
+            background: 'color-mix(in srgb, var(--cb-accent-soft) 88%, transparent)',
+            color: 'var(--cb-accent)',
+          }}
+        >
+          <Shield className="size-5" aria-hidden="true" />
+        </span>
+        <div>
+          <p className="cb-kicker">Privacy and access</p>
+          <h3 className="cb-page-title mt-2 text-2xl">Account boundaries stay quiet</h3>
+        </div>
+      </div>
+      <div className="mt-5 grid gap-3">
+        {(model.account?.details || []).map((detail) => (
+          <ContentCard key={detail.key}>
+            <p className="cb-kicker">{detail.label}</p>
+            <p className="mt-2 text-sm font-semibold" style={{ color: 'var(--cb-text)' }}>{detail.value}</p>
+          </ContentCard>
+        ))}
+      </div>
+      <div className="mt-5">
+        <ContentCard>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex items-start gap-3">
+              <KeyRound className="mt-0.5 size-4 shrink-0" style={{ color: 'var(--cb-accent)' }} aria-hidden="true" />
+              <div>
+                <p className="text-sm font-semibold" style={{ color: 'var(--cb-text)' }}>Google sign-in</p>
+                <p className="cb-body-copy mt-2 text-sm">
+                  Link Google only while signed in with the existing approved account so the current Firebase UID, couple membership, and private book data stay intact.
+                </p>
+              </div>
+            </div>
+            <StatusBadge tone={googleLinked ? 'success' : 'warning'}>{googleLinked ? 'Linked' : 'Not linked'}</StatusBadge>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <SecondaryButton disabled={googleLinked || googleLinkState.pending} onClick={onLinkGoogle}>
+              {googleLinkState.pending ? 'Opening Google...' : 'Link Google sign-in'}
+            </SecondaryButton>
+            <StatusBadge>{GOOGLE_PROVIDER_ID}</StatusBadge>
+          </div>
+          {googleLinkState.message ? (
+            <InlineAlert className="mt-4" description={googleLinkState.message} tone={googleLinkState.kind === 'error' ? 'error' : 'success'} />
+          ) : null}
+        </ContentCard>
+      </div>
+      <div className="mt-5 grid gap-3">
+        {(model.privacy?.items || []).map((item) => (
+          <ContentCard key={item.label}>
+            <div className="flex items-start gap-3">
+              <LockKeyhole className="mt-0.5 size-4 shrink-0" style={{ color: 'var(--cb-accent)' }} aria-hidden="true" />
+              <div>
+                <p className="text-sm font-semibold" style={{ color: 'var(--cb-text)' }}>{item.label}</p>
+                <p className="cb-body-copy mt-2 text-sm">{item.description}</p>
+              </div>
+            </div>
+          </ContentCard>
+        ))}
+      </div>
+    </Surface>
+  )
+}
+
+function AdvancedSettingsSection({ model, onSignOut }) {
+  return (
+    <details className="cb-advanced-panel" open>
+      <summary className="cb-advanced-summary">
+        <span>
+          <span className="cb-kicker">Advanced</span>
+          <span className="mt-1 block text-lg font-semibold" style={{ color: 'var(--cb-text)' }}>System health and account controls</span>
+        </span>
+        <span className="text-sm font-semibold" style={{ color: 'var(--cb-accent)' }}>Review</span>
+      </summary>
+      <div className="grid gap-5 pt-5">
+        <Surface tone="soft">
+          <div className="flex items-start gap-3">
+            <MonitorCog className="mt-1 size-5" style={{ color: 'var(--cb-accent)' }} aria-hidden="true" />
+            <div>
+              <p className="cb-kicker">System health</p>
+              <h3 className="cb-page-title mt-2 text-2xl">System health</h3>
+              <p className="cb-body-copy mt-2 text-sm">Private access, saved data, and media connection health.</p>
+            </div>
+          </div>
+          <div className="mt-5 grid gap-3">
+            {(model.compatibility?.items || []).map((item) => (
+              <ContentCard key={item.key}>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold" style={{ color: 'var(--cb-text)' }}>{item.label}</p>
+                    <p className="cb-body-copy mt-2 text-sm">{item.summary}</p>
+                  </div>
+                  <StatusBadge>{item.statusLabel}</StatusBadge>
+                </div>
+              </ContentCard>
+            ))}
+          </div>
+        </Surface>
+
+        <Surface tone="soft">
+          <div className="flex items-start gap-3">
+            <Sparkles className="mt-1 size-5" style={{ color: 'var(--cb-accent)' }} aria-hidden="true" />
+            <div>
+              <p className="cb-kicker">Account</p>
+              <h3 className="cb-page-title mt-2 text-2xl">Leave this device</h3>
+              <p className="cb-body-copy mt-2 text-sm">Sign out closes Couple Book on this device and returns to the private sign-in screen.</p>
+            </div>
+          </div>
+          <div className="mt-5">
+            <SecondaryButton onClick={onSignOut}><LogOut className="size-4" />Sign out</SecondaryButton>
+          </div>
+        </Surface>
+      </div>
+    </details>
+  )
+}
+
+function SettingsCategoryPane({ activeCategory, form, googleLinkState, googleLinked, model, onLinkGoogle, onSignOut, onToggleNotification, onUpdateField }) {
+  if (activeCategory === 'profiles') return <ProfileSettingsSection />
+  if (activeCategory === 'dates') return <DatesSettingsSection />
+  if (activeCategory === 'appearance') return <AppearanceSettingsSection form={form} model={model} onUpdateField={onUpdateField} />
+  if (activeCategory === 'media') return <MediaSettingsSection media={model.media} />
+  if (activeCategory === 'notifications') {
+    return <NotificationSettingsSection notifications={model.notifications} onToggle={onToggleNotification} values={form.notifications} />
+  }
+  if (activeCategory === 'privacy') {
+    return <PrivacySettingsSection googleLinkState={googleLinkState} googleLinked={googleLinked} model={model} onLinkGoogle={onLinkGoogle} />
+  }
+  return <AdvancedSettingsSection model={model} onSignOut={onSignOut} />
+}
+
 export function SettingsView({ compatibilityError, compatibilityState, model, onRefresh }) {
   const writer = useOwnerWrite(onRefresh)
   const { linkGoogleProvider, signOut, user } = useAuth()
@@ -263,225 +507,25 @@ export function SettingsView({ compatibilityError, compatibilityState, model, on
 
   return (
     <section className="cb-settings-page" data-route="settings">
-      <div className="cb-settings-heading">
-        <div>
-          <h2>Settings</h2>
-          <p>Account, appearance, media, notifications, privacy, and private access.</p>
-        </div>
-        <div className="cb-settings-actions">
-          <StatusBadge tone={dirty ? 'warning' : 'success'}>
-            {dirty ? 'Unsaved changes' : 'Saved'}
-          </StatusBadge>
-          <SecondaryButton disabled={!dirty || status.saving} onClick={resetCurrentView}>Cancel</SecondaryButton>
-          <PrimaryButton loading={status.saving} onClick={saveSettings}>{status.saving ? 'Saving' : 'Save changes'}</PrimaryButton>
-        </div>
-      </div>
+      <SettingsHeading dirty={dirty} onCancel={resetCurrentView} onSave={saveSettings} status={status} />
 
       {status.message ? <InlineAlert description={status.message} tone={status.kind === 'error' ? 'error' : 'success'} /> : null}
 
       <div className="cb-settings-layout">
-        <nav aria-label="Settings categories" className="cb-settings-tabs">
-          {SETTINGS_CATEGORIES.map(([key, label]) => (
-            <button
-              aria-current={activeCategory === key ? 'page' : undefined}
-              className={activeCategory === key ? 'cb-settings-tab cb-settings-tab-active min-h-11' : 'cb-settings-tab min-h-11'}
-              key={key}
-              onClick={() => setActiveCategory(key)}
-              type="button"
-            >
-              {label}
-            </button>
-          ))}
-        </nav>
+        <SettingsTabs activeCategory={activeCategory} onSelect={setActiveCategory} />
 
         <div className="cb-settings-pane">
-      {activeCategory === 'profiles' ? (
-        <Surface className="cb-page-frame">
-          <p className="cb-kicker">Profile & Relationship</p>
-          <h3 className="cb-page-title mt-2 text-2xl">Use Us for profile details</h3>
-          <p className="cb-body-copy mt-2 text-sm">Partner names, birthdays, shared relationship dates, and favorites live on the Us page so Settings stays focused on configuration.</p>
-        </Surface>
-      ) : null}
-
-      {activeCategory === 'dates' ? (
-        <Surface className="cb-page-frame">
-          <p className="cb-kicker">Important Dates</p>
-          <h3 className="cb-page-title mt-2 text-2xl">Dates are managed from Us</h3>
-          <p className="cb-body-copy mt-2 text-sm">Birthdays are partner dates. The primary anniversary is a couple-level relationship date.</p>
-        </Surface>
-      ) : null}
-
-      {activeCategory === 'appearance' ? <Surface className="cb-page-frame">
-        <div className="flex flex-col gap-4 border-b pb-4 sm:flex-row sm:items-end sm:justify-between" style={{ borderColor: 'var(--cb-border)' }}>
-          <div>
-            <p className="cb-kicker">Appearance</p>
-            <h3 className="cb-page-title mt-2 text-3xl">Appearance</h3>
-            <p className="cb-body-copy mt-2 text-sm">Preview every supported theme instantly. Save only one allowed theme ID to your personal settings.</p>
-          </div>
-          <StatusBadge tone="info">Theme: {THEME_REGISTRY.find((theme) => theme.id === form.appearanceTheme)?.name || 'Midnight Rose'}</StatusBadge>
-        </div>
-
-        <div className="mt-5 grid gap-4 xl:grid-cols-3">
-          {THEME_REGISTRY.map((theme) => (
-            <ThemeTile active={form.appearanceTheme === theme.id} key={theme.id} onSelect={(themeId) => updateField('appearanceTheme', themeId)} theme={theme} />
-          ))}
-        </div>
-
-        <div className="mt-5 grid gap-4 lg:grid-cols-2">
-          <FormField label="Relationship dates view">
-            <SelectField id="setting-anniversary-view" onChange={(event) => updateField('anniversaryView', event.target.value)} value={form.anniversaryView}>
-              <option value="dual">Show both perspectives</option>
-              <option value="jaylan">Jaylan perspective</option>
-              <option value="omia">Omia perspective</option>
-            </SelectField>
-          </FormField>
-          <ContentCard>
-            <p className="cb-kicker">Current theme</p>
-            <p className="mt-2 text-sm font-semibold" style={{ color: 'var(--cb-text)' }}>{model.appearance?.preservedTheme?.label}</p>
-            <p className="cb-body-copy mt-2 text-sm">{model.appearance?.preservedTheme?.origin}</p>
-          </ContentCard>
-        </div>
-
-        <div className="mt-5 grid gap-4 lg:grid-cols-2">
-          <ToggleRow
-            checked={form.localOnlyMode}
-            description="Helpful when reviewing Couple Book on a trusted browser without changing the underlying auth boundary."
-            label="Keep private reads on this device"
-            onChange={(value) => updateField('localOnlyMode', value)}
+          <SettingsCategoryPane
+            activeCategory={activeCategory}
+            form={form}
+            googleLinkState={googleLinkState}
+            googleLinked={googleLinked}
+            model={model}
+            onLinkGoogle={handleLinkGoogle}
+            onSignOut={confirmSignOut}
+            onToggleNotification={updateNotificationPreference}
+            onUpdateField={updateField}
           />
-          <ToggleRow
-            checked={form.reducedMotion}
-            description="Use quieter transitions while preserving the Couple Book layout and route structure."
-            label="Reduce motion"
-            onChange={(value) => updateField('reducedMotion', value)}
-          />
-        </div>
-      </Surface> : null}
-
-      {activeCategory === 'notifications' ? <NotificationSettingsSection
-        notifications={model.notifications}
-        onToggle={updateNotificationPreference}
-        values={form.notifications}
-      /> : null}
-
-      {activeCategory === 'privacy' ? (
-        <Surface>
-          <div className="flex items-start gap-3">
-            <span
-              className="grid size-11 shrink-0 place-items-center rounded-2xl"
-              style={{
-                background: 'color-mix(in srgb, var(--cb-accent-soft) 88%, transparent)',
-                color: 'var(--cb-accent)',
-              }}
-            >
-              <Shield className="size-5" aria-hidden="true" />
-            </span>
-            <div>
-              <p className="cb-kicker">Privacy and access</p>
-              <h3 className="cb-page-title mt-2 text-2xl">Account boundaries stay quiet</h3>
-            </div>
-          </div>
-          <div className="mt-5 grid gap-3">
-            {(model.account?.details || []).map((detail) => (
-              <ContentCard key={detail.key}>
-                <p className="cb-kicker">{detail.label}</p>
-                <p className="mt-2 text-sm font-semibold" style={{ color: 'var(--cb-text)' }}>{detail.value}</p>
-              </ContentCard>
-            ))}
-          </div>
-          <div className="mt-5">
-            <ContentCard>
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div className="flex items-start gap-3">
-                  <KeyRound className="mt-0.5 size-4 shrink-0" style={{ color: 'var(--cb-accent)' }} aria-hidden="true" />
-                  <div>
-                    <p className="text-sm font-semibold" style={{ color: 'var(--cb-text)' }}>Google sign-in</p>
-                    <p className="cb-body-copy mt-2 text-sm">
-                      Link Google only while signed in with the existing approved account so the current Firebase UID, couple membership, and private book data stay intact.
-                    </p>
-                  </div>
-                </div>
-                <StatusBadge tone={googleLinked ? 'success' : 'warning'}>{googleLinked ? 'Linked' : 'Not linked'}</StatusBadge>
-              </div>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <SecondaryButton disabled={googleLinked || googleLinkState.pending} onClick={handleLinkGoogle}>
-                  {googleLinkState.pending ? 'Opening Google...' : 'Link Google sign-in'}
-                </SecondaryButton>
-                <StatusBadge>{GOOGLE_PROVIDER_ID}</StatusBadge>
-              </div>
-              {googleLinkState.message ? (
-                <InlineAlert className="mt-4" description={googleLinkState.message} tone={googleLinkState.kind === 'error' ? 'error' : 'success'} />
-              ) : null}
-            </ContentCard>
-          </div>
-          <div className="mt-5 grid gap-3">
-            {(model.privacy?.items || []).map((item) => (
-              <ContentCard key={item.label}>
-                <div className="flex items-start gap-3">
-                  <LockKeyhole className="mt-0.5 size-4 shrink-0" style={{ color: 'var(--cb-accent)' }} aria-hidden="true" />
-                  <div>
-                    <p className="text-sm font-semibold" style={{ color: 'var(--cb-text)' }}>{item.label}</p>
-                    <p className="cb-body-copy mt-2 text-sm">{item.description}</p>
-                  </div>
-                </div>
-              </ContentCard>
-            ))}
-          </div>
-        </Surface>
-      ) : null}
-
-      {activeCategory === 'media' ? <MediaSettingsSection media={model.media} /> : null}
-
-      {activeCategory === 'advanced' ? (
-        <details className="cb-advanced-panel" open>
-          <summary className="cb-advanced-summary">
-            <span>
-              <span className="cb-kicker">Advanced</span>
-              <span className="mt-1 block text-lg font-semibold" style={{ color: 'var(--cb-text)' }}>System health and account controls</span>
-            </span>
-            <span className="text-sm font-semibold" style={{ color: 'var(--cb-accent)' }}>Review</span>
-          </summary>
-          <div className="grid gap-5 pt-5">
-          <Surface tone="soft">
-            <div className="flex items-start gap-3">
-              <MonitorCog className="mt-1 size-5" style={{ color: 'var(--cb-accent)' }} aria-hidden="true" />
-              <div>
-                <p className="cb-kicker">System health</p>
-                <h3 className="cb-page-title mt-2 text-2xl">System health</h3>
-                <p className="cb-body-copy mt-2 text-sm">Private access, saved data, and media connection health.</p>
-              </div>
-            </div>
-            <div className="mt-5 grid gap-3">
-              {(model.compatibility?.items || []).map((item) => (
-                <ContentCard key={item.key}>
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-semibold" style={{ color: 'var(--cb-text)' }}>{item.label}</p>
-                      <p className="cb-body-copy mt-2 text-sm">{item.summary}</p>
-                    </div>
-                    <StatusBadge>{item.statusLabel}</StatusBadge>
-                  </div>
-                </ContentCard>
-              ))}
-            </div>
-          </Surface>
-
-          <Surface tone="soft">
-            <div className="flex items-start gap-3">
-              <Sparkles className="mt-1 size-5" style={{ color: 'var(--cb-accent)' }} aria-hidden="true" />
-              <div>
-                <p className="cb-kicker">Account</p>
-                <h3 className="cb-page-title mt-2 text-2xl">Leave this device</h3>
-                <p className="cb-body-copy mt-2 text-sm">Sign out closes Couple Book on this device and returns to the private sign-in screen.</p>
-              </div>
-            </div>
-            <div className="mt-5">
-              <SecondaryButton onClick={confirmSignOut}><LogOut className="size-4" />Sign out</SecondaryButton>
-            </div>
-          </Surface>
-          </div>
-        </details>
-      ) : null}
         </div>
       </div>
 
