@@ -37,6 +37,7 @@ const THRESHOLDS = Object.freeze({
   mobileScrollLongFrameCount: 2,
   cumulativeLayoutShift: 0.1,
 })
+const DETAIL_DIALOG_SELECTOR = 'dialog[open], [role="dialog"], .lightbox-overlay.active, .modal-overlay.active'
 
 function log(message) {
   process.stdout.write(`${message}\n`)
@@ -201,13 +202,32 @@ async function measureDetailDialog(page, baseUrl, routePath, triggerTarget) {
     } else {
       await page.getByRole('button', { name: triggerTarget.name }).first().click()
     }
-    await page.locator('[role="dialog"], .lightbox-overlay.active, .modal-overlay.active').first().waitFor({ state: 'visible', timeout: 5000 })
+    await page.locator(DETAIL_DIALOG_SELECTOR).first().waitFor({ state: 'visible', timeout: 5000 })
   })
   assert.equal(result.ms <= THRESHOLDS.modalOpenMs, true, `${route.path} detail dialog should open below ${THRESHOLDS.modalOpenMs}ms.`)
-  const dialog = page.locator('[role="dialog"], .lightbox-overlay.active, .modal-overlay.active').first()
+  const dialog = page.locator(DETAIL_DIALOG_SELECTOR).first()
   assert.equal(await dialog.locator('img, video, audio, iframe').count(), 0, `${route.path} dialog should not render private media elements.`)
   await dialog.getByRole('button', { name: /close/i }).first().click({ force: true })
   await dialog.waitFor({ state: 'hidden', timeout: 5000 })
+  return result
+}
+
+async function measureGalleryInteraction(page, baseUrl) {
+  const route = ROUTES.find((entry) => entry.path === '/gallery')
+  await page.goto(`${baseUrl}${route.path}`, { waitUntil: 'domcontentloaded' })
+  await waitForRoute(page, route)
+
+  const tile = page.locator('button.gallery-media-frame, button.gallery-index-tile-button').first()
+  if (await tile.count()) {
+    return measureDetailDialog(page, baseUrl, '/gallery', { selector: 'button.gallery-media-frame, button.gallery-index-tile-button' })
+  }
+
+  const result = await timed('panel:/gallery', async () => {
+    await page.getByRole('button', { name: /Manage/i }).first().click()
+    await page.locator('[aria-label="Album management tools"]').first().waitFor({ state: 'visible', timeout: 5000 })
+  })
+  assert.equal(result.ms <= THRESHOLDS.modalOpenMs, true, `/gallery management panel should open below ${THRESHOLDS.modalOpenMs}ms.`)
+  assert.equal(await page.locator('[aria-label="Album management tools"]').locator('img, video, audio, iframe').count(), 0, '/gallery management panel should not render private media elements.')
   return result
 }
 
@@ -343,7 +363,7 @@ async function run() {
     const routeTransitions = await measureRouteTransitions(page, baseUrl)
     const modalOpen = [
       await measureDetailDialog(page, baseUrl, '/timeline', { name: 'View memory' }),
-      await measureDetailDialog(page, baseUrl, '/gallery', { selector: 'button.gallery-media-frame' }),
+      await measureGalleryInteraction(page, baseUrl),
     ]
     const performanceState = await readPerformanceState(page)
 

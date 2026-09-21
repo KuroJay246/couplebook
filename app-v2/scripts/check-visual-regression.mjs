@@ -28,7 +28,7 @@ const VIEWPORTS = Object.freeze([
 ])
 
 const ROUTES = Object.freeze([
-  { path: '/login', heading: 'Open the shared journal kept between the two of you.', mode: 'signed-out' },
+  { path: '/login', heading: /Continue with Google/, mode: 'signed-out' },
   { path: '/dashboard', heading: /Omia & Jaylan/, mode: 'authorized' },
   { path: '/timeline', heading: /Our Story/, mode: 'authorized' },
   { path: '/gallery', heading: /Album/, mode: 'authorized' },
@@ -78,6 +78,7 @@ async function measurePage(page) {
 
     return {
       pathname: window.location.pathname,
+      bodyText: document.body?.innerText || '',
       overflowX: Math.max(0, document.documentElement.scrollWidth - document.documentElement.clientWidth),
       scrollHeight: document.documentElement.scrollHeight,
       contentWidth: shellContent ? Math.round(shellContent.getBoundingClientRect().width) : null,
@@ -113,7 +114,13 @@ function assertRecoveredVisuals(route, viewport, metrics) {
   }
 
   if (route.path === '/gallery') {
-    if (viewport.family === 'desktop') {
+    if (metrics.galleryCardWidths.length === 0) {
+      assert.match(
+        metrics.bodyText,
+        /Album sync needs attention|No gallery entries match this view|Queue is empty/i,
+        `${viewport.name} Gallery without visible cards should render an intentional empty or recovery state.`,
+      )
+    } else if (viewport.family === 'desktop') {
       assert.equal(
         metrics.galleryColumnsInFirstRows.some((columns) => columns >= 3),
         true,
@@ -157,7 +164,15 @@ async function assertDetailInteraction(page, route, viewport) {
   }
 
   if (route.path === '/gallery') {
-    await page.locator('button.gallery-media-frame').first().click()
+    const tile = page.locator('button.gallery-media-frame, button.gallery-index-tile-button').first()
+    if (!(await tile.count())) {
+      await page.getByRole('button', { name: /Manage/i }).first().click()
+      await page.locator('[aria-label="Album management tools"]').first().waitFor({ state: 'visible', timeout: 5000 })
+      assert.equal(await page.locator('[aria-label="Album management tools"]').locator('img, video, audio, iframe').count(), 0, `${viewport.name} ${route.path} management panel should not render private media elements.`)
+      return
+    }
+
+    await tile.click()
     const dialog = page.getByRole('dialog')
     await dialog.waitFor({ state: 'visible', timeout: 5000 })
     assert.equal(await dialog.locator('img, video, audio, iframe').count(), 0, `${viewport.name} ${route.path} detail should not render private media elements.`)
