@@ -118,6 +118,35 @@ function buildMonthOptions(memories) {
   return [...monthMap.values()].sort((left, right) => right.key.localeCompare(left.key))
 }
 
+function filterTimelineMemories({ memories, search, selectedMonth, selectedTag, selectedType, selectedYear, sortOrder }) {
+  const normalizedSearch = search.trim().toLowerCase()
+  const filtered = memories.filter((memory) => {
+    if (selectedTag !== 'all' && !memory.tags.some((tag) => tag.key === selectedTag)) return false
+    if (selectedYear !== 'all' && String(memory.date?.year || '') !== selectedYear) return false
+    if (selectedMonth !== 'all') {
+      const monthKey = memory.date?.status === 'valid'
+        ? `${memory.date.year}-${String(memory.date.month).padStart(2, '0')}`
+        : ''
+      if (monthKey !== selectedMonth) return false
+    }
+    if (selectedType !== 'all') {
+      if (selectedType === 'special' && !memory.specialMoment?.isSpecial) return false
+      if (selectedType === 'photo' && memory.media?.kind !== 'image') return false
+      if (selectedType === 'video' && memory.media?.kind !== 'video') return false
+      if (selectedType === 'no-media' && !['none', 'special-route-only'].includes(memory.media?.status)) return false
+    }
+    if (!normalizedSearch) return true
+    const haystack = [
+      memory.displayTitle,
+      memory.displayDescription,
+      memory.displayDate,
+      ...memory.tags.map((tag) => tag.label),
+    ].join(' ').toLowerCase()
+    return haystack.includes(normalizedSearch)
+  })
+  return sortMemories(filtered, sortOrder)
+}
+
 function MemoryFormDialog({ memory = null, mode, onClose, onSave, status }) {
   const firstFieldRef = useRef(null)
   const titleId = useId()
@@ -198,6 +227,91 @@ function MemoryFormDialog({ memory = null, mode, onClose, onSave, status }) {
   )
 }
 
+function getDetailPreviewState(memory) {
+  const previewUrl = memory.media?.previewUrl || memory.media?.thumbnailUrl || ''
+  const previewKind = memory.media?.previewKind || memory.media?.kind || 'image'
+  const isVideo = memory.media?.kind === 'video'
+  const hasVideoStream = isVideo && previewKind === 'video' && previewUrl
+
+  return {
+    hasPreview: Boolean(previewUrl || isVideo),
+    hasVideoStream,
+    isVideo,
+    posterUrl: isVideo && !hasVideoStream ? previewUrl : '',
+    previewUrl,
+    viewerKind: isVideo ? 'video' : previewKind,
+    viewerSrc: isVideo ? (hasVideoStream ? previewUrl : '') : previewUrl,
+  }
+}
+
+function DetailPreview({ memory, onLoadStream, streamStatus }) {
+  const preview = getDetailPreviewState(memory)
+  if (!preview.hasPreview) return null
+  const {
+    hasVideoStream,
+    isVideo,
+    posterUrl,
+    viewerKind,
+    viewerSrc,
+  } = preview
+
+  return (
+    <div className="overflow-hidden rounded-[20px] border border-[var(--cb-border)] bg-[var(--cb-accent-soft)]">
+      <MediaPreview
+        alt={memory.displayTitle}
+        className={isVideo ? 'aspect-video w-full' : 'aspect-[4/3] w-full'}
+        controls={isVideo && hasVideoStream}
+        description={streamStatus?.error || (isVideo ? 'The video original is private. Open a temporary playback session when you want to watch it.' : '')}
+        kind={viewerKind}
+        loading={Boolean(streamStatus?.loading)}
+        objectFit={isVideo ? 'contain' : 'cover'}
+        onLoadRequest={isVideo ? onLoadStream : undefined}
+        poster={posterUrl}
+        src={viewerSrc}
+        title={isVideo ? 'Private video preview' : ''}
+      />
+    </div>
+  )
+}
+
+function DetailMediaNotice({ memory }) {
+  const verified = ['storage-verified', 'drive-verified', 'drive-indexed'].includes(memory.media.status)
+
+  return (
+    <InlineAlert
+      tone={verified ? 'success' : 'info'}
+      title={verified ? 'Private media verified' : 'Private media stays protected'}
+      description={
+        verified
+          ? 'Album can safely reference the private media provider metadata without exposing the original file in public assets.'
+          : 'This entry preserves the story and metadata even when the original private file is not available in the current device view.'
+      }
+    />
+  )
+}
+
+function DetailSidebar({ memory }) {
+  return (
+    <div className="grid gap-4">
+      <Surface tone="soft">
+        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Tags</p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {memory.tags.length > 0 ? memory.tags.map((tag) => <StatusBadge key={tag.key}>{tag.label}</StatusBadge>) : <span className="text-sm text-[var(--cb-text-muted)]">No tags saved.</span>}
+        </div>
+      </Surface>
+      {memory.specialMoment.route ? (
+        <Surface tone="soft">
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Related page</p>
+          <p className="mt-2 text-sm leading-6 text-[var(--cb-text-secondary)]">This memory also connects to a protected special page inside Couple Book.</p>
+          <div className="mt-4">
+            <SecondaryButton as={Link} to={memory.specialMoment.route}>Open related page</SecondaryButton>
+          </div>
+        </Surface>
+      ) : null}
+    </div>
+  )
+}
+
 function DetailModal({ memory, onArchive, onClose, onEdit, onLoadStream, status, streamStatus }) {
   const closeButtonRef = useRef(null)
   const titleId = useId()
@@ -209,13 +323,6 @@ function DetailModal({ memory, onArchive, onClose, onEdit, onLoadStream, status,
   }, [memory])
 
   if (!memory) return null
-  const previewUrl = memory.media?.previewUrl || memory.media?.thumbnailUrl || ''
-  const previewKind = memory.media?.previewKind || memory.media?.kind || 'image'
-  const isVideo = memory.media?.kind === 'video'
-  const hasVideoStream = isVideo && previewKind === 'video' && previewUrl
-  const posterUrl = isVideo && !hasVideoStream ? previewUrl : ''
-  const viewerKind = isVideo ? 'video' : previewKind
-  const viewerSrc = isVideo ? (hasVideoStream ? previewUrl : '') : previewUrl
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -239,57 +346,17 @@ function DetailModal({ memory, onArchive, onClose, onEdit, onLoadStream, status,
         <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(18rem,0.9fr)]">
           <ContentCard className="min-h-72 bg-[linear-gradient(180deg,#fff9fb_0%,#fdf4f8_100%)]">
             <div className="flex h-full flex-col justify-between gap-6">
-              {previewUrl || isVideo ? (
-                <div className="overflow-hidden rounded-[20px] border border-[var(--cb-border)] bg-[var(--cb-accent-soft)]">
-                  <MediaPreview
-                    alt={memory.displayTitle}
-                    className={memory.media.kind === 'video' ? 'aspect-video w-full' : 'aspect-[4/3] w-full'}
-                    controls={isVideo && hasVideoStream}
-                    description={streamStatus?.error || (isVideo ? 'The video original is private. Open a temporary playback session when you want to watch it.' : '')}
-                    kind={viewerKind}
-                    loading={Boolean(streamStatus?.loading)}
-                    objectFit={memory.media.kind === 'video' ? 'contain' : 'cover'}
-                    onLoadRequest={isVideo ? onLoadStream : undefined}
-                    poster={posterUrl}
-                    src={viewerSrc}
-                    title={isVideo ? 'Private video preview' : ''}
-                  />
-                </div>
-              ) : null}
+              <DetailPreview memory={memory} onLoadStream={onLoadStream} streamStatus={streamStatus} />
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--cb-accent)]">Story memory</p>
                 <h4 className="mt-2 text-lg font-bold text-[var(--cb-text)]">{memory.displayTitle}</h4>
                 <p className="mt-3 text-sm leading-6 text-[var(--cb-text-secondary)]">{memory.displayDescription}</p>
               </div>
-              <InlineAlert
-                tone={['storage-verified', 'drive-verified', 'drive-indexed'].includes(memory.media.status) ? 'success' : 'info'}
-                title={['storage-verified', 'drive-verified', 'drive-indexed'].includes(memory.media.status) ? 'Private media verified' : 'Private media stays protected'}
-                description={
-                  ['storage-verified', 'drive-verified', 'drive-indexed'].includes(memory.media.status)
-                    ? 'Album can safely reference the private media provider metadata without exposing the original file in public assets.'
-                    : 'This entry preserves the story and metadata even when the original private file is not available in the current device view.'
-                }
-              />
+              <DetailMediaNotice memory={memory} />
             </div>
           </ContentCard>
 
-          <div className="grid gap-4">
-            <Surface tone="soft">
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Tags</p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {memory.tags.length > 0 ? memory.tags.map((tag) => <StatusBadge key={tag.key}>{tag.label}</StatusBadge>) : <span className="text-sm text-[var(--cb-text-muted)]">No tags saved.</span>}
-              </div>
-            </Surface>
-            {memory.specialMoment.route ? (
-              <Surface tone="soft">
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Related page</p>
-                <p className="mt-2 text-sm leading-6 text-[var(--cb-text-secondary)]">This memory also connects to a protected special page inside Couple Book.</p>
-                <div className="mt-4">
-                  <SecondaryButton as={Link} to={memory.specialMoment.route}>Open related page</SecondaryButton>
-                </div>
-              </Surface>
-            ) : null}
-          </div>
+          <DetailSidebar memory={memory} />
         </div>
 
         {status?.message ? <div className="mt-5"><InlineAlert description={status.message} tone={status.kind === 'error' ? 'error' : 'success'} /></div> : null}
@@ -307,26 +374,49 @@ function DetailModal({ memory, onArchive, onClose, onEdit, onLoadStream, status,
   )
 }
 
-function TimelineCard({ memory, onArchive, onEdit, onSelect }) {
+function TimelineCardVisual({ memory }) {
   const previewUrl = memory.media?.previewUrl || memory.media?.thumbnailUrl || ''
   const previewKind = memory.media?.previewKind || memory.media?.kind || 'image'
+
+  return (
+    <div className="timeline-card-visual" aria-hidden="true">
+      {previewUrl ? (
+        <MediaPreview
+          alt=""
+          className="h-full w-full"
+          controls={false}
+          kind={previewKind}
+          objectFit="cover"
+          src={previewUrl}
+        />
+      ) : (
+        <span>{memory.media.kind === 'video' ? 'Video' : memory.media.kind === 'image' ? 'Photo' : memory.specialMoment.isSpecial ? 'Special' : 'Note'}</span>
+      )}
+    </div>
+  )
+}
+
+function TimelineCardMeta({ memory }) {
+  return (
+    <div className="flex flex-wrap items-center gap-3 text-sm text-[var(--cb-text-muted)]">
+      <span>{memory.displayDate || 'Date review'}</span>
+      <span aria-hidden="true">•</span>
+      <span>{memory.typeLabel || memory.kindLabel || 'Saved memory'}</span>
+      {memory.media.hasReference ? (
+        <>
+          <span aria-hidden="true">•</span>
+          <span>{memory.media.kind === 'video' ? 'Video reference saved' : 'Photo reference saved'}</span>
+        </>
+      ) : null}
+    </div>
+  )
+}
+
+function TimelineCard({ memory, onArchive, onEdit, onSelect }) {
   return (
     <ContentCard className={`timeline-card timeline-card-${memory.media.kind || 'none'} relative max-w-[58rem] overflow-hidden`}>
       <div className={`absolute inset-y-4 left-0 w-1 rounded-full ${accentStripeClass(memory)}`} aria-hidden="true" />
-      <div className="timeline-card-visual" aria-hidden="true">
-        {previewUrl ? (
-          <MediaPreview
-            alt=""
-            className="h-full w-full"
-            controls={false}
-            kind={previewKind}
-            objectFit="cover"
-            src={previewUrl}
-          />
-        ) : (
-          <span>{memory.media.kind === 'video' ? 'Video' : memory.media.kind === 'image' ? 'Photo' : memory.specialMoment.isSpecial ? 'Special' : 'Note'}</span>
-        )}
-      </div>
+      <TimelineCardVisual memory={memory} />
       <div className="flex flex-col gap-4 pl-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -349,17 +439,7 @@ function TimelineCard({ memory, onArchive, onEdit, onSelect }) {
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 text-sm text-[var(--cb-text-muted)]">
-          <span>{memory.displayDate || 'Date review'}</span>
-          <span aria-hidden="true">•</span>
-          <span>{memory.typeLabel || memory.kindLabel || 'Saved memory'}</span>
-          {memory.media.hasReference ? (
-            <>
-              <span aria-hidden="true">•</span>
-              <span>{memory.media.kind === 'video' ? 'Video reference saved' : 'Photo reference saved'}</span>
-            </>
-          ) : null}
-        </div>
+        <TimelineCardMeta memory={memory} />
 
         <div className="flex flex-wrap gap-2">
           <PrimaryButton onClick={() => onSelect(memory)}>View memory</PrimaryButton>
@@ -377,6 +457,229 @@ function TimelineSkeleton() {
       <LoadingSkeleton className="h-40" />
       <LoadingSkeleton className="h-40" />
     </div>
+  )
+}
+
+function TimelineFilters({
+  filteredCount,
+  memoriesCount,
+  monthOptions,
+  onClear,
+  onSearch,
+  onSelectMonth,
+  onSelectSort,
+  onSelectTag,
+  onSelectType,
+  onSelectYear,
+  search,
+  selectedMonth,
+  selectedTag,
+  selectedType,
+  selectedYear,
+  sortOrder,
+  tags,
+  types,
+  years,
+}) {
+  return (
+    <Surface>
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_repeat(3,minmax(0,0.6fr))]">
+        <SearchField
+          label="Search memories"
+          onChange={(event) => onSearch(event.target.value)}
+          placeholder="Search titles, details, and tags"
+          value={search}
+        />
+        <FormField label="Year">
+          <SelectField onChange={(event) => onSelectYear(event.target.value)} value={selectedYear}>
+            <option value="all">All years</option>
+            {years.map((year) => <option key={year.key} value={year.key}>{year.label}</option>)}
+          </SelectField>
+        </FormField>
+        <FormField label="Month">
+          <SelectField onChange={(event) => onSelectMonth(event.target.value)} value={selectedMonth}>
+            <option value="all">Any month</option>
+            {monthOptions.map((month) => <option key={month.key} value={month.key}>{month.label}</option>)}
+          </SelectField>
+        </FormField>
+        <FormField label="Sort">
+          <SelectField onChange={(event) => onSelectSort(event.target.value)} value={sortOrder}>
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+          </SelectField>
+        </FormField>
+      </div>
+
+      <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <SegmentedControl
+          label="Memory type"
+          onChange={onSelectType}
+          options={[{ value: 'all', label: 'All types' }, ...types.map((type) => ({ value: type.key, label: type.label }))]}
+          value={selectedType}
+        />
+        <div className="grid gap-2">
+          <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-text-muted)]">Browse by tag</span>
+          <div className="flex flex-wrap gap-2">
+            <FilterChip active={selectedTag === 'all'} onClick={() => onSelectTag('all')}>All</FilterChip>
+            {tags.map((tag) => (
+              <FilterChip active={selectedTag === tag.key} key={tag.key} onClick={() => onSelectTag(tag.key)}>
+                {tag.label}
+              </FilterChip>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4 flex flex-col gap-3 rounded-2xl border border-[var(--cb-border)] bg-[var(--cb-surface-soft)] p-4 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm text-[var(--cb-text-secondary)]">
+          {filteredCount === memoriesCount ? 'Showing the full story.' : `Showing ${filteredCount} of ${memoriesCount} memories.`}
+        </p>
+        <SecondaryButton onClick={onClear}>Clear filters</SecondaryButton>
+      </div>
+    </Surface>
+  )
+}
+
+function YearJump({ onSelectYear, selectedYear, years }) {
+  if (!years.length) return null
+
+  return (
+    <Surface tone="soft">
+      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Jump to year</p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <FilterChip active={selectedYear === 'all'} onClick={() => onSelectYear('all')}>All years</FilterChip>
+        {years.map((year) => (
+          <FilterChip active={selectedYear === year.key} key={year.key} onClick={() => onSelectYear(year.key)}>
+            {year.label} ({year.count})
+          </FilterChip>
+        ))}
+      </div>
+    </Surface>
+  )
+}
+
+function StoryRail({ memories, onAdd, onArchive, onClearFilters, onEdit, onSelect }) {
+  if (memories.length === 0) {
+    return (
+      <EmptyState
+        icon={BookHeart}
+        title="No memories match this view yet."
+        description="Try a different year, month, tag, or search phrase. Your saved memories will still be here when you clear the filters."
+        action={(
+          <div className="mt-6 flex flex-wrap justify-center gap-2">
+            <SecondaryButton onClick={onClearFilters}>Show everything</SecondaryButton>
+            <PrimaryButton onClick={onAdd}>Add a new memory</PrimaryButton>
+          </div>
+        )}
+      />
+    )
+  }
+
+  return (
+    <div className="cb-story-rail space-y-8">
+      {memories.map((memory, index) => {
+        const previous = memories[index - 1]
+        const currentChapter = chapterLabel(memory)
+        const previousChapter = previous ? chapterLabel(previous) : null
+        const currentMonth = monthLabel(memory)
+        const previousMonth = previous ? monthLabel(previous) : null
+        return (
+          <section key={memory.id} className="cb-story-marker relative space-y-3 pl-8 sm:pl-12">
+            {currentChapter !== previousChapter ? (
+              <div className="sticky top-[5.5rem] z-10 mb-2">
+                <div className="inline-flex rounded-full border border-[var(--cb-border)] bg-[var(--cb-surface)] px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)] shadow-[0_8px_24px_rgba(84,53,67,0.06)]">{currentChapter}</div>
+              </div>
+            ) : null}
+            {currentMonth !== previousMonth || currentChapter !== previousChapter ? <p className="text-sm font-semibold text-[var(--cb-text-secondary)]">{currentMonth}</p> : null}
+            <TimelineCard
+              memory={memory}
+              onArchive={onArchive}
+              onEdit={onEdit}
+              onSelect={onSelect}
+            />
+          </section>
+        )
+      })}
+    </div>
+  )
+}
+
+function ArchivedMemoriesPanel({ archivedMemories, onRestore }) {
+  if (!archivedMemories.length) return null
+
+  return (
+    <Surface>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Archived memories</p>
+          <h3 className="mt-2 font-serif text-2xl text-[var(--cb-text)]">Hidden from the active story</h3>
+          <p className="mt-2 text-sm leading-6 text-[var(--cb-text-secondary)]">Restored memories return to Story and Album grouping.</p>
+        </div>
+        <StatusBadge tone="warning">{archivedMemories.length}</StatusBadge>
+      </div>
+      <div className="mt-5 grid gap-3">
+        {archivedMemories.map((memory) => (
+          <ContentCard key={memory.id} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-[var(--cb-text)]">{memory.displayTitle}</p>
+              <p className="mt-1 text-sm text-[var(--cb-text-secondary)]">{memory.displayDate || 'Date review'} • {memory.typeLabel}</p>
+            </div>
+            <SecondaryButton onClick={() => onRestore(memory)}><RotateCcw className="size-4" />Restore memory</SecondaryButton>
+          </ContentCard>
+        ))}
+      </div>
+    </Surface>
+  )
+}
+
+function TimelineDialogs({
+  confirmState,
+  editingMemory,
+  formMode,
+  loadSelectedPreview,
+  onArchive,
+  onCloseDetails,
+  onCloseForm,
+  onConfirmArchiveOrRestore,
+  onEdit,
+  onSaveForm,
+  onSetConfirmState,
+  selectedMemory,
+  selectedMemoryWithPreview,
+  status,
+  streamStatus,
+}) {
+  return (
+    <>
+      <DetailModal
+        memory={selectedMemoryWithPreview}
+        onArchive={onArchive}
+        onClose={onCloseDetails}
+        onEdit={onEdit}
+        onLoadStream={() => loadSelectedPreview(selectedMemory, { force: true })}
+        status={status}
+        streamStatus={streamStatus}
+      />
+      {formMode ? (
+        <MemoryFormDialog
+          memory={editingMemory}
+          mode={formMode}
+          onClose={onCloseForm}
+          onSave={onSaveForm}
+          status={status}
+        />
+      ) : null}
+      <ConfirmDialog
+        confirmLabel={confirmState.mode === 'restore' ? 'Restore memory' : 'Archive memory'}
+        message={confirmState.mode === 'restore' ? 'This memory will return to the active Story and Album views.' : 'This memory will leave the active Story view until it is restored.'}
+        onCancel={() => onSetConfirmState({ mode: '', memory: null })}
+        onConfirm={onConfirmArchiveOrRestore}
+        open={Boolean(confirmState.memory)}
+        pending={status.saving}
+        recordName={confirmState.memory?.displayTitle}
+        title={confirmState.mode === 'restore' ? 'Restore this memory?' : 'Archive this memory?'}
+      />
+    </>
   )
 }
 
@@ -401,34 +704,7 @@ export function TimelineView({ compatibilityError, compatibilityState, model, on
   const monthOptions = useMemo(() => buildMonthOptions(memories), [memories])
 
   const filtered = useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase()
-    return sortMemories(
-      memories.filter((memory) => {
-        if (selectedTag !== 'all' && !memory.tags.some((tag) => tag.key === selectedTag)) return false
-        if (selectedYear !== 'all' && String(memory.date?.year || '') !== selectedYear) return false
-        if (selectedMonth !== 'all') {
-          const monthKey = memory.date?.status === 'valid'
-            ? `${memory.date.year}-${String(memory.date.month).padStart(2, '0')}`
-            : ''
-          if (monthKey !== selectedMonth) return false
-        }
-        if (selectedType !== 'all') {
-          if (selectedType === 'special' && !memory.specialMoment?.isSpecial) return false
-          if (selectedType === 'photo' && memory.media?.kind !== 'image') return false
-          if (selectedType === 'video' && memory.media?.kind !== 'video') return false
-          if (selectedType === 'no-media' && !['none', 'special-route-only'].includes(memory.media?.status)) return false
-        }
-        if (!normalizedSearch) return true
-        const haystack = [
-          memory.displayTitle,
-          memory.displayDescription,
-          memory.displayDate,
-          ...memory.tags.map((tag) => tag.label),
-        ].join(' ').toLowerCase()
-        return haystack.includes(normalizedSearch)
-      }),
-      sortOrder,
-    )
+    return filterTimelineMemories({ memories, search, selectedMonth, selectedTag, selectedType, selectedYear, sortOrder })
   }, [memories, search, selectedMonth, selectedTag, selectedType, selectedYear, sortOrder])
 
   const {
@@ -525,170 +801,60 @@ export function TimelineView({ compatibilityError, compatibilityState, model, on
       />
 
       {status.message && !formMode ? <InlineAlert description={status.message} tone={status.kind === 'error' ? 'error' : 'success'} /> : null}
-      <Surface>
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_repeat(3,minmax(0,0.6fr))]">
-          <SearchField
-            label="Search memories"
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search titles, details, and tags"
-            value={search}
-          />
-          <FormField label="Year">
-            <SelectField onChange={(event) => setSelectedYear(event.target.value)} value={selectedYear}>
-              <option value="all">All years</option>
-              {years.map((year) => <option key={year.key} value={year.key}>{year.label}</option>)}
-            </SelectField>
-          </FormField>
-          <FormField label="Month">
-            <SelectField onChange={(event) => setSelectedMonth(event.target.value)} value={selectedMonth}>
-              <option value="all">Any month</option>
-              {monthOptions.map((month) => <option key={month.key} value={month.key}>{month.label}</option>)}
-            </SelectField>
-          </FormField>
-          <FormField label="Sort">
-            <SelectField onChange={(event) => setSortOrder(event.target.value)} value={sortOrder}>
-              <option value="newest">Newest first</option>
-              <option value="oldest">Oldest first</option>
-            </SelectField>
-          </FormField>
-        </div>
+      <TimelineFilters
+        filteredCount={filtered.length}
+        memoriesCount={memories.length}
+        monthOptions={monthOptions}
+        onClear={clearFilters}
+        onSearch={setSearch}
+        onSelectMonth={setSelectedMonth}
+        onSelectSort={setSortOrder}
+        onSelectTag={setSelectedTag}
+        onSelectType={setSelectedType}
+        onSelectYear={setSelectedYear}
+        search={search}
+        selectedMonth={selectedMonth}
+        selectedTag={selectedTag}
+        selectedType={selectedType}
+        selectedYear={selectedYear}
+        sortOrder={sortOrder}
+        tags={tags}
+        types={types}
+        years={years}
+      />
 
-        <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-          <SegmentedControl
-            label="Memory type"
-            onChange={setSelectedType}
-            options={[{ value: 'all', label: 'All types' }, ...types.map((type) => ({ value: type.key, label: type.label }))]}
-            value={selectedType}
-          />
-          <div className="grid gap-2">
-            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-text-muted)]">Browse by tag</span>
-            <div className="flex flex-wrap gap-2">
-              <FilterChip active={selectedTag === 'all'} onClick={() => setSelectedTag('all')}>All</FilterChip>
-              {tags.map((tag) => (
-                <FilterChip active={selectedTag === tag.key} key={tag.key} onClick={() => setSelectedTag(tag.key)}>
-                  {tag.label}
-                </FilterChip>
-              ))}
-            </div>
-          </div>
-        </div>
+      <YearJump onSelectYear={setSelectedYear} selectedYear={selectedYear} years={years} />
 
-        <div className="mt-4 flex flex-col gap-3 rounded-2xl border border-[var(--cb-border)] bg-[var(--cb-surface-soft)] p-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-[var(--cb-text-secondary)]">
-            {filtered.length === memories.length ? 'Showing the full story.' : `Showing ${filtered.length} of ${memories.length} memories.`}
-          </p>
-          <SecondaryButton onClick={clearFilters}>Clear filters</SecondaryButton>
-        </div>
-      </Surface>
-
-      {years.length ? (
-        <Surface tone="soft">
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Jump to year</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <FilterChip active={selectedYear === 'all'} onClick={() => setSelectedYear('all')}>All years</FilterChip>
-            {years.map((year) => (
-              <FilterChip active={selectedYear === year.key} key={year.key} onClick={() => setSelectedYear(year.key)}>
-                {year.label} ({year.count})
-              </FilterChip>
-            ))}
-          </div>
-        </Surface>
-      ) : null}
-
-      {filteredWithPreviews.length > 0 ? (
-        <div className="cb-story-rail space-y-8">
-          {filteredWithPreviews.map((memory, index) => {
-            const previous = filteredWithPreviews[index - 1]
-            const currentChapter = chapterLabel(memory)
-            const previousChapter = previous ? chapterLabel(previous) : null
-            const currentMonth = monthLabel(memory)
-            const previousMonth = previous ? monthLabel(previous) : null
-            return (
-              <section key={memory.id} className="cb-story-marker relative space-y-3 pl-8 sm:pl-12">
-                {currentChapter !== previousChapter ? (
-                  <div className="sticky top-[5.5rem] z-10 mb-2">
-                    <div className="inline-flex rounded-full border border-[var(--cb-border)] bg-[var(--cb-surface)] px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)] shadow-[0_8px_24px_rgba(84,53,67,0.06)]">{currentChapter}</div>
-                  </div>
-                ) : null}
-                {currentMonth !== previousMonth || currentChapter !== previousChapter ? <p className="text-sm font-semibold text-[var(--cb-text-secondary)]">{currentMonth}</p> : null}
-                <TimelineCard
-                  memory={memory}
-                  onArchive={(candidate) => setConfirmState({ mode: 'archive', memory: candidate })}
-                  onEdit={openEditForm}
-                  onSelect={setSelectedMemory}
-                />
-              </section>
-            )
-          })}
-        </div>
-      ) : (
-        <EmptyState
-          icon={BookHeart}
-          title="No memories match this view yet."
-          description="Try a different year, month, tag, or search phrase. Your saved memories will still be here when you clear the filters."
-          action={(
-            <div className="mt-6 flex flex-wrap justify-center gap-2">
-              <SecondaryButton onClick={clearFilters}>Show everything</SecondaryButton>
-              <PrimaryButton onClick={openAddForm}>Add a new memory</PrimaryButton>
-            </div>
-          )}
-        />
-      )}
-
-      {archivedMemories.length ? (
-        <Surface>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Archived memories</p>
-              <h3 className="mt-2 font-serif text-2xl text-[var(--cb-text)]">Hidden from the active story</h3>
-              <p className="mt-2 text-sm leading-6 text-[var(--cb-text-secondary)]">Restored memories return to Story and Album grouping.</p>
-            </div>
-            <StatusBadge tone="warning">{archivedMemories.length}</StatusBadge>
-          </div>
-          <div className="mt-5 grid gap-3">
-            {archivedMemories.map((memory) => (
-              <ContentCard key={memory.id} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="min-w-0">
-                  <p className="text-sm font-bold text-[var(--cb-text)]">{memory.displayTitle}</p>
-                  <p className="mt-1 text-sm text-[var(--cb-text-secondary)]">{memory.displayDate || 'Date review'} • {memory.typeLabel}</p>
-                </div>
-                <SecondaryButton onClick={() => setConfirmState({ mode: 'restore', memory })}><RotateCcw className="size-4" />Restore memory</SecondaryButton>
-              </ContentCard>
-            ))}
-          </div>
-        </Surface>
-      ) : null}
-
-      <DetailModal
-        memory={selectedMemoryWithPreview}
+      <StoryRail
+        memories={filteredWithPreviews}
+        onAdd={openAddForm}
         onArchive={(candidate) => setConfirmState({ mode: 'archive', memory: candidate })}
-        onClose={() => setSelectedMemory(null)}
+        onClearFilters={clearFilters}
         onEdit={openEditForm}
-        onLoadStream={() => loadSelectedPreview(selectedMemory, { force: true })}
+        onSelect={setSelectedMemory}
+      />
+
+      <ArchivedMemoriesPanel archivedMemories={archivedMemories} onRestore={(memory) => setConfirmState({ mode: 'restore', memory })} />
+
+      <TimelineDialogs
+        confirmState={confirmState}
+        editingMemory={editingMemory}
+        formMode={formMode}
+        loadSelectedPreview={loadSelectedPreview}
+        onArchive={(candidate) => setConfirmState({ mode: 'archive', memory: candidate })}
+        onCloseDetails={() => setSelectedMemory(null)}
+        onCloseForm={() => {
+          setFormMode('')
+          setEditingMemory(null)
+        }}
+        onConfirmArchiveOrRestore={confirmArchiveOrRestore}
+        onEdit={openEditForm}
+        onSaveForm={saveForm}
+        onSetConfirmState={setConfirmState}
+        selectedMemory={selectedMemory}
+        selectedMemoryWithPreview={selectedMemoryWithPreview}
         status={status}
         streamStatus={streamStatus}
-      />
-      {formMode ? (
-        <MemoryFormDialog
-          memory={editingMemory}
-          mode={formMode}
-          onClose={() => {
-            setFormMode('')
-            setEditingMemory(null)
-          }}
-          onSave={saveForm}
-          status={status}
-        />
-      ) : null}
-      <ConfirmDialog
-        confirmLabel={confirmState.mode === 'restore' ? 'Restore memory' : 'Archive memory'}
-        message={confirmState.mode === 'restore' ? 'This memory will return to the active Story and Album views.' : 'This memory will leave the active Story view until it is restored.'}
-        onCancel={() => setConfirmState({ mode: '', memory: null })}
-        onConfirm={confirmArchiveOrRestore}
-        open={Boolean(confirmState.memory)}
-        pending={status.saving}
-        recordName={confirmState.memory?.displayTitle}
-        title={confirmState.mode === 'restore' ? 'Restore this memory?' : 'Archive this memory?'}
       />
     </section>
   )
