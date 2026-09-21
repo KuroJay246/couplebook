@@ -192,6 +192,14 @@ export function MediaSettingsSection({ media }) {
         returnUrl,
         user,
       })
+      if (result.connected) {
+        setMediaService((current) => ({
+          ...current,
+          message: 'Google Drive is connected. Run Sync now to refresh Album.',
+          state: 'connected',
+        }))
+        return
+      }
       if (!result.authorizationUrl) throw new Error('Google Drive authorization could not start.')
       window.location.assign(result.authorizationUrl)
     } catch (error) {

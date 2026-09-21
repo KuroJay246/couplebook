@@ -526,16 +526,7 @@ export function useMediaUploadQueue(onRefresh, drive) {
       await waitForUploadTestDelay('finalizing')
 
       const finalizedItem = findItem(itemId)
-      let result = { memoryId: finalizedItem.memoryId, refreshError: null, revision: 0, verifiedMedia }
-      if (TRUSTED_MEDIA_BACKEND_AVAILABLE) {
-        try {
-          if (typeof onRefresh === 'function') await onRefresh()
-        } catch (error) {
-          result = { ...result, refreshError: error }
-        }
-      } else {
-        result = await writer.finalizeMemoryWithMedia(finalizedItem.memoryId, toMemoryPayload(finalizedItem), verifiedMedia)
-      }
+      const result = await writer.finalizeMemoryWithMedia(finalizedItem.memoryId, toMemoryPayload(finalizedItem), verifiedMedia)
 
       if (operation.cancelRequested) {
         updateItem(itemId, { status: QUEUE_STATUS.cancelling })
@@ -588,7 +579,6 @@ export function useMediaUploadQueue(onRefresh, drive) {
     handleProcessingFailure,
     driveProvider,
     driveState,
-    onRefresh,
     setNotice,
     updateItem,
     writer,
