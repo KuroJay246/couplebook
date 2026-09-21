@@ -38,6 +38,74 @@ function validate(form) {
   return errors
 }
 
+function QuickAddStepFields({ errors, firstFieldRef, form, step, update }) {
+  if (step === 0) {
+    return (
+      <FormField label="What happened?">
+        <TextField aria-describedby={errors.title ? 'quick-add-title-error' : undefined} maxLength={180} onChange={(event) => update('title', event.target.value)} ref={firstFieldRef} required value={form.title} />
+      </FormField>
+    )
+  }
+
+  if (step === 1) {
+    return (
+      <FormField label="When did it happen?">
+        <TextField onChange={(event) => update('date', event.target.value)} required type="date" value={form.date} />
+      </FormField>
+    )
+  }
+
+  if (step === 2) {
+    return (
+      <FormField label="What kind of moment was it?">
+        <SelectField onChange={(event) => update('kindLabel', event.target.value)} value={form.kindLabel}>
+          {MEMORY_TYPES.map((type) => <option key={type} value={type}>{type}</option>)}
+        </SelectField>
+      </FormField>
+    )
+  }
+
+  return (
+    <>
+      <FormField label="Optional details">
+        <TextAreaField maxLength={2000} onChange={(event) => update('description', event.target.value)} rows={5} value={form.description} />
+      </FormField>
+      <FormField label="Tags">
+        <TextField onChange={(event) => update('tags', event.target.value)} placeholder="date night, trip, first" value={form.tags} />
+      </FormField>
+      <FormField label="Related media note">
+        <TextField onChange={(event) => update('mediaNote', event.target.value)} placeholder="Private media note..." value={form.mediaNote} />
+      </FormField>
+    </>
+  )
+}
+
+function QuickAddValidation({ errors, status, step }) {
+  return (
+    <>
+      {errors.title ? <p className="mt-3 text-sm text-[#a3264c]" id="quick-add-title-error">{errors.title}</p> : null}
+      {errors.date && step === 1 ? <p className="mt-3 text-sm text-[#a3264c]">{errors.date}</p> : null}
+      {status.message ? <div className="mt-5"><InlineAlert description={status.message} tone={status.kind === 'error' ? 'error' : 'success'} /></div> : null}
+    </>
+  )
+}
+
+function QuickAddFooter({ errors, setStep, status, step }) {
+  const hasErrors = Object.keys(errors).length > 0
+  return (
+    <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-between">
+      <div className="flex gap-2">
+        <SecondaryButton disabled={step === 0 || status.saving} onClick={() => setStep((value) => Math.max(0, value - 1))}>Back</SecondaryButton>
+        {step < 3 ? <SecondaryButton disabled={status.saving} onClick={() => setStep((value) => Math.min(3, value + 1))}>More details</SecondaryButton> : null}
+      </div>
+      <div className="flex gap-2">
+        <SecondaryButton disabled={status.saving || hasErrors} type="submit">Fast save</SecondaryButton>
+        <PrimaryButton disabled={step < 3 || hasErrors} loading={status.saving} type="submit">{status.saving ? 'Saving...' : 'Save memory'}</PrimaryButton>
+      </div>
+    </div>
+  )
+}
+
 export function QuickAddMemory({ onClose, open }) {
   const navigate = useNavigate()
   const writer = useOwnerWrite()
@@ -122,52 +190,11 @@ export function QuickAddMemory({ onClose, open }) {
         </div>
 
         <div className="mt-6 grid gap-4">
-          {step === 0 ? (
-            <FormField label="What happened?">
-              <TextField aria-describedby={errors.title ? 'quick-add-title-error' : undefined} maxLength={180} onChange={(event) => update('title', event.target.value)} ref={firstFieldRef} required value={form.title} />
-            </FormField>
-          ) : null}
-          {step === 1 ? (
-            <FormField label="When did it happen?">
-              <TextField onChange={(event) => update('date', event.target.value)} required type="date" value={form.date} />
-            </FormField>
-          ) : null}
-          {step === 2 ? (
-            <FormField label="What kind of moment was it?">
-              <SelectField onChange={(event) => update('kindLabel', event.target.value)} value={form.kindLabel}>
-                {MEMORY_TYPES.map((type) => <option key={type} value={type}>{type}</option>)}
-              </SelectField>
-            </FormField>
-          ) : null}
-          {step === 3 ? (
-            <>
-              <FormField label="Optional details">
-                <TextAreaField maxLength={2000} onChange={(event) => update('description', event.target.value)} rows={5} value={form.description} />
-              </FormField>
-              <FormField label="Tags">
-                <TextField onChange={(event) => update('tags', event.target.value)} placeholder="date night, trip, first" value={form.tags} />
-              </FormField>
-              <FormField label="Related media note">
-                <TextField onChange={(event) => update('mediaNote', event.target.value)} placeholder="Private media note..." value={form.mediaNote} />
-              </FormField>
-            </>
-          ) : null}
+          <QuickAddStepFields errors={errors} firstFieldRef={firstFieldRef} form={form} step={step} update={update} />
         </div>
 
-        {errors.title ? <p className="mt-3 text-sm text-[#a3264c]" id="quick-add-title-error">{errors.title}</p> : null}
-        {errors.date && step === 1 ? <p className="mt-3 text-sm text-[#a3264c]">{errors.date}</p> : null}
-        {status.message ? <div className="mt-5"><InlineAlert description={status.message} tone={status.kind === 'error' ? 'error' : 'success'} /></div> : null}
-
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-between">
-          <div className="flex gap-2">
-            <SecondaryButton disabled={step === 0 || status.saving} onClick={() => setStep((value) => Math.max(0, value - 1))}>Back</SecondaryButton>
-            {step < 3 ? <SecondaryButton disabled={status.saving} onClick={() => setStep((value) => Math.min(3, value + 1))}>More details</SecondaryButton> : null}
-          </div>
-          <div className="flex gap-2">
-            <SecondaryButton disabled={status.saving || Object.keys(errors).length > 0} type="submit">Fast save</SecondaryButton>
-            <PrimaryButton disabled={step < 3 || Object.keys(errors).length > 0} loading={status.saving} type="submit">{status.saving ? 'Saving...' : 'Save memory'}</PrimaryButton>
-          </div>
-        </div>
+        <QuickAddValidation errors={errors} status={status} step={step} />
+        <QuickAddFooter errors={errors} setStep={setStep} status={status} step={step} />
       </form>
     </div>,
     document.body,
