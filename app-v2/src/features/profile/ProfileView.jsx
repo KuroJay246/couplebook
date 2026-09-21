@@ -183,17 +183,146 @@ function ProfileSkeleton() {
   )
 }
 
+function buildPeopleForApprovedUser(modelPeople, approvedUser) {
+  const basePeople = modelPeople || []
+  if (!approvedUser || basePeople.some((person) => isOwnerProfile(person, approvedUser))) return basePeople
+
+  const displayName = approvedUser.displayName || approvedUser.username || 'Jaylan'
+  return [
+    {
+      anniversaryView: 'dual',
+      bio: '',
+      birthday: '',
+      details: [],
+      displayName,
+      id: approvedUser.username || displayName,
+      importantDates: [],
+      joinedDate: '',
+      revision: 0,
+    },
+    ...basePeople,
+  ]
+}
+
+function ProfileHero({ onEditRelationship, people, primaryAnniversary }) {
+  return (
+    <div className="cb-us-hero-new">
+      <div>
+        <h2>{relationshipTitle(people)}</h2>
+        <p>{primaryAnniversary?.dateLabel ? `Together since ${primaryAnniversary.dateLabel}` : 'Set the relationship date to calculate anniversaries and time together.'}</p>
+      </div>
+      <div className="cb-us-hero-actions">
+        <SecondaryButton as={Link} to="/favorites"><Star className="size-4" />Favorites</SecondaryButton>
+        <PrimaryButton onClick={onEditRelationship}>Edit Relationship</PrimaryButton>
+      </div>
+    </div>
+  )
+}
+
+function ProfileFacts({ nextImportantDate, primaryAnniversary }) {
+  return (
+    <div className="cb-us-facts">
+      <div>
+        <span>Together since</span>
+        <strong>{primaryAnniversary?.dateLabel || 'Add date'}</strong>
+      </div>
+      <div>
+        <span>Time together</span>
+        <strong>{primaryAnniversary?.timeTogetherLabel || 'Add date'}</strong>
+      </div>
+      <div>
+        <span>Next anniversary</span>
+        <strong>{primaryAnniversary?.countdownLabel || 'Add date'}</strong>
+      </div>
+      <div>
+        <span>Next important date</span>
+        <strong>{nextImportantDate?.countdownLabel || 'Add date'}</strong>
+      </div>
+    </div>
+  )
+}
+
+function PartnerRow({ approvedUser, index, onEdit, person }) {
+  return (
+    <article className="cb-us-partner-row">
+      <div className="cb-us-avatar">{relationshipDisplayName(person.displayName, index).slice(0, 1)}</div>
+      <div>
+        <h4>{relationshipDisplayName(person.displayName, index)}</h4>
+        {person.birthdayLabel ? <p>Birthday {person.birthdayLabel}</p> : null}
+        {person.bio ? <p>{person.bio}</p> : null}
+      </div>
+      {isOwnerProfile(person, approvedUser) ? <SecondaryButton onClick={() => onEdit(person)}>Edit</SecondaryButton> : null}
+    </article>
+  )
+}
+
+function PartnersPanel({ approvedUser, onEdit, people }) {
+  return (
+    <section className="cb-us-panel">
+      <div className="cb-us-section-title">
+        <HeartHandshake className="size-4" />
+        <h3>Partners</h3>
+      </div>
+      <div className="cb-us-partners">
+        {people.map((person, index) => (
+          <PartnerRow approvedUser={approvedUser} index={index} key={person.id} onEdit={onEdit} person={person} />
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function ImportantDateRow({ item }) {
+  return (
+    <article className="cb-us-date-row">
+      <div>
+        <h4>{item.label}</h4>
+        <p>{item.dateLabel || 'Add date'}</p>
+      </div>
+      <StatusBadge tone={item.daysUntil === 0 ? 'success' : 'info'}>{item.countdownLabel || 'Saved'}</StatusBadge>
+    </article>
+  )
+}
+
+function ImportantDatesPanel({ importantDates }) {
+  return (
+    <section className="cb-us-panel">
+      <div className="cb-us-section-title">
+        <CalendarDays className="size-4" />
+        <h3>Important dates</h3>
+      </div>
+      <div className="cb-us-date-list">
+        {importantDates.length > 0
+          ? importantDates.map((item) => <ImportantDateRow item={item} key={item.id} />)
+          : <EmptyState title="No dates yet." description="Edit a profile to add birthdays and relationship dates." />}
+      </div>
+    </section>
+  )
+}
+
+function FavoritesPanel({ highlights }) {
+  return (
+    <section className="cb-us-panel">
+      <div className="cb-us-section-title">
+        <Star className="size-4" />
+        <h3>Favorites</h3>
+      </div>
+      <div className="cb-us-favorite-strip">
+        {highlights?.length > 0 ? highlights.map((highlight) => (
+          <span key={highlight.id}>{highlight.label}</span>
+        )) : <p>No shared favorites yet.</p>}
+        <SecondaryButton as={Link} to="/favorites">Manage Favorites</SecondaryButton>
+      </div>
+    </section>
+  )
+}
+
 export function ProfileView({ compatibilityError, compatibilityState, model, onRefresh }) {
   const writer = useOwnerWrite(onRefresh)
   const [editingPerson, setEditingPerson] = useState(null)
   const [status, setStatus] = useState({ kind: '', message: '', saving: false })
 
-  const people = useMemo(() => {
-    const basePeople = model.people || []
-    if (!writer.approvedUser || basePeople.some((person) => isOwnerProfile(person, writer.approvedUser))) return basePeople
-    const displayName = writer.approvedUser.displayName || writer.approvedUser.username || 'Jaylan'
-    return [{ id: writer.approvedUser.username || displayName, displayName, bio: '', anniversaryView: 'dual', joinedDate: '', birthday: '', importantDates: [], revision: 0, details: [] }, ...basePeople]
-  }, [model.people, writer.approvedUser])
+  const people = useMemo(() => buildPeopleForApprovedUser(model.people, writer.approvedUser), [model.people, writer.approvedUser])
 
   const primaryAnniversary = model.relationship?.primaryAnniversary || null
   const nextImportantDate = model.relationship?.nextImportantDate || null
@@ -225,90 +354,18 @@ export function ProfileView({ compatibilityError, compatibilityState, model, onR
 
   return (
     <section className="cb-us-redesign" data-route="profile">
-      <div className="cb-us-hero-new">
-        <div>
-          <h2>{relationshipTitle(people)}</h2>
-          <p>{primaryAnniversary?.dateLabel ? `Together since ${primaryAnniversary.dateLabel}` : 'Set the relationship date to calculate anniversaries and time together.'}</p>
-        </div>
-        <div className="cb-us-hero-actions">
-          <SecondaryButton as={Link} to="/favorites"><Star className="size-4" />Favorites</SecondaryButton>
-          <PrimaryButton onClick={() => people[0] && setEditingPerson(people[0])}>Edit Relationship</PrimaryButton>
-        </div>
-      </div>
+      <ProfileHero onEditRelationship={() => people[0] && setEditingPerson(people[0])} people={people} primaryAnniversary={primaryAnniversary} />
 
       {status.message && !editingPerson ? <InlineAlert description={status.message} tone={status.kind === 'error' ? 'error' : 'success'} /> : null}
 
-      <div className="cb-us-facts">
-        <div>
-          <span>Together since</span>
-          <strong>{primaryAnniversary?.dateLabel || 'Add date'}</strong>
-        </div>
-        <div>
-          <span>Time together</span>
-          <strong>{primaryAnniversary?.timeTogetherLabel || 'Add date'}</strong>
-        </div>
-        <div>
-          <span>Next anniversary</span>
-          <strong>{primaryAnniversary?.countdownLabel || 'Add date'}</strong>
-        </div>
-        <div>
-          <span>Next important date</span>
-          <strong>{nextImportantDate?.countdownLabel || 'Add date'}</strong>
-        </div>
-      </div>
+      <ProfileFacts nextImportantDate={nextImportantDate} primaryAnniversary={primaryAnniversary} />
 
       <div className="cb-us-grid">
-        <section className="cb-us-panel">
-          <div className="cb-us-section-title">
-            <HeartHandshake className="size-4" />
-            <h3>Partners</h3>
-          </div>
-          <div className="cb-us-partners">
-            {people.map((person, index) => (
-              <article className="cb-us-partner-row" key={person.id}>
-                <div className="cb-us-avatar">{relationshipDisplayName(person.displayName, index).slice(0, 1)}</div>
-                <div>
-                  <h4>{relationshipDisplayName(person.displayName, index)}</h4>
-                  {person.birthdayLabel ? <p>Birthday {person.birthdayLabel}</p> : null}
-                  {person.bio ? <p>{person.bio}</p> : null}
-                </div>
-                {isOwnerProfile(person, writer.approvedUser) ? <SecondaryButton onClick={() => setEditingPerson(person)}>Edit</SecondaryButton> : null}
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="cb-us-panel">
-          <div className="cb-us-section-title">
-            <CalendarDays className="size-4" />
-            <h3>Important dates</h3>
-          </div>
-          <div className="cb-us-date-list">
-            {importantDates.length > 0 ? importantDates.map((item) => (
-              <article className="cb-us-date-row" key={item.id}>
-                <div>
-                  <h4>{item.label}</h4>
-                  <p>{item.dateLabel || 'Add date'}</p>
-                </div>
-                <StatusBadge tone={item.daysUntil === 0 ? 'success' : 'info'}>{item.countdownLabel || 'Saved'}</StatusBadge>
-              </article>
-            )) : <EmptyState title="No dates yet." description="Edit a profile to add birthdays and relationship dates." />}
-          </div>
-        </section>
+        <PartnersPanel approvedUser={writer.approvedUser} onEdit={setEditingPerson} people={people} />
+        <ImportantDatesPanel importantDates={importantDates} />
       </div>
 
-      <section className="cb-us-panel">
-        <div className="cb-us-section-title">
-          <Star className="size-4" />
-          <h3>Favorites</h3>
-        </div>
-        <div className="cb-us-favorite-strip">
-          {model.sharedHighlights?.length > 0 ? model.sharedHighlights.map((highlight) => (
-            <span key={highlight.id}>{highlight.label}</span>
-          )) : <p>No shared favorites yet.</p>}
-          <SecondaryButton as={Link} to="/favorites">Manage Favorites</SecondaryButton>
-        </div>
-      </section>
+      <FavoritesPanel highlights={model.sharedHighlights} />
 
       {editingPerson ? <ProfileEditDialog onClose={() => setEditingPerson(null)} onSave={saveProfile} person={editingPerson} status={status} /> : null}
     </section>
