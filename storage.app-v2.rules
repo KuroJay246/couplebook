@@ -39,16 +39,16 @@ service firebase.storage {
     function isActiveApprovedUserForCouple(coupleId) {
       return isSignedIn()
         && firestore.exists(userDocPath(request.auth.uid))
-        && firestore.get(userDocPath(request.auth.uid)).data.approved == true
-        && firestore.get(userDocPath(request.auth.uid)).data.accessStatus == 'active'
-        && firestore.get(userDocPath(request.auth.uid)).data.coupleId == coupleId;
+        && firestore.get(userDocPath(request.auth.uid)).data.get('approved', false) == true
+        && firestore.get(userDocPath(request.auth.uid)).data.get('accessStatus', '') == 'active'
+        && firestore.get(userDocPath(request.auth.uid)).data.get('coupleId', '') == coupleId;
     }
 
     function isActiveCoupleMember(coupleId) {
       return isActiveApprovedUserForCouple(coupleId)
         && firestore.exists(memberDocPath(coupleId, request.auth.uid))
-        && firestore.get(memberDocPath(coupleId, request.auth.uid)).data.active == true
-        && firestore.get(memberDocPath(coupleId, request.auth.uid)).data.role == 'member';
+        && firestore.get(memberDocPath(coupleId, request.auth.uid)).data.get('active', false) == true
+        && firestore.get(memberDocPath(coupleId, request.auth.uid)).data.get('role', '') == 'member';
     }
 
     function validVariant(variant) {
@@ -96,7 +96,7 @@ service firebase.storage {
       allow create: if isActiveCoupleMember(coupleId) && validObject(coupleId, mediaId, variant);
       allow update: if false;
       allow delete: if isActiveCoupleMember(coupleId)
-        && resource.metadata.ownerUid == request.auth.uid
+        && resource.metadata.get('ownerUid', '') == request.auth.uid
         && validVariant(variant);
     }
 
