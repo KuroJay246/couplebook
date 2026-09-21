@@ -45,9 +45,9 @@ Persistent Google Drive sync has an approved trusted backend path. The current r
 
 - `packages/drive-backend`: contract and pure handlers for OAuth state binding, active membership validation, sync planning, upload finalization, removal, webhooks, watch renewal, disconnect, and credential-field rejection.
 - `packages/drive-worker`: selected Cloudflare Workers Free adapter for `/api/drive/**`, using Firebase ID-token verification, active membership checks through Firestore REST, encrypted Workers KV refresh-token storage, Drive reconciliation, and protected media proxying.
-- `functions/`: legacy Firebase Functions wrapper from the rejected paid path. It is retained as historical code only and is not selected by `firebase.json`.
+- Legacy Firebase Functions wrapper from the rejected paid path: removed from the active repository. The selected implementation is the Cloudflare Worker under `packages/drive-worker` plus the shared backend contract under `packages/drive-backend`.
 
-Current external blocker: Wrangler is not authenticated for Cloudflare, so the Worker/KV resources cannot yet be created or verified. Do not enable Firebase Blaze for this media backend.
+Current production boundary: the Worker/KV path is the selected zero-cost media backend. Do not enable Firebase Blaze for this media backend.
 
 Firebase Storage/private media migration remains historical/deferred and must not become the production original-media path without separate approval. Use `storage.app-v2.rules` and `npm --prefix app-v2 run test:storage-rules` for local rule validation only.
 

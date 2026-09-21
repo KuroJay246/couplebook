@@ -74,7 +74,7 @@ The frontend may render the Firestore media index and request a session Drive co
 
 `packages/drive-worker/` is the selected zero-cost Cloudflare Worker adapter for that contract. It verifies Firebase ID tokens server-side, checks active couple membership through Firestore REST, stores the Drive refresh credential encrypted in Workers KV, reconciles stable Drive metadata into Firestore, and proxies private media without persisting temporary Drive URLs.
 
-`functions/` is a legacy Firebase Functions adapter from the previous deployment path. It is not selected for production, `firebase.json` does not route `/api/drive/**` to it, and it must not be deployed unless the architecture is explicitly changed later.
+The previous Firebase Functions adapter has been removed from the active repository. The authoritative production media backend is the Cloudflare Worker package plus the shared Drive backend contract. `firebase.json` does not route `/api/drive/**` to Firebase Functions.
 
 The local sync planner accepts already-authorized Drive metadata from an injected backend reader, compares it with indexed Firestore media records, and produces only stable `upsert`, `tombstone`, sync-state, and privacy-minimal audit writes. It rejects cross-couple records and temporary URL or credential-shaped fields such as Drive `thumbnailLink`, `webContentLink`, access tokens, refresh tokens, signed URLs, preview URLs, and download URLs. This proves the write contract; it does not replace the still-required persistent token host, Drive Changes processor, webhook receiver, or thumbnail/original streaming proxy.
 
