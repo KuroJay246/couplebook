@@ -236,7 +236,7 @@ function resolveCoupleId(approvedUser) {
 async function assertWriteContext({ approvedUser, createDoc = doc, env, firestore = db, getDocument = getDoc, user }) {
   if (!firestore) throw new Error('Firestore is not configured.')
   if (!isFirestoreWriteMode(env)) {
-    throw new Error('Firestore writes are disabled outside approved Firestore write mode.')
+    throw new Error('Firestore writes are disabled for this app configuration.')
   }
   if (!user?.uid || !approvedUser?.uid || user.uid !== approvedUser.uid) {
     throw new Error('An authenticated approved user is required before writing.')

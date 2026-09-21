@@ -73,7 +73,7 @@ test('write services reject explicitly disabled mode before writing', async () =
   const firestore = createFirestoreStub()
   await assert.rejects(
     saveOwnProfile({ name: 'Member One' }, { ...context, env: { MODE: 'production', VITE_DATA_SOURCE_MODE: 'firestore', VITE_WRITE_MODE: 'production-write-disabled' }, firestore, ...firestore }),
-    /disabled/,
+    /disabled for this app configuration/,
   )
   assert.equal(firestore.writes.length, 0)
 })
