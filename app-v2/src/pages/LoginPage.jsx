@@ -28,17 +28,17 @@ function LoginStoryPanel() {
         <div className="cb-card p-4">
           <LockKeyhole className="size-5" style={{ color: 'var(--cb-accent)' }} />
           <p className="mt-3 text-sm font-semibold" style={{ color: 'var(--cb-text)' }}>Approved users only</p>
-          <p className="cb-body-copy mt-1 text-xs">No guest access, no public sign-up, and no static bypass.</p>
+          <p className="cb-body-copy mt-1 text-xs">Only approved accounts can open this private book.</p>
         </div>
         <div className="cb-card p-4">
           <Heart className="size-5" style={{ color: 'var(--cb-accent)' }} />
           <p className="mt-3 text-sm font-semibold" style={{ color: 'var(--cb-text)' }}>Two-person scope</p>
-          <p className="cb-body-copy mt-1 text-xs">Couple-scoped records stay private and route-guarded.</p>
+          <p className="cb-body-copy mt-1 text-xs">Memories, plans, and special pages stay between Omia and Jaylan.</p>
         </div>
         <div className="cb-card p-4">
           <Sparkles className="size-5" style={{ color: 'var(--cb-accent)' }} />
-          <p className="mt-3 text-sm font-semibold" style={{ color: 'var(--cb-text)' }}>Theme-aware shell</p>
-          <p className="cb-body-copy mt-1 text-xs">Your saved personal appearance restores when your account loads.</p>
+          <p className="mt-3 text-sm font-semibold" style={{ color: 'var(--cb-text)' }}>Personal view</p>
+          <p className="cb-body-copy mt-1 text-xs">Your saved appearance returns after sign-in.</p>
         </div>
       </div>
     </section>
@@ -191,7 +191,7 @@ export function LoginPage() {
         <main className="mx-auto max-w-3xl">
           <LoadingState
             title="Restoring Couple Book"
-            description="Checking Firebase auth and the approved-user record before the shell opens."
+            description="Checking your saved sign-in and private access before Couple Book opens."
           />
         </main>
       </div>

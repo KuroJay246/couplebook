@@ -62,6 +62,7 @@ test('shared states and login shell keep the Event Hub-family framing explicit',
   assert.match(loginSource, /Continue with Google/)
   assert.match(loginSource, /Other sign-in options/)
   assert.match(loginSource, /BrandMark/)
+  assert.doesNotMatch(loginSource, /Firebase auth|route-guarded|static bypass|Theme-aware shell/)
   assert.match(loadingSource, /SharedLoadingState/)
   assert.match(errorSource, /SharedErrorState/)
   assert.match(pageLayoutSource, /EditorialEmptyState/)
