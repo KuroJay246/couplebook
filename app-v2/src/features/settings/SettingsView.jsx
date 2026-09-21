@@ -1,11 +1,15 @@
 import {
   Bell,
+  HardDrive,
+  HeartHandshake,
+  Info,
   KeyRound,
   LockKeyhole,
   LogOut,
   MonitorCog,
   Shield,
   Sparkles,
+  UserRound,
 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { PrimaryButton, SecondaryButton } from '../../components/ui/Button.jsx'
@@ -24,13 +28,16 @@ import { GOOGLE_PROVIDER_ID, isGoogleProviderLinked } from '../../services/authS
 import { MediaSettingsSection } from './MediaSettingsSection.jsx'
 
 const SETTINGS_CATEGORIES = [
-  ['profiles', 'Profile & Relationship'],
+  ['account', 'Account'],
+  ['profiles', 'Relationship & Profiles'],
   ['dates', 'Important Dates'],
   ['appearance', 'Appearance'],
   ['media', 'Media & Sync'],
   ['notifications', 'Notifications'],
   ['privacy', 'Privacy & Security'],
-  ['advanced', 'Advanced'],
+  ['storage', 'App & Storage'],
+  ['advanced', 'Advanced / Diagnostics'],
+  ['about', 'About'],
 ]
 
 function buildFormState(model) {
@@ -168,7 +175,7 @@ function SettingsHeading({ dirty, onCancel, onSave, status }) {
     <div className="cb-settings-heading">
       <div>
         <h2>Settings</h2>
-        <p>Account, appearance, media, notifications, privacy, and private access.</p>
+        <p>Account, relationship, dates, appearance, media, notifications, privacy, app storage, diagnostics, and about.</p>
       </div>
       <div className="cb-settings-actions">
         <StatusBadge tone={dirty ? 'warning' : 'success'}>
@@ -199,12 +206,91 @@ function SettingsTabs({ activeCategory, onSelect }) {
   )
 }
 
+function AccountSettingsSection({ googleLinkState, googleLinked, model, onLinkGoogle, onSignOut }) {
+  return (
+    <Surface className="cb-page-frame">
+      <div className="flex flex-col gap-4 border-b pb-4 sm:flex-row sm:items-start sm:justify-between" style={{ borderColor: 'var(--cb-border)' }}>
+        <div className="flex items-start gap-3">
+          <span
+            className="grid size-11 shrink-0 place-items-center rounded-2xl"
+            style={{
+              background: 'color-mix(in srgb, var(--cb-accent-soft) 88%, transparent)',
+              color: 'var(--cb-accent)',
+            }}
+          >
+            <UserRound className="size-5" aria-hidden="true" />
+          </span>
+          <div>
+            <p className="cb-kicker">Account</p>
+            <h3 className="cb-page-title mt-2 text-2xl">Approved account</h3>
+            <p className="cb-body-copy mt-2 text-sm">Review the signed-in account, connection method, and this device session without exposing private relationship content.</p>
+          </div>
+        </div>
+        <StatusBadge tone={googleLinked ? 'success' : 'warning'}>{googleLinked ? 'Google linked' : 'Password only'}</StatusBadge>
+      </div>
+
+      <div className="mt-5 grid gap-3 md:grid-cols-2">
+        {(model.account?.details || []).map((detail) => (
+          <ContentCard key={detail.key}>
+            <p className="cb-kicker">{detail.label}</p>
+            <p className="mt-2 text-sm font-semibold" style={{ color: 'var(--cb-text)' }}>{detail.value}</p>
+          </ContentCard>
+        ))}
+      </div>
+
+      <div className="mt-5 grid gap-4 lg:grid-cols-2">
+        <ContentCard>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex items-start gap-3">
+              <KeyRound className="mt-0.5 size-4 shrink-0" style={{ color: 'var(--cb-accent)' }} aria-hidden="true" />
+              <div>
+                <p className="text-sm font-semibold" style={{ color: 'var(--cb-text)' }}>Google sign-in</p>
+                <p className="cb-body-copy mt-2 text-sm">
+                  Link Google only while signed in with the existing approved account so the approved identity, couple membership, and private book data stay intact.
+                </p>
+              </div>
+            </div>
+            <StatusBadge tone={googleLinked ? 'success' : 'warning'}>{googleLinked ? 'Linked' : 'Not linked'}</StatusBadge>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <SecondaryButton disabled={googleLinked || googleLinkState.pending} onClick={onLinkGoogle}>
+              {googleLinkState.pending ? 'Opening Google...' : 'Link Google sign-in'}
+            </SecondaryButton>
+            <StatusBadge>{GOOGLE_PROVIDER_ID}</StatusBadge>
+          </div>
+          {googleLinkState.message ? (
+            <InlineAlert className="mt-4" description={googleLinkState.message} tone={googleLinkState.kind === 'error' ? 'error' : 'success'} />
+          ) : null}
+        </ContentCard>
+
+        <ContentCard>
+          <div className="flex items-start gap-3">
+            <LogOut className="mt-0.5 size-4 shrink-0" style={{ color: 'var(--cb-accent)' }} aria-hidden="true" />
+            <div>
+              <p className="text-sm font-semibold" style={{ color: 'var(--cb-text)' }}>Leave this device</p>
+              <p className="cb-body-copy mt-2 text-sm">Sign out closes Couple Book on this device and returns to the private sign-in screen.</p>
+            </div>
+          </div>
+          <div className="mt-4">
+            <SecondaryButton onClick={onSignOut}><LogOut className="size-4" />Sign out</SecondaryButton>
+          </div>
+        </ContentCard>
+      </div>
+    </Surface>
+  )
+}
+
 function ProfileSettingsSection() {
   return (
     <Surface className="cb-page-frame">
-      <p className="cb-kicker">Profile & Relationship</p>
-      <h3 className="cb-page-title mt-2 text-2xl">Use Us for profile details</h3>
-      <p className="cb-body-copy mt-2 text-sm">Partner names, birthdays, shared relationship dates, and favorites live on the Us page so Settings stays focused on configuration.</p>
+      <div className="flex items-start gap-3">
+        <HeartHandshake className="mt-1 size-5" style={{ color: 'var(--cb-accent)' }} aria-hidden="true" />
+        <div>
+          <p className="cb-kicker">Relationship & Profiles</p>
+          <h3 className="cb-page-title mt-2 text-2xl">Use Us for profile details</h3>
+          <p className="cb-body-copy mt-2 text-sm">Partner names, birthdays, shared relationship dates, and favorites live on the Us page so Settings stays focused on configuration.</p>
+        </div>
+      </div>
     </Surface>
   )
 }
@@ -212,9 +298,14 @@ function ProfileSettingsSection() {
 function DatesSettingsSection() {
   return (
     <Surface className="cb-page-frame">
-      <p className="cb-kicker">Important Dates</p>
-      <h3 className="cb-page-title mt-2 text-2xl">Dates are managed from Us</h3>
-      <p className="cb-body-copy mt-2 text-sm">Birthdays are partner dates. The primary anniversary is a couple-level relationship date.</p>
+      <div className="flex items-start gap-3">
+        <Sparkles className="mt-1 size-5" style={{ color: 'var(--cb-accent)' }} aria-hidden="true" />
+        <div>
+          <p className="cb-kicker">Important Dates</p>
+          <h3 className="cb-page-title mt-2 text-2xl">Dates are managed from Us</h3>
+          <p className="cb-body-copy mt-2 text-sm">Birthdays are partner dates. The primary anniversary is a couple-level relationship date.</p>
+        </div>
+      </div>
     </Surface>
   )
 }
@@ -272,7 +363,81 @@ function AppearanceSettingsSection({ form, model, onUpdateField }) {
   )
 }
 
-function PrivacySettingsSection({ googleLinkState, googleLinked, model, onLinkGoogle }) {
+function AppStorageSettingsSection({ model }) {
+  const storageItems = [
+    {
+      key: 'private-cache',
+      label: 'Private app cache',
+      summary: 'The web app may keep lightweight local state for responsiveness, but private media originals stay in the approved Drive archive.',
+      statusLabel: 'Local device',
+    },
+    {
+      key: 'offline-shell',
+      label: 'Offline shell',
+      summary: 'Core application files can remain available after first load. Protected data still requires an approved session and current permissions.',
+      statusLabel: 'Guarded',
+    },
+    {
+      key: 'media-queue',
+      label: 'Media queue',
+      summary: model.media?.queue?.summary || 'Upload and recovery queue status is surfaced from the Media & Sync section when available.',
+      statusLabel: model.media?.queue?.statusLabel || 'Ready',
+    },
+  ]
+
+  return (
+    <Surface className="cb-page-frame">
+      <div className="flex items-start gap-3">
+        <HardDrive className="mt-1 size-5" style={{ color: 'var(--cb-accent)' }} aria-hidden="true" />
+        <div>
+          <p className="cb-kicker">App & Storage</p>
+          <h3 className="cb-page-title mt-2 text-2xl">Local app storage</h3>
+          <p className="cb-body-copy mt-2 text-sm">Review what the installed web app can keep locally without changing the Drive-first media boundary.</p>
+        </div>
+      </div>
+      <div className="mt-5 grid gap-3">
+        {storageItems.map((item) => (
+          <ContentCard key={item.key}>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold" style={{ color: 'var(--cb-text)' }}>{item.label}</p>
+                <p className="cb-body-copy mt-2 text-sm">{item.summary}</p>
+              </div>
+              <StatusBadge>{item.statusLabel}</StatusBadge>
+            </div>
+          </ContentCard>
+        ))}
+      </div>
+    </Surface>
+  )
+}
+
+function AboutSettingsSection({ model }) {
+  return (
+    <Surface className="cb-page-frame">
+      <div className="flex items-start gap-3">
+        <Info className="mt-1 size-5" style={{ color: 'var(--cb-accent)' }} aria-hidden="true" />
+        <div>
+          <p className="cb-kicker">About</p>
+          <h3 className="cb-page-title mt-2 text-2xl">Couple Book</h3>
+          <p className="cb-body-copy mt-2 text-sm">A private two-person memory book for shared plans, photos, videos, milestones, and special pages.</p>
+        </div>
+      </div>
+      <div className="mt-5 grid gap-3 md:grid-cols-2">
+        <ContentCard>
+          <p className="cb-kicker">Media boundary</p>
+          <p className="cb-body-copy mt-2 text-sm">{model.media?.boundary || 'Original media stays Drive-first. Firestore stores stable metadata, not temporary preview URLs.'}</p>
+        </ContentCard>
+        <ContentCard>
+          <p className="cb-kicker">Product mode</p>
+          <p className="cb-body-copy mt-2 text-sm">Owner-review web app. Native work remains frozen unless explicitly resumed.</p>
+        </ContentCard>
+      </div>
+    </Surface>
+  )
+}
+
+function PrivacySettingsSection({ model }) {
   return (
     <Surface>
       <div className="flex items-start gap-3">
@@ -291,39 +456,6 @@ function PrivacySettingsSection({ googleLinkState, googleLinked, model, onLinkGo
         </div>
       </div>
       <div className="mt-5 grid gap-3">
-        {(model.account?.details || []).map((detail) => (
-          <ContentCard key={detail.key}>
-            <p className="cb-kicker">{detail.label}</p>
-            <p className="mt-2 text-sm font-semibold" style={{ color: 'var(--cb-text)' }}>{detail.value}</p>
-          </ContentCard>
-        ))}
-      </div>
-      <div className="mt-5">
-        <ContentCard>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div className="flex items-start gap-3">
-              <KeyRound className="mt-0.5 size-4 shrink-0" style={{ color: 'var(--cb-accent)' }} aria-hidden="true" />
-              <div>
-                <p className="text-sm font-semibold" style={{ color: 'var(--cb-text)' }}>Google sign-in</p>
-                <p className="cb-body-copy mt-2 text-sm">
-                  Link Google only while signed in with the existing approved account so the current Firebase UID, couple membership, and private book data stay intact.
-                </p>
-              </div>
-            </div>
-            <StatusBadge tone={googleLinked ? 'success' : 'warning'}>{googleLinked ? 'Linked' : 'Not linked'}</StatusBadge>
-          </div>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <SecondaryButton disabled={googleLinked || googleLinkState.pending} onClick={onLinkGoogle}>
-              {googleLinkState.pending ? 'Opening Google...' : 'Link Google sign-in'}
-            </SecondaryButton>
-            <StatusBadge>{GOOGLE_PROVIDER_ID}</StatusBadge>
-          </div>
-          {googleLinkState.message ? (
-            <InlineAlert className="mt-4" description={googleLinkState.message} tone={googleLinkState.kind === 'error' ? 'error' : 'success'} />
-          ) : null}
-        </ContentCard>
-      </div>
-      <div className="mt-5 grid gap-3">
         {(model.privacy?.items || []).map((item) => (
           <ContentCard key={item.label}>
             <div className="flex items-start gap-3">
@@ -340,13 +472,13 @@ function PrivacySettingsSection({ googleLinkState, googleLinked, model, onLinkGo
   )
 }
 
-function AdvancedSettingsSection({ model, onSignOut }) {
+function AdvancedSettingsSection({ model }) {
   return (
     <details className="cb-advanced-panel" open>
       <summary className="cb-advanced-summary">
         <span>
-          <span className="cb-kicker">Advanced</span>
-          <span className="mt-1 block text-lg font-semibold" style={{ color: 'var(--cb-text)' }}>System health and account controls</span>
+          <span className="cb-kicker">Advanced / Diagnostics</span>
+          <span className="mt-1 block text-lg font-semibold" style={{ color: 'var(--cb-text)' }}>System health</span>
         </span>
         <span className="text-sm font-semibold" style={{ color: 'var(--cb-accent)' }}>Review</span>
       </summary>
@@ -375,25 +507,15 @@ function AdvancedSettingsSection({ model, onSignOut }) {
           </div>
         </Surface>
 
-        <Surface tone="soft">
-          <div className="flex items-start gap-3">
-            <Sparkles className="mt-1 size-5" style={{ color: 'var(--cb-accent)' }} aria-hidden="true" />
-            <div>
-              <p className="cb-kicker">Account</p>
-              <h3 className="cb-page-title mt-2 text-2xl">Leave this device</h3>
-              <p className="cb-body-copy mt-2 text-sm">Sign out closes Couple Book on this device and returns to the private sign-in screen.</p>
-            </div>
-          </div>
-          <div className="mt-5">
-            <SecondaryButton onClick={onSignOut}><LogOut className="size-4" />Sign out</SecondaryButton>
-          </div>
-        </Surface>
       </div>
     </details>
   )
 }
 
 function SettingsCategoryPane({ activeCategory, form, googleLinkState, googleLinked, model, onLinkGoogle, onSignOut, onToggleNotification, onUpdateField }) {
+  if (activeCategory === 'account') {
+    return <AccountSettingsSection googleLinkState={googleLinkState} googleLinked={googleLinked} model={model} onLinkGoogle={onLinkGoogle} onSignOut={onSignOut} />
+  }
   if (activeCategory === 'profiles') return <ProfileSettingsSection />
   if (activeCategory === 'dates') return <DatesSettingsSection />
   if (activeCategory === 'appearance') return <AppearanceSettingsSection form={form} model={model} onUpdateField={onUpdateField} />
@@ -402,9 +524,11 @@ function SettingsCategoryPane({ activeCategory, form, googleLinkState, googleLin
     return <NotificationSettingsSection notifications={model.notifications} onToggle={onToggleNotification} values={form.notifications} />
   }
   if (activeCategory === 'privacy') {
-    return <PrivacySettingsSection googleLinkState={googleLinkState} googleLinked={googleLinked} model={model} onLinkGoogle={onLinkGoogle} />
+    return <PrivacySettingsSection model={model} />
   }
-  return <AdvancedSettingsSection model={model} onSignOut={onSignOut} />
+  if (activeCategory === 'storage') return <AppStorageSettingsSection model={model} />
+  if (activeCategory === 'about') return <AboutSettingsSection model={model} />
+  return <AdvancedSettingsSection model={model} />
 }
 
 export function SettingsView({ compatibilityError, compatibilityState, model, onRefresh }) {
@@ -416,7 +540,7 @@ export function SettingsView({ compatibilityError, compatibilityState, model, on
   const [signOutState, setSignOutState] = useState({ open: false, pending: false })
   const [googleLinkState, setGoogleLinkState] = useState({ kind: '', message: '', pending: false })
   const [status, setStatus] = useState({ kind: '', message: '', saving: false })
-  const [activeCategory, setActiveCategory] = useState('profiles')
+  const [activeCategory, setActiveCategory] = useState('account')
   const form = useMemo(() => ({ ...loadedForm, ...draft, revision: loadedForm.revision }), [draft, loadedForm])
   const dirty = hasChanges(loadedForm, form)
   const googleLinked = isGoogleProviderLinked(user)

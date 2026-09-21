@@ -32,8 +32,11 @@ test('Settings owns Google Drive media library administration', () => {
   assert.doesNotMatch(mediaSettingsSource, /Persistent background sync requires trusted backend approval/)
 })
 
-test('Settings keeps technical health behind Advanced', () => {
-  assert.match(settingsSource, /System health and account controls/)
+test('Settings separates account controls from advanced diagnostics', () => {
+  assert.match(settingsSource, /Approved account/)
+  assert.match(settingsSource, /Leave this device/)
+  assert.match(settingsSource, /Advanced \/ Diagnostics/)
+  assert.match(settingsSource, /System health/)
   assert.match(settingsSource, /className="cb-advanced-panel"/)
   assert.match(styleSource, /\.cb-advanced-panel/)
 })
