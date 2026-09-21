@@ -381,9 +381,25 @@ async function waitForRoute(page, route) {
   await waitForVisibleDelay()
 }
 
+function isTransientLocalNavigationError(error) {
+  return /ERR_NETWORK_CHANGED|ERR_NETWORK_IO_SUSPENDED|ERR_ABORTED/i.test(String(error?.message || error))
+}
+
 async function openRoute(page, baseUrl, route) {
-  await page.goto(`${baseUrl}${route.path}`, { waitUntil: 'domcontentloaded' })
-  await waitForRoute(page, route)
+  const targetUrl = `${baseUrl}${route.path}`
+  let lastError = null
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      await page.goto(targetUrl, { waitUntil: 'domcontentloaded' })
+      await waitForRoute(page, route)
+      return
+    } catch (error) {
+      lastError = error
+      if (!isTransientLocalNavigationError(error)) throw error
+      await new Promise((resolve) => setTimeout(resolve, 350 * (attempt + 1)))
+    }
+  }
+  throw lastError
 }
 
 async function hashFile(filePath) {
@@ -609,13 +625,10 @@ async function listStorageObjects(bucket, prefix) {
 
 async function listLocalDriveFileIds(page) {
   return page.evaluate(() => {
-    try {
-      return JSON.parse(window.sessionStorage.getItem('__couplebook_drive_test_files__') || '[]')
-        .map((file) => file.id)
-        .sort()
-    } catch {
-      return []
-    }
+    const files = Array.isArray(window.__COUPLEBOOK_DRIVE_TEST__?.files)
+      ? window.__COUPLEBOOK_DRIVE_TEST__.files
+      : []
+    return files.map((file) => file.id).sort()
   })
 }
 
@@ -860,7 +873,7 @@ async function runPlanWorkflows(summary, page, baseUrl) {
     await page.getByRole('button', { name: /Save plan/i }).click()
     assert.equal(Boolean(await titleField.evaluate((element) => element.validationMessage)), true)
     await captureShot(summary, page, { captureType: 'validation', group: 'forms', label: 'Add Plan validation', route: '/plans', routeSlug: 'plan-validation', themeId: 'midnight-rose', viewport: VIEWPORTS[0] })
-    await page.getByRole('button', { name: 'Cancel' }).click()
+    await page.getByRole('button', { name: 'Cancel', exact: true }).click()
     await page.getByRole('heading', { name: 'Add a new plan' }).waitFor({ state: 'hidden', timeout: 5000 })
     await page.getByRole('button', { name: /Add plan/i }).click()
     await titleField.fill(title)
@@ -1105,7 +1118,12 @@ async function captureCards(summary, browser, baseUrl, ownerEmail, ownerPassword
       ['Home relationship hero', '/dashboard', async (page) => page.locator('[data-route="dashboard"] .cb-home-layout').first()],
       ['Featured memory', '/dashboard', async (page) => page.locator('[data-route="dashboard"] .cb-home-lead').first()],
       ['Story text memory', '/timeline', async (page) => page.locator('article').filter({ has: page.getByText('First harbor walk') }).first()],
-      ['Album tile', '/gallery', async (page) => page.locator('.gallery-item').first()],
+      ['Album gallery surface', '/gallery', async (page) => {
+        const tile = page.locator('.gallery-item').first()
+        if (await tile.isVisible().catch(() => false)) return tile
+        await openUploadTools(page)
+        return page.getByLabel('Album source reconciliation')
+      }],
       ['Us profile section', '/profile', async (page) => page.locator('[data-route="profile"] .cb-us-panel').first()],
       ['Plan card', '/plans', async (page) => page.locator('article').filter({ has: page.getByText('Bookstore date') }).first()],
       ['Theme tile', '/settings', async (page) => {

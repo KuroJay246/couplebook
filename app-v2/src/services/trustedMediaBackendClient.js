@@ -131,6 +131,7 @@ export async function uploadMediaViaTrustedBackend({ checksum, coupleId, file, m
     const now = new Date().toISOString()
     const metadata = {
       id: driveFileId,
+      mediaId,
       name: file?.name || mediaId,
       mimeType: file?.type || 'application/octet-stream',
       size: String(file?.size || 0),
@@ -202,7 +203,7 @@ export async function disconnectDriveViaTrustedBackend({ coupleId, user }) {
 
 export async function removeMediaViaTrustedBackend({ coupleId, deleteOriginal = false, mediaId, user }) {
   if (isLocalTrustedMediaTestHookEnabled()) {
-    writeLocalDriveFiles(readLocalDriveFiles().filter((entry) => entry.id !== mediaId))
+    writeLocalDriveFiles(readLocalDriveFiles().filter((entry) => entry.id !== mediaId && entry.mediaId !== mediaId))
     return { coupleId, deleteOriginal, mediaId, ok: true }
   }
 
