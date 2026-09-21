@@ -1,6 +1,5 @@
 import { useMemorySource } from '../memories/useMemorySource.js'
 import { buildGalleryReadModelWithMediaIndex } from './galleryReadModel.js'
-import { toUserFacingError } from '../../services/userFacingError.js'
 import { useMediaIndexSource } from './useMediaIndexSource.js'
 
 function sourceItemCount(source) {
@@ -12,24 +11,32 @@ function sourceItemCount(source) {
 function resolveGalleryState(memoryState, mediaIndexState, memorySource, mediaIndexSource) {
   if (sourceItemCount(memorySource) + sourceItemCount(mediaIndexSource) > 0) return 'ready'
   if (memoryState === 'loading' && mediaIndexState === 'loading') return 'loading'
-  if (memoryState === 'error' && mediaIndexState === 'error') return 'error'
   if (memoryState === 'empty' && mediaIndexState === 'empty') return 'empty'
   return 'ready'
+}
+
+function sourceWithWarning(source, error) {
+  if (!error) return source
+  return {
+    ...(source || {}),
+    status: 'unavailable',
+    warnings: [...new Set([...(Array.isArray(source?.warnings) ? source.warnings : []), error])],
+  }
 }
 
 export function useGalleryData() {
   const memory = useMemorySource()
   const mediaIndex = useMediaIndexSource()
+  const memorySource = sourceWithWarning(memory.source, memory.error)
+  const mediaIndexSource = sourceWithWarning(mediaIndex.source, mediaIndex.error)
 
   return {
     model: buildGalleryReadModelWithMediaIndex({
-      memorySource: memory.source,
-      mediaIndexSource: mediaIndex.source,
+      memorySource,
+      mediaIndexSource,
     }),
-    compatibilityError: memory.error || mediaIndex.error
-      ? toUserFacingError(memory.error || mediaIndex.error, 'We could not load your Album right now. Try again.')
-      : null,
-    compatibilityState: resolveGalleryState(memory.state, mediaIndex.state, memory.source, mediaIndex.source),
+    compatibilityError: null,
+    compatibilityState: resolveGalleryState(memory.state, mediaIndex.state, memorySource, mediaIndexSource),
     refreshCompatibility: () => {
       memory.refresh()
       mediaIndex.refresh()

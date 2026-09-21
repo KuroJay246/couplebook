@@ -27,6 +27,7 @@ export function AppRoutes() {
           <Route path="/story" element={<Navigate replace to="/timeline" />} />
           <Route path="/timeline" element={<TimelinePage />} />
           <Route path="/gallery" element={<GalleryPage />} />
+          <Route path="/us" element={<Navigate replace to="/profile" />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/favorites" element={<FavoritesPage />} />
           <Route path="/plans" element={<PlansPage />} />

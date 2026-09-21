@@ -844,11 +844,17 @@ function useGalleryRemoval({ setSelectedItem, uploadQueue }) {
   return { confirmRemoval, removeState, setRemoveState }
 }
 
-function getGalleryWarning(mediaInventory) {
+function getGalleryWarning(mediaInventory, memoryArchive) {
   const mediaWarnings = Array.isArray(mediaInventory.warnings) ? mediaInventory.warnings : []
-  return mediaInventory.status === 'unavailable' && mediaWarnings.length > 0
-    ? 'The private Drive index is not readable for this session. Open Media & Sync and refresh after reconnecting.'
-    : ''
+  if (mediaInventory.status === 'unavailable' && mediaWarnings.length > 0) {
+    return 'The private Drive index is not readable for this session. Open Media & Sync and refresh after reconnecting.'
+  }
+
+  if (memoryArchive?.status === 'unavailable') {
+    return 'The private story archive is taking too long to load. Album remains available for indexed Drive media; retry when the connection settles.'
+  }
+
+  return ''
 }
 
 function getSelectedStreamStatus(selectedItemWithPreview, streamStatus) {
@@ -858,11 +864,12 @@ function getSelectedStreamStatus(selectedItemWithPreview, streamStatus) {
 
 function useGalleryModelState(model) {
   const items = useMemo(() => (Array.isArray(model.items) ? model.items : []), [model])
+  const memoryArchive = model.sourceStatus?.memoryArchive || {}
   const years = model.filters?.availableYears || []
   const mediaInventory = model.sourceStatus?.mediaInventory || {}
   const reconciliation = model.sourceStatus?.reconciliation || {}
   const archivedReferenceCount = Number(reconciliation.historicalArchiveReferences || model.archiveReferenceItems?.length || 0)
-  const userFacingMediaWarning = getGalleryWarning(mediaInventory)
+  const userFacingMediaWarning = getGalleryWarning(mediaInventory, memoryArchive)
 
   return { archivedReferenceCount, items, reconciliation, userFacingMediaWarning, years }
 }

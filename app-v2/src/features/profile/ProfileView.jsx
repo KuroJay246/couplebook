@@ -356,6 +356,14 @@ export function ProfileView({ compatibilityError, compatibilityState, model, onR
     <section className="cb-us-redesign" data-route="profile">
       <ProfileHero onEditRelationship={() => people[0] && setEditingPerson(people[0])} people={people} primaryAnniversary={primaryAnniversary} />
 
+      {model.sourceStatus?.overall === 'partial' && model.warnings?.length > 0 ? (
+        <InlineAlert
+          description={model.warnings.slice(0, 2).join(' ')}
+          title="Some Us details need a retry"
+          tone="warning"
+        />
+      ) : null}
+
       {status.message && !editingPerson ? <InlineAlert description={status.message} tone={status.kind === 'error' ? 'error' : 'success'} /> : null}
 
       <ProfileFacts nextImportantDate={nextImportantDate} primaryAnniversary={primaryAnniversary} />

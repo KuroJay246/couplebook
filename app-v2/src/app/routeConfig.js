@@ -2,6 +2,7 @@ export const LOGIN_PATH = '/login'
 export const DEFAULT_AUTHENTICATED_PATH = '/dashboard'
 export const PROTECTED_ROUTE_ALIASES = Object.freeze({
   '/story': '/timeline',
+  '/us': '/profile',
 })
 
 export const ROUTE_GROUPS = Object.freeze({

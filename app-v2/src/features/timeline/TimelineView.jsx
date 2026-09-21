@@ -801,6 +801,13 @@ export function TimelineView({ compatibilityError, compatibilityState, model, on
       />
 
       {status.message && !formMode ? <InlineAlert description={status.message} tone={status.kind === 'error' ? 'error' : 'success'} /> : null}
+      {model.sourceStatus?.bridge?.status === 'unavailable' && model.warnings?.length > 0 ? (
+        <InlineAlert
+          description={model.warnings.slice(0, 2).join(' ')}
+          title="Story needs a retry"
+          tone="warning"
+        />
+      ) : null}
       <TimelineFilters
         filteredCount={filtered.length}
         memoriesCount={memories.length}

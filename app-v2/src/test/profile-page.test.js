@@ -19,6 +19,8 @@ test('profile route uses the feature hook and owner editing view', async () => {
   assert.match(profileViewSource, /ProfileEditDialog/)
   assert.match(profileViewSource, /saveProfile/)
   assert.match(profileViewSource, /Important dates/)
+  assert.match(profileViewSource, /Some Us details need a retry/)
+  assert.match(profileViewSource, /model\.sourceStatus\?\.overall === 'partial'/)
   assert.doesNotMatch(profileViewSource, /type="file"/)
 })
 

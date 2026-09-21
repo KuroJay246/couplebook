@@ -109,6 +109,26 @@ test('direct reload keeps the intended protected destination after auth restorat
   assert.equal(resolved.path, '/favorites')
 })
 
+test('legacy and owner-facing route aliases resolve to canonical protected pages', () => {
+  const story = resolveProtectedRouteOutcome({
+    pathname: '/story',
+    isLoading: false,
+    user: { uid: 'approved' },
+    isAuthorized: true,
+  })
+  const us = resolveProtectedRouteOutcome({
+    pathname: '/us',
+    isLoading: false,
+    user: { uid: 'approved' },
+    isAuthorized: true,
+  })
+
+  assert.equal(story.type, 'allow')
+  assert.equal(story.path, '/timeline')
+  assert.equal(us.type, 'allow')
+  assert.equal(us.path, '/profile')
+})
+
 test('authorization uses a targeted users uid lookup only', async () => {
   const userCalls = []
   const membershipCalls = []
@@ -212,6 +232,8 @@ test('route source and auth shell source keep the protected migration contract e
   assert.match(routesSource, /path=\{DEFAULT_AUTHENTICATED_PATH\}/)
   assert.match(routesSource, /path="\/timeline"/)
   assert.match(routesSource, /path="\/gallery"/)
+  assert.match(routesSource, /path="\/us"/)
+  assert.match(routesSource, /to="\/profile"/)
   assert.match(routesSource, /path="\/profile"/)
   assert.match(routesSource, /path="\/favorites"/)
   assert.match(routesSource, /path="\/plans"/)

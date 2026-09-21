@@ -265,6 +265,38 @@ test('profile read model stays partial when only one person or one source is ava
   assert.equal(model.sharedHighlights.length, 0)
 })
 
+test('profile read model keeps usable profile content when secondary sources are unavailable', () => {
+  const baseSnapshot = createSnapshot()
+  const model = buildProfileReadModel({
+    compatibilitySnapshot: createSnapshot({
+      sources: {
+        ...baseSnapshot.sources,
+        favorites: {
+          status: 'unavailable',
+          source: 'firestore',
+          warnings: ['Favorites is taking too long to load. Check the connection and try again.'],
+          data: null,
+        },
+        contract: {
+          status: 'unavailable',
+          source: 'firestore',
+          warnings: ['Contract is taking too long to load. Check the connection and try again.'],
+          data: null,
+        },
+      },
+    }),
+  })
+
+  assert.equal(model.status, 'partial')
+  assert.equal(model.people.length, 2)
+  assert.equal(model.relationship.title, 'Jaylan and Omia')
+  assert.equal(model.sourceStatus.overall, 'partial')
+  assert.deepEqual(model.warnings, [
+    'Favorites is taking too long to load. Check the connection and try again.',
+    'Contract is taking too long to load. Check the connection and try again.',
+  ])
+})
+
 test('profile read model returns frozen data and does not mutate compatibility inputs', () => {
   const snapshot = createSnapshot()
   const before = structuredClone(snapshot)
@@ -290,5 +322,7 @@ test('profile feature sources stay read-only and avoid local auth shortcuts', as
   assert.match(hookSource, /useProfileSource/)
   assert.match(hookSource, /useFavoritesSource/)
   assert.match(hookSource, /useContractSource/)
+  assert.match(hookSource, /sourceWithWarning/)
+  assert.doesNotMatch(hookSource, /compatibilityError: contractError \|\| favoritesError \|\| profileError/)
   assert.doesNotMatch(hookSource, /useCompatibilityData/)
 })
