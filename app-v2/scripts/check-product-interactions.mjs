@@ -1,4 +1,4 @@
-/* global URL, document, getComputedStyle, matchMedia, window */
+/* global URL, document, getComputedStyle, matchMedia, setTimeout, window */
 
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
@@ -145,6 +145,27 @@ async function waitForRoute(page, route) {
     },
     { timeout: 12000 },
   )
+}
+
+function isTransientLocalNavigationError(error) {
+  return /ERR_NETWORK_CHANGED|ERR_NETWORK_IO_SUSPENDED|ERR_ABORTED/i.test(String(error?.message || error))
+}
+
+async function openRoute(page, baseUrl, route) {
+  const targetUrl = `${baseUrl}${route.path}`
+  let lastError = null
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      await page.goto(targetUrl, { waitUntil: 'domcontentloaded' })
+      await waitForRoute(page, route)
+      return
+    } catch (error) {
+      lastError = error
+      if (!isTransientLocalNavigationError(error)) throw error
+      await new Promise((resolve) => setTimeout(resolve, 300 * (attempt + 1)))
+    }
+  }
+  throw lastError
 }
 
 async function collectInteractionMetrics(page) {
@@ -373,8 +394,7 @@ async function run() {
         attachPageGuards(page, observed)
 
         try {
-          await page.goto(`${baseUrl}${route.path}`, { waitUntil: 'domcontentloaded' })
-          await waitForRoute(page, route)
+          await openRoute(page, baseUrl, route)
           const metrics = await collectInteractionMetrics(page)
           assertInteractionMetrics(route, viewport, metrics)
           await assertKeyboardFocus(page, route, viewport)
