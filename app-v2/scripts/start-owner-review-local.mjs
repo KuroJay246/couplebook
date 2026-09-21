@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process'
+import net from 'node:net'
 import process from 'node:process'
 
 const isWindows = process.platform === 'win32'
@@ -15,6 +16,23 @@ const childEnv = {
 
 const children = []
 let shuttingDown = false
+
+function isPortOpen(port, host = '127.0.0.1') {
+  return new Promise((resolve) => {
+    const socket = net.createConnection({ host, port: Number(port) })
+    socket.once('connect', () => {
+      socket.end()
+      resolve(true)
+    })
+    socket.once('error', () => {
+      resolve(false)
+    })
+    socket.setTimeout(750, () => {
+      socket.destroy()
+      resolve(false)
+    })
+  })
+}
 
 function spawnChild(label, command, args, options = {}) {
   const child = spawn(command, args, {
@@ -66,9 +84,20 @@ process.stdout.write('Starting Couple Book owner-review local runtime.\n')
 process.stdout.write(`Private legacy bridge: ${childEnv.VITE_LEGACY_LOCAL_BASE_URL}\n`)
 process.stdout.write('Vite app: http://localhost:5173\n')
 
-spawnChild('bridge', nodeCommand, ['server.js'])
-if (isWindows) {
-  spawnChild('vite', commandShell, ['/d', '/s', '/c', `${npmCommand} --prefix app-v2 run dev`])
+const bridgePort = childEnv.PORT || '3003'
+if (await isPortOpen(bridgePort)) {
+  process.stdout.write(`[bridge] already running on port ${bridgePort}; reusing existing process.\n`)
 } else {
-  spawnChild('vite', npmCommand, ['--prefix', 'app-v2', 'run', 'dev'])
+  spawnChild('bridge', nodeCommand, ['server.js'])
+}
+
+const vitePort = process.env.PORT || '5173'
+if (await isPortOpen(vitePort, 'localhost')) {
+  process.stdout.write(`[vite] already running on port ${vitePort}; reusing existing process.\n`)
+} else {
+  if (isWindows) {
+    spawnChild('vite', commandShell, ['/d', '/s', '/c', `${npmCommand} --prefix app-v2 run dev`])
+  } else {
+    spawnChild('vite', npmCommand, ['--prefix', 'app-v2', 'run', 'dev'])
+  }
 }
