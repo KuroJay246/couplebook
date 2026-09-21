@@ -7,6 +7,13 @@ import { useSettingsSource } from '../settings/useSettingsSource.js'
 import { buildDashboardReadModel } from './dashboardReadModel.js'
 
 const MINUTE_MS = 60 * 1000
+const MINIMUM_CLOCK_DELAY_MS = 1000
+
+function getDelayUntilNextMinute(now = new Date()) {
+  const elapsedMinuteMs = (now.getSeconds() * 1000) + now.getMilliseconds()
+  const remainingMinuteMs = MINUTE_MS - elapsedMinuteMs
+  return Math.max(MINIMUM_CLOCK_DELAY_MS, remainingMinuteMs)
+}
 
 function combineState(states) {
   if (states.includes('error')) return 'error'
@@ -29,7 +36,7 @@ export function useDashboardModel() {
       interval = window.setInterval(() => {
         setNow(new Date())
       }, MINUTE_MS)
-    }, Math.max(1000, MINUTE_MS - (Date.now() % MINUTE_MS)))
+    }, getDelayUntilNextMinute())
 
     return () => {
       window.clearTimeout(timeout)

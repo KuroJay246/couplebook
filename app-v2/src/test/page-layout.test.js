@@ -36,6 +36,7 @@ test('settings page layout keeps the faithful utility information architecture e
 
 test('dashboard adopts the faithful MemoryBook layout without placeholder fallbacks', async () => {
   const dashboardSource = await readSource('../features/dashboard/DashboardView.jsx')
+  const homeStyles = await readSource('../styles/pages/home.css')
 
   assert.match(dashboardSource, /cb-home-redesign/)
   assert.match(dashboardSource, /MemoryLead/)
@@ -47,4 +48,9 @@ test('dashboard adopts the faithful MemoryBook layout without placeholder fallba
   assert.doesNotMatch(dashboardSource, /Open Us/)
   assert.doesNotMatch(dashboardSource, /Clock3|Quick links/)
   assert.doesNotMatch(dashboardSource, /PlaceholderPage/)
+  assert.match(homeStyles, /\.cb-home-topline-actions/)
+  assert.match(homeStyles, /\.cb-home-clock/)
+  assert.match(homeStyles, /@media \(max-width: 640px\)/)
+  assert.match(homeStyles, /justify-items: start/)
+  assert.match(homeStyles, /text-align: left/)
 })
