@@ -44,3 +44,23 @@ test('dashboard page uses the dedicated feature slice instead of the migration p
   assert.doesNotMatch(viewSource, /Clock3|Quick links/)
   assert.match(mainSource, /import '\.\/styles\/pages\/home\.css'/)
 })
+
+test('dashboard clock stays intentional, compact, and minute-scoped', async () => {
+  const hookSource = await readSource('../features/dashboard/useDashboardModel.js')
+  const viewSource = await readSource('../features/dashboard/DashboardView.jsx')
+  const readModelSource = await readSource('../features/dashboard/dashboardReadModel.js')
+
+  assert.match(viewSource, /cb-home-clock/)
+  assert.match(viewSource, /Current time/)
+  assert.match(hookSource, /MINUTE_MS = 60 \* 1000/)
+  assert.match(hookSource, /MINIMUM_CLOCK_DELAY_MS = 1000/)
+  assert.match(hookSource, /window\.setTimeout/)
+  assert.match(hookSource, /window\.setInterval/)
+  assert.match(hookSource, /window\.clearTimeout/)
+  assert.match(hookSource, /window\.clearInterval/)
+  assert.match(hookSource, /}, MINUTE_MS\)/)
+  assert.doesNotMatch(hookSource, /,\s*1000\)/)
+  assert.match(readModelSource, /hour: 'numeric'/)
+  assert.match(readModelSource, /minute: '2-digit'/)
+  assert.doesNotMatch(readModelSource, /second: '2-digit'/)
+})
