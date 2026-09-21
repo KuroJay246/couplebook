@@ -18,6 +18,19 @@ Settings may expose an optional `VITE_SHARED_ICLOUD_ALBUM_URL` shortcut when the
 - `drive-verified`
 - `storage-verified`
 
+## Real Media Format Inventory
+
+The current private Drive-backed Album manifest contains 110 active media items. The verified format inventory is:
+
+| Format | MIME type | Count | Kind | Intended handling |
+| --- | --- | ---: | --- | --- |
+| HEIC | `image/heic` | 28 | image | Drive-generated browser-compatible thumbnail/poster preview with original-download fallback |
+| JPEG/JPG | `image/jpeg` | 45 | image | Native protected image preview and viewer |
+| PNG | `image/png` | 2 | image | Native protected image preview and viewer |
+| MP4 | `video/mp4` | 35 | video | Native protected video stream with poster fallback |
+
+Current inventory result: 75 images, 35 videos, 0 corrupt items, and 0 unsupported formats. Do not add primary-bundle decoders or paid transcoding for hypothetical formats; support only actual owner media formats as they appear in this inventory.
+
 `drive-indexed` records live under:
 
 ```text

@@ -21,6 +21,13 @@ Firestore rules tests run against `firestore.rules`.
 
 Storage rules tests run against `storage.app-v2.rules`.
 
+The default `npm --prefix app-v2 test` command intentionally skips emulator-dependent rules tests when emulator host environment variables are absent. Treat those skips as unresolved until both emulator-backed commands have been run:
+
+- `npm --prefix app-v2 run test:rules`
+- `npm --prefix app-v2 run test:storage-rules`
+
+As of the September 2026 completion run, the skipped default-test items are classified as emulator-gated coverage: 13 Firestore rules tests and 5 Storage rules tests. They are not obsolete tests. Run the two commands above serially because both wrappers use the Firestore emulator port.
+
 Rules coverage includes signed-out denial, active-member access, pending and inactive denial, cross-couple denial, private settings boundaries, schema validation, revision conflicts, contract acceptance preservation, and blocked raw/private media paths.
 
 V1.2 rules coverage also includes plan schemas, allowed plan statuses/categories, protected fields, and memory archive/restore revision behavior.

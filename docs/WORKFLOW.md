@@ -22,8 +22,11 @@ npm run alignment:check
 npm --prefix app-v2 run lint
 npm --prefix app-v2 test
 npm --prefix app-v2 run test:rules
+npm --prefix app-v2 run test:storage-rules
 npm --prefix app-v2 run build
 ```
+
+`npm --prefix app-v2 test` skips emulator-dependent rules cases when no emulator hosts are configured. For a real rules pass, run `test:rules` and `test:storage-rules` serially. Do not run those two commands in parallel on the default ports because both need the Firestore emulator.
 
 ## Product QA
 

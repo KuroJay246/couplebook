@@ -30,9 +30,12 @@ When using Gather & Savor Event Hub as a workflow reference, also read `docs/EVE
 - `npm --prefix app-v2 run lint`
 - `npm --prefix app-v2 test`
 - `npm --prefix app-v2 run test:rules`
+- `npm --prefix app-v2 run test:storage-rules`
 - `npm --prefix app-v2 run build`
 - `npm run product:qa`
 - `npm run product:audit`
+
+The default app-v2 Node test run intentionally skips emulator-dependent Firestore and Storage rules cases when emulator hosts are not configured. Do not report those skips as accepted until the serial emulator commands above have passed.
 
 ## V1.2 Scope Notes
 

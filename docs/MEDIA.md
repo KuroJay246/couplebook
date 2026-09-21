@@ -16,6 +16,8 @@ The app can render memory and gallery metadata without exposing raw private loca
 - `drive-verified`
 - `storage-verified`
 
+Current private Album format inventory is 110 active items: 28 HEIC images, 45 JPEG/JPG images, 2 PNG images, and 35 MP4 videos. HEIC uses Drive thumbnail/poster handling with original-download fallback; JPEG/JPG/PNG use native protected image preview/viewer; MP4 uses native protected video playback with poster fallback. The latest inventory check found 0 corrupt items and 0 unsupported formats.
+
 Drive media index records must use:
 
 ```text
