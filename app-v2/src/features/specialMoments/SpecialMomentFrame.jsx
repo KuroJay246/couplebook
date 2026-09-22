@@ -242,7 +242,7 @@ export function SpecialMomentFrame({ momentKey }) {
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f5168]">Go next</p>
               <div className="mt-4 flex flex-wrap gap-2">
                 <SecondaryButton as={Link} to="/gallery">Open Album</SecondaryButton>
-                <SecondaryButton as={Link} to="/timeline">Open Story</SecondaryButton>
+                <SecondaryButton as={Link} to="/dashboard">Open Home</SecondaryButton>
               </div>
             </Surface>
           </div>

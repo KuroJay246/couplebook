@@ -1,22 +1,13 @@
-import { CalendarHeart, NotebookPen, Plus } from 'lucide-react'
+import { CalendarHeart, Images, NotebookPen, UsersRound } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { EmptyState } from '../../components/ui/EmptyState.jsx'
 import { PrimaryButton, SecondaryButton } from '../../components/ui/Button.jsx'
 
-function MemoryLead({ memory }) {
-  if (!memory) {
-    return (
-      <section className="cb-home-lead cb-home-lead-empty">
-        <EmptyState title="No featured memory yet." description="Add one memory to make Home feel alive." />
-      </section>
-    )
-  }
-
+function AlbumLead() {
   return (
-    <Link className={`cb-home-lead ${memory.mediaKind === 'image' || memory.mediaKind === 'video' ? 'has-media-reference' : 'is-text-memory'}`} to="/timeline">
-      <span className="cb-home-lead-label">{memory.dateLabel || 'Recent memory'}</span>
-      <span className="cb-home-lead-title">{memory.title}</span>
-      <span className="cb-home-lead-copy">{memory.description}</span>
+    <Link className="cb-home-lead has-media-reference" to="/gallery">
+      <span className="cb-home-lead-label">Private Album</span>
+      <span className="cb-home-lead-title">Photos and videos live here now.</span>
+      <span className="cb-home-lead-copy">Open protected Drive previews, playback, uploads, and cleanup from the shared Album.</span>
     </Link>
   )
 }
@@ -33,28 +24,6 @@ function CompactDate({ milestones }) {
         <p className="cb-home-row-label">Next date</p>
         <h2>{date?.label || 'Add an important date'}</h2>
         <p>{date?.countdownLabel || anniversary?.totalDaysLabel || 'Birthdays and anniversaries can be managed in Us.'}</p>
-      </div>
-    </section>
-  )
-}
-
-function RecentMemories({ section }) {
-  const items = section.items || []
-  if (items.length === 0) return null
-
-  return (
-    <section className="cb-home-section">
-      <div className="cb-home-section-header">
-        <h2>Recent memories</h2>
-        <Link to="/timeline">Story</Link>
-      </div>
-      <div className="cb-home-memory-list">
-        {items.slice(0, 3).map((item) => (
-          <Link className="cb-home-memory-row" key={item.id} to="/timeline">
-            <span>{item.dateLabel || 'Saved'}</span>
-            <strong>{item.title}</strong>
-          </Link>
-        ))}
       </div>
     </section>
   )
@@ -77,7 +46,6 @@ function SpecialMoments({ section }) {
 }
 
 export function DashboardView({ model }) {
-  const featuredMemory = model.todayInUs?.featured || model.recentMemories?.items?.[0] || null
   const timestampLabel = model.hero?.timestampLabel || ''
   const dateLabel = model.hero?.dateLabel || ''
 
@@ -95,15 +63,15 @@ export function DashboardView({ model }) {
               {dateLabel ? <small>{dateLabel}</small> : null}
             </div>
           ) : null}
-          <PrimaryButton as={Link} className="cb-home-add-memory" to="/timeline">
-            <Plus className="size-4" />
-            Add Memory
+          <PrimaryButton as={Link} className="cb-home-add-memory" to="/gallery">
+            <Images className="size-4" />
+            Open Album
           </PrimaryButton>
         </div>
       </div>
 
       <div className="cb-home-layout">
-        <MemoryLead memory={featuredMemory} />
+        <AlbumLead />
         <div className="cb-home-side">
           <CompactDate milestones={model.milestones} />
           <section className="cb-home-row">
@@ -115,11 +83,19 @@ export function DashboardView({ model }) {
               <SecondaryButton as={Link} to="/plans">Open Plans</SecondaryButton>
             </div>
           </section>
+          <section className="cb-home-row">
+            <div className="cb-home-row-icon"><UsersRound className="size-4" /></div>
+            <div>
+              <p className="cb-home-row-label">Us</p>
+              <h2>Profiles</h2>
+              <p>Keep names, birthdays, relationship dates, and shared details tidy.</p>
+              <SecondaryButton as={Link} to="/profile">Open Us</SecondaryButton>
+            </div>
+          </section>
         </div>
       </div>
 
       <div className="cb-home-bottom">
-        <RecentMemories section={model.recentMemories} />
         <SpecialMoments section={model.specialMoments} />
       </div>
     </section>

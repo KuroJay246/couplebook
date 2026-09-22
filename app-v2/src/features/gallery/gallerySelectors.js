@@ -1,5 +1,4 @@
 import { deepFreeze, freezeClone } from '../../data/adapterUtils.js'
-import { selectTimelineDisplayMemories } from '../memories/memorySelectors.js'
 
 const INDEXED_DATE_FORMATTER = new Intl.DateTimeFormat('en-US', {
   day: 'numeric',
@@ -106,79 +105,6 @@ function matchesGallerySearch(item, search) {
     .join(' ')
     .toLowerCase()
     .includes(normalizedSearch)
-}
-
-export function classifyGalleryMediaStatus(media) {
-  if (media?.status === 'storage-verified') return 'storage-verified'
-  if (media?.status === 'drive-verified') return 'drive-verified'
-  if (media?.status === 'drive-indexed') return 'drive-indexed'
-  if (media?.isAvailableInApp === true) return 'available-local-reference'
-  if (media?.status === 'private-legacy-reference') return 'private-legacy-reference'
-  if (media?.status === 'special-route-only') return 'special-route-only'
-  if (media?.status === 'invalid-reference') return 'invalid'
-  if (media?.status === 'unavailable') return 'unavailable'
-  if (media?.hasReference === true) return 'unavailable'
-  return 'no-media'
-}
-
-function buildGalleryItem(memory, index) {
-  const mediaStatus = classifyGalleryMediaStatus(memory.media)
-  const media = memory.media || {}
-  const mediaKind = media.kind === 'image' || media.kind === 'video' ? media.kind : 'none'
-
-  const galleryItem = {
-    key: `gallery-item-${String(index + 1).padStart(4, '0')}`,
-    title: memory.displayTitle,
-    description: memory.displayDescription,
-    displayDate: memory.displayDate,
-    date: {
-      status: memory.date.status,
-      year: memory.date.year,
-      month: memory.date.month,
-    },
-    monthLabel: createMonthLabel(memory.date),
-    typeLabel: memory.specialMoment.isSpecial ? 'Special moment' : mediaKind === 'video' ? 'Video memory' : mediaKind === 'image' ? 'Photo memory' : 'Saved memory',
-    media: {
-      id: media.id || '',
-      kind: mediaKind,
-      type: media.type || mediaKind,
-      status: mediaStatus,
-      provider: media.provider || '',
-      providerFileId: media.providerFileId || '',
-      hasReference: media.hasReference,
-      isAvailableInApp: media.isAvailableInApp === true,
-      storagePath: media.storagePath || '',
-      thumbnailPath: media.thumbnailPath || '',
-      posterPath: media.posterPath || '',
-      driveFileId: media.driveFileId || '',
-      driveFolderId: media.driveFolderId || '',
-      contentType: media.contentType || '',
-      mimeType: media.mimeType || media.contentType || '',
-      sizeBytes: media.sizeBytes || 0,
-    },
-    specialMoment: {
-      isSpecial: memory.specialMoment.isSpecial,
-      route: memory.specialMoment.route,
-      routeStatus: memory.specialMoment.routeStatus,
-    },
-    tags: memory.tags,
-    sort: memory.sort,
-  }
-
-  Object.defineProperties(galleryItem, {
-    memoryId: {
-      value: memory.id,
-      enumerable: true,
-      writable: false,
-    },
-    memoryRevision: {
-      value: memory.revision,
-      enumerable: true,
-      writable: false,
-    },
-  })
-
-  return galleryItem
 }
 
 function buildMediaIndexGalleryItem(record, index) {
@@ -336,11 +262,6 @@ export function buildMediaLibrary(items = []) {
     favoriteCount: visualItems.filter((item) => item.media.favorite === true).length,
     unlinkedCount: visualItems.filter((item) => !item.memoryId && !item.media.linkedMemoryId).length,
   })
-}
-
-export function selectGalleryItems(memories = []) {
-  const displayMemories = selectTimelineDisplayMemories(memories)
-  return deepFreeze(sortByNewest(displayMemories).map((memory, index) => buildGalleryItem(memory, index)))
 }
 
 export function selectMediaIndexGalleryItems(records = []) {

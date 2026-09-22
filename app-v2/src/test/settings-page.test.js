@@ -46,7 +46,7 @@ test('settings route uses the read-only feature hook and utility view', async ()
 test('settings migration progress and utility navigation stay explicit', () => {
   assert.deepEqual(
     routeMigrationStatus.completed.map((entry) => entry.label),
-    ['Home', 'Story', 'Album', 'Us', 'Favorites', 'Plans', 'Contract', 'Birthday', 'Valentine', 'Confession', 'Settings'],
+    ['Home', 'Album', 'Us', 'Favorites', 'Plans', 'Contract', 'Birthday', 'Valentine', 'Confession', 'Settings', 'Update'],
   )
   assert.deepEqual(routeMigrationStatus.pending.map((entry) => entry.label), [])
   assert.deepEqual(specialMomentContentConnectionStatus, {
@@ -62,9 +62,9 @@ test('settings migration progress and utility navigation stay explicit', () => {
   })
   assert.deepEqual(
     getRoutesByGroup(ROUTE_GROUPS.primary).map((route) => route.path),
-    ['/dashboard', '/timeline', '/gallery', '/profile', '/plans'],
+    ['/dashboard', '/gallery', '/profile', '/plans'],
   )
-  assert.deepEqual(getRoutesByGroup(ROUTE_GROUPS.utility).map((route) => route.path), ['/settings'])
+  assert.deepEqual(getRoutesByGroup(ROUTE_GROUPS.utility).map((route) => route.path), ['/settings', '/update'])
 })
 
 test('settings migration progress stays aligned with the protected router', () => {

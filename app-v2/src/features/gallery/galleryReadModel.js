@@ -1,14 +1,6 @@
 import { freezeClone } from '../../data/adapterUtils.js'
 import { getMediaSyncArchitectureContract } from '../../services/syncService.js'
-import { normalizeTimelineMemories } from '../memories/memoryNormalizer.js'
-import { buildGalleryCollections, buildGalleryFilters, buildGallerySummary, buildMediaLibrary, selectGalleryItems, selectMediaIndexGalleryItems } from './gallerySelectors.js'
-
-const EMPTY_MEMORY_SOURCE = Object.freeze({
-  status: 'empty',
-  source: 'legacy-local-dev',
-  data: null,
-  warnings: [],
-})
+import { buildGalleryCollections, buildGalleryFilters, buildGallerySummary, buildMediaLibrary, selectMediaIndexGalleryItems } from './gallerySelectors.js'
 
 const EMPTY_MEDIA_INDEX_SOURCE = Object.freeze({
   status: 'empty',
@@ -17,73 +9,16 @@ const EMPTY_MEDIA_INDEX_SOURCE = Object.freeze({
   warnings: [],
 })
 
-function deriveGalleryStatus(memorySource, mediaIndexSource, items) {
+function deriveGalleryStatus(mediaIndexSource, items) {
   if (mediaIndexSource?.status === 'invalid') return 'invalid'
-  if (memorySource?.status === 'invalid') return 'invalid'
   if (items.length > 0 && mediaIndexSource?.status === 'ready') return 'ready'
-  if (memorySource?.status === 'unavailable') return items.length > 0 ? 'partial' : 'unavailable'
-  if (memorySource?.status === 'empty') return items.length > 0 ? 'partial' : 'empty'
+  if (mediaIndexSource?.status === 'unavailable') return items.length > 0 ? 'partial' : 'unavailable'
   if (items.length === 0) return 'empty'
-  if (memorySource?.data?.hasBaseDataset !== true) return 'partial'
   return 'ready'
 }
 
-function buildPhysicalMediaKey(item) {
-  const media = item?.media || {}
-  if (media.driveFileId) return `drive:${media.driveFileId}`
-  if (media.providerFileId && media.provider === 'google-drive') return `drive:${media.providerFileId}`
-  if (media.storagePath) return `storage:${media.storagePath}`
-  if (media.id && media.provider) return `${media.provider}:${media.id}`
-  if (media.id && ['drive-indexed', 'drive-verified', 'storage-verified'].includes(media.status)) return `media:${media.id}`
-  return ''
-}
-
-function reconcileGalleryItems(indexedItems, memoryItems) {
-  const authoritativeKeys = new Set()
-  const duplicates = []
-  const archiveReferenceItems = []
-  const items = []
-
-  for (const item of indexedItems) {
-    const key = buildPhysicalMediaKey(item)
-    if (key) authoritativeKeys.add(key)
-    items.push(item)
-  }
-
-  for (const item of memoryItems) {
-    const key = buildPhysicalMediaKey(item)
-    if (key && authoritativeKeys.has(key)) {
-      duplicates.push(item)
-      continue
-    }
-    if (!['drive-indexed', 'drive-verified', 'storage-verified'].includes(item.media?.status)) {
-      archiveReferenceItems.push(item)
-      continue
-    }
-    items.push(item)
-  }
-
+function buildSourceStatus(mediaIndexSource, indexedItems) {
   return freezeClone({
-    archiveReferenceItems,
-    duplicateHistoricalItems: duplicates.length,
-    items,
-  })
-}
-
-function buildSourceStatus(memorySource, mediaIndexSource, indexedItems, memoryItems, reconciliation) {
-  const totalMemories = Array.isArray(memorySource?.data?.memories) ? memorySource.data.memories.length : 0
-  const hasBaseDataset = memorySource?.data?.hasBaseDataset === true
-  const memoryVisualItems = Array.isArray(memoryItems)
-    ? memoryItems.filter((item) => item.media?.kind === 'image' || item.media?.kind === 'video').length
-    : 0
-
-  return freezeClone({
-    memoryArchive: {
-      status: hasBaseDataset ? 'ready' : memorySource?.status === 'unavailable' ? 'unavailable' : 'empty',
-      count: totalMemories,
-      visualCount: memoryVisualItems,
-      label: 'Private story archive',
-    },
     mediaInventory: {
       status: mediaIndexSource?.status || 'empty',
       count: indexedItems.length,
@@ -91,17 +26,10 @@ function buildSourceStatus(memorySource, mediaIndexSource, indexedItems, memoryI
       warningCount: Array.isArray(mediaIndexSource?.warnings) ? mediaIndexSource.warnings.length : 0,
       warnings: Array.isArray(mediaIndexSource?.warnings) ? mediaIndexSource.warnings : [],
     },
-    bridge: {
-      status: memorySource?.status || 'empty',
-      warningCount: Array.isArray(memorySource?.warnings) ? memorySource.warnings.length : 0,
-    },
     reconciliation: {
-      activeAlbumItems: reconciliation.items.length,
+      activeAlbumItems: indexedItems.length,
       authoritativeIndexedCount: indexedItems.length,
-      historicalArchiveReferences: reconciliation.archiveReferenceItems.length,
-      historicalMemoryCount: memoryItems.length,
-      duplicateHistoricalItems: reconciliation.duplicateHistoricalItems,
-      totalItems: reconciliation.items.length,
+      totalItems: indexedItems.length,
     },
   })
 }
@@ -124,34 +52,28 @@ function buildMediaBackendStatus(coupleId = 'couple') {
     uploadLabel: localHandlersReady ? 'Drive saving ready' : 'Media saving is pending',
     description: localHandlersReady
       ? 'Album can sync, upload, preview, stream, and remove private media through the trusted Drive service without exposing Google credentials in the browser.'
-      : 'Album can browse available memories, but shared Drive saving and background sync still need the trusted media service.',
+      : 'Album can browse indexed media, but shared Drive saving and background sync still need the trusted media service.',
   })
 }
 
-export function buildGalleryReadModel({ compatibilitySnapshot = null, memorySource = null } = {}) {
-  return buildGalleryReadModelWithMediaIndex({ compatibilitySnapshot, memorySource })
+export function buildGalleryReadModel({ compatibilitySnapshot = null, mediaIndexSource = null } = {}) {
+  return buildGalleryReadModelWithMediaIndex({ compatibilitySnapshot, mediaIndexSource })
 }
 
-export function buildGalleryReadModelWithMediaIndex({ compatibilitySnapshot = null, memorySource = null, mediaIndexSource = null, coupleId = 'couple' } = {}) {
-  const resolvedMemorySource = memorySource || compatibilitySnapshot?.sources?.memories || EMPTY_MEMORY_SOURCE
+export function buildGalleryReadModelWithMediaIndex({ compatibilitySnapshot = null, mediaIndexSource = null, coupleId = 'couple' } = {}) {
   const resolvedMediaIndexSource = mediaIndexSource || compatibilitySnapshot?.sources?.mediaIndex || EMPTY_MEDIA_INDEX_SOURCE
-  const normalizedMemories = normalizeTimelineMemories(resolvedMemorySource?.data?.memories || [])
-  const memoryItems = selectGalleryItems(normalizedMemories)
   const indexedItems = selectMediaIndexGalleryItems(resolvedMediaIndexSource?.data?.entries || [])
-  const reconciliation = reconcileGalleryItems(indexedItems, memoryItems)
-  const items = reconciliation.items
+  const items = indexedItems
   const photos = items.filter((item) => item.media.kind === 'image')
   const videos = items.filter((item) => item.media.kind === 'video')
-  const unavailableMedia = items.filter((item) =>
-    ['private-legacy-reference', 'unavailable', 'invalid'].includes(item.media.status),
-  )
-  const verifiedMedia = items.filter((item) => ['storage-verified', 'drive-verified', 'drive-indexed'].includes(item.media.status))
+  const unavailableMedia = items.filter((item) => ['unavailable', 'invalid'].includes(item.media.status))
+  const verifiedMedia = items.filter((item) => item.media.status === 'drive-indexed')
 
   return freezeClone({
-    status: deriveGalleryStatus(resolvedMemorySource, resolvedMediaIndexSource, items),
+    status: deriveGalleryStatus(resolvedMediaIndexSource, items),
     items,
-    archiveReferenceItems: reconciliation.archiveReferenceItems,
-    memoryItems,
+    archiveReferenceItems: [],
+    memoryItems: [],
     indexedItems,
     library: buildMediaLibrary(items),
     summary: buildGallerySummary(items),
@@ -161,11 +83,8 @@ export function buildGalleryReadModelWithMediaIndex({ compatibilitySnapshot = nu
     verifiedMedia,
     unavailableMedia,
     filters: buildGalleryFilters(items),
-    sourceStatus: buildSourceStatus(resolvedMemorySource, resolvedMediaIndexSource, indexedItems, memoryItems, reconciliation),
+    sourceStatus: buildSourceStatus(resolvedMediaIndexSource, indexedItems),
     mediaBackend: buildMediaBackendStatus(coupleId),
-    warnings: [
-      ...(Array.isArray(resolvedMemorySource?.warnings) ? resolvedMemorySource.warnings : []),
-      ...(Array.isArray(resolvedMediaIndexSource?.warnings) ? resolvedMediaIndexSource.warnings : []),
-    ],
+    warnings: Array.isArray(resolvedMediaIndexSource?.warnings) ? resolvedMediaIndexSource.warnings : [],
   })
 }

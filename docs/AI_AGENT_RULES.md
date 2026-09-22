@@ -39,7 +39,7 @@ The default app-v2 Node test run intentionally skips emulator-dependent Firestor
 
 ## V1.2 Scope Notes
 
-- V1.2 adds active Home, global Quick Add Memory, canonical On This Day, Story chapter navigation, archived-memory restore, Gallery Album grouping, Us organization, Our Plans, plan-to-memory, and a deterministic prompt foundation.
+- V1.2 keeps active Home, Album, Us, Plans, Settings, special moments, plan-to-memory, and a deterministic prompt foundation. Story/Timeline is retired from the active product.
 - New persistent Couple Book plans live at `couples/{coupleId}/plans/{planId}`.
 - Memory writes may include safe `kindLabel` and `mediaNote` fields.
 - Prompt answer persistence is not enabled in V1.2 unless a later task explicitly adds that workflow.

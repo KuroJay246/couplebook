@@ -27,7 +27,6 @@ import { buildGalleryReadModel } from '../features/gallery/galleryReadModel.js'
 import { buildProfileReadModel } from '../features/profile/profileReadModel.js'
 import { buildSettingsReadModel } from '../features/settings/settingsReadModel.js'
 import { buildSpecialMomentContentModel } from '../features/specialMoments/specialMomentContentModel.js'
-import { buildTimelineReadModel } from '../features/timeline/timelineReadModel.js'
 import { getContractSourceForApprovedUser } from '../services/contractService.js'
 import { getFavoritesSourceForApprovedUser } from '../services/favoritesService.js'
 import { getFirestoreMemoriesForCouple } from '../services/memoryService.js'
@@ -869,13 +868,12 @@ test('app-v2 Firestore source mode reads seeded fictional data through read mode
   const settingsSource = await getSettingsSourceForApprovedUser({ approvedUser, firestore: db, sourceMode: 'firestore' })
   const birthdaySource = await getFirestoreSpecialMoment(ids.couple, 'birthday', { firestore: db })
 
-  const dashboard = buildDashboardReadModel({ approvedUser, memorySource, profileSource, settingsSource, routeMeta: protectedRouteMeta })
+  buildDashboardReadModel({ approvedUser, memorySource, profileSource, settingsSource, routeMeta: protectedRouteMeta })
   const profile = buildProfileReadModel({ approvedUser, contractSource, favoritesSource, profileSource })
   const favorites = buildFavoritesReadModel({ approvedUser, contractSource, favoritesSource, profileSource })
   const settings = buildSettingsReadModel({ approvedUser, profileSource, settingsSource })
   const contract = buildContractReadModel({ approvedUser, contractSource, profileSource })
-  const timeline = buildTimelineReadModel({ memorySource })
-  const gallery = buildGalleryReadModel({ memorySource })
+  const gallery = buildGalleryReadModel()
   const birthday = buildSpecialMomentContentModel({
     momentKey: 'birthday',
     contentSource: birthdaySource,
@@ -891,12 +889,9 @@ test('app-v2 Firestore source mode reads seeded fictional data through read mode
   assert.ok(['ready', 'partial'].includes(favorites.status))
   assert.ok(['ready', 'partial'].includes(settings.status))
   assert.ok(['ready', 'partial'].includes(contract.status))
-  assert.ok(['ready', 'partial'].includes(timeline.status))
   assert.equal(gallery.status, 'empty')
   assert.equal(gallery.items.length, 0)
-  assert.equal(gallery.archiveReferenceItems.length, 1)
   assert.equal(birthday.status, 'ready')
-  assert.equal(dashboard.recentMemories.totalCount, 1)
   assert.equal(memorySource.data.memories[0].mediaState, 'none')
 })
 

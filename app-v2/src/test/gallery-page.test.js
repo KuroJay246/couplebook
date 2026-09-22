@@ -6,7 +6,7 @@ async function readSource(relativePath) {
   return readFile(new URL(relativePath, import.meta.url), 'utf8')
 }
 
-test('gallery route uses the read-only feature hook and archive view', async () => {
+test('gallery route uses the Drive-index Album feature hook and media view', async () => {
   const galleryPageSource = await readSource('../pages/GalleryPage.jsx')
   const galleryViewSource = await readSource('../features/gallery/GalleryView.jsx')
   const galleryDataSource = await readSource('../features/gallery/useGalleryData.js')
@@ -17,6 +17,7 @@ test('gallery route uses the read-only feature hook and archive view', async () 
   assert.match(galleryDataSource, /useMediaIndexSource/)
   assert.match(galleryDataSource, /buildGalleryReadModelWithMediaIndex/)
   assert.match(galleryDataSource, /sourceWithWarning/)
+  assert.doesNotMatch(galleryDataSource, /useMemorySource/)
   assert.match(mediaIndexSource, /getFirestoreMediaIndexForCouple/)
   assert.match(mediaIndexSource, /DATA_SOURCE_MODES\.firestore/)
   assert.match(mediaIndexSource, /UNAVAILABLE_MEDIA_INDEX_SOURCE/)
@@ -24,9 +25,8 @@ test('gallery route uses the read-only feature hook and archive view', async () 
   assert.doesNotMatch(galleryPageSource, /PlaceholderPage/)
   assert.match(galleryViewSource, /cb-album-header/)
   assert.match(galleryViewSource, /Album sync needs attention/)
-  assert.match(galleryViewSource, /private story archive is taking too long to load/)
-  assert.match(galleryViewSource, /Album sources are reconciled/)
-  assert.match(galleryViewSource, /Archived photo reference/)
+  assert.doesNotMatch(galleryViewSource, /private story archive|Archived photo reference|Story references/)
+  assert.match(galleryViewSource, /Album sync is indexed/)
   assert.match(galleryViewSource, /Private photo indexed/)
   assert.doesNotMatch(galleryViewSource, /Some photos could not be loaded|Photo preview loading/)
   assert.match(galleryViewSource, /cb-media-viewer/)

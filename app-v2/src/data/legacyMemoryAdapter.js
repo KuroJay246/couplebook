@@ -14,11 +14,77 @@ import {
   resolveUrl,
   toTrimmedString,
 } from './adapterUtils.js'
-import { mergeLegacyMemorySources } from '../features/timeline/memorySourceMerge.js'
 
 const CUSTOM_MEMORIES_KEY = 'memorybook_custom_memories'
 const DELETED_MEMORIES_KEY = 'memorybook_deleted_memories'
 const OVERRIDDEN_MEMORIES_KEY = 'memorybook_overridden_memories'
+
+function parseMemorySortTimestamp(dateValue) {
+  const normalized = toTrimmedString(dateValue)
+  if (!normalized) return null
+  const timestamp = Date.parse(normalized)
+  return Number.isNaN(timestamp) ? null : timestamp
+}
+
+function cloneMemoryRecord(record, overrides = {}) {
+  return {
+    ...record,
+    ...overrides,
+    tags: Array.isArray(overrides.tags || record.tags) ? [...(overrides.tags || record.tags)] : [],
+    unknownFields: isPlainObject(overrides.unknownFields || record.unknownFields)
+      ? { ...(overrides.unknownFields || record.unknownFields) }
+      : {},
+  }
+}
+
+function createMemorySortEnvelope(record, mergeOrdinal) {
+  return {
+    mergeOrdinal,
+    sortTimestamp: parseMemorySortTimestamp(record.dateLabel),
+    record: cloneMemoryRecord(record),
+  }
+}
+
+function mergeLegacyMemorySources({ baseMemories = [], customMemories = [], deletedIds = [], overrides = {} } = {}) {
+  const deletedIdSet = new Set(
+    Array.isArray(deletedIds)
+      ? deletedIds.flatMap((entry) => {
+          const normalized = toTrimmedString(entry)
+          return normalized ? [normalized] : []
+        })
+      : [],
+  )
+  const overrideMap = isPlainObject(overrides) ? overrides : {}
+  const envelopes = []
+  let mergeOrdinal = 0
+
+  for (const memory of Array.isArray(baseMemories) ? baseMemories : []) {
+    const memoryId = toTrimmedString(memory?.id)
+    if (!memoryId || deletedIdSet.has(memoryId)) continue
+    const override = overrideMap[memoryId]
+    envelopes.push(createMemorySortEnvelope(
+      isPlainObject(override) ? cloneMemoryRecord(memory, { ...override, id: memoryId, source: 'local-override' }) : memory,
+      mergeOrdinal,
+    ))
+    mergeOrdinal += 1
+  }
+
+  for (const memory of Array.isArray(customMemories) ? customMemories : []) {
+    const memoryId = toTrimmedString(memory?.id)
+    if (!memoryId || deletedIdSet.has(memoryId)) continue
+    envelopes.push(createMemorySortEnvelope(memory, mergeOrdinal))
+    mergeOrdinal += 1
+  }
+
+  return envelopes.sort((left, right) => {
+    if (left.sortTimestamp !== null && right.sortTimestamp !== null && left.sortTimestamp !== right.sortTimestamp) {
+      return right.sortTimestamp - left.sortTimestamp
+    }
+    if (left.sortTimestamp !== null && right.sortTimestamp === null) return -1
+    if (left.sortTimestamp === null && right.sortTimestamp !== null) return 1
+    return left.mergeOrdinal - right.mergeOrdinal
+  }).map((entry) => entry.record)
+}
 
 /**
  * @typedef {Object} NormalizedMemoryRecord

@@ -27,9 +27,9 @@ const COMPATIBILITY_ITEM_LABELS = Object.freeze({
 
 const MIGRATION_PROGRESS_LABELS = Object.freeze({
   '/dashboard': 'Home',
-  '/timeline': 'Story',
   '/gallery': 'Album',
   '/profile': 'Us',
+  '/update': 'Update',
 })
 
 const SHARED_ALBUM_HOSTS = Object.freeze(['icloud.com', 'www.icloud.com'])

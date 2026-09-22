@@ -19,7 +19,6 @@ export function NotFoundPage() {
         />
         <nav aria-label="Return to verified routes" className="mt-6 flex flex-wrap justify-center gap-3">
           <Link className="inline-flex min-h-10 items-center rounded-xl border border-[#dcc2cd] px-4 text-xs font-bold text-[#6f5462] hover:bg-[#fff5f8]" to="/dashboard">Home</Link>
-          <Link className="inline-flex min-h-10 items-center rounded-xl border border-[#dcc2cd] px-4 text-xs font-bold text-[#6f5462] hover:bg-[#fff5f8]" to="/timeline">Story</Link>
           <Link className="inline-flex min-h-10 items-center rounded-xl border border-[#dcc2cd] px-4 text-xs font-bold text-[#6f5462] hover:bg-[#fff5f8]" to="/gallery">Album</Link>
           <Link className="inline-flex min-h-10 items-center rounded-xl border border-[#dcc2cd] px-4 text-xs font-bold text-[#6f5462] hover:bg-[#fff5f8]" to="/settings">Settings</Link>
         </nav>

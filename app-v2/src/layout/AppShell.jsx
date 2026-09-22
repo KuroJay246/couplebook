@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
-  BookHeart,
   ChevronLeft,
   ChevronRight,
+  Clock3,
   Gift,
   Heart,
   HeartHandshake,
@@ -26,7 +26,7 @@ import { ConfirmDialog } from '../components/ui/ConfirmDialog.jsx'
 import { mobilePrimaryNavigation } from '../utils/navigation.js'
 
 const NAV_ICON_BY_NAME = {
-  BookHeart,
+  Clock3,
   Gift,
   Heart,
   HeartHandshake,
@@ -40,7 +40,7 @@ const NAV_ICON_BY_NAME = {
 }
 
 const desktopNavGroups = [
-  { label: 'Main', items: ['/dashboard', '/timeline', '/gallery', '/profile', '/plans', '/settings'] },
+  { label: 'Main', items: ['/dashboard', '/gallery', '/profile', '/plans', '/settings'] },
 ]
 
 const mobileMoreGroups = [

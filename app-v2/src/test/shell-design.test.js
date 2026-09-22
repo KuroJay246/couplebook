@@ -10,7 +10,7 @@ async function readSource(relativePath) {
 test('route registry keeps the final primary and secondary hierarchy explicit', () => {
   assert.deepEqual(
     getRoutesByGroup(ROUTE_GROUPS.primary).map((route) => route.path),
-    ['/dashboard', '/timeline', '/gallery', '/profile', '/plans'],
+    ['/dashboard', '/gallery', '/profile', '/plans'],
   )
   assert.deepEqual(
     getRoutesByGroup(ROUTE_GROUPS.shared).map((route) => route.path),
@@ -22,7 +22,7 @@ test('route registry keeps the final primary and secondary hierarchy explicit', 
   )
   assert.deepEqual(
     getRoutesByGroup(ROUTE_GROUPS.utility).map((route) => route.path),
-    ['/settings'],
+    ['/settings', '/update'],
   )
 })
 
@@ -33,7 +33,7 @@ test('app shell keeps the refined navigation hierarchy explicit', async () => {
 
   assert.match(routeConfigSource, /ROUTE_GROUPS/)
   assert.match(routeConfigSource, /navLabel: 'Home'/)
-  assert.match(routeConfigSource, /navLabel: 'Story'/)
+  assert.doesNotMatch(routeConfigSource, /navLabel: 'Story'|\/timeline|\/story/)
   assert.match(routeConfigSource, /navLabel: 'Album'/)
   assert.match(routeConfigSource, /navLabel: 'Us'/)
   assert.match(routeConfigSource, /navLabel: 'Plans'/)

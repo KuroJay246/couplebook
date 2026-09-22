@@ -88,7 +88,7 @@ export function ValentinePage() {
     <section className="special-moment-page special-valentine-page" data-route="valentine">
       <div className="special-moment-utility">
         <Link className="special-moment-link" to="/dashboard">Back to Home</Link>
-        <Link className="special-moment-link subtle" to="/timeline">Open Story</Link>
+        <Link className="special-moment-link subtle" to="/gallery">Open Album</Link>
       </div>
 
       <div className="valentine-stage">

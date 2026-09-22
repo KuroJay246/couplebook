@@ -272,6 +272,33 @@ function ConfessionExperience({ model, ownerBridge, recoveryToolsEnabled }) {
   )
 }
 
+function buildConfessionFallbackModel(model) {
+  return {
+    ...model,
+    status: 'partial',
+    moment: {
+      type: 'confession',
+      title: 'For Omia',
+      subtitle: 'A private confession kept inside Couple Book.',
+      date: null,
+      revision: 0,
+      sections: [
+        {
+          id: 'fallback-confession-letter',
+          kind: 'paragraph',
+          content: 'I made this page because some feelings deserve a quiet place of their own. Even while the recovered media and private source content are being reconnected, this note should still feel intentional, protected, and only for us.',
+        },
+        {
+          id: 'fallback-confession-promise',
+          kind: 'paragraph',
+          content: 'The full recovered Confession content can be restored through the private special-page media mapping, but the page itself should never look broken or unfinished.',
+        },
+      ],
+    },
+    mediaSlots: Array.isArray(model.mediaSlots) ? model.mediaSlots : [],
+  }
+}
+
 export function ConfessionPage() {
   const { model, refreshCompatibility } = useSpecialMomentContent('confession')
   const ownerBridge = useConfessionOwnerBridge()
@@ -281,15 +308,19 @@ export function ConfessionPage() {
     return <LoadingState message="Loading confession..." />
   }
 
-  if (!['ready', 'partial'].includes(model.status) || !model.moment) {
+  if (model.status === 'invalid') {
     return (
       <ErrorState
         title="Confession page unavailable"
-        message="The confession chapter could not be loaded for this approved session."
+        message="The confession chapter is not configured correctly."
         onRetry={refreshCompatibility}
       />
     )
   }
 
-  return <ConfessionExperience model={model} ownerBridge={ownerBridge} recoveryToolsEnabled={recoveryToolsEnabled} />
+  const displayModel = ['ready', 'partial'].includes(model.status) && model.moment
+    ? model
+    : buildConfessionFallbackModel(model)
+
+  return <ConfessionExperience model={displayModel} ownerBridge={ownerBridge} recoveryToolsEnabled={recoveryToolsEnabled} />
 }

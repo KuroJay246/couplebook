@@ -1,7 +1,6 @@
 export const LOGIN_PATH = '/login'
 export const DEFAULT_AUTHENTICATED_PATH = '/dashboard'
 export const PROTECTED_ROUTE_ALIASES = Object.freeze({
-  '/story': '/timeline',
   '/us': '/profile',
 })
 
@@ -25,22 +24,11 @@ export const protectedRouteMeta = [
     summary: 'Relationship highlights, featured memories, and what matters today.',
   },
   {
-    path: '/timeline',
-    label: 'Timeline',
-    navLabel: 'Story',
-    title: 'Story',
-    chapter: 'Chapter 02',
-    group: ROUTE_GROUPS.primary,
-    icon: 'BookHeart',
-    mobilePrimary: true,
-    summary: 'An editorial journal of memories, milestones, and restored chapters.',
-  },
-  {
     path: '/gallery',
     label: 'Gallery',
     navLabel: 'Album',
     title: 'Album',
-    chapter: 'Chapter 03',
+    chapter: 'Chapter 02',
     group: ROUTE_GROUPS.primary,
     icon: 'Images',
     mobilePrimary: true,
@@ -51,7 +39,7 @@ export const protectedRouteMeta = [
     label: 'Profile',
     navLabel: 'Us',
     title: 'Us',
-    chapter: 'Chapter 04',
+    chapter: 'Chapter 03',
     group: ROUTE_GROUPS.primary,
     icon: 'HeartHandshake',
     mobilePrimary: true,
@@ -123,6 +111,15 @@ export const protectedRouteMeta = [
     group: ROUTE_GROUPS.utility,
     icon: 'Settings',
     summary: 'Appearance, special pages, privacy details, and personal account controls.',
+  },
+  {
+    path: '/update',
+    label: 'Update',
+    navLabel: 'Update',
+    title: 'Update',
+    group: ROUTE_GROUPS.utility,
+    icon: 'Clock3',
+    summary: 'A protected maintenance notice for planned owner-review updates.',
   },
 ]
 

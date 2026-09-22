@@ -9,11 +9,11 @@ import { DashboardPage } from '../pages/DashboardPage'
 import { FavoritesPage } from '../pages/FavoritesPage'
 import { GalleryPage } from '../pages/GalleryPage'
 import { LoginPage } from '../pages/LoginPage'
+import { MaintenancePage } from '../pages/MaintenancePage'
 import { NotFoundPage } from '../pages/NotFoundPage'
 import { PlansPage } from '../pages/PlansPage'
 import { ProfilePage } from '../pages/ProfilePage'
 import { SettingsPage } from '../pages/SettingsPage'
-import { TimelinePage } from '../pages/TimelinePage'
 import { ValentinePage } from '../pages/ValentinePage'
 
 export function AppRoutes() {
@@ -24,14 +24,14 @@ export function AppRoutes() {
         <Route element={<AppShell />}>
           <Route index element={<Navigate replace to={DEFAULT_AUTHENTICATED_PATH} />} />
           <Route path={DEFAULT_AUTHENTICATED_PATH} element={<DashboardPage />} />
-          <Route path="/story" element={<Navigate replace to="/timeline" />} />
-          <Route path="/timeline" element={<TimelinePage />} />
           <Route path="/gallery" element={<GalleryPage />} />
           <Route path="/us" element={<Navigate replace to="/profile" />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/favorites" element={<FavoritesPage />} />
           <Route path="/plans" element={<PlansPage />} />
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/update" element={<MaintenancePage />} />
+          <Route path="/maintenance" element={<MaintenancePage />} />
           <Route path="/contract" element={<ContractPage />} />
           <Route path="/birthday" element={<BirthdayPage />} />
           <Route path="/valentine" element={<ValentinePage />} />

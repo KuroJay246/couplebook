@@ -18,8 +18,7 @@ Current app surface: `app-v2`, a Vite React app protected by Firebase Auth and F
 The V1.2 branch adds the active app-experience layer on top of the protected shell:
 
 - Home: Today in Us, On This Day, For Us Today prompt, Coming Up, Recently, and quieter route shortcuts.
-- Global Quick Add Memory: protected-shell action using the existing memory write service.
-- Story: year chapter jump controls and archived-memory restoration.
+- Album: protected Drive-backed photo and video browsing, uploads, previews, and cleanup.
 - Gallery: album grouping by year with related-memory links and truthful missing-media states.
 - Us: About Jaylan, About Omia, Our Story, Our Dates, Things We Both Love, and Things We Want to Try.
 - Our Plans: couple-scoped plans at `couples/{coupleId}/plans/{planId}` with plan-to-memory conversion.

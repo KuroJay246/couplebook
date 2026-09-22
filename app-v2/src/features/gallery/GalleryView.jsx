@@ -66,12 +66,6 @@ function formatDuration(durationMillis) {
 function getPreviewPlaceholder(item) {
   const media = item?.media || {}
   const isVideo = media.kind === 'video'
-  if (media.status === 'private-legacy-reference') {
-    return {
-      icon: isVideo ? Film : ImageIcon,
-      label: isVideo ? 'Archived video reference' : 'Archived photo reference',
-    }
-  }
   if (media.status === 'drive-indexed') {
     return {
       icon: isVideo ? Film : ImageIcon,
@@ -526,15 +520,13 @@ function SelectionToolbar({ selectedCount, selectionMode }) {
   )
 }
 
-function ReconciliationPanel({ archivedReferenceCount, reconciliation }) {
+function ReconciliationPanel({ reconciliation }) {
   return (
-    <Surface aria-label="Album source reconciliation" tone="soft">
+    <Surface aria-label="Album sync status" tone="soft">
       <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--cb-accent)]">Private media index</p>
-      <h3 className="mt-2 font-serif text-2xl text-[var(--cb-text)]">Album sources are reconciled</h3>
+      <h3 className="mt-2 font-serif text-2xl text-[var(--cb-text)]">Album sync is indexed</h3>
       <p className="mt-2 text-sm leading-6 text-[var(--cb-text-secondary)]">
         {Number(reconciliation.activeAlbumItems || reconciliation.totalItems || 0)} Album items are shown from {Number(reconciliation.authoritativeIndexedCount || 0)} trusted Drive records.
-        {archivedReferenceCount > 0 ? ` ${archivedReferenceCount} archived Story references are kept out of the Album grid until they are linked to trusted private media.` : ''}
-        {Number(reconciliation.duplicateHistoricalItems || 0) > 0 ? ` ${Number(reconciliation.duplicateHistoricalItems)} older duplicate ${Number(reconciliation.duplicateHistoricalItems) === 1 ? 'reference is' : 'references are'} hidden behind the Drive index.` : ''}
       </p>
       <div className="mt-5 grid gap-3 sm:grid-cols-3">
         <ContentCard>
@@ -542,12 +534,12 @@ function ReconciliationPanel({ archivedReferenceCount, reconciliation }) {
           <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[var(--cb-text-muted)]">Drive-indexed</p>
         </ContentCard>
         <ContentCard>
-          <p className="text-3xl font-bold text-[var(--cb-text)]">{archivedReferenceCount}</p>
-          <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[var(--cb-text-muted)]">Archived references</p>
+          <p className="text-3xl font-bold text-[var(--cb-text)]">{Number(reconciliation.activeAlbumItems || 0)}</p>
+          <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[var(--cb-text-muted)]">Active items</p>
         </ContentCard>
         <ContentCard>
-          <p className="text-3xl font-bold text-[var(--cb-text)]">{Number(reconciliation.duplicateHistoricalItems || 0)}</p>
-          <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[var(--cb-text-muted)]">Duplicates hidden</p>
+          <p className="text-3xl font-bold text-[var(--cb-text)]">{Number(reconciliation.totalItems || 0)}</p>
+          <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[var(--cb-text-muted)]">Visible media</p>
         </ContentCard>
       </div>
     </Surface>
@@ -620,12 +612,12 @@ function UploadQueuePanel({ onSelectFiles, uploadQueue }) {
   )
 }
 
-function ManagementTools({ archivedReferenceCount, manageUploadsOpen, onSelectFiles, reconciliation, uploadQueue }) {
+function ManagementTools({ manageUploadsOpen, onSelectFiles, reconciliation, uploadQueue }) {
   if (!manageUploadsOpen) return null
 
   return (
     <div className="grid gap-5" aria-label="Album management tools">
-      <ReconciliationPanel archivedReferenceCount={archivedReferenceCount} reconciliation={reconciliation} />
+      <ReconciliationPanel reconciliation={reconciliation} />
       <UploadQueuePanel onSelectFiles={onSelectFiles} uploadQueue={uploadQueue} />
     </div>
   )
@@ -861,14 +853,10 @@ function useGalleryRemoval({ setSelectedItem, uploadQueue }) {
   return { confirmRemoval, removeState, setRemoveState }
 }
 
-function getGalleryWarning(mediaInventory, memoryArchive) {
+function getGalleryWarning(mediaInventory) {
   const mediaWarnings = Array.isArray(mediaInventory.warnings) ? mediaInventory.warnings : []
   if (mediaInventory.status === 'unavailable' && mediaWarnings.length > 0) {
     return 'The private Drive index is not readable for this session. Open Media & Sync and refresh after reconnecting.'
-  }
-
-  if (memoryArchive?.status === 'unavailable') {
-    return 'The private story archive is taking too long to load. Album remains available for indexed Drive media; retry when the connection settles.'
   }
 
   return ''
@@ -881,14 +869,12 @@ function getSelectedStreamStatus(selectedItemWithPreview, streamStatus) {
 
 function useGalleryModelState(model) {
   const items = useMemo(() => (Array.isArray(model.items) ? model.items : []), [model])
-  const memoryArchive = model.sourceStatus?.memoryArchive || {}
   const years = model.filters?.availableYears || []
   const mediaInventory = model.sourceStatus?.mediaInventory || {}
   const reconciliation = model.sourceStatus?.reconciliation || {}
-  const archivedReferenceCount = Number(reconciliation.historicalArchiveReferences || model.archiveReferenceItems?.length || 0)
-  const userFacingMediaWarning = getGalleryWarning(mediaInventory, memoryArchive)
+  const userFacingMediaWarning = getGalleryWarning(mediaInventory)
 
-  return { archivedReferenceCount, items, reconciliation, userFacingMediaWarning, years }
+  return { items, reconciliation, userFacingMediaWarning, years }
 }
 
 function GalleryReadyView({ model, onRefresh }) {
@@ -900,7 +886,7 @@ function GalleryReadyView({ model, onRefresh }) {
   const [manageUploadsOpen, setManageUploadsOpen] = useState(false)
   const fileInputRef = useRef(null)
   const uploadQueue = useMediaUploadQueue(onRefresh, null)
-  const { archivedReferenceCount, items, reconciliation, userFacingMediaWarning, years } = useGalleryModelState(model)
+  const { items, reconciliation, userFacingMediaWarning, years } = useGalleryModelState(model)
   const { loadSelectedPreview, previewUrls, streamStatus } = useGalleryTrustedPreviews({ approvedUser, items, selectedItem, user })
 
   const itemsWithPreviews = useMemo(() => items.map((item) => withTrustedPreview(item, previewUrls)), [items, previewUrls])
@@ -946,7 +932,6 @@ function GalleryReadyView({ model, onRefresh }) {
         <InlineAlert tone="warning" title="Album sync needs attention" description={userFacingMediaWarning} />
       ) : null}
       <ManagementTools
-        archivedReferenceCount={archivedReferenceCount}
         manageUploadsOpen={manageUploadsOpen}
         onSelectFiles={() => fileInputRef.current?.click()}
         reconciliation={reconciliation}

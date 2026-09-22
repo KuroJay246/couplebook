@@ -110,13 +110,7 @@ test('direct reload keeps the intended protected destination after auth restorat
   assert.equal(resolved.path, '/favorites')
 })
 
-test('legacy and owner-facing route aliases resolve to canonical protected pages', () => {
-  const story = resolveProtectedRouteOutcome({
-    pathname: '/story',
-    isLoading: false,
-    user: { uid: 'approved' },
-    isAuthorized: true,
-  })
+test('owner-facing route aliases resolve to canonical protected pages while Story stays retired', () => {
   const us = resolveProtectedRouteOutcome({
     pathname: '/us',
     isLoading: false,
@@ -124,8 +118,15 @@ test('legacy and owner-facing route aliases resolve to canonical protected pages
     isAuthorized: true,
   })
 
+  const story = resolveProtectedRouteOutcome({
+    pathname: '/story',
+    isLoading: false,
+    user: { uid: 'approved' },
+    isAuthorized: true,
+  })
+
   assert.equal(story.type, 'allow')
-  assert.equal(story.path, '/timeline')
+  assert.equal(story.path, DEFAULT_AUTHENTICATED_PATH)
   assert.equal(us.type, 'allow')
   assert.equal(us.path, '/profile')
 })
@@ -310,7 +311,7 @@ test('missing Firebase configuration fails clearly and safely', () => {
 })
 
 test('return-path sanitization rejects login and external redirects', () => {
-  assert.equal(sanitizeReturnPath('/timeline'), '/timeline')
+  assert.equal(sanitizeReturnPath('/gallery'), '/gallery')
   assert.equal(sanitizeReturnPath('/login'), DEFAULT_AUTHENTICATED_PATH)
   assert.equal(sanitizeReturnPath('https://evil.example'), DEFAULT_AUTHENTICATED_PATH)
   assert.equal(sanitizeReturnPath('//evil.example'), DEFAULT_AUTHENTICATED_PATH)
@@ -325,8 +326,9 @@ test('route source and auth shell source keep the protected migration contract e
   const authServiceSource = await readFile(new URL('../services/authService.js', import.meta.url), 'utf8')
 
   assert.match(routesSource, /path=\{DEFAULT_AUTHENTICATED_PATH\}/)
-  assert.match(routesSource, /path="\/timeline"/)
+  assert.doesNotMatch(routesSource, /path="\/timeline"|path="\/story"|TimelinePage/)
   assert.match(routesSource, /path="\/gallery"/)
+  assert.match(routesSource, /path="\/update"/)
   assert.match(routesSource, /path="\/us"/)
   assert.match(routesSource, /to="\/profile"/)
   assert.match(routesSource, /path="\/profile"/)

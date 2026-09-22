@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { protectedRouteMeta } from '../../app/routeConfig.js'
 import { useAuth } from '../../auth/useAuth.js'
-import { useMemorySource } from '../memories/useMemorySource.js'
 import { useProfileSource } from '../profile/useProfileSource.js'
 import { useSettingsSource } from '../settings/useSettingsSource.js'
 import { buildDashboardReadModel } from './dashboardReadModel.js'
@@ -24,7 +23,6 @@ function combineState(states) {
 
 export function useDashboardModel() {
   const { approvedUser } = useAuth()
-  const { error: memoryError, refresh: refreshMemories, source: memorySource, state: memoryState } = useMemorySource()
   const { error: profileError, refresh: refreshProfile, source: profileSource, state: profileState } = useProfileSource()
   const { error: settingsError, refresh: refreshSettings, source: settingsSource, state: settingsState } = useSettingsSource()
   const [now, setNow] = useState(() => new Date())
@@ -47,16 +45,14 @@ export function useDashboardModel() {
   return {
     model: buildDashboardReadModel({
       approvedUser,
-      memorySource,
       now,
       profileSource,
       routeMeta: protectedRouteMeta,
       settingsSource,
     }),
-    compatibilityError: memoryError || profileError || settingsError,
-    compatibilityState: combineState([memoryState, profileState, settingsState]),
+    compatibilityError: profileError || settingsError,
+    compatibilityState: combineState([profileState, settingsState]),
     refreshCompatibility: () => {
-      refreshMemories()
       refreshProfile()
       refreshSettings()
     },

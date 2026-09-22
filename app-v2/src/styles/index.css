@@ -213,7 +213,7 @@ h6 {
 }
 
 /* The primary dashboard memory action remains a full touch target even when rendered as a route link. */
-a[href="/timeline"].cb-button-pill {
+a[href="/gallery"].cb-button-pill {
   min-height: 2.75rem;
   height: 2.75rem;
 }
