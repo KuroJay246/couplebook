@@ -157,6 +157,30 @@ test('authorization uses a targeted users uid lookup only', async () => {
   assert.equal(resolution.approvedUser.memberRole, 'member')
 })
 
+test('owner and partner membership roles are active Couple Book memberships', async () => {
+  for (const role of ['owner', 'partner']) {
+    const resolution = await resolveApprovedUser(
+      { uid: `${role}-uid`, email: `${role}@example.com` },
+      {
+        readUserProfileByUid: async (uid) => ({
+          uid,
+          approved: true,
+          accessStatus: 'active',
+          username: role,
+          coupleId: 'couple-alpha',
+        }),
+        readCoupleMembership: async (coupleId, uid) => ({
+          status: 'ready',
+          data: { uid, active: true, role, schemaVersion: 1 },
+        }),
+      },
+    )
+
+    assert.equal(resolution.status, 'authorized')
+    assert.equal(resolution.approvedUser.memberRole, role)
+  }
+})
+
 test('pending approved accounts receive the safe unopened-book status', async () => {
   const resolution = await resolveApprovedUser(
     { uid: 'pending-uid', email: 'pending@example.com' },
@@ -230,6 +254,28 @@ test('removed couple membership remains blocked by authorization resolution', as
         username: 'Removed',
       }),
       readCoupleMembership: async () => null,
+    },
+  )
+
+  assert.equal(resolution.status, 'pending')
+  assert.equal(resolution.approvedUser, null)
+})
+
+test('unsupported couple membership roles remain blocked', async () => {
+  const resolution = await resolveApprovedUser(
+    { uid: 'viewer-member', email: 'viewer@example.com' },
+    {
+      readUserProfileByUid: async (uid) => ({
+        uid,
+        approved: true,
+        accessStatus: 'active',
+        coupleId: 'couple-alpha',
+        username: 'Viewer',
+      }),
+      readCoupleMembership: async () => ({
+        status: 'invalid',
+        data: null,
+      }),
     },
   )
 

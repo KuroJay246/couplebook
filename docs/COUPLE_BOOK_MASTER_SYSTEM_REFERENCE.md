@@ -9,7 +9,7 @@ Couple Book is a private two-person memory app. The current app is `app-v2`, bui
 - Firebase Auth establishes identity.
 - `users/{uid}` is the authorization profile.
 - Access requires `approved: true`, `accessStatus: "active"`, and a `coupleId`.
-- Access also requires `couples/{coupleId}/members/{uid}` with `active: true` and `role: "member"`.
+- Access also requires `couples/{coupleId}/members/{uid}` with `active: true` and an approved two-person membership role: `member`, `owner`, or `partner`.
 - Pending, inactive, unauthorized, signed-out, and cross-couple users fail closed.
 
 ## Firestore Shape

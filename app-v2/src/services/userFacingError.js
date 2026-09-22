@@ -1,6 +1,13 @@
 const RAW_PERMISSION = /permission|insufficient permissions|permission-denied/i
 const RAW_NETWORK = /network|offline|unavailable|deadline|timeout|failed to fetch/i
 
+export function classifyUserFacingError(error) {
+  const signature = `${String(error?.code || '')} ${String(error?.message || error || '')}`.trim()
+  if (RAW_NETWORK.test(signature)) return 'transient'
+  if (RAW_PERMISSION.test(signature)) return 'permission'
+  return 'unknown'
+}
+
 export function toUserFacingError(error, fallback = 'Something went wrong. Try again.') {
   const message = String(error?.message || error || '').trim()
   if (RAW_PERMISSION.test(message)) return 'Your access to this Couple Book could not be confirmed. Try again.'

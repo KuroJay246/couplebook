@@ -156,6 +156,21 @@ function ConfessionVisualSlot({ slot }) {
   return null
 }
 
+function ConfessionNote({ className = '', imageSlot, memeSlot, text, secondaryText }) {
+  if (!text && !imageSlot?.url && !memeSlot?.url) return null
+
+  return (
+    <aside className={`confession-note ${className}`}>
+      <div className="confession-note-stack">
+        {text ? <p className="confession-note-bubble primary">{text}</p> : null}
+        {secondaryText ? <p className="confession-note-bubble secondary">{secondaryText}</p> : null}
+        {memeSlot?.url ? <img alt={memeSlot.label} className="confession-note-meme" src={memeSlot.url} /> : null}
+      </div>
+      {imageSlot?.url ? <img alt={imageSlot.label} className="confession-note-face" src={imageSlot.url} /> : null}
+    </aside>
+  )
+}
+
 function ConfessionMedia({ slotMap }) {
   const closingVideo = slotMap['closing-video']
   const backgroundAudio = slotMap['background-audio']
@@ -200,14 +215,27 @@ function ConfessionReadingCard({ model, ownerBridge, recoveryToolsEnabled, slotM
   return (
     <article className="confession-card">
       <header className="confession-card-header">
-        <p className="confession-overline">For Omia</p>
+        <p className="confession-overline">For Mara</p>
         <h2>{model.moment.subtitle || 'To the girl who fills my heart'}</h2>
       </header>
 
-      <div className="confession-notes">
-        <ConfessionVisualSlot slot={slotMap['top-note-photo']} />
-        <ConfessionVisualSlot slot={slotMap['cheesy-note-image']} />
-        <ConfessionVisualSlot slot={slotMap['outside-note-photo']} />
+      <div className="confession-notes" aria-label="Preserved side notes">
+        <ConfessionNote
+          className="top"
+          imageSlot={slotMap['top-note-photo']}
+          text="Ik i repeat my self alot ml"
+        />
+        <ConfessionNote
+          className="cheesy"
+          memeSlot={slotMap['cheesy-note-image']}
+          secondaryText="Yh this was kinda chessy but all love"
+        />
+        <ConfessionNote
+          className="outside"
+          imageSlot={slotMap['outside-note-photo']}
+          secondaryText="Yes ik i deserve a beating"
+          text="Yes i did ask for your favorite flowers for a reason ml. I also did take some insprations from your code alot of it lol"
+        />
       </div>
 
       <ConfessionLetter letterText={letterText} />
@@ -234,8 +262,23 @@ function ConfessionReadingCard({ model, ownerBridge, recoveryToolsEnabled, slotM
 }
 
 function ConfessionExperience({ model, ownerBridge, recoveryToolsEnabled }) {
+  const [unlocked, setUnlocked] = useState(false)
   const [opened, setOpened] = useState(false)
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
   const slotMap = Object.fromEntries((model.mediaSlots || []).map((slot) => [slot.id, slot]))
+  const validPasswords = new Set(['mara', 'bighead', 'big head', 'mimi', 'mia'])
+
+  function unlockCard(event) {
+    event.preventDefault()
+    const normalized = password.toLowerCase().trim()
+    if (validPasswords.has(normalized)) {
+      setUnlocked(true)
+      setError('')
+      return
+    }
+    setError('Think of what I call you.')
+  }
 
   return (
     <section className="special-moment-page special-confession-page" data-route="confession">
@@ -251,52 +294,49 @@ function ConfessionExperience({ model, ownerBridge, recoveryToolsEnabled }) {
         <span />
       </div>
 
-      <div className={`confession-shell ${opened ? 'is-opened' : ''}`}>
-        <div className="confession-gate">
-          <p className="confession-kicker">Private reading</p>
-          <h1>{model.moment.title}</h1>
-          <p className="confession-intro">A private note, kept inside Couple Book and opened only for the signed-in person who belongs here.</p>
-          <button className="confession-open-button" onClick={() => setOpened(true)} type="button">
-            Open card
-          </button>
-        </div>
+      <div className={`confession-shell ${unlocked ? 'is-unlocked' : ''} ${opened ? 'is-opened' : ''}`}>
+        {!unlocked ? (
+          <form className="confession-password-screen" onSubmit={unlockCard}>
+            <p className="confession-kicker">Private card</p>
+            <h1>Unlock Your Card</h1>
+            <p className="confession-intro">Hint: a nickname that I call you.</p>
+            <input
+              aria-label="Confession password"
+              className="confession-password-input"
+              onChange={(event) => setPassword(event.target.value)}
+              placeholder="Enter password..."
+              type="text"
+              value={password}
+            />
+            <button className="confession-open-button" type="submit">Unlock</button>
+            {error ? <p className="confession-password-error" aria-live="polite">{error}</p> : null}
+          </form>
+        ) : (
+          <div className="confession-flip-stage">
+            <button
+              aria-expanded={opened}
+              className={`confession-card-front ${opened ? 'is-opened' : ''}`}
+              onClick={() => setOpened((value) => !value)}
+              type="button"
+            >
+              <span>For Mara</span>
+              <strong>{model.moment.title}</strong>
+              <em>Tap to {opened ? 'close' : 'open'}</em>
+            </button>
+          </div>
+        )}
 
-        <ConfessionReadingCard
-          model={model}
-          ownerBridge={ownerBridge}
-          recoveryToolsEnabled={recoveryToolsEnabled}
-          slotMap={slotMap}
-        />
+        {unlocked && opened ? (
+          <ConfessionReadingCard
+            model={model}
+            ownerBridge={ownerBridge}
+            recoveryToolsEnabled={recoveryToolsEnabled}
+            slotMap={slotMap}
+          />
+        ) : null}
       </div>
     </section>
   )
-}
-
-function buildConfessionFallbackModel(model) {
-  return {
-    ...model,
-    status: 'partial',
-    moment: {
-      type: 'confession',
-      title: 'For Omia',
-      subtitle: 'A private confession kept inside Couple Book.',
-      date: null,
-      revision: 0,
-      sections: [
-        {
-          id: 'fallback-confession-letter',
-          kind: 'paragraph',
-          content: 'I made this page because some feelings deserve a quiet place of their own. Even while the recovered media and private source content are being reconnected, this note should still feel intentional, protected, and only for us.',
-        },
-        {
-          id: 'fallback-confession-promise',
-          kind: 'paragraph',
-          content: 'The full recovered Confession content can be restored through the private special-page media mapping, but the page itself should never look broken or unfinished.',
-        },
-      ],
-    },
-    mediaSlots: Array.isArray(model.mediaSlots) ? model.mediaSlots : [],
-  }
 }
 
 export function ConfessionPage() {
@@ -318,9 +358,15 @@ export function ConfessionPage() {
     )
   }
 
-  const displayModel = ['ready', 'partial'].includes(model.status) && model.moment
-    ? model
-    : buildConfessionFallbackModel(model)
+  if (!['ready', 'partial'].includes(model.status) || !model.moment) {
+    return (
+      <ErrorState
+        title="Confession source unavailable"
+        message="The authentic Confession source is not loaded for this session. Start the local private bridge or restore the protected special-moment document before reviewing this page."
+        onRetry={refreshCompatibility}
+      />
+    )
+  }
 
-  return <ConfessionExperience model={displayModel} ownerBridge={ownerBridge} recoveryToolsEnabled={recoveryToolsEnabled} />
+  return <ConfessionExperience model={model} ownerBridge={ownerBridge} recoveryToolsEnabled={recoveryToolsEnabled} />
 }

@@ -3,7 +3,7 @@ import { readFile, readdir } from 'node:fs/promises'
 import path from 'node:path'
 import test from 'node:test'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import { buildCoupleDocumentPath } from '../services/coupleService.js'
+import { buildCoupleDocumentPath, isActiveCoupleMemberRole, normalizeMemberDocument } from '../services/coupleService.js'
 import { getLegacyContract, getFirestoreContractByUid, buildContractDocumentPath } from '../services/contractService.js'
 import { getRegisteredDevice, buildDeviceDocumentPath } from '../services/deviceService.js'
 import { getLegacyFavorites, getFirestoreFavoritesByUid, buildFavoritesDocumentPath } from '../services/favoritesService.js'
@@ -163,6 +163,25 @@ test('sync service exposes a read-only orchestration contract', async () => {
   assert.equal(contract.broadUserQueries, false)
   assert.deepEqual(contract.sourceModel, ['legacy-local-storage', 'legacy-local-dev'])
   assert.equal(snapshot.status, 'ready')
+})
+
+test('couple membership accepts active owner partner and member roles only', () => {
+  for (const role of ['member', 'owner', 'partner']) {
+    const warnings = []
+    assert.deepEqual(normalizeMemberDocument('uid-1', { active: true, role, schemaVersion: 1 }, warnings), {
+      uid: 'uid-1',
+      active: true,
+      role,
+      schemaVersion: 1,
+    })
+    assert.deepEqual(warnings, [])
+    assert.equal(isActiveCoupleMemberRole(role), true)
+  }
+
+  const warnings = []
+  assert.equal(normalizeMemberDocument('uid-1', { active: true, role: 'viewer', schemaVersion: 1 }, warnings), null)
+  assert.deepEqual(warnings, ['Couple membership is not active.'])
+  assert.equal(isActiveCoupleMemberRole('viewer'), false)
 })
 
 test('sync service exposes the Google Drive media index architecture without pretending backend deployment exists', async () => {

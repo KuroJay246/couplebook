@@ -110,7 +110,7 @@ service cloud.firestore {
       return isActiveApprovedUserForCouple(coupleId)
         && exists(memberDocPath(coupleId, request.auth.uid))
         && get(memberDocPath(coupleId, request.auth.uid)).data.active == true
-        && get(memberDocPath(coupleId, request.auth.uid)).data.role == 'member';
+        && get(memberDocPath(coupleId, request.auth.uid)).data.role in ['member', 'owner', 'partner'];
     }
 
     function isApprovedMomentType(momentType) {

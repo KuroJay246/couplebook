@@ -1,6 +1,7 @@
 import { collection, doc, getDoc, getDocs, limit, query, serverTimestamp, setDoc, updateDoc, where } from 'firebase/firestore'
 import { isFirestoreWriteMode } from '../data/writeMode.js'
 import { db } from '../lib/firebase.js'
+import { isActiveCoupleMemberRole } from './coupleService.js'
 import { DEFAULT_THEME_ID, isSupportedThemeInput, normalizeThemeId, THEME_REGISTRY } from '../theme/themeRegistry.js'
 import { normalizeNotificationPreferences } from './notificationPreferences.js'
 import {
@@ -247,7 +248,7 @@ async function assertWriteContext({ approvedUser, createDoc = doc, env, firestor
 
   const membership = await getDocument(docRef(firestore, memberPath(coupleId, user.uid), createDoc))
   const membershipData = membership.exists() ? membership.data() : null
-  if (membershipData?.active !== true || membershipData?.role !== 'member') {
+  if (membershipData?.active !== true || !isActiveCoupleMemberRole(membershipData?.role)) {
     throw new Error('Active couple membership is required before writing.')
   }
 

@@ -42,7 +42,10 @@ test('special routes use dedicated protected experiences instead of placeholders
   assert.match(birthdayPageSource, /special-birthday-page/)
   assert.match(valentinePageSource, /special-valentine-page/)
   assert.match(confessionPageSource, /special-confession-page/)
-  assert.match(confessionPageSource, /For Omia/)
+  assert.match(confessionPageSource, /For Mara/)
+  assert.match(confessionPageSource, /Unlock Your Card/)
+  assert.match(confessionPageSource, /Ik i repeat my self alot ml/)
+  assert.match(confessionPageSource, /Yes i did ask for your favorite flowers/)
 
   for (const source of [birthdayPageSource, valentinePageSource, confessionPageSource]) {
     assert.match(source, /useSpecialMomentContent/)
@@ -56,7 +59,7 @@ test('special routes use dedicated protected experiences instead of placeholders
   assert.match(adapterSource, /createLocalApiPath\('special-moment', momentKey\)/)
   assert.match(mainSource, /import '\.\/styles\/pages\/special-moments\.css'/)
   assert.doesNotMatch(`${birthdayPageSource}\n${valentinePageSource}\n${confessionPageSource}\n${hookSource}`, /dangerouslySetInnerHTML|legacy\.html|OUR MEMORIES|pages\/confession|pages\/valentine|omnia-happy-birthday/)
-  assert.doesNotMatch(confessionPageSource, /For Mara|Photo awaiting restoration|Refresh local candidates[^]*recoveryToolsEnabled === false/)
+  assert.doesNotMatch(confessionPageSource, /Photo awaiting restoration|Refresh local candidates[^]*recoveryToolsEnabled === false/)
   assert.doesNotMatch(`${birthdayPageSource}\n${valentinePageSource}\n${confessionPageSource}\n${hookSource}\n${adapterSource}`, /\bsetItem\s*\(|\bupdateDoc\s*\(|\baddDoc\s*\(|\bdeleteDoc\s*\(|collectionGroup\(|collection\([^)]*users/)
 })
 

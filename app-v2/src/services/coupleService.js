@@ -2,6 +2,12 @@ import { db } from '../lib/firebase.js'
 import { couplePath, memberPath, pathToString } from './firestorePaths.js'
 import { readDocument, requireSchemaVersion, safeString } from './firestoreReaders.js'
 
+export const ACTIVE_COUPLE_MEMBER_ROLES = Object.freeze(['member', 'owner', 'partner'])
+
+export function isActiveCoupleMemberRole(role) {
+  return ACTIVE_COUPLE_MEMBER_ROLES.includes(role)
+}
+
 export function buildCoupleDocumentPath(coupleId) {
   return pathToString(couplePath(coupleId))
 }
@@ -22,14 +28,15 @@ export function normalizeCoupleDocument(id, data, warnings) {
 
 export function normalizeMemberDocument(uid, data, warnings) {
   if (!requireSchemaVersion(data, warnings)) return null
-  if (data.active !== true || data.role !== 'member') {
+  const role = safeString(data.role, 40)
+  if (data.active !== true || !isActiveCoupleMemberRole(role)) {
     warnings.push('Couple membership is not active.')
     return null
   }
   return {
     uid,
     active: true,
-    role: 'member',
+    role,
     schemaVersion: data.schemaVersion,
   }
 }
