@@ -22,7 +22,7 @@ test('route registry keeps the final primary and secondary hierarchy explicit', 
   )
   assert.deepEqual(
     getRoutesByGroup(ROUTE_GROUPS.utility).map((route) => route.path),
-    ['/settings', '/update'],
+    ['/settings'],
   )
 })
 

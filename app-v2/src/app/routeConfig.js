@@ -112,15 +112,6 @@ export const protectedRouteMeta = [
     icon: 'Settings',
     summary: 'Appearance, special pages, privacy details, and personal account controls.',
   },
-  {
-    path: '/update',
-    label: 'Update',
-    navLabel: 'Update',
-    title: 'Update',
-    group: ROUTE_GROUPS.utility,
-    icon: 'Clock3',
-    summary: 'A protected maintenance notice for planned owner-review updates.',
-  },
 ]
 
 export function getRoutesByGroup(group) {

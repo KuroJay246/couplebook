@@ -29,7 +29,8 @@ test('theme registry exposes the supported Couple Book themes and safe fallback 
 
 test('theme runtime sources keep personal scoped storage and root data-theme wiring explicit', async () => {
   const providerSource = await readFile(new URL('../theme/ThemeProvider.jsx', import.meta.url), 'utf8')
-  const mainSource = await readFile(new URL('../main.jsx', import.meta.url), 'utf8')
+  const appProvidersSource = await readFile(new URL('../app/AppProviders.jsx', import.meta.url), 'utf8')
+  const routesSource = await readFile(new URL('../app/routes.jsx', import.meta.url), 'utf8')
   const htmlSource = await readFile(new URL('../../index.html', import.meta.url), 'utf8')
 
   assert.equal(THEME_STORAGE_KEY, 'couplebook:appearance-theme')
@@ -38,7 +39,8 @@ test('theme runtime sources keep personal scoped storage and root data-theme wir
   assert.match(providerSource, /appearanceTheme/)
   assert.doesNotMatch(providerSource, /initializationStateId/)
   assert.doesNotMatch(providerSource, /setTimeout\(\(\) => \{\s*setInitialization\(authInitialized && isAuthorized \? 'loading' : 'ready'\)/)
-  assert.match(mainSource, /ThemeProvider/)
+  assert.match(appProvidersSource, /ThemeProvider/)
+  assert.match(routesSource, /<AppProviders \/>/)
   assert.match(htmlSource, /couplebook:appearance-theme/)
   assert.match(htmlSource, /dataset\.theme/)
 })

@@ -35,6 +35,8 @@ test('service worker caches only app shell assets and bypasses private media and
   assert.match(source, /accounts\.google\.com/)
   assert.match(source, /url\.pathname\.startsWith\('\/api\/'\)/)
   assert.match(source, /url\.pathname\.includes\('\/drive\/'\)/)
+  assert.match(source, /MAINTENANCE_STATUS_PATH/)
+  assert.match(source, /fetch\(request, \{ cache: 'no-store' \}\)/)
   assert.doesNotMatch(source, /cache\.put\(request[\s\S]*PRIVATE_MEDIA_PATTERN/)
 })
 
@@ -61,4 +63,20 @@ test('PWA status UI keeps offline and update copy honest about private media lim
   assert.match(source, /requestServiceWorkerUpdate/)
   assert.doesNotMatch(source, /offline original-media access/i)
   assert.doesNotMatch(source, /Google Drive works without internet/i)
+})
+
+test('public maintenance status stays separate from the PWA update alert', async () => {
+  const status = JSON.parse(await readProjectFile('public/maintenance-status.json'))
+  const firebaseConfig = await readProjectFile('../firebase.json')
+  const pageSource = await readProjectFile('src/pages/MaintenancePage.jsx')
+  const gateSource = await readProjectFile('src/maintenance/MaintenanceGate.jsx')
+
+  assert.equal(status.enabled, false)
+  assert.equal(typeof status.message, 'string')
+  assert.equal(typeof status.details, 'string')
+  assert.doesNotMatch(JSON.stringify(status), /firebase|firestore|drive|token|secret|password/i)
+  assert.match(firebaseConfig, /\/maintenance-status\.json/)
+  assert.match(firebaseConfig, /no-store, max-age=0/)
+  assert.match(pageSource, /does not load Firebase Auth, Firestore, Drive media/)
+  assert.match(gateSource, /<Outlet \/>/)
 })

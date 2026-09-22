@@ -2,8 +2,6 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import App from './app/App'
-import { AuthProvider } from './auth/AuthProvider'
-import { ThemeProvider } from './theme/ThemeProvider.jsx'
 import './styles/tokens.css'
 import './styles/tokens/foundation.css'
 import './styles/tokens/midnight-rose.css'
@@ -34,11 +32,7 @@ registerServiceWorker()
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
-      <AuthProvider>
-        <ThemeProvider>
-          <App />
-        </ThemeProvider>
-      </AuthProvider>
+      <App />
     </BrowserRouter>
   </StrictMode>,
 )

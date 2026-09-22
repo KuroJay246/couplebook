@@ -29,7 +29,6 @@ const MIGRATION_PROGRESS_LABELS = Object.freeze({
   '/dashboard': 'Home',
   '/gallery': 'Album',
   '/profile': 'Us',
-  '/update': 'Update',
 })
 
 const SHARED_ALBUM_HOSTS = Object.freeze(['icloud.com', 'www.icloud.com'])

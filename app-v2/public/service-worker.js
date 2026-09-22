@@ -1,6 +1,7 @@
 const CACHE_VERSION = 'couple-book-app-shell-v1'
 const APP_SHELL_CACHE = CACHE_VERSION
 const APP_SHELL_URLS = ['/', '/dashboard', '/manifest.webmanifest', '/icons/couple-book-icon.svg', '/icons/couple-book-maskable.svg']
+const MAINTENANCE_STATUS_PATH = '/maintenance-status.json'
 const STATIC_ASSET_PATTERN = /^\/assets\/.+\.(?:css|js)$/i
 const PRIVATE_MEDIA_PATTERN = /\.(?:avif|gif|heic|heif|jpe?g|mov|mp4|png|webm|webp)$/i
 const NEVER_CACHE_HOSTS = [
@@ -61,6 +62,11 @@ self.addEventListener('fetch', (event) => {
   if (shouldBypass(request)) return
 
   const url = new URL(request.url)
+
+  if (url.pathname === MAINTENANCE_STATUS_PATH) {
+    event.respondWith(fetch(request, { cache: 'no-store' }))
+    return
+  }
 
   if (isNavigation(request)) {
     event.respondWith(
