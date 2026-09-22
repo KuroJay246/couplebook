@@ -42,10 +42,14 @@ const firestorePort = Number((process.env.FIRESTORE_EMULATOR_HOST || '127.0.0.1:
 const ids = Object.freeze({
   memberOne: 'member_one',
   memberTwo: 'member_two',
+  ownerRoleMember: 'owner_role_member',
+  partnerRoleMember: 'partner_role_member',
   pendingPartner: 'pending_partner',
   disabledMember: 'disabled_member',
   inactive: 'inactive_member',
   removedMember: 'removed_member',
+  unapprovedRoleOnly: 'unapproved_role_only',
+  wrongCoupleRoleOnly: 'wrong_couple_role_only',
   outsider: 'outsider_user',
   couple: 'couple_alpha',
   otherCouple: 'couple_beta',
@@ -78,10 +82,14 @@ test.beforeEach(async () => {
     const db = context.firestore()
     await setDoc(doc(db, 'users', ids.memberOne), { approved: true, accessStatus: 'active', coupleId: ids.couple, displayName: 'Member One', schemaVersion: 1 })
     await setDoc(doc(db, 'users', ids.memberTwo), { approved: true, accessStatus: 'active', coupleId: ids.couple, displayName: 'Member Two', schemaVersion: 1 })
+    await setDoc(doc(db, 'users', ids.ownerRoleMember), { approved: true, accessStatus: 'active', coupleId: ids.couple, displayName: 'Owner Role', schemaVersion: 1 })
+    await setDoc(doc(db, 'users', ids.partnerRoleMember), { approved: true, accessStatus: 'active', coupleId: ids.couple, displayName: 'Partner Role', schemaVersion: 1 })
     await setDoc(doc(db, 'users', ids.pendingPartner), { approved: true, accessStatus: 'pending', coupleId: ids.couple, displayName: 'Pending Partner', schemaVersion: 1 })
     await setDoc(doc(db, 'users', ids.disabledMember), { approved: true, accessStatus: 'disabled', coupleId: ids.couple, displayName: 'Disabled Member', schemaVersion: 1 })
     await setDoc(doc(db, 'users', ids.inactive), { approved: true, accessStatus: 'active', coupleId: ids.couple, displayName: 'Inactive', schemaVersion: 1 })
     await setDoc(doc(db, 'users', ids.removedMember), { approved: true, accessStatus: 'active', coupleId: ids.couple, displayName: 'Removed Member', schemaVersion: 1 })
+    await setDoc(doc(db, 'users', ids.unapprovedRoleOnly), { approved: false, accessStatus: 'active', coupleId: ids.couple, displayName: 'Unapproved Role Only', schemaVersion: 1 })
+    await setDoc(doc(db, 'users', ids.wrongCoupleRoleOnly), { approved: true, accessStatus: 'active', coupleId: ids.otherCouple, displayName: 'Wrong Couple Role Only', schemaVersion: 1 })
     await setDoc(doc(db, 'users', ids.outsider), { approved: false, accessStatus: 'active', coupleId: ids.couple, displayName: 'Outsider', schemaVersion: 1 })
     await setDoc(doc(db, 'users', ids.otherMember), { approved: true, accessStatus: 'active', coupleId: ids.otherCouple, displayName: 'Other', schemaVersion: 1 })
 
@@ -90,9 +98,13 @@ test.beforeEach(async () => {
 
     await setDoc(doc(db, 'couples', ids.couple, 'members', ids.memberOne), { active: true, role: 'member', schemaVersion: 1 })
     await setDoc(doc(db, 'couples', ids.couple, 'members', ids.memberTwo), { active: true, role: 'member', schemaVersion: 1 })
+    await setDoc(doc(db, 'couples', ids.couple, 'members', ids.ownerRoleMember), { active: true, role: 'owner', schemaVersion: 1 })
+    await setDoc(doc(db, 'couples', ids.couple, 'members', ids.partnerRoleMember), { active: true, role: 'partner', schemaVersion: 1 })
     await setDoc(doc(db, 'couples', ids.couple, 'members', ids.pendingPartner), { active: true, role: 'member', schemaVersion: 1 })
     await setDoc(doc(db, 'couples', ids.couple, 'members', ids.disabledMember), { active: true, role: 'member', schemaVersion: 1 })
     await setDoc(doc(db, 'couples', ids.couple, 'members', ids.inactive), { active: false, role: 'member', schemaVersion: 1 })
+    await setDoc(doc(db, 'couples', ids.couple, 'members', ids.unapprovedRoleOnly), { active: true, role: 'owner', schemaVersion: 1 })
+    await setDoc(doc(db, 'couples', ids.couple, 'members', ids.wrongCoupleRoleOnly), { active: true, role: 'partner', schemaVersion: 1 })
     await setDoc(doc(db, 'couples', ids.otherCouple, 'members', ids.otherMember), { active: true, role: 'member', schemaVersion: 1 })
 
     for (const uid of [ids.memberOne, ids.memberTwo]) {
@@ -214,8 +226,35 @@ test('second active member receives same couple access but not private settings 
   await assertFails(getDocs(collection(db, 'couples', ids.otherCouple, 'profiles')))
 })
 
+test('owner and partner roles require active approved account and matching couple membership', { skip: !hasEmulator }, async () => {
+  for (const uid of [ids.ownerRoleMember, ids.partnerRoleMember]) {
+    const db = authed(uid)
+    await assertSucceeds(getDoc(doc(db, 'users', uid)))
+    await assertSucceeds(getDoc(doc(db, 'couples', ids.couple)))
+    await assertSucceeds(getDoc(doc(db, 'couples', ids.couple, 'members', uid)))
+    await assertSucceeds(getDoc(doc(db, 'couples', ids.couple, 'profiles', ids.memberOne)))
+    await assertSucceeds(getDocs(collection(db, 'couples', ids.couple, 'mediaItems')))
+    await assertSucceeds(getDoc(doc(db, 'couples', ids.couple, 'specialMoments', 'confession')))
+    await assertFails(getDoc(doc(db, 'couples', ids.otherCouple)))
+    await assertFails(getDocs(collection(db, 'couples', ids.otherCouple, 'profiles')))
+    await assertFails(setDoc(doc(db, 'couples', ids.otherCouple, 'profiles', uid), { schemaVersion: 1, name: 'Wrong couple' }))
+  }
+})
+
+test('role name alone does not grant access without approved account correct couple and active membership', { skip: !hasEmulator }, async () => {
+  for (const uid of [ids.unapprovedRoleOnly, ids.wrongCoupleRoleOnly]) {
+    const db = authed(uid)
+    await assertFails(getDoc(doc(db, 'couples', ids.couple)))
+    await assertFails(getDoc(doc(db, 'couples', ids.couple, 'members', uid)))
+    await assertFails(getDoc(doc(db, 'couples', ids.couple, 'profiles', ids.memberOne)))
+    await assertFails(getDocs(collection(db, 'couples', ids.couple, 'mediaItems')))
+    await assertFails(getDoc(doc(db, 'couples', ids.couple, 'specialMoments', 'confession')))
+    await assertFails(setDoc(doc(db, 'couples', ids.couple, 'profiles', uid), { schemaVersion: 1, revision: 1, name: 'Role only' }))
+  }
+})
+
 test('pending, unauthorized, inactive, and cross-couple users fail closed', { skip: !hasEmulator }, async () => {
-  for (const uid of [ids.pendingPartner, ids.disabledMember, ids.outsider, ids.inactive, ids.removedMember, ids.otherMember]) {
+  for (const uid of [ids.pendingPartner, ids.disabledMember, ids.outsider, ids.inactive, ids.removedMember, ids.otherMember, ids.unapprovedRoleOnly, ids.wrongCoupleRoleOnly]) {
     const db = authed(uid)
     await assertFails(getDoc(doc(db, 'couples', ids.couple)))
     await assertFails(getDoc(doc(db, 'couples', ids.couple, 'members', uid)))
