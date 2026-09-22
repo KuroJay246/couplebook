@@ -28,17 +28,33 @@ import { GOOGLE_PROVIDER_ID, isGoogleProviderLinked } from '../../services/authS
 import { MediaSettingsSection } from './MediaSettingsSection.jsx'
 
 const SETTINGS_CATEGORIES = [
-  ['account', 'Account'],
-  ['profiles', 'Relationship & Profiles'],
-  ['dates', 'Important Dates'],
-  ['appearance', 'Appearance'],
-  ['media', 'Media & Sync'],
-  ['notifications', 'Notifications'],
-  ['privacy', 'Privacy & Security'],
-  ['storage', 'App & Storage'],
-  ['advanced', 'Advanced / Diagnostics'],
-  ['about', 'About'],
+  { key: 'account', label: 'Account', group: 'Access', description: 'Signed-in identity and session controls.' },
+  { key: 'profiles', label: 'Relationship & Profiles', group: 'Couple Book', description: 'Where shared profile details live.' },
+  { key: 'dates', label: 'Important Dates', group: 'Couple Book', description: 'Birthday and anniversary ownership.' },
+  { key: 'appearance', label: 'Appearance', group: 'Personalization', description: 'Theme, motion, and relationship date view.' },
+  { key: 'media', label: 'Media & Sync', group: 'Library', description: 'Drive connection, upload queue, and sync health.' },
+  { key: 'notifications', label: 'Notifications', group: 'Personalization', description: 'Quiet app reminders and permission state.' },
+  { key: 'privacy', label: 'Privacy & Security', group: 'Safety', description: 'Private-data boundaries and access checks.' },
+  { key: 'storage', label: 'App & Storage', group: 'Safety', description: 'Local cache and offline shell limits.' },
+  { key: 'advanced', label: 'Advanced / Diagnostics', group: 'Maintenance', description: 'System health for owner review.' },
+  { key: 'about', label: 'About', group: 'Maintenance', description: 'Product mode and media boundary.' },
 ]
+
+function getSettingsCategory(key) {
+  return SETTINGS_CATEGORIES.find((category) => category.key === key) || SETTINGS_CATEGORIES[0]
+}
+
+function getSettingsGroups() {
+  return SETTINGS_CATEGORIES.reduce((groups, category) => {
+    const existing = groups.find((group) => group.label === category.group)
+    if (existing) {
+      existing.categories.push(category)
+      return groups
+    }
+    groups.push({ label: category.group, categories: [category] })
+    return groups
+  }, [])
+}
 
 function buildFormState(model) {
   return {
@@ -170,12 +186,20 @@ function NotificationSettingsSection({ notifications, onToggle, values }) {
   )
 }
 
-function SettingsHeading({ dirty, onCancel, onSave, status }) {
+function SettingsHeading({ activeCategory, dirty, onCancel, onSave, status }) {
+  const category = getSettingsCategory(activeCategory)
+
   return (
     <div className="cb-settings-heading">
       <div>
-        <h2>Settings</h2>
-        <p>Account, relationship, dates, appearance, media, notifications, privacy, app storage, diagnostics, and about.</p>
+        <p className="cb-kicker">Settings</p>
+        <h2>Private settings</h2>
+        <p>Manage the parts of Couple Book that affect access, media, appearance, privacy, and this device.</p>
+        <div className="cb-settings-context" aria-live="polite">
+          <span>{category.group}</span>
+          <strong>{category.label}</strong>
+          <span>{category.description}</span>
+        </div>
       </div>
       <div className="cb-settings-actions">
         <StatusBadge tone={dirty ? 'warning' : 'success'}>
@@ -191,16 +215,22 @@ function SettingsHeading({ dirty, onCancel, onSave, status }) {
 function SettingsTabs({ activeCategory, onSelect }) {
   return (
     <nav aria-label="Settings categories" className="cb-settings-tabs">
-      {SETTINGS_CATEGORIES.map(([key, label]) => (
-        <button
-          aria-current={activeCategory === key ? 'page' : undefined}
-          className={activeCategory === key ? 'cb-settings-tab cb-settings-tab-active min-h-11' : 'cb-settings-tab min-h-11'}
-          key={key}
-          onClick={() => onSelect(key)}
-          type="button"
-        >
-          {label}
-        </button>
+      {getSettingsGroups().map((group) => (
+        <div className="cb-settings-tab-group" key={group.label}>
+          <p className="cb-settings-tab-group-label">{group.label}</p>
+          {group.categories.map((category) => (
+            <button
+              aria-current={activeCategory === category.key ? 'page' : undefined}
+              className={activeCategory === category.key ? 'cb-settings-tab cb-settings-tab-active min-h-11' : 'cb-settings-tab min-h-11'}
+              key={category.key}
+              onClick={() => onSelect(category.key)}
+              type="button"
+            >
+              <span>{category.label}</span>
+              <small>{category.description}</small>
+            </button>
+          ))}
+        </div>
       ))}
     </nav>
   )
@@ -631,7 +661,7 @@ export function SettingsView({ compatibilityError, compatibilityState, model, on
 
   return (
     <section className="cb-settings-page" data-route="settings">
-      <SettingsHeading dirty={dirty} onCancel={resetCurrentView} onSave={saveSettings} status={status} />
+      <SettingsHeading activeCategory={activeCategory} dirty={dirty} onCancel={resetCurrentView} onSave={saveSettings} status={status} />
 
       {status.message ? <InlineAlert description={status.message} tone={status.kind === 'error' ? 'error' : 'success'} /> : null}
 
