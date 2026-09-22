@@ -84,7 +84,7 @@ function getPreviewPlaceholder(item) {
   }
 }
 
-function GalleryTileMedia({ isIndexedDriveMedia, previewKind, previewPlaceholder, previewUrl }) {
+function GalleryTileMedia({ isIndexedDriveMedia, previewError, previewKind, previewPlaceholder, previewUrl }) {
   const PreviewIcon = previewPlaceholder.icon
   if (previewUrl) {
     return (
@@ -101,9 +101,9 @@ function GalleryTileMedia({ isIndexedDriveMedia, previewKind, previewPlaceholder
 
   if (isIndexedDriveMedia) {
     return (
-      <span className="gallery-index-placeholder" aria-hidden="true">
+      <span className={`gallery-index-placeholder ${previewError ? 'is-preview-unavailable' : ''}`} aria-hidden="true">
         <PreviewIcon className="size-7" />
-        <span>{previewPlaceholder.label}</span>
+        <span>{previewError || previewPlaceholder.label}</span>
       </span>
     )
   }
@@ -140,6 +140,7 @@ function useGalleryTileAction({ item, onSelect, onToggleSelection, selectionMode
 function IndexedGalleryTile({ item, onSelect, onToggleSelection, previewKind, previewPlaceholder, previewUrl, selected, selectionMode, showTitle }) {
   const isVideo = item.media.kind === 'video'
   const tileAction = useGalleryTileAction({ item, onSelect, onToggleSelection, selectionMode })
+  const previewError = item.media.previewError || ''
 
   return (
     <article className={`gallery-index-tile cb-gallery-tile ${isVideo ? 'is-video' : 'is-photo'} ${selected ? 'is-selected' : ''}`}>
@@ -151,7 +152,7 @@ function IndexedGalleryTile({ item, onSelect, onToggleSelection, previewKind, pr
         style={mediaTileAspectStyle(item)}
         type="button"
       >
-        <GalleryTileMedia isIndexedDriveMedia previewKind={previewKind} previewPlaceholder={previewPlaceholder} previewUrl={previewUrl} />
+        <GalleryTileMedia isIndexedDriveMedia previewError={previewError} previewKind={previewKind} previewPlaceholder={previewPlaceholder} previewUrl={previewUrl} />
         <GalleryTileBadges duration="" isVideo={isVideo} item={item} selected={selected} selectionMode={selectionMode} showTitle={showTitle} />
       </button>
     </article>
@@ -173,7 +174,7 @@ function StandardGalleryTile({ duration, item, onSelect, onToggleSelection, prev
         type="button"
       >
         <div className="gallery-tile-art" aria-hidden="true">
-          <GalleryTileMedia isIndexedDriveMedia={false} previewKind={previewKind} previewPlaceholder={previewPlaceholder} previewUrl={previewUrl} />
+          <GalleryTileMedia isIndexedDriveMedia={false} previewError={item.media.previewError || ''} previewKind={previewKind} previewPlaceholder={previewPlaceholder} previewUrl={previewUrl} />
         </div>
         <GalleryTileBadges duration={duration} isVideo={isVideo} item={item} selected={selected} selectionMode={selectionMode} showTitle={showTitle} />
       </button>
@@ -201,7 +202,17 @@ function withTrustedPreview(item, previewUrls) {
   const mediaId = item?.media?.id || item?.mediaIndexId || ''
   const preview = mediaId ? previewUrls[mediaId] || null : null
   const previewUrl = typeof preview === 'string' ? preview : preview?.url || ''
-  if (!previewUrl) return item
+  if (!previewUrl) {
+    if (!preview?.error) return item
+    return {
+      ...item,
+      media: {
+        ...item.media,
+        previewError: preview.error,
+        previewMode: preview.mode || 'unavailable',
+      },
+    }
+  }
   const previewKind = typeof preview === 'string' ? item.media?.kind || 'image' : preview.kind || item.media?.kind || 'image'
   return {
     ...item,
@@ -710,7 +721,7 @@ function useGalleryTrustedPreviews({ approvedUser, items, selectedItem, user }) 
     const controller = new AbortController()
     let cancelled = false
 
-    async function loadPreviewItem(item) {
+async function loadPreviewItem(item) {
       try {
         if (cancelled || controller.signal.aborted) return
         const blob = await fetchMediaBlobViaTrustedBackend({
@@ -724,7 +735,13 @@ function useGalleryTrustedPreviews({ approvedUser, items, selectedItem, user }) 
         previewUrlsRef.current.set(item.media.id, { kind: 'image', mode: 'thumbnail', url: objectUrl })
         setPreviewUrls(Object.fromEntries(previewUrlsRef.current.entries()))
       } catch {
-        // Individual private previews can fail without blocking the Album index.
+        const isVideo = item.media?.kind === 'video'
+        previewUrlsRef.current.set(item.media.id, {
+          error: isVideo ? 'Video poster unavailable' : 'Preview unavailable',
+          kind: 'image',
+          mode: 'unavailable',
+        })
+        setPreviewUrls(Object.fromEntries(previewUrlsRef.current.entries()))
       }
     }
 

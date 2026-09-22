@@ -752,6 +752,7 @@ export const internals = {
   isBrowserNativeImage,
   mediaIdForDriveFile,
   parseJwt,
+  proxyDriveOriginal,
   toFirestoreFields,
   fromFirestoreFields,
   upgradedThumbnailUrl,

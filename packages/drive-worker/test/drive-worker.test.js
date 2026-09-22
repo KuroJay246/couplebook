@@ -163,3 +163,46 @@ test('Drive thumbnail fallback only treats browser-native images as original-saf
   assert.equal(internals.isBrowserNativeImage('image/heic'), false)
   assert.equal(internals.isBrowserNativeImage('video/mp4'), false)
 })
+
+test('Drive stream proxy forwards Range and preserves partial-content headers', async () => {
+  const calls = []
+  const originalFetch = globalThis.fetch
+  globalThis.fetch = async (url, options = {}) => {
+    calls.push({ headers: options.headers || {}, url: String(url) })
+    return new Response(new Uint8Array([1, 2, 3, 4]), {
+      status: 206,
+      headers: {
+        'Accept-Ranges': 'bytes',
+        'Content-Length': '4',
+        'Content-Range': 'bytes 0-3/100',
+        'Content-Type': 'video/mp4',
+      },
+    })
+  }
+
+  try {
+    const response = await internals.proxyDriveOriginal(
+      new Request('https://worker.example/api/drive/media/media_one/stream', {
+        headers: {
+          Origin: 'http://localhost:5173',
+          Range: 'bytes=0-3',
+        },
+      }),
+      { ALLOWED_ORIGINS: 'http://localhost:5173' },
+      {
+        accessToken: 'fake-access-token',
+        media: { driveFileId: 'drive_file_private_123', mimeType: 'video/mp4' },
+      },
+    )
+
+    assert.equal(response.status, 206)
+    assert.equal(response.headers.get('Accept-Ranges'), 'bytes')
+    assert.equal(response.headers.get('Content-Range'), 'bytes 0-3/100')
+    assert.equal(response.headers.get('Content-Type'), 'video/mp4')
+    assert.equal(response.headers.get('Access-Control-Allow-Origin'), 'http://localhost:5173')
+    assert.equal(calls[0].headers.Range, 'bytes=0-3')
+    assert.match(calls[0].url, /alt=media/)
+  } finally {
+    globalThis.fetch = originalFetch
+  }
+})

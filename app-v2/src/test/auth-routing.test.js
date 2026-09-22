@@ -8,6 +8,7 @@ import {
   resolveProtectedRouteOutcome,
 } from '../app/routeConfig.js'
 import { formatMissingFirebaseConfigMessage } from '../lib/firebaseConfig.js'
+import { shouldPreserveLastAuthorizedState } from '../auth/authorizationCache.js'
 import { resolveApprovedUser } from '../services/authorizationService.js'
 import { buildMemberDocumentPath } from '../services/coupleService.js'
 import { buildUserDocumentPath } from '../services/userService.js'
@@ -194,6 +195,100 @@ test('approved users without active couple membership remain blocked', async () 
   assert.equal(resolution.approvedUser, null)
 })
 
+test('disabled approved accounts remain blocked by authorization resolution', async () => {
+  const resolution = await resolveApprovedUser(
+    { uid: 'disabled-member', email: 'disabled@example.com' },
+    {
+      readUserProfileByUid: async (uid) => ({
+        uid,
+        approved: true,
+        accessStatus: 'disabled',
+        coupleId: 'couple-alpha',
+        username: 'Disabled',
+      }),
+      readCoupleMembership: async () => ({
+        status: 'ready',
+        data: { active: true, role: 'member', schemaVersion: 1 },
+      }),
+    },
+  )
+
+  assert.equal(resolution.status, 'pending')
+  assert.equal(resolution.approvedUser, null)
+})
+
+test('removed couple membership remains blocked by authorization resolution', async () => {
+  const resolution = await resolveApprovedUser(
+    { uid: 'removed-member', email: 'removed@example.com' },
+    {
+      readUserProfileByUid: async (uid) => ({
+        uid,
+        approved: true,
+        accessStatus: 'active',
+        coupleId: 'couple-alpha',
+        username: 'Removed',
+      }),
+      readCoupleMembership: async () => null,
+    },
+  )
+
+  assert.equal(resolution.status, 'pending')
+  assert.equal(resolution.approvedUser, null)
+})
+
+test('cached authorization fallback is limited to transient same-uid verification failures', () => {
+  const lastAuthorizedState = {
+    user: { uid: 'uid-123' },
+    approvedUser: { uid: 'uid-123', coupleId: 'couple-alpha' },
+    isAuthorized: true,
+  }
+
+  assert.equal(
+    shouldPreserveLastAuthorizedState({
+      error: Object.assign(new Error('Firestore network timeout'), { code: 'unavailable' }),
+      lastAuthorizedState,
+      nextUser: { uid: 'uid-123' },
+    }),
+    true,
+  )
+
+  assert.equal(
+    shouldPreserveLastAuthorizedState({
+      error: Object.assign(new Error('Firestore network timeout'), { code: 'unavailable' }),
+      lastAuthorizedState,
+      nextUser: { uid: 'different-uid' },
+    }),
+    false,
+  )
+
+  assert.equal(
+    shouldPreserveLastAuthorizedState({
+      error: Object.assign(new Error('Missing or insufficient permissions.'), { code: 'permission-denied' }),
+      lastAuthorizedState,
+      nextUser: { uid: 'uid-123' },
+    }),
+    false,
+  )
+
+  assert.equal(
+    shouldPreserveLastAuthorizedState({
+      error: Object.assign(new Error('Firebase ID token expired.'), { code: 'auth/id-token-expired' }),
+      lastAuthorizedState,
+      nextUser: { uid: 'uid-123' },
+    }),
+    false,
+  )
+
+  assert.equal(
+    shouldPreserveLastAuthorizedState({
+      error: Object.assign(new Error('User must sign in again.'), { code: 'unauthenticated' }),
+      lastAuthorizedState: null,
+      nextUser: null,
+    }),
+    false,
+  )
+})
+
 test('local session-like values do not unlock protected routes independently', () => {
   const outcome = resolveProtectedRouteOutcome({
     pathname: '/contract',
@@ -261,7 +356,7 @@ test('route source and auth shell source keep the protected migration contract e
   assert.match(authProviderSource, /signInWithGoogleProvider\(\)/)
   assert.match(authProviderSource, /resolveApprovedUser\(result\.user\)/)
   assert.match(authProviderSource, /lastAuthorizedStateRef/)
-  assert.match(authProviderSource, /lastAuthorizedState\.user\.uid === nextUser\.uid/)
+  assert.match(authProviderSource, /shouldPreserveLastAuthorizedState/)
   assert.match(authProviderSource, /lastAuthorizedStateRef\.current = null/)
   assert.match(authServiceSource, /signInWithPopup/)
   assert.match(authServiceSource, /linkWithPopup/)

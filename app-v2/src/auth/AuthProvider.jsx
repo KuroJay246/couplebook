@@ -4,6 +4,7 @@ import { getBrowserTestAuthState } from '../lib/browserTestMode'
 import { ensureAuthPersistence, linkCurrentUserWithGoogle, observeAuthState, signInWithEmail, signInWithGoogleProvider, signOutCurrentUser } from '../services/authService'
 import { resolveApprovedUser } from '../services/authorizationService'
 import { toAuthError, toUserFacingError } from '../services/userFacingError.js'
+import { shouldPreserveLastAuthorizedState } from './authorizationCache.js'
 import { AuthContext } from './AuthContext'
 
 const UNAPPROVED_ACCOUNT_MESSAGE = 'This account is not approved for Couple Book.'
@@ -128,7 +129,7 @@ export function AuthProvider({ children }) {
 
         reportDevAuthError('resolveApprovedUser', error)
         const lastAuthorizedState = lastAuthorizedStateRef.current
-        if (lastAuthorizedState?.user?.uid && lastAuthorizedState.user.uid === nextUser.uid) {
+        if (shouldPreserveLastAuthorizedState({ error, lastAuthorizedState, nextUser })) {
           transitionAuthState(dispatchAuthState, {
             ...lastAuthorizedState,
             authError: toUserFacingError(error, 'We could not refresh this approved session right now. Couple Book will retry.'),
