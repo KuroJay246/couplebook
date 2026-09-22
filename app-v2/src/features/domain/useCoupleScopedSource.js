@@ -1,27 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useAuth } from '../../auth/useAuth.js'
 import { resolveDataSourceMode } from '../../data/dataSourceMode.js'
+import {
+  getApprovedUserCoupleId,
+  getApprovedUserLabel,
+  getApprovedUserUid,
+  getCoupleScopedOwnerKey,
+} from './coupleSourceIdentity.js'
 import { withSourceTimeout } from './sourceTimeout.js'
-
-export function getApprovedUserCoupleId(approvedUser) {
-  return approvedUser?.coupleId || approvedUser?.raw?.coupleId || ''
-}
-
-export function getApprovedUserUid(approvedUser) {
-  return approvedUser?.uid || approvedUser?.raw?.uid || ''
-}
-
-export function getCoupleScopedOwnerKey({ approvedUser, domainKey, fixtureSource, isAuthorized, sourceMode }) {
-  if (fixtureSource) return `${domainKey}:browser-fixture`
-  if (!isAuthorized || !approvedUser?.username) return `${domainKey}:empty`
-  return [
-    domainKey,
-    sourceMode,
-    getApprovedUserUid(approvedUser) || approvedUser.username,
-    getApprovedUserCoupleId(approvedUser),
-    approvedUser.username,
-  ].join(':')
-}
 
 function getHookStateFromSource(source) {
   return source?.status === 'empty' ? 'empty' : 'ready'
@@ -45,7 +31,7 @@ export function useCoupleScopedSource({ domainKey, emptySource, fixtureSource = 
   useEffect(() => {
     if (fixtureSource) return undefined
 
-    if (!isAuthorized || !approvedUser?.username) {
+    if (!isAuthorized || !getApprovedUserUid(approvedUser) || !getApprovedUserCoupleId(approvedUser)) {
       return undefined
     }
 
@@ -60,7 +46,7 @@ export function useCoupleScopedSource({ domainKey, emptySource, fixtureSource = 
         refreshKey,
         sourceMode,
         uid: getApprovedUserUid(approvedUser),
-        username: approvedUser.username,
+        username: getApprovedUserLabel(approvedUser),
       })), domainKey))
       .then((source) => {
         if (!active) return
@@ -91,7 +77,7 @@ export function useCoupleScopedSource({ domainKey, emptySource, fixtureSource = 
     setRefreshKey((value) => value + 1)
   }, [fixtureSource])
 
-  const isEmptyOwner = !isAuthorized || !approvedUser?.username
+  const isEmptyOwner = !isAuthorized || !getApprovedUserUid(approvedUser) || !getApprovedUserCoupleId(approvedUser)
   const hasResolvedOwner = state.ownerKey === ownerKey
 
   return {

@@ -1,4 +1,4 @@
-import { collection, doc, getDoc, getDocs } from 'firebase/firestore'
+import { collection, doc, documentId, getDoc, getDocsFromServer, limit as queryLimit, orderBy, query, startAfter } from 'firebase/firestore'
 import {
   createCompatibilityResult,
   FIRESTORE_SOURCE,
@@ -24,9 +24,35 @@ export async function readDocument({ firestore, path, getDocument = getDoc, norm
   return normalizeDocumentData(snapshot.id, snapshot.data(), normalize)
 }
 
-export async function readCollection({ firestore, path, getCollection = getDocs, normalizeEntry, emptyStatus = 'empty' }) {
+const DEFAULT_COLLECTION_PAGE_SIZE = 50
+const MAX_COLLECTION_PAGES = 20
+
+async function getCollectionInPages(reference, { getCollection, pageSize = DEFAULT_COLLECTION_PAGE_SIZE } = {}) {
+  if (getCollection) return getCollection(reference)
+
+  const documents = []
+  let lastId = ''
+  for (let page = 0; page < MAX_COLLECTION_PAGES; page += 1) {
+    const constraints = [orderBy(documentId()), queryLimit(pageSize)]
+    if (lastId) constraints.splice(1, 0, startAfter(lastId))
+    const snapshot = await getDocsFromServer(query(reference, ...constraints))
+    snapshot.forEach((documentSnapshot) => {
+      documents.push(documentSnapshot)
+      lastId = documentSnapshot.id
+    })
+    if (snapshot.size < pageSize) break
+  }
+
+  return {
+    forEach(callback) {
+      documents.forEach(callback)
+    },
+  }
+}
+
+export async function readCollection({ firestore, path, getCollection = null, normalizeEntry, emptyStatus = 'empty', pageSize = DEFAULT_COLLECTION_PAGE_SIZE }) {
   if (!firestore) throw new Error('Firestore is not configured for Couple Book.')
-  const snapshot = await getCollection(collection(firestore, ...path))
+  const snapshot = await getCollectionInPages(collection(firestore, ...path), { getCollection, pageSize })
   const warnings = []
   const entries = []
 

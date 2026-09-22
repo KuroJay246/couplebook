@@ -20,12 +20,15 @@ function getApprovedUserCoupleId(approvedUser) {
 }
 
 function getCompatibilityOwnerKey(approvedUser) {
-  if (!approvedUser?.username) return ''
-  return [getApprovedUserUid(approvedUser), getApprovedUserCoupleId(approvedUser), approvedUser.username].filter(Boolean).join(':')
+  const uid = getApprovedUserUid(approvedUser)
+  const coupleId = getApprovedUserCoupleId(approvedUser)
+  if (!uid || !coupleId) return ''
+  return [uid, coupleId, approvedUser?.username || approvedUser?.displayName || uid].filter(Boolean).join(':')
 }
 
 export function CompatibilityProvider({ children }) {
   const { approvedUser, isAuthorized } = useAuth()
+  const hasApprovedCoupleIdentity = isAuthorized && Boolean(getApprovedUserUid(approvedUser)) && Boolean(getApprovedUserCoupleId(approvedUser))
   const [browserTestCompatibility] = useState(() => getBrowserTestCompatibilityState())
   const [refreshKey, setRefreshKey] = useState(0)
   const [compatibilityState, setCompatibilityState] = useState({
@@ -56,7 +59,7 @@ export function CompatibilityProvider({ children }) {
     loadCompatibilitySnapshot({
       approvedUser,
       sourceMode: resolveDataSourceMode(),
-      username: approvedUser.username,
+      username: approvedUser.username || approvedUser.displayName || getApprovedUserUid(approvedUser),
     })
       .then((snapshot) => {
         if (!active || ownerKey !== getCompatibilityOwnerKey(approvedUser)) return
@@ -85,6 +88,7 @@ export function CompatibilityProvider({ children }) {
     approvedUser?.coupleId,
     approvedUser?.raw?.coupleId,
     approvedUser?.raw?.uid,
+    approvedUser?.displayName,
     approvedUser?.uid,
     approvedUser?.username,
     browserTestCompatibility,
@@ -93,10 +97,10 @@ export function CompatibilityProvider({ children }) {
   ])
 
   const resolvedState = browserTestCompatibility
-    ? isAuthorized && approvedUser?.username
+    ? hasApprovedCoupleIdentity
       ? browserTestCompatibility
       : EMPTY_COMPATIBILITY_STATE
-    : !isAuthorized || !approvedUser?.username
+    : !hasApprovedCoupleIdentity
       ? EMPTY_COMPATIBILITY_STATE
       : compatibilityState
 

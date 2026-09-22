@@ -122,4 +122,8 @@ test('app-v2 Firestore sources avoid broad users queries, writes, and arbitrary 
   assert.doesNotMatch(combined, /collection\([^)]*['"]users['"]/)
   assert.doesNotMatch(combined, /collectionGroup\(/)
   assert.doesNotMatch(combined, /setDoc|addDoc|updateDoc|deleteDoc|writeBatch|runTransaction/)
+  assert.match(combined, /getDocsFromServer/)
+  assert.match(combined, /orderBy\(documentId\(\)\)/)
+  assert.match(combined, /queryLimit\(pageSize\)/)
+  assert.match(combined, /MAX_COLLECTION_PAGES/)
 })

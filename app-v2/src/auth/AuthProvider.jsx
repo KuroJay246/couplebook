@@ -1,4 +1,4 @@
-import { startTransition, useCallback, useEffect, useMemo, useReducer, useState } from 'react'
+import { startTransition, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { auth, isFirebaseConfigured, missingFirebaseConfigMessage } from '../lib/firebase.js'
 import { getBrowserTestAuthState } from '../lib/browserTestMode'
 import { ensureAuthPersistence, linkCurrentUserWithGoogle, observeAuthState, signInWithEmail, signInWithGoogleProvider, signOutCurrentUser } from '../services/authService'
@@ -92,6 +92,7 @@ function createResolvedAuthState(nextUser, resolution) {
 export function AuthProvider({ children }) {
   const [browserTestAuth] = useState(() => getBrowserTestAuthState())
   const isBrowserTestMode = browserTestAuth !== null
+  const lastAuthorizedStateRef = useRef(null)
   const [authState, dispatchAuthState] = useReducer(
     authReducer,
     browserTestAuth,
@@ -119,11 +120,24 @@ export function AuthProvider({ children }) {
         const resolution = await resolveApprovedUser(nextUser)
         if (!active) return
 
-        transitionAuthState(dispatchAuthState, createResolvedAuthState(nextUser, resolution))
+        const resolvedState = createResolvedAuthState(nextUser, resolution)
+        if (resolvedState.isAuthorized) lastAuthorizedStateRef.current = resolvedState
+        transitionAuthState(dispatchAuthState, resolvedState)
       } catch (error) {
         if (!active) return
 
         reportDevAuthError('resolveApprovedUser', error)
+        const lastAuthorizedState = lastAuthorizedStateRef.current
+        if (lastAuthorizedState?.user?.uid && lastAuthorizedState.user.uid === nextUser.uid) {
+          transitionAuthState(dispatchAuthState, {
+            ...lastAuthorizedState,
+            authError: toUserFacingError(error, 'We could not refresh this approved session right now. Couple Book will retry.'),
+            authInitialized: true,
+            loading: false,
+          })
+          return
+        }
+
         transitionAuthState(dispatchAuthState, {
           user: nextUser,
           approvedUser: null,
@@ -198,8 +212,10 @@ export function AuthProvider({ children }) {
     try {
       const result = await signInWithEmail(email, password)
       const resolution = await resolveApprovedUser(result.user)
+      const resolvedState = createResolvedAuthState(result.user, resolution)
+      if (resolvedState.isAuthorized) lastAuthorizedStateRef.current = resolvedState
 
-      transitionAuthState(dispatchAuthState, createResolvedAuthState(result.user, resolution))
+      transitionAuthState(dispatchAuthState, resolvedState)
 
       return result
     } catch (error) {
@@ -226,8 +242,10 @@ export function AuthProvider({ children }) {
     try {
       const result = await signInWithGoogleProvider()
       const resolution = await resolveApprovedUser(result.user)
+      const resolvedState = createResolvedAuthState(result.user, resolution)
+      if (resolvedState.isAuthorized) lastAuthorizedStateRef.current = resolvedState
 
-      transitionAuthState(dispatchAuthState, createResolvedAuthState(result.user, resolution))
+      transitionAuthState(dispatchAuthState, resolvedState)
 
       return result
     } catch (error) {
@@ -255,6 +273,7 @@ export function AuthProvider({ children }) {
     try {
       await signOutCurrentUser()
     } finally {
+      lastAuthorizedStateRef.current = null
       applySignedOutState(dispatchAuthState)
     }
   }, [isBrowserTestMode])
@@ -269,7 +288,9 @@ export function AuthProvider({ children }) {
     try {
       const result = await linkCurrentUserWithGoogle()
       const resolution = await resolveApprovedUser(result.user)
-      transitionAuthState(dispatchAuthState, createResolvedAuthState(result.user, resolution))
+      const resolvedState = createResolvedAuthState(result.user, resolution)
+      if (resolvedState.isAuthorized) lastAuthorizedStateRef.current = resolvedState
+      transitionAuthState(dispatchAuthState, resolvedState)
       return result
     } catch (error) {
       reportDevAuthError('linkGoogleProvider', error)

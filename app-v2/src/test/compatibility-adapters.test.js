@@ -433,6 +433,9 @@ test('routes keep normal protected data out of the legacy compatibility provider
 
   assert.doesNotMatch(routesSource, /CompatibilityProvider/)
   assert.match(providerSource, /loadCompatibilitySnapshot/)
+  assert.match(providerSource, /hasApprovedCoupleIdentity/)
+  assert.match(providerSource, /approvedUser\.username \|\| approvedUser\.displayName \|\| getApprovedUserUid/)
+  assert.doesNotMatch(providerSource, /!approvedUser\?\.username/)
   assert.doesNotMatch(providerSource, /setItem\(/)
   assert.doesNotMatch(providerSource, /updateDoc\(/)
 })
