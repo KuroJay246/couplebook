@@ -15,6 +15,7 @@ test('plans view exposes complete create edit cancel and memory conversion workf
   assert.match(viewSource, /Mark completed/)
   assert.match(viewSource, /Turn into memory/)
   assert.match(viewSource, /Cancel plan/)
+  assert.match(viewSource, /writer\.updatePlan\(plan\.id, \{ \.\.\.plan, status: nextStatus \}\)/)
   assert.match(viewSource, /status: 'archived'/)
   assert.match(viewSource, /This hides the plan from active planning without deleting the historical record\./)
   assert.match(readModelSource, /plan\.status !== 'archived'/)

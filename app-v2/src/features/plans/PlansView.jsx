@@ -180,7 +180,13 @@ export function PlansView({ model, onRefresh, search, setSearch, setStatus, stat
   }
 
   async function updateStatus(plan, nextStatus) {
-    await savePlan({ ...plan, status: nextStatus })
+    setFeedback({ kind: '', message: '', saving: true })
+    try {
+      await writer.updatePlan(plan.id, { ...plan, status: nextStatus })
+      setFeedback({ kind: 'success', message: 'Plan saved.', saving: false })
+    } catch (error) {
+      setFeedback({ kind: 'error', message: error?.message || 'Plan could not be saved.', saving: false })
+    }
   }
 
   async function convertPlan() {
