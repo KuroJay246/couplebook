@@ -220,13 +220,14 @@
 
 .cb-media-viewer {
   display: grid;
-  grid-template-rows: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
 }
 
 .cb-media-viewer-stage {
   display: grid;
   min-height: 0;
   place-items: center;
+  padding: 3.5rem 1rem 1rem;
 }
 
 .cb-media-viewer-media {
@@ -262,8 +263,9 @@
 }
 
 .cb-media-viewer-bottom {
-  bottom: 0;
-  background: linear-gradient(180deg, transparent, rgba(8, 5, 8, 0.82));
+  position: relative;
+  inset: auto;
+  background: rgba(8, 5, 8, 0.92);
 }
 
 .cb-media-viewer-top > *,
@@ -314,5 +316,9 @@
   .cb-media-viewer-bottom {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .cb-media-viewer-stage {
+    padding: 3.5rem 0.25rem 0.5rem;
   }
 }
