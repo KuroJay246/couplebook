@@ -331,7 +331,7 @@ function ProfileSettingsSection() {
   )
 }
 
-function DatesSettingsSection({ model }) {
+function DatesSettingsSection() {
   return (
     <Surface className="cb-page-frame">
       <div className="flex items-start gap-3">
@@ -340,18 +340,6 @@ function DatesSettingsSection({ model }) {
           <p className="cb-kicker">Important Dates</p>
           <h3 className="cb-page-title mt-2 text-2xl">Dates are managed from Us</h3>
           <p className="cb-body-copy mt-2 text-sm">Birthdays are partner dates. The primary anniversary is a couple-level relationship date.</p>
-          <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            <ContentCard>
-              <p className="cb-kicker">Next date</p>
-              <p className="mt-2 text-sm font-semibold" style={{ color: 'var(--cb-text)' }}>{model.relationship?.nextImportantDate?.label || 'No date saved yet'}</p>
-              <p className="cb-body-copy mt-1 text-sm">{model.relationship?.nextImportantDate?.countdownLabel || 'Add birthdays and milestones from Us.'}</p>
-            </ContentCard>
-            <ContentCard>
-              <p className="cb-kicker">Primary anniversary</p>
-              <p className="mt-2 text-sm font-semibold" style={{ color: 'var(--cb-text)' }}>{model.relationship?.primaryAnniversary?.dateLabel || 'No relationship date saved'}</p>
-              <p className="cb-body-copy mt-1 text-sm">{model.relationship?.primaryAnniversary?.countdownLabel || 'Set the relationship date from Us.'}</p>
-            </ContentCard>
-          </div>
           <div className="mt-5">
             <PrimaryButton as={Link} to="/profile"><CalendarDays className="size-4" />Manage important dates</PrimaryButton>
           </div>
@@ -572,7 +560,7 @@ function SettingsCategoryPane({ activeCategory, form, googleLinkState, googleLin
     return <AccountSettingsSection googleLinkState={googleLinkState} googleLinked={googleLinked} model={model} onLinkGoogle={onLinkGoogle} onSignOut={onSignOut} />
   }
   if (activeCategory === 'profiles') return <ProfileSettingsSection />
-  if (activeCategory === 'dates') return <DatesSettingsSection model={model} />
+  if (activeCategory === 'dates') return <DatesSettingsSection />
   if (activeCategory === 'appearance') return <AppearanceSettingsSection form={form} model={model} onUpdateField={onUpdateField} />
   if (activeCategory === 'media') return <MediaSettingsSection media={model.media} />
   if (activeCategory === 'notifications') {
