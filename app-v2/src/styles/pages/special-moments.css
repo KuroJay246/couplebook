@@ -73,192 +73,137 @@
   box-shadow: 0 24px 64px rgba(8, 4, 14, 0.42);
 }
 
-.birthday-card-glow {
+.birthday-card::after {
   position: absolute;
   inset: 0;
+  content: "";
   background:
     radial-gradient(circle at 10% 20%, rgba(255, 255, 255, 0.14), transparent 20%),
     radial-gradient(circle at 86% 78%, rgba(255, 255, 255, 0.08), transparent 18%);
+  pointer-events: none;
 }
 
 .birthday-card-inner {
   position: relative;
   z-index: 1;
-  display: grid;
-  place-items: center;
-  gap: 1.5rem;
+  display: flex;
+  min-height: 36rem;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 1.25rem;
   padding: 3rem 1.5rem 4rem;
 }
 
-.birthday-cake {
-  position: relative;
-  display: grid;
-  justify-items: center;
-  gap: 0.5rem;
-  padding-top: 2rem;
+.birthday-legacy-cake {
+  width: 220px;
+  height: 220px;
+  overflow: visible;
 }
 
-.birthday-cake-layer {
-  position: relative;
-  border-radius: 999px;
+.birthday-layer rect {
   opacity: 0;
-  transform: translateY(2.25rem);
+  transform: translateY(60px);
+  animation: birthday-stack 0.8s forwards;
 }
 
-.birthday-cake.is-revealed .birthday-cake-layer,
-.birthday-cake.is-revealed .birthday-candles,
-.birthday-cake.is-revealed .birthday-cake-plate {
-  opacity: 1;
-  transform: translateY(0);
-  transition: opacity 0.8s ease, transform 0.8s ease;
-}
+.birthday-bottom rect { animation-delay: 0.2s; }
+.birthday-middle rect { animation-delay: 0.5s; }
+.birthday-top rect { animation-delay: 0.8s; }
 
-.birthday-cake-layer.bottom {
-  width: 14rem;
-  height: 3rem;
-  background: linear-gradient(180deg, #d9a6ff 0%, #8b3ebd 100%);
-  transition-delay: 0.15s;
-}
-
-.birthday-cake-layer.middle {
-  width: 11rem;
-  height: 2.5rem;
-  background: linear-gradient(180deg, #f3d9ff 0%, #c084fc 100%);
-  transition-delay: 0.45s;
-}
-
-.birthday-cake-layer.top {
-  width: 7.5rem;
-  height: 2.2rem;
-  background: linear-gradient(180deg, #fff0ff 0%, #f0abfc 100%);
-  transition-delay: 0.75s;
-}
-
-.birthday-cake-layer .frosting {
-  position: absolute;
-  inset: 0 0 auto;
-  height: 1rem;
-  border-radius: 999px 999px 0 0;
-  background: rgba(255, 255, 255, 0.78);
-}
-
-.birthday-cake-layer .sprinkle {
-  position: absolute;
-  top: 52%;
-  width: 0.42rem;
-  height: 0.42rem;
-  border-radius: 999px;
-}
-
-.birthday-cake-layer .sprinkle.pink { left: 18%; background: #f0abfc; }
-.birthday-cake-layer .sprinkle.gold { left: 38%; background: #ffd36b; }
-.birthday-cake-layer .sprinkle.green { left: 58%; background: #88d18a; }
-.birthday-cake-layer .sprinkle.violet { left: 78%; background: #a78bfa; }
-
-.birthday-cake-cherry {
-  position: absolute;
-  top: -0.5rem;
-  left: calc(50% - 0.35rem);
-  width: 0.7rem;
-  height: 0.7rem;
-  border-radius: 999px;
-  background: #e11d48;
-  box-shadow: 0 -0.5rem 0 -0.25rem #a3e635;
-}
-
-.birthday-candles {
-  position: absolute;
-  top: 0;
-  display: flex;
-  gap: 1rem;
+.birthday-frosting {
   opacity: 0;
-  transform: translateY(2rem);
-  transition-delay: 1s;
+  transform: scaleY(0);
+  transform-origin: top;
+  animation: birthday-pour 0.8s forwards;
 }
 
-.birthday-candles .candle {
-  position: relative;
-  display: block;
-  width: 0.75rem;
-  border-radius: 999px;
-  background: #fff8ed;
-  box-shadow: inset 0 0 0 1px rgba(216, 180, 254, 0.9);
+.birthday-bottom .birthday-frosting { animation-delay: 1s; }
+.birthday-middle .birthday-frosting { animation-delay: 1.3s; }
+.birthday-top .birthday-frosting { animation-delay: 1.6s; }
+
+.birthday-candle {
+  opacity: 0;
+  transform: translateY(60px);
+  animation: birthday-stack 0.8s forwards;
 }
 
-.birthday-candles .candle.tall { height: 2.3rem; }
-.birthday-candles .candle.medium { height: 1.9rem; margin-top: 0.35rem; }
-.birthday-candles .candle.short { height: 1.7rem; margin-top: 0.5rem; }
+.birthday-candle-main {
+  fill: #faf5ff;
+  stroke: #d8b4fe;
+  stroke-width: 1;
+  animation-delay: 2s;
+}
 
-.birthday-candles .flame {
-  position: absolute;
-  top: -0.85rem;
-  left: calc(50% - 0.32rem);
-  width: 0.64rem;
-  height: 0.88rem;
-  border-radius: 999px;
-  background: radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.96), #ffe28a 58%, rgba(255, 196, 79, 0.88) 100%);
+.birthday-candle-two {
+  fill: #fffbe7;
+  stroke: #ffd36b;
+  stroke-width: 1;
+  animation-delay: 2.1s;
+}
+
+.birthday-candle-three {
+  fill: #e0e7ff;
+  stroke: #a78bfa;
+  stroke-width: 1;
+  animation-delay: 2.2s;
+}
+
+.birthday-flame,
+.birthday-flame-two,
+.birthday-flame-three {
+  fill: url("#birthdayFrostGrad");
   animation: birthday-flame 1s infinite alternate ease-in-out;
+  transform-origin: center;
 }
 
-.birthday-cake-plate {
-  width: 16rem;
-  height: 1rem;
-  border-radius: 999px;
-  background: #e5e7eb;
+.birthday-flame-two { animation-delay: 0.2s; }
+.birthday-flame-three { animation-delay: 0.4s; }
+
+.birthday-plate {
+  fill: #e5e7eb;
   opacity: 0;
-  transform: translateY(1rem);
-  transition-delay: 1.2s;
+  animation: birthday-stack 0.8s forwards 2.4s;
 }
 
-.birthday-copy {
-  display: grid;
-  gap: 0.65rem;
+.birthday-sprinkle {
+  opacity: 0;
+  animation: birthday-stack 0.8s forwards 2.6s;
+}
+
+.birthday-sprinkle:nth-of-type(1) { fill: #f0abfc; }
+.birthday-sprinkle:nth-of-type(2) { fill: #ffd36b; }
+.birthday-sprinkle:nth-of-type(3) { fill: #88d18a; }
+.birthday-sprinkle:nth-of-type(4) { fill: #a78bfa; }
+.birthday-sprinkle:nth-of-type(5) { fill: #bbf7d0; }
+
+.birthday-cherry {
+  fill: #e11d48;
+  opacity: 0;
+  animation: birthday-stack 0.8s forwards 2.8s;
+}
+
+rect.birthday-cherry {
+  fill: #a3e635;
+}
+
+.birthday-greeting {
+  color: #f5d0fe;
+  font-family: "Dancing Script", Georgia, serif;
+  font-size: clamp(2rem, 6vw, 2.75rem);
+  letter-spacing: 0.6px;
   text-align: center;
-  color: #f5f3ff;
+  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);
   opacity: 0;
-  transform: translateY(1.6rem);
+  transform: translateY(30px);
+  animation: birthday-text-appear 1s ease forwards 2.2s;
 }
 
-.birthday-copy.is-revealed {
-  opacity: 1;
-  transform: translateY(0);
-  transition: opacity 0.9s ease 1.5s, transform 0.9s ease 1.5s;
-}
-
-.birthday-kicker {
+.birthday-legacy-subtitle {
   margin: 0;
-  color: #f5d0fe;
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.birthday-copy h1 {
-  margin: 0;
-  color: #f5d0fe;
-  font-size: clamp(2.2rem, 4vw, 3.4rem);
-  line-height: 0.95;
-}
-
-.birthday-subtitle {
-  margin: 0;
-  color: rgba(245, 243, 255, 0.92);
-  font-size: 1rem;
-}
-
-.birthday-message {
-  display: grid;
-  max-width: 42rem;
-  gap: 0.7rem;
-  margin-top: 0.5rem;
-}
-
-.birthday-message p {
-  margin: 0;
-  color: rgba(245, 243, 255, 0.86);
+  color: #f5f3ff;
   font-size: 0.95rem;
-  line-height: 1.75;
+  opacity: 0.85;
 }
 
 .birthday-confetti {
@@ -267,20 +212,14 @@
   pointer-events: none;
 }
 
-.birthday-confetti-piece {
+.birthday-confetti span {
   position: absolute;
-  top: -1rem;
   width: 0.6rem;
   height: 0.6rem;
   border-radius: 0.2rem;
-  background: #f0abfc;
   opacity: 0;
   animation: birthday-confetti-fall linear infinite;
 }
-
-.birthday-confetti-piece:nth-child(3n) { background: #ffd36b; }
-.birthday-confetti-piece:nth-child(4n) { background: #88d18a; }
-.birthday-confetti-piece:nth-child(5n) { background: #a78bfa; }
 
 .valentine-stage {
   min-height: 39rem;
@@ -302,8 +241,46 @@
   bottom: -2rem;
   color: rgba(255, 255, 255, 0.8);
   font-size: 1.3rem;
+  font-weight: 800;
+  text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.7);
   animation: valentine-float linear infinite;
 }
+
+.valentine-popup-message {
+  position: absolute;
+  z-index: 2;
+  color: #ff3366;
+  font-size: 1rem;
+  font-weight: 800;
+  pointer-events: none;
+  text-shadow: 1px 1px 2px #fff;
+  animation: valentine-popup 2.2s ease forwards;
+}
+
+.valentine-confetti-burst {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.valentine-confetti-burst span {
+  position: absolute;
+  left: 50%;
+  top: 58%;
+  width: 0.52rem;
+  height: 0.86rem;
+  border-radius: 0.18rem;
+  background: #fff;
+  animation: valentine-confetti-burst 1.45s ease-out forwards;
+  animation-delay: calc((var(--burst-index) % 8) * 28ms);
+  transform: rotate(calc(var(--burst-index) * 31deg));
+}
+
+.valentine-confetti-burst span:nth-child(3n) { background: #ff4d6d; }
+.valentine-confetti-burst span:nth-child(4n) { background: #ffd1dc; }
+.valentine-confetti-burst span:nth-child(5n) { background: #f9a8d4; }
 
 .valentine-card {
   position: relative;
@@ -351,6 +328,12 @@
   color: #4a1c2f;
   font-size: clamp(2rem, 4vw, 2.8rem);
   line-height: 1.05;
+}
+
+.valentine-card h1 {
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: clamp(1.8rem, 5vw, 2.25rem);
+  line-height: 1.35;
 }
 
 .valentine-hint,
@@ -429,15 +412,20 @@
 
 .confession-atmosphere span {
   position: absolute;
-  border-radius: 999px;
-  background: rgba(255, 173, 214, 0.12);
-  animation: confession-float 12s linear infinite;
+  color: rgba(255, 245, 250, 0.82);
+  font-size: 1.45rem;
+  text-shadow: 0 10px 24px rgba(91, 9, 50, 0.24);
+  animation: confession-float 10s ease-in infinite;
 }
 
-.confession-atmosphere span:nth-child(1) { top: 8%; left: 6%; width: 0.85rem; height: 0.85rem; }
-.confession-atmosphere span:nth-child(2) { top: 18%; right: 12%; width: 0.65rem; height: 0.65rem; animation-duration: 10s; }
-.confession-atmosphere span:nth-child(3) { bottom: 16%; left: 18%; width: 0.9rem; height: 0.9rem; animation-duration: 11s; }
-.confession-atmosphere span:nth-child(4) { bottom: 10%; right: 8%; width: 0.7rem; height: 0.7rem; animation-duration: 13s; }
+.confession-atmosphere span:nth-child(1) { bottom: -8%; left: 7%; animation-delay: 0s; }
+.confession-atmosphere span:nth-child(2) { bottom: -10%; left: 22%; animation-delay: 1.2s; animation-duration: 8s; }
+.confession-atmosphere span:nth-child(3) { bottom: -9%; left: 39%; animation-delay: 2.4s; animation-duration: 9s; }
+.confession-atmosphere span:nth-child(4) { bottom: -8%; left: 55%; animation-delay: 3.2s; animation-duration: 8.5s; }
+.confession-atmosphere span:nth-child(5) { bottom: -11%; left: 68%; animation-delay: 4s; animation-duration: 10s; }
+.confession-atmosphere span:nth-child(6) { bottom: -8%; left: 82%; animation-delay: 5.2s; animation-duration: 9.5s; }
+.confession-atmosphere span:nth-child(7) { bottom: -10%; left: 92%; animation-delay: 6s; animation-duration: 8.8s; }
+.confession-atmosphere span:nth-child(8) { bottom: -9%; left: 14%; animation-delay: 7s; animation-duration: 10.5s; }
 
 .confession-password-screen,
 .confession-card-front,
@@ -543,8 +531,21 @@
 .confession-notes,
 .confession-media {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 0.8rem;
+}
+
+.confession-video-section {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.confession-video-section h3 {
+  margin: 0;
+  color: #ad1457;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(1.25rem, 3vw, 1.65rem);
+  text-align: center;
 }
 
 .confession-note {
@@ -774,6 +775,18 @@
   to { transform: scale(1.16); }
 }
 
+@keyframes birthday-stack {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes birthday-pour {
+  to { opacity: 1; transform: scaleY(1); }
+}
+
+@keyframes birthday-text-appear {
+  to { opacity: 1; transform: translateY(0); }
+}
+
 @keyframes birthday-confetti-fall {
   0% { opacity: 0; transform: translateY(-1rem) rotate(0deg); }
   10% { opacity: 1; }
@@ -797,10 +810,35 @@
   to { transform: translateY(-120vh) scale(1.5); opacity: 0; }
 }
 
+@keyframes valentine-popup {
+  0% { opacity: 0; transform: translateY(0) scale(0.8); }
+  20% { opacity: 1; transform: translateY(-20px) scale(1.1); }
+  80% { opacity: 1; transform: translateY(-40px) scale(1); }
+  100% { opacity: 0; transform: translateY(-60px) scale(0.9); }
+}
+
+@keyframes valentine-confetti-burst {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(calc(var(--burst-index) * 31deg)) scale(0.4);
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform:
+      translate(calc(-50% + var(--burst-x)), calc(-50% + var(--burst-y)))
+      rotate(calc(var(--burst-index) * 97deg))
+      scale(1);
+  }
+}
+
 @keyframes confession-float {
-  from { transform: translateY(0) scale(1); opacity: 0.1; }
-  50% { opacity: 0.24; }
-  to { transform: translateY(-2rem) scale(1.22); opacity: 0.08; }
+  0% { transform: translateY(100%) rotate(0deg); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(-120vh) rotate(360deg); opacity: 0; }
 }
 
 @media (max-width: 900px) {

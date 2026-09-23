@@ -56,6 +56,63 @@ const ids = Object.freeze({
   otherMember: 'other_member',
 })
 
+const trustedConfessionMediaSlots = Object.freeze([
+  {
+    id: 'top-note-photo',
+    kind: 'image',
+    label: 'Top note image',
+    mediaId: 'drive_confession_top_note_001',
+    provider: 'google-drive',
+    required: true,
+    status: 'mapped',
+  },
+  {
+    id: 'cheesy-note-image',
+    kind: 'image',
+    label: 'Cheesy note image',
+    mediaId: 'drive_confession_cheesy_note_001',
+    provider: 'google-drive',
+    required: true,
+    status: 'mapped',
+  },
+  {
+    id: 'outside-note-photo',
+    kind: 'image',
+    label: 'Outside note image',
+    mediaId: 'drive_confession_outside_note_001',
+    provider: 'google-drive',
+    required: true,
+    status: 'mapped',
+  },
+  {
+    id: 'inline-meme-image',
+    kind: 'image',
+    label: 'Inline meme image',
+    mediaId: 'drive_confession_inline_meme_001',
+    provider: 'google-drive',
+    required: true,
+    status: 'mapped',
+  },
+  {
+    id: 'closing-video',
+    kind: 'video',
+    label: 'Closing video',
+    mediaId: 'drive_confession_video_001',
+    provider: 'google-drive',
+    required: true,
+    status: 'mapped',
+  },
+  {
+    id: 'background-audio',
+    kind: 'audio',
+    label: 'Background audio',
+    mediaId: 'drive_confession_audio_001',
+    provider: 'google-drive',
+    required: false,
+    status: 'optional',
+  },
+])
+
 let env
 
 test.before(async () => {
@@ -151,7 +208,13 @@ test.beforeEach(async () => {
     })
     await setDoc(doc(db, 'couples', ids.couple, 'specialMoments', 'birthday'), { title: 'Fictional birthday', sections: [{ kind: 'paragraph', content: 'Fictional text' }], revision: 1, schemaVersion: 1 })
     await setDoc(doc(db, 'couples', ids.couple, 'specialMoments', 'valentine'), { title: 'Fictional valentine', sections: [{ kind: 'note', content: 'Fictional text' }], revision: 1, schemaVersion: 1 })
-    await setDoc(doc(db, 'couples', ids.couple, 'specialMoments', 'confession'), { title: 'Fictional confession', sections: [{ kind: 'quote', content: 'Fictional text' }], revision: 1, schemaVersion: 1 })
+    await setDoc(doc(db, 'couples', ids.couple, 'specialMoments', 'confession'), {
+      title: 'Fictional confession',
+      sections: [{ kind: 'quote', content: 'Fictional text' }],
+      revision: 1,
+      schemaVersion: 1,
+      mediaSlots: trustedConfessionMediaSlots,
+    })
     await setDoc(doc(db, 'couples', ids.couple, 'specialMoments', 'unapproved'), { title: 'Nope', revision: 1, schemaVersion: 1 })
   })
 })
@@ -435,62 +498,7 @@ test('active members can perform valid emulator writes', { skip: !hasEmulator },
     subtitle: 'Safe runtime content',
     date: '',
     sections: [{ kind: 'paragraph', content: 'Fictional text' }],
-    mediaSlots: [
-      {
-        id: 'top-note-photo',
-        kind: 'image',
-        label: 'Top note image',
-        mediaId: 'drive_confession_top_note_001',
-        provider: 'google-drive',
-        required: true,
-        status: 'mapped',
-      },
-      {
-        id: 'cheesy-note-image',
-        kind: 'image',
-        label: 'Cheesy note image',
-        mediaId: 'drive_confession_cheesy_note_001',
-        provider: 'google-drive',
-        required: true,
-        status: 'mapped',
-      },
-      {
-        id: 'outside-note-photo',
-        kind: 'image',
-        label: 'Outside note image',
-        mediaId: 'drive_confession_outside_note_001',
-        provider: 'google-drive',
-        required: true,
-        status: 'mapped',
-      },
-      {
-        id: 'inline-meme-image',
-        kind: 'image',
-        label: 'Inline meme image',
-        mediaId: 'drive_confession_inline_meme_001',
-        provider: 'google-drive',
-        required: true,
-        status: 'mapped',
-      },
-      {
-        id: 'closing-video',
-        kind: 'video',
-        label: 'Closing video',
-        mediaId: 'drive_confession_video_001',
-        provider: 'google-drive',
-        required: true,
-        status: 'mapped',
-      },
-      {
-        id: 'background-audio',
-        kind: 'audio',
-        label: 'Background audio',
-        mediaId: 'drive_confession_audio_001',
-        provider: 'google-drive',
-        required: false,
-        status: 'optional',
-      },
-    ],
+    mediaSlots: trustedConfessionMediaSlots,
   }))
 
   const memberTwoDb = authed(ids.memberTwo)
@@ -539,6 +547,22 @@ test('active members can replace legacy v1 documents that do not yet have revisi
 
 test('write rules reject unauthorized, cross-couple, partner-private, and malformed writes', { skip: !hasEmulator }, async () => {
   const db = authed(ids.memberOne)
+  await env.withSecurityRulesDisabled(async (context) => {
+    const adminDb = context.firestore()
+    await setDoc(doc(adminDb, 'couples', ids.couple, 'specialMoments', 'valentine'), {
+      schemaVersion: 1,
+      revision: 1,
+      title: 'Fictional valentine',
+      sections: [{ kind: 'note', content: 'Fictional text' }],
+    })
+    await setDoc(doc(adminDb, 'couples', ids.couple, 'specialMoments', 'confession'), {
+      schemaVersion: 1,
+      revision: 1,
+      title: 'Fictional confession',
+      sections: [{ kind: 'quote', content: 'Fictional text' }],
+      mediaSlots: trustedConfessionMediaSlots,
+    })
+  })
   await assertFails(getDoc(doc(db, 'couples', ids.couple, 'unknown', 'doc')))
   await assertFails(setDoc(doc(db, 'couples', ids.couple, 'profiles', ids.memberTwo), { schemaVersion: 1, name: 'Changed' }))
   await assertFails(updateDoc(doc(db, 'couples', ids.couple, 'settings', ids.memberTwo), {
@@ -638,19 +662,38 @@ test('write rules reject unauthorized, cross-couple, partner-private, and malfor
     title: 'Unsupported',
     sections: [],
   }))
+  await assertFails(setDoc(doc(db, 'couples', ids.couple, 'specialMoments', 'valentine'), {
+    schemaVersion: 1,
+    revision: 2,
+    title: 'Client-added media slots',
+    sections: [{ kind: 'paragraph', content: 'Safe text.' }],
+    mediaSlots: trustedConfessionMediaSlots,
+  }))
   await assertFails(setDoc(doc(db, 'couples', ids.couple, 'specialMoments', 'confession'), {
     schemaVersion: 1,
     revision: 2,
-    title: 'Too many confession media slots',
+    title: 'Tampered confession media slot',
     sections: [{ kind: 'paragraph', content: 'Safe text.' }],
-    mediaSlots: Array.from({ length: 9 }, (_entry, index) => ({
-      id: `slot-${index}`,
-      kind: 'image',
-      label: `Slot ${index}`,
-      mediaId: `drive_confession_image_${index}`,
-      provider: 'google-drive',
-      status: 'mapped',
-    })),
+    mediaSlots: [
+      {
+        ...trustedConfessionMediaSlots[0],
+        mediaId: 'drive_confession_replaced_001',
+      },
+      ...trustedConfessionMediaSlots.slice(1),
+    ],
+  }))
+  await assertFails(setDoc(doc(db, 'couples', ids.couple, 'specialMoments', 'confession'), {
+    schemaVersion: 1,
+    revision: 2,
+    title: 'Injected preview URL',
+    sections: [{ kind: 'paragraph', content: 'Safe text.' }],
+    mediaSlots: [
+      {
+        ...trustedConfessionMediaSlots[0],
+        previewUrl: 'https://drive.google.com/private-preview',
+      },
+      ...trustedConfessionMediaSlots.slice(1),
+    ],
   }))
   await assertFails(setDoc(doc(db, 'couples', ids.couple, 'plans', 'bad_plan'), {
     schemaVersion: 1,

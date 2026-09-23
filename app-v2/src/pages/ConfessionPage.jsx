@@ -181,9 +181,12 @@ function ConfessionMedia({ slotMap }) {
   return (
     <div className="confession-media">
       {closingVideo?.status === 'mapped' && closingVideo?.url ? (
-        <video className="confession-video" controls playsInline preload="metadata">
-          <source src={closingVideo.url} type="video/mp4" />
-        </video>
+        <section className="confession-video-section">
+          <h3>One of my favourite moments with you 💞</h3>
+          <video className="confession-video" controls playsInline preload="metadata">
+            <source src={closingVideo.url} type="video/mp4" />
+          </video>
+        </section>
       ) : null}
       {backgroundAudio?.status === 'mapped' && backgroundAudio?.url ? (
         <audio className="confession-audio" controls preload="metadata" src={backgroundAudio.url} />
@@ -285,7 +288,7 @@ function ConfessionReadingCard({ model, ownerBridge, recoveryToolsEnabled, slotM
   return (
     <article className="confession-card">
       <header className="confession-card-header">
-        <p className="confession-overline">For Mara</p>
+        <p className="confession-overline">For Mara 💜</p>
         <h2>{model.moment.subtitle || 'To the girl who fills my heart'}</h2>
       </header>
 
@@ -358,18 +361,17 @@ function ConfessionExperience({ model, ownerBridge, recoveryToolsEnabled }) {
       </div>
 
       <div className="confession-atmosphere" aria-hidden="true">
-        <span />
-        <span />
-        <span />
-        <span />
+        {['💗', '💖', '💞', '💋', '🌸', '💐', '💗', '🌸'].map((item, index) => (
+          <span key={`confession-float-${index}`}>{item}</span>
+        ))}
       </div>
 
       <div className={`confession-shell ${unlocked ? 'is-unlocked' : ''} ${opened ? 'is-opened' : ''}`}>
         {!unlocked ? (
           <form className="confession-password-screen" onSubmit={unlockCard}>
             <p className="confession-kicker">Private card</p>
-            <h1>Unlock Your Card</h1>
-            <p className="confession-intro">Hint: a nickname that I call you.</p>
+            <h1>🔐 Unlock Your Card</h1>
+            <p className="confession-intro">Hint: a nickname that I call you 💭</p>
             <input
               aria-label="Confession password"
               className="confession-password-input"
@@ -389,8 +391,8 @@ function ConfessionExperience({ model, ownerBridge, recoveryToolsEnabled }) {
               onClick={() => setOpened((value) => !value)}
               type="button"
             >
-              <span>For Mara</span>
-              <strong>{model.moment.title}</strong>
+              <span>For Mara 💜</span>
+              <strong>{model.moment.title || 'I need to tell you something ml 💌'}</strong>
               <em>Tap to {opened ? 'close' : 'open'}</em>
             </button>
           </div>

@@ -70,7 +70,7 @@ service cloud.firestore {
     //   subtitle: string, <=180
     //   date: string YYYY-MM-DD or empty
     //   sections: list <=8, validated structurally in app service
-    //   mediaSlots: optional list <=8 of stable Google Drive media references
+    //   mediaSlots: trusted-backend-managed stable Google Drive media references
     //
     // couples/{coupleId}/auditEvents/{auditId}
     //   schemaVersion: 1
@@ -455,28 +455,12 @@ service cloud.firestore {
         && (!('date' in request.resource.data) || isDateOrEmpty(request.resource.data.date))
         && request.resource.data.sections is list
         && request.resource.data.sections.size() <= 8
-        && (!('mediaSlots' in request.resource.data) || isValidSpecialMomentMediaSlots(request.resource.data.mediaSlots));
+        && specialMomentMediaSlotsAreUnchanged();
     }
 
-    function isValidSpecialMomentMediaSlot(slot) {
-      return slot is map
-        && slot.keys().hasOnly(['id', 'label', 'kind', 'required', 'status', 'note', 'mediaId', 'provider'])
-        && slot.id is string
-        && slot.id.size() > 0
-        && slot.id.size() <= 80
-        && slot.label is string
-        && slot.label.size() <= 120
-        && slot.kind in ['image', 'video', 'audio']
-        && (!('required' in slot) || slot.required is bool)
-        && (!('status' in slot) || slot.status in ['mapped', 'pending', 'optional'])
-        && (!('note' in slot) || (slot.note is string && slot.note.size() <= 240))
-        && (!('mediaId' in slot) || (isSafeString(slot.mediaId, 120) && slot.mediaId.matches('^[A-Za-z0-9_-]{1,120}$')))
-        && (!('provider' in slot) || slot.provider == 'google-drive');
-    }
-
-    function isValidSpecialMomentMediaSlots(slots) {
-      return slots is list
-        && slots.size() <= 8;
+    function specialMomentMediaSlotsAreUnchanged() {
+      return (resource == null && !('mediaSlots' in request.resource.data))
+        || (resource != null && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['mediaSlots']));
     }
 
     function isValidAuditEvent(coupleId) {

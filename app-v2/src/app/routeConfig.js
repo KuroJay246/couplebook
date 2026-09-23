@@ -1,6 +1,7 @@
 export const LOGIN_PATH = '/login'
 export const DEFAULT_AUTHENTICATED_PATH = '/dashboard'
 export const PROTECTED_ROUTE_ALIASES = Object.freeze({
+  '/home': DEFAULT_AUTHENTICATED_PATH,
   '/us': '/profile',
 })
 

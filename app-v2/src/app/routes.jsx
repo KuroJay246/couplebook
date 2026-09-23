@@ -29,6 +29,7 @@ export function AppRoutes() {
           <Route element={<ProtectedRoute />}>
             <Route element={<AppShell />}>
               <Route index element={<Navigate replace to={DEFAULT_AUTHENTICATED_PATH} />} />
+              <Route path="/home" element={<Navigate replace to={DEFAULT_AUTHENTICATED_PATH} />} />
               <Route path={DEFAULT_AUTHENTICATED_PATH} element={<DashboardPage />} />
               <Route path="/gallery" element={<GalleryPage />} />
               <Route path="/us" element={<Navigate replace to="/profile" />} />
