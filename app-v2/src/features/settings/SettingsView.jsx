@@ -30,16 +30,11 @@ import { GOOGLE_PROVIDER_ID, isGoogleProviderLinked } from '../../services/authS
 import { MediaSettingsSection } from './MediaSettingsSection.jsx'
 
 const SETTINGS_CATEGORIES = [
-  { key: 'account', label: 'Account', group: 'Access', description: 'Signed-in identity and session controls.' },
-  { key: 'profiles', label: 'Relationship & Profiles', group: 'Couple Book', description: 'Where shared profile details live.' },
-  { key: 'dates', label: 'Important Dates', group: 'Couple Book', description: 'Birthday and anniversary ownership.' },
-  { key: 'appearance', label: 'Appearance', group: 'Personalization', description: 'Theme, motion, and relationship date view.' },
-  { key: 'media', label: 'Media & Sync', group: 'Library', description: 'Drive connection, upload queue, and sync health.' },
-  { key: 'notifications', label: 'Notifications', group: 'Personalization', description: 'Quiet app reminders and permission state.' },
-  { key: 'privacy', label: 'Privacy & Security', group: 'Safety', description: 'Private-data boundaries and access checks.' },
-  { key: 'storage', label: 'App & Storage', group: 'Safety', description: 'Local cache and offline shell limits.' },
-  { key: 'advanced', label: 'Advanced / Diagnostics', group: 'Maintenance', description: 'System health for owner review.' },
-  { key: 'about', label: 'About', group: 'Maintenance', description: 'Product mode and media boundary.' },
+  { key: 'account', label: 'Account', group: 'Personal', description: 'Your profile and sign-in.' },
+  { key: 'appearance', label: 'Appearance', group: 'Personal', description: 'Theme and motion.' },
+  { key: 'notifications', label: 'Notifications', group: 'Personal', description: 'In-app reminders and preferences.' },
+  { key: 'privacy', label: 'Privacy', group: 'Personal', description: 'Privacy choices for this device.' },
+  { key: 'about', label: 'About Couple Book', group: 'Help', description: 'App information.' },
 ]
 
 function getSettingsCategory(key) {
@@ -195,8 +190,8 @@ function SettingsHeading({ activeCategory, dirty, onCancel, onSave, status }) {
     <div className="cb-settings-heading">
       <div>
         <p className="cb-kicker">Settings</p>
-        <h2>Private settings</h2>
-        <p>Manage the parts of Couple Book that affect access, media, appearance, privacy, and this device.</p>
+        <h2>Settings</h2>
+        <p>Personal preferences for Couple Book.</p>
         <div className="cb-settings-context" aria-live="polite">
           <span>{category.group}</span>
           <strong>{category.label}</strong>
@@ -204,9 +199,7 @@ function SettingsHeading({ activeCategory, dirty, onCancel, onSave, status }) {
         </div>
       </div>
       <div className="cb-settings-actions">
-        <StatusBadge tone={dirty ? 'warning' : 'success'}>
-          {dirty ? 'Unsaved changes' : 'Saved'}
-        </StatusBadge>
+        {dirty ? <StatusBadge tone="warning">Unsaved changes</StatusBadge> : null}
         <SecondaryButton disabled={!dirty || status.saving} onClick={onCancel}>Cancel</SecondaryButton>
         <PrimaryButton loading={status.saving} onClick={onSave}>{status.saving ? 'Saving' : 'Save changes'}</PrimaryButton>
       </div>
@@ -238,7 +231,10 @@ function SettingsTabs({ activeCategory, onSelect }) {
   )
 }
 
-function AccountSettingsSection({ googleLinkState, googleLinked, model, onLinkGoogle, onSignOut }) {
+function AccountSettingsSection({ googleLinkState, googleLinked, model, onLinkGoogle, onSignOut, user }) {
+  const [photoFailed, setPhotoFailed] = useState(false)
+  const accountName = user?.displayName || model.account?.details?.find((detail) => detail.key === 'name')?.value || 'Couple Book account'
+
   return (
     <Surface className="cb-page-frame">
       <div className="flex flex-col gap-4 border-b pb-4 sm:flex-row sm:items-start sm:justify-between" style={{ borderColor: 'var(--cb-border)' }}>
@@ -254,24 +250,23 @@ function AccountSettingsSection({ googleLinkState, googleLinked, model, onLinkGo
           </span>
           <div>
             <p className="cb-kicker">Account</p>
-            <h3 className="cb-page-title mt-2 text-2xl">Approved account</h3>
-            <p className="cb-body-copy mt-2 text-sm">Review the signed-in account, connection method, and this device session without exposing private relationship content.</p>
+            <h3 className="cb-page-title mt-2 text-2xl">Your account</h3>
+            <p className="cb-body-copy mt-2 text-sm">Your signed-in account.</p>
           </div>
         </div>
         <StatusBadge tone={googleLinked ? 'success' : 'warning'}>{googleLinked ? 'Google linked' : 'Password only'}</StatusBadge>
       </div>
 
-      <div className="mt-5 grid gap-3 md:grid-cols-2">
-        {(model.account?.details || []).map((detail) => (
-          <ContentCard key={detail.key}>
-            <p className="cb-kicker">{detail.label}</p>
-            <p className="mt-2 text-sm font-semibold" style={{ color: 'var(--cb-text)' }}>{detail.value}</p>
-          </ContentCard>
-        ))}
+      <div className="mt-5 flex items-center gap-4 rounded-2xl border p-4" style={{ borderColor: 'var(--cb-border)', background: 'var(--cb-surface)' }}>
+        {user?.photoURL && !photoFailed ? <img alt="" className="size-14 rounded-full object-cover" onError={() => setPhotoFailed(true)} src={user.photoURL} /> : <span className="grid size-14 shrink-0 place-items-center rounded-full text-xl font-semibold" style={{ background: 'var(--cb-accent-soft)', color: 'var(--cb-accent)' }}>{accountName.slice(0, 1).toUpperCase()}</span>}
+        <div>
+          <p className="text-base font-semibold" style={{ color: 'var(--cb-text)' }}>{accountName}</p>
+          <p className="cb-body-copy mt-1 text-sm">{user?.email || model.account?.email || 'Signed-in account'}</p>
+        </div>
       </div>
 
       <div className="mt-5 grid gap-4 lg:grid-cols-2">
-        <ContentCard>
+        {!googleLinked ? <ContentCard>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex items-start gap-3">
               <KeyRound className="mt-0.5 size-4 shrink-0" style={{ color: 'var(--cb-accent)' }} aria-hidden="true" />
@@ -293,7 +288,7 @@ function AccountSettingsSection({ googleLinkState, googleLinked, model, onLinkGo
           {googleLinkState.message ? (
             <InlineAlert className="mt-4" description={googleLinkState.message} tone={googleLinkState.kind === 'error' ? 'error' : 'success'} />
           ) : null}
-        </ContentCard>
+        </ContentCard> : null}
 
         <ContentCard>
           <div className="flex items-start gap-3">
@@ -555,23 +550,19 @@ function AdvancedSettingsSection({ model }) {
   )
 }
 
-function SettingsCategoryPane({ activeCategory, form, googleLinkState, googleLinked, model, onLinkGoogle, onSignOut, onToggleNotification, onUpdateField }) {
+function SettingsCategoryPane({ activeCategory, form, googleLinkState, googleLinked, model, onLinkGoogle, onSignOut, onToggleNotification, onUpdateField, user }) {
   if (activeCategory === 'account') {
-    return <AccountSettingsSection googleLinkState={googleLinkState} googleLinked={googleLinked} model={model} onLinkGoogle={onLinkGoogle} onSignOut={onSignOut} />
+    return <AccountSettingsSection googleLinkState={googleLinkState} googleLinked={googleLinked} model={model} onLinkGoogle={onLinkGoogle} onSignOut={onSignOut} user={user} />
   }
-  if (activeCategory === 'profiles') return <ProfileSettingsSection />
-  if (activeCategory === 'dates') return <DatesSettingsSection />
   if (activeCategory === 'appearance') return <AppearanceSettingsSection form={form} model={model} onUpdateField={onUpdateField} />
-  if (activeCategory === 'media') return <MediaSettingsSection media={model.media} />
   if (activeCategory === 'notifications') {
     return <NotificationSettingsSection notifications={model.notifications} onToggle={onToggleNotification} values={form.notifications} />
   }
   if (activeCategory === 'privacy') {
     return <PrivacySettingsSection model={model} />
   }
-  if (activeCategory === 'storage') return <AppStorageSettingsSection model={model} />
   if (activeCategory === 'about') return <AboutSettingsSection model={model} />
-  return <AdvancedSettingsSection model={model} />
+  return <PrivacySettingsSection model={model} />
 }
 
 export function SettingsView({ compatibilityError, compatibilityState, model, onRefresh }) {
@@ -692,6 +683,7 @@ export function SettingsView({ compatibilityError, compatibilityState, model, on
             onSignOut={confirmSignOut}
             onToggleNotification={updateNotificationPreference}
             onUpdateField={updateField}
+            user={user}
           />
         </div>
       </div>
