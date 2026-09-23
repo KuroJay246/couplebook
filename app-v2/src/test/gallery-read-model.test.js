@@ -56,8 +56,8 @@ test('gallery read model uses indexed Drive media as the active Album source onl
 
 test('gallery selectors filter, search, and group indexed Drive media without temporary URLs', () => {
   const items = selectMediaIndexGalleryItems([
-    createMediaRecord({ mediaId: 'photo', caption: 'Beach afternoon', capturedAt: '2026-07-20T12:00:00.000Z' }),
-    createMediaRecord({ mediaId: 'video', mediaType: 'video', mimeType: 'video/mp4', capturedAt: '2026-07-21T12:00:00.000Z', favorite: true }),
+    createMediaRecord({ mediaId: 'photo', driveFileId: 'drive-photo', caption: 'Beach afternoon', capturedAt: '2026-07-20T12:00:00.000Z' }),
+    createMediaRecord({ mediaId: 'video', driveFileId: 'drive-video', mediaType: 'video', mimeType: 'video/mp4', capturedAt: '2026-07-21T12:00:00.000Z', favorite: true }),
   ])
 
   assert.equal(selectFilteredGalleryItems(items, { filter: 'photos' }).length, 1)
@@ -66,4 +66,15 @@ test('gallery selectors filter, search, and group indexed Drive media without te
   assert.equal(selectFilteredGalleryItems(items, { search: 'beach' }).length, 1)
   assert.equal(groupGalleryItemsByDate(items).length, 2)
   assert.doesNotMatch(JSON.stringify(items), /thumbnailLink|downloadUrl|accessToken|refreshToken/)
+})
+
+test('gallery selectors collapse duplicate records for one Drive file without collapsing same-name files', () => {
+  const items = selectMediaIndexGalleryItems([
+    createMediaRecord({ mediaId: 'first', driveFileId: 'drive_same', fileName: 'same.jpg' }),
+    createMediaRecord({ mediaId: 'second', driveFileId: 'drive_same', fileName: 'same.jpg', linkedMemoryId: 'memory_linked' }),
+    createMediaRecord({ mediaId: 'third', driveFileId: 'drive_other', fileName: 'same.jpg' }),
+  ])
+
+  assert.equal(items.length, 2)
+  assert.equal(items.find((item) => item.media.providerFileId === 'drive_same')?.memoryId, 'memory_linked')
 })

@@ -267,7 +267,15 @@ export function buildMediaLibrary(items = []) {
 export function selectMediaIndexGalleryItems(records = []) {
   const activeRecords = (Array.isArray(records) ? records : [])
     .filter((record) => record?.deleted !== true && record?.provider === 'google-drive' && (record.mediaType === 'image' || record.mediaType === 'video'))
-  return deepFreeze(sortByNewest(activeRecords.map((record, index) => buildMediaIndexGalleryItem(record, index))))
+  const uniqueRecords = new Map()
+  for (const record of activeRecords) {
+    const key = record.driveFileId || record.mediaId
+    const existing = uniqueRecords.get(key)
+    if (!existing || (!existing.linkedMemoryId && record.linkedMemoryId) || (!existing.caption && record.caption)) {
+      uniqueRecords.set(key, record)
+    }
+  }
+  return deepFreeze(sortByNewest([...uniqueRecords.values()].map((record, index) => buildMediaIndexGalleryItem(record, index))))
 }
 
 export function buildGallerySummary(items = []) {
