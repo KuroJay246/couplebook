@@ -87,7 +87,7 @@ function GalleryTileMedia({ isIndexedDriveMedia, previewError, previewKind, prev
         className="h-full w-full"
         controls={false}
         kind={previewKind}
-        objectFit="cover"
+        objectFit="contain"
         src={previewUrl}
       />
     )
