@@ -386,8 +386,11 @@ async function listDriveRecords(env, coupleId) {
   const accessToken = await driveAccessToken(env, coupleId)
   const params = new URLSearchParams({
     fields: 'files(id,name,mimeType,size,createdTime,modifiedTime,hasThumbnail,imageMediaMetadata(width,height,time),videoMediaMetadata(width,height,durationMillis,time)),nextPageToken',
+    includeItemsFromAllDrives: 'true',
     pageSize: '1000',
     q: `'${env.GOOGLE_DRIVE_FOLDER_ID}' in parents and trashed = false and (mimeType contains 'image/' or mimeType contains 'video/' or mimeType contains 'audio/')`,
+    spaces: 'drive',
+    supportsAllDrives: 'true',
   })
   const response = await fetch(`https://www.googleapis.com/drive/v3/files?${params}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
