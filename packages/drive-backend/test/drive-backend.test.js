@@ -396,6 +396,43 @@ test('drive media upload finalizes stable media metadata and privacy-minimal aud
   assertNoCredentialValues(auditEvents[0])
 })
 
+test('drive media upload accepts audio and finalizes it as audio media', async () => {
+  const mediaWrites = []
+  const result = await runDriveMediaUpload({
+    activeMembershipReader: async () => ({ active: true }),
+    auditWriter: async () => {},
+    body: {
+      checksum: 'd'.repeat(64),
+      clientUploadId: 'client_upload_audio',
+      coupleId: 'couple_alpha',
+      fileName: 'confession-audio.mp3',
+      mediaId: 'media_upload_audio',
+      mimeType: 'audio/mpeg',
+      sizeBytes: 2048,
+    },
+    driveUploader: async () => ({
+      createdTime: '2026-09-16T12:00:00.000Z',
+      driveFileId: 'drive_audio_1',
+      driveFolderId: 'folder_alpha',
+      fileName: 'confession-audio.mp3',
+      modifiedTime: '2026-09-16T12:00:01.000Z',
+    }),
+    duplicateReader: async () => ({}),
+    headers: { authorization: 'Bearer local-test-token' },
+    mediaWriter: async (write) => mediaWrites.push(write),
+    tokenVerifier: async () => ({ uid: 'member_one' }),
+  })
+
+  assert.equal(result.ok, true)
+  assert.equal(result.mediaId, 'media_upload_audio')
+  assert.equal(mediaWrites.length, 1)
+  assert.equal(mediaWrites[0].record.mediaType, 'audio')
+  assert.equal(mediaWrites[0].record.mimeType, 'audio/mpeg')
+  assert.equal(mediaWrites[0].record.durationMillis, null)
+  assertNoCredentialValues(result)
+  assertNoCredentialValues(mediaWrites[0])
+})
+
 test('drive media upload records orphan recovery when Firestore finalization fails after Drive upload', async () => {
   const orphans = []
   const result = await runDriveMediaUpload({

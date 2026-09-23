@@ -16,7 +16,7 @@ Status: PASS
 Evidence:
 
 - Firestore project `couplebook-97830` uses the `(default)` STANDARD / FIRESTORE_NATIVE database.
-- `npm run rules:drift` confirmed local Firestore rules exactly match deployed ruleset `06830d05-793f-4a9d-a3d8-8f07e66a02c2`.
+- `npm run rules:drift` confirmed local Firestore rules exactly match deployed ruleset `0a7c0343-d9ba-4d44-a248-4b8f422788bc`.
 - `npm --prefix app-v2 run test:rules` passed 16/16 emulator-backed rules tests with no skips after adding explicit `owner` and `partner` role coverage.
 - Role expansion is constrained by authenticated UID, approved active user document, matching `coupleId`, active membership document, and allowed role.
 - Added denial coverage proving role names alone do not grant access when the account is unapproved or belongs to another couple.
@@ -31,7 +31,7 @@ Next implementation action:
 
 ## Confession Production Restoration
 
-Status: PARTIAL
+Status: PASS for local owner review
 
 Evidence:
 
@@ -39,16 +39,20 @@ Evidence:
 - Local browser proof confirmed entry gate, original writing, four images, video, and audio render from `127.0.0.1:3003`.
 - Implemented production-safe Confession media slots that can carry stable Google Drive media IDs without temporary URLs, OAuth data, object URLs, or local paths.
 - Confession runtime now resolves Drive-backed media slots through the trusted media backend for authenticated approved users and revokes generated object URLs on cleanup.
-- Firestore rules now validate optional special moment `mediaSlots` and reject URL-bearing slots; deployed ruleset `06830d05-793f-4a9d-a3d8-8f07e66a02c2` matches local rules.
+- Uploaded the four Confession images, closing video, and background audio through the trusted Drive backend into Google Drive; Firestore stores only stable media IDs.
+- Deployed Worker version `a36378f0-987a-4691-b72b-2705007f7a9f`, adding audio upload/finalization support.
+- Firestore Confession document `couples/couplebook-v1/specialMoments/confession` is restored at revision 6 with one full restored letter section and six Google Drive media slots.
+- Firestore rules deployed as ruleset `0a7c0343-d9ba-4d44-a248-4b8f422788bc`; local/deployed drift check passed.
 - Focused tests passed for special moment media slot normalization, Firestore write preservation of existing slots, Drive/media index audio classification, and Firestore rules validation.
+- Browser runtime proof on `http://localhost:5173/confession` with Firestore mode and local bridge disabled: protected route resolved, unlock succeeded, card opened, full restored letter rendered, 4/4 images loaded from blob URLs, 1 video source used a blob URL, 1 audio source used a blob URL, and console warnings/errors were empty.
 
 Defect:
 
-- Production/PWA Confession content still needs actual production Firestore media-slot population with real Drive-indexed `mediaId` values and browser proof with the local bridge disabled.
+- Firestore Rules enforce special moment media slot list size but no longer fully validate each slot field because full six-slot validation exceeded the Firestore Rules 1000-expression limit. The app write service rejects URL/credential-bearing slots and validates stable media IDs; a future hardening pass should move slots to a fixed-key map or separate subcollection for stronger database-side validation.
 
 Next implementation action:
 
-- Inventory Confession media against the Drive index and trusted media backend; populate the Firestore Confession document with stable Drive media IDs without exposing the private mapping file.
+- Continue full product QA: Settings write/reload proof, Album media workflow proof, responsive browser pass, and production Hosting review.
 
 ## Settings Functionality
 

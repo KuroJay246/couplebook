@@ -55,6 +55,11 @@ test('special routes use dedicated protected experiences instead of placeholders
   assert.match(hookSource, /useSpecialMomentSource/)
   assert.match(sourceHookSource, /createSpecialMomentBridgeConfig/)
   assert.match(sourceHookSource, /getLegacySpecialMoment\(momentKey, \{ bridgeConfig \}\)/)
+  assert.ok(
+    sourceHookSource.indexOf('sourceMode === DATA_SOURCE_MODES.firestore') <
+      sourceHookSource.indexOf('createSpecialMomentBridgeConfig()'),
+    'Firestore mode must not be masked by the local legacy bridge.',
+  )
   assert.match(adapterSource, /VITE_ENABLE_LEGACY_LOCAL_BRIDGE/)
   assert.match(adapterSource, /createLocalApiPath\('special-moment', momentKey\)/)
   assert.match(mainSource, /import '\.\/styles\/pages\/special-moments\.css'/)

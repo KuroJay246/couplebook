@@ -461,27 +461,22 @@ service cloud.firestore {
     function isValidSpecialMomentMediaSlot(slot) {
       return slot is map
         && slot.keys().hasOnly(['id', 'label', 'kind', 'required', 'status', 'note', 'mediaId', 'provider'])
-        && isRequiredSafeString(slot.id, 80)
-        && isSafeString(slot.label, 120)
+        && slot.id is string
+        && slot.id.size() > 0
+        && slot.id.size() <= 80
+        && slot.label is string
+        && slot.label.size() <= 120
         && slot.kind in ['image', 'video', 'audio']
         && (!('required' in slot) || slot.required is bool)
         && (!('status' in slot) || slot.status in ['mapped', 'pending', 'optional'])
-        && (!('note' in slot) || isSafeString(slot.note, 240))
+        && (!('note' in slot) || (slot.note is string && slot.note.size() <= 240))
         && (!('mediaId' in slot) || (isSafeString(slot.mediaId, 120) && slot.mediaId.matches('^[A-Za-z0-9_-]{1,120}$')))
         && (!('provider' in slot) || slot.provider == 'google-drive');
     }
 
     function isValidSpecialMomentMediaSlots(slots) {
       return slots is list
-        && slots.size() <= 8
-        && (!(slots.size() >= 1) || isValidSpecialMomentMediaSlot(slots[0]))
-        && (!(slots.size() >= 2) || isValidSpecialMomentMediaSlot(slots[1]))
-        && (!(slots.size() >= 3) || isValidSpecialMomentMediaSlot(slots[2]))
-        && (!(slots.size() >= 4) || isValidSpecialMomentMediaSlot(slots[3]))
-        && (!(slots.size() >= 5) || isValidSpecialMomentMediaSlot(slots[4]))
-        && (!(slots.size() >= 6) || isValidSpecialMomentMediaSlot(slots[5]))
-        && (!(slots.size() >= 7) || isValidSpecialMomentMediaSlot(slots[6]))
-        && (!(slots.size() >= 8) || isValidSpecialMomentMediaSlot(slots[7]));
+        && slots.size() <= 8;
     }
 
     function isValidAuditEvent(coupleId) {

@@ -45,6 +45,7 @@ export const PLAN_CATEGORIES = Object.freeze([
   'Other',
 ])
 export const SPECIAL_SECTION_KINDS = Object.freeze(['paragraph', 'note', 'quote', 'list'])
+export const SPECIAL_MEDIA_KINDS = Object.freeze(['image', 'video', 'audio'])
 const SAFE_STORAGE_PATH = /^couples\/[A-Za-z0-9_-]{1,120}\/media\/[A-Za-z0-9_-]{1,120}\/(original|thumbnail|poster)$/
 const SAFE_DRIVE_ID = /^[A-Za-z0-9_-]{10,200}$/
 const SAFE_AUDIT_DETAIL_KEYS = Object.freeze([
@@ -65,6 +66,8 @@ const MEDIA_CONTENT_TYPES = Object.freeze([
   'video/mp4',
   'video/webm',
 ])
+
+const SAFE_MEDIA_ID = /^[A-Za-z0-9_-]{1,120}$/
 
 const UNSAFE_TEXT_PATTERN = /<\s*\/?\s*(script|style|iframe|object|embed|img|video|audio)\b|on[a-z]+\s*=|javascript:|<[^>]+>/i
 
@@ -90,6 +93,32 @@ function cleanStringList(value, { label, maxItems = 20, maxLength = 80 } = {}) {
     if (result.length >= maxItems) break
   }
   return result
+}
+
+function cleanSpecialMomentMediaSlots(value) {
+  if (!Array.isArray(value)) return []
+  return value.slice(0, 8).map((slot) => {
+    if (!slot || typeof slot !== 'object') throw new Error('Special page media slot is invalid.')
+    const unsafeKeys = ['url', 'objectUrl', 'previewUrl', 'downloadUrl', 'signedUrl', 'thumbnailLink', 'webContentLink', 'token', 'accessToken', 'refreshToken']
+    if (unsafeKeys.some((key) => key in slot)) throw new Error('Special page media slots must not include temporary URLs or credentials.')
+    const kind = cleanText(slot.kind, 20, 'Media slot type', { required: true })
+    const mediaId = cleanText(slot.mediaId, 120, 'Media ID')
+    if (!SPECIAL_MEDIA_KINDS.includes(kind)) throw new Error('Media slot type is not supported.')
+    if (mediaId && !SAFE_MEDIA_ID.test(mediaId)) throw new Error('Media ID is invalid.')
+    const next = {
+      id: cleanText(slot.id, 80, 'Media slot ID', { required: true }),
+      label: cleanText(slot.label, 120, 'Media slot label'),
+      kind,
+      required: slot.required === true,
+      status: ['mapped', 'pending', 'optional'].includes(slot.status) ? slot.status : mediaId ? 'mapped' : 'pending',
+    }
+    if (mediaId) {
+      next.provider = 'google-drive'
+      next.mediaId = mediaId
+    }
+    if (slot.note) next.note = cleanText(slot.note, 240, 'Media slot note')
+    return next
+  })
 }
 
 function cleanDate(value) {
@@ -644,12 +673,14 @@ export async function saveSpecialMomentText(momentType, payload, context) {
       if (!SPECIAL_SECTION_KINDS.includes(kind)) throw new Error('Section type is not supported.')
       return {
         kind,
-        content: cleanText(section.content, 1200, 'Section content', { required: true }),
+        content: cleanText(section.content, 8000, 'Section content', { required: true }),
       }
     }),
   }
-  const existingMediaSlots = snapshot.exists() && Array.isArray(snapshot.data().mediaSlots) ? snapshot.data().mediaSlots : []
-  if (existingMediaSlots.length > 0) next.mediaSlots = existingMediaSlots
+  const requestedMediaSlots = cleanSpecialMomentMediaSlots(payload.mediaSlots)
+  const existingMediaSlots = snapshot.exists() && Array.isArray(snapshot.data().mediaSlots) ? cleanSpecialMomentMediaSlots(snapshot.data().mediaSlots) : []
+  if (requestedMediaSlots.length > 0) next.mediaSlots = requestedMediaSlots
+  else if (existingMediaSlots.length > 0) next.mediaSlots = existingMediaSlots
   return writeDocumentWithAudit(reference, next, undefined, {
     coupleId,
     createDoc,

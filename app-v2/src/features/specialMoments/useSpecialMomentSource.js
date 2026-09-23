@@ -25,16 +25,16 @@ export function useSpecialMomentSource(momentKey) {
 
   const loadSource = useCallback(
     ({ coupleId, sourceMode }) => {
-      const bridgeConfig = createSpecialMomentBridgeConfig()
-      if (bridgeConfig.enabled) {
-        return getLegacySpecialMoment(momentKey, { bridgeConfig })
-      }
-
       if (sourceMode === DATA_SOURCE_MODES.firestore) {
         if (!coupleId) {
           throw new Error('Special moment data requires an approved couple membership.')
         }
         return getFirestoreSpecialMoment(coupleId, momentKey)
+      }
+
+      const bridgeConfig = createSpecialMomentBridgeConfig()
+      if (bridgeConfig.enabled) {
+        return getLegacySpecialMoment(momentKey, { bridgeConfig })
       }
 
       return getLegacySpecialMoment(momentKey)

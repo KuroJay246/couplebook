@@ -20,7 +20,7 @@ export const DRIVE_BACKEND_ROUTES = Object.freeze([
 const SAFE_ID = /^[A-Za-z0-9_-]{1,160}$/
 const SAFE_AUTH_CODE = /^[A-Za-z0-9._~/-]{8,4096}$/
 const SAFE_CHECKSUM = /^[a-f0-9]{32,128}$/i
-const SUPPORTED_MEDIA_TYPE = /^(image|video)\//
+const SUPPORTED_MEDIA_TYPE = /^(image|video|audio)\//
 const SAFE_CHANGE_TOKEN = /^[A-Za-z0-9._~/-]{1,500}$/
 const DEFAULT_STATE_TTL_MS = 10 * 60 * 1000
 const FORBIDDEN_SYNC_FIELD_PATTERN = /(?:^|[_-])(access[_-]?token|refresh[_-]?token|client[_-]?secret|thumbnaillink|webcontentlink|previewurl|downloadurl|signedurl)(?:$|[_-])/i
@@ -77,7 +77,7 @@ function assertSafeUploadDraft(upload, coupleId) {
   if (!isSafeId(upload.clientUploadId || '')) throw new Error('Drive upload draft requires a safe clientUploadId.')
   if (!isSafeId(upload.mediaId || '')) throw new Error('Drive upload draft requires a safe mediaId.')
   if (upload.coupleId !== coupleId) throw new Error('Drive upload draft couple mismatch.')
-  if (!SUPPORTED_MEDIA_TYPE.test(String(upload.mimeType || ''))) throw new Error('Drive upload draft requires supported image or video MIME type.')
+  if (!SUPPORTED_MEDIA_TYPE.test(String(upload.mimeType || ''))) throw new Error('Drive upload draft requires supported image, video, or audio MIME type.')
   if (!Number.isSafeInteger(Number(upload.sizeBytes)) || Number(upload.sizeBytes) <= 0) throw new Error('Drive upload draft requires a positive sizeBytes value.')
   if (upload.checksum && !isSafeChecksum(upload.checksum)) throw new Error('Drive upload draft checksum is invalid.')
   if (/[\\/]|^\.+$/.test(String(upload.fileName || ''))) throw new Error('Drive upload draft fileName must not contain a local path.')
@@ -578,7 +578,7 @@ export async function runDriveMediaUpload({
     height: Number.isSafeInteger(Number(uploaded?.height)) && Number(uploaded.height) >= 0 ? Number(uploaded.height) : null,
     lastSyncedAtMs: nowMs,
     mediaId: upload.mediaId,
-    mediaType: upload.mimeType.startsWith('video/') ? 'video' : 'image',
+    mediaType: upload.mimeType.startsWith('video/') ? 'video' : upload.mimeType.startsWith('audio/') ? 'audio' : 'image',
     mimeType: upload.mimeType,
     modifiedTime: String(uploaded?.modifiedTime || uploaded?.createdTime || ''),
     provider: 'google-drive',

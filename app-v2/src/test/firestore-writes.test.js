@@ -170,6 +170,62 @@ test('write services validate text, categories, settings, memories, contract, an
   assert.equal(writes[8].data.revision, 1)
 })
 
+test('special moment writes preserve full restored text and stable media slots', async () => {
+  const firestore = createFirestoreStub()
+  const longText = 'Restored confession paragraph. '.repeat(180).trim()
+
+  await saveSpecialMomentText('confession', {
+    title: 'Confession',
+    sections: [{ kind: 'paragraph', content: longText }],
+    mediaSlots: [
+      {
+        id: 'background-audio',
+        label: 'Background audio',
+        kind: 'audio',
+        required: false,
+        status: 'mapped',
+        provider: 'google-drive',
+        mediaId: 'confession_background_audio_c078bdd73ff4',
+      },
+    ],
+  }, { ...context, firestore, ...firestore })
+
+  const write = dataWrites(firestore)[0]
+  assert.equal(write.path, 'couples/couple_alpha/specialMoments/confession')
+  assert.equal(write.data.sections[0].content, longText)
+  assert.deepEqual(write.data.mediaSlots, [
+    {
+      id: 'background-audio',
+      label: 'Background audio',
+      kind: 'audio',
+      required: false,
+      status: 'mapped',
+      provider: 'google-drive',
+      mediaId: 'confession_background_audio_c078bdd73ff4',
+    },
+  ])
+})
+
+test('special moment media slots reject temporary URLs and credentials', async () => {
+  const firestore = createFirestoreStub()
+
+  await assert.rejects(saveSpecialMomentText('confession', {
+    title: 'Confession',
+    sections: [{ kind: 'paragraph', content: 'Safe text' }],
+    mediaSlots: [
+      {
+        id: 'top-note-photo',
+        label: 'Top note',
+        kind: 'image',
+        status: 'mapped',
+        provider: 'google-drive',
+        mediaId: 'confession_top_note_photo_abc6a8dda7db',
+        previewUrl: 'https://drive.google.com/private-temporary-url',
+      },
+    ],
+  }, { ...context, firestore, ...firestore }), /temporary URLs/)
+})
+
 test('verified media memory writes preserve private storage metadata without local paths', async () => {
   const firestore = createFirestoreStub()
 
