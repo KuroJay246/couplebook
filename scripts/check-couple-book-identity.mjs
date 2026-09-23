@@ -51,7 +51,11 @@ for (const themeId of ['midnight-rose', 'paper-hearts', 'moonlit']) {
 }
 
 const mainSource = readFileSync(path.join(repoRoot, 'app-v2', 'src', 'main.jsx'), 'utf8')
-for (const marker of ['ThemeProvider', 'foundation.css', 'midnight-rose.css', 'paper-hearts.css', 'moonlit.css', 'typography.css', 'forms.css', 'motion.css']) {
+const appProvidersSource = readFileSync(path.join(repoRoot, 'app-v2', 'src', 'app', 'AppProviders.jsx'), 'utf8')
+if (!appProvidersSource.includes('ThemeProvider')) {
+  errors.push('AppProviders.jsx is missing the ThemeProvider runtime composition.')
+}
+for (const marker of ['foundation.css', 'midnight-rose.css', 'paper-hearts.css', 'moonlit.css', 'typography.css', 'forms.css', 'motion.css']) {
   if (!mainSource.includes(marker)) {
     errors.push(`main.jsx is missing identity runtime marker: ${marker}`)
   }
