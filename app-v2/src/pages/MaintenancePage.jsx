@@ -4,13 +4,15 @@ import { Link, useNavigate } from 'react-router-dom'
 import { DEFAULT_AUTHENTICATED_PATH } from '../app/routeConfig.js'
 import { useMaintenanceStatus } from '../maintenance/useMaintenanceStatus.js'
 
+const RETURN_TIME_FORMATTER = new Intl.DateTimeFormat('en-US', {
+  dateStyle: 'medium',
+  timeStyle: 'short',
+})
+
 function formatReturnTime(value) {
   if (!value) return 'Check back shortly'
   try {
-    return new Intl.DateTimeFormat('en-US', {
-      dateStyle: 'medium',
-      timeStyle: 'short',
-    }).format(new Date(value))
+    return RETURN_TIME_FORMATTER.format(new Date(value))
   } catch {
     return 'Check back shortly'
   }

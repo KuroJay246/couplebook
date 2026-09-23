@@ -64,7 +64,6 @@ const VIEWPORTS = Object.freeze([
 
 const DEFAULT_ROUTE_SET = Object.freeze([
   { path: '/dashboard', slug: 'dashboard', heading: /Omia & Jaylan/ },
-  { path: '/timeline', slug: 'timeline', heading: /Our Story/ },
   { path: '/gallery', slug: 'gallery', heading: /Album/ },
   { path: '/profile', slug: 'profile', heading: /^Us$/ },
   { path: '/favorites', slug: 'favorites', heading: /Favorite Things/ },
@@ -467,7 +466,7 @@ function themeTile(page, themeId) {
 
 async function openAppearance(page, baseUrl) {
   await openRoute(page, baseUrl, DEFAULT_ROUTE_SET.find((route) => route.path === '/settings'))
-  await page.getByRole('button', { name: /^Appearance$/ }).click()
+  await page.getByRole('button', { name: /^Appearance\b/i }).click()
   await page.getByRole('heading', { name: 'Appearance' }).first().waitFor({ state: 'visible', timeout: 10000 })
 }
 
@@ -552,19 +551,15 @@ function storyCard(page, title) {
   return page.locator('article').filter({ has: page.getByText(title) }).first()
 }
 
-function escapeRegExp(value) {
-  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-}
-
 function galleryTile(page, title) {
-  return page.getByRole('button', { name: new RegExp(`^${escapeRegExp(title)},`) }).first()
+  return page.locator('article').filter({ hasText: title }).first().getByRole('button').first()
 }
 
 async function ensureDriveConnected(page) {
   const baseUrl = new globalThis.URL(page.url()).origin
   await page.goto(`${baseUrl}/settings`, { waitUntil: 'domcontentloaded' })
   await page.getByRole('heading', { name: 'Settings' }).first().waitFor({ state: 'visible', timeout: 15000 })
-  await page.getByRole('button', { name: /^Media & Sync$/ }).click()
+  await page.getByRole('button', { name: /^Media & Sync\b/i }).click()
   const mediaPanel = page.getByLabel('Media and sync settings')
   await mediaPanel.waitFor({ state: 'visible', timeout: 10000 })
   if (!(await mediaPanel.locator('button[aria-label="Connect Google Drive"]').filter({ hasText: 'Reconnect' }).isVisible().catch(() => false))) {
@@ -802,6 +797,8 @@ async function captureRouteSet(summary, browser, baseUrl, ownerEmail, ownerPassw
   }
 }
 
+// Retained as historical reference for the retired Story surface; owner review no longer executes it.
+// eslint-disable-next-line no-unused-vars
 async function runTimelineWorkflows(summary, page, baseUrl, db) {
   const title = `Owner Review Text Memory ${uniqueSuffix()}`
   const tag = `owner-review-${uniqueSuffix()}`
@@ -978,9 +975,6 @@ async function runGalleryWorkflows(summary, page, baseUrl, fixtures, networkCont
     assert.deepEqual(storageObjects, storageBeforeRetry, 'Drive upload must not create Firebase Storage objects.')
     assert.equal((await listLocalDriveFileIds(page)).includes(memory.media.driveFileId), true)
     summary.savedMedia = { title: savedTitle, driveFileId: memory.media.driveFileId, storageObjectsBefore: storageBeforeRetry }
-    await openRoute(page, baseUrl, DEFAULT_ROUTE_SET.find((route) => route.path === '/timeline'))
-    await page.getByRole('searchbox', { name: 'Search memories' }).fill(savedTitle)
-    await captureCard(summary, page, { label: 'Story photo memory', locator: storyCard(page, savedTitle), route: '/timeline', themeId: 'midnight-rose', viewport: VIEWPORTS[0] })
     await openRoute(page, baseUrl, DEFAULT_ROUTE_SET.find((route) => route.path === '/gallery'))
     await ensureDriveConnected(page)
   })
@@ -1080,7 +1074,7 @@ async function runSignOutChecks(summary, page, baseUrl) {
   async function openAdvancedAccountControls() {
     const button = routeButton(page, 'settings', /^Sign out$/)
     if (!(await button.isVisible().catch(() => false))) {
-      await page.getByRole('button', { name: /^Advanced$/ }).click()
+      await page.getByRole('button', { name: /^Advanced\b/i }).click()
     }
     await button.waitFor({ state: 'visible', timeout: 5000 })
   }
@@ -1127,7 +1121,7 @@ async function captureCards(summary, browser, baseUrl, ownerEmail, ownerPassword
       ['Us profile section', '/profile', async (page) => page.locator('[data-route="profile"] .cb-us-panel').first()],
       ['Plan card', '/plans', async (page) => page.locator('article').filter({ has: page.getByText('Bookstore date') }).first()],
       ['Theme tile', '/settings', async (page) => {
-        await page.getByRole('button', { name: /^Appearance$/ }).click()
+        await page.getByRole('button', { name: /^Appearance\b/i }).click()
         return themeTile(page, 'paper-hearts')
       }],
       ['Contract section', '/contract', async (page) => page.locator('article').first()],
@@ -1249,7 +1243,6 @@ async function run() {
       await themeTile(page, 'midnight-rose').click()
       await page.getByRole('button', { name: /Save changes/i }).click()
       await waitForSettingsSave(page)
-      await runTimelineWorkflows(summary, page, baseUrl, db)
       await runPlanWorkflows(summary, page, baseUrl)
       await runGalleryWorkflows(summary, page, baseUrl, fixtures, networkController, db, bucket)
       await captureCards(summary, browser, baseUrl, ownerEmail, ownerPassword)
