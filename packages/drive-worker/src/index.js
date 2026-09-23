@@ -385,7 +385,7 @@ async function driveFileToMediaRecord(env, coupleId, file) {
 async function listDriveRecords(env, coupleId) {
   const accessToken = await driveAccessToken(env, coupleId)
   const params = new URLSearchParams({
-    fields: 'files(id,name,mimeType,size,createdTime,modifiedTime,hasThumbnail,imageMediaMetadata(width,height,time),videoMediaMetadata(width,height,durationMillis,time)),nextPageToken',
+    fields: 'files(id,name,mimeType,size,createdTime,modifiedTime,hasThumbnail,imageMediaMetadata(width,height),videoMediaMetadata(width,height,durationMillis)),nextPageToken',
     includeItemsFromAllDrives: 'true',
     pageSize: '1000',
     q: `'${env.GOOGLE_DRIVE_FOLDER_ID}' in parents and trashed = false and (mimeType contains 'image/' or mimeType contains 'video/' or mimeType contains 'audio/')`,
@@ -395,7 +395,13 @@ async function listDriveRecords(env, coupleId) {
   const response = await fetch(`https://www.googleapis.com/drive/v3/files?${params}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
   })
-  if (!response.ok) throw new Error('drive-list-failed')
+  if (!response.ok) {
+    const failure = await response.json().catch(() => ({}))
+    const reason = failure?.error?.errors?.[0]?.reason || failure?.error?.status || ''
+    const message = failure?.error?.message || ''
+    console.error('drive-list-failed', { status: response.status, reason: String(reason).slice(0, 120), message: String(message).slice(0, 240) })
+    throw new Error('drive-list-failed')
+  }
   const data = await response.json()
   return Promise.all((data.files || []).map((file) => driveFileToMediaRecord(env, coupleId, file)))
 }
