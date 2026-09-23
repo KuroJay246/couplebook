@@ -152,7 +152,14 @@ function FavoriteSection({ canEdit, category, onAdd, onRemove, ownerId, search }
       </div>
       <div className="mt-4 flex flex-wrap gap-2">
         {filteredItems.map((item) => (
-          <button className="inline-flex items-center gap-2 rounded-full border border-[#E7D6CC] bg-[var(--cb-surface)] px-3 py-2 text-sm text-[#5A443B]" key={`${ownerId}-${category.key}-${item}`} onClick={canEdit ? () => onRemove(category, item) : undefined} type="button">
+          <button
+            aria-label={canEdit ? `Remove ${item} from ${category.label}` : item}
+            className="inline-flex items-center gap-2 rounded-full border border-[#E7D6CC] bg-[var(--cb-surface)] px-3 py-2 text-sm text-[#5A443B]"
+            key={`${ownerId}-${category.key}-${item}`}
+            onClick={canEdit ? () => onRemove(category, item) : undefined}
+            title={canEdit ? `Remove ${item}` : undefined}
+            type="button"
+          >
             <span>{item}</span>
             {canEdit ? <span aria-hidden="true">×</span> : null}
           </button>

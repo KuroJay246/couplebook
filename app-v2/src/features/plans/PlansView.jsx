@@ -46,6 +46,13 @@ function statusLabel(status) {
   return status
 }
 
+function formatPlanDate(value) {
+  if (!value) return ''
+  const parsed = new Date(`${value}T12:00:00`)
+  if (Number.isNaN(parsed.getTime())) return value
+  return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(parsed)
+}
+
 function PlanForm({ initialPlan, onCancel, onSave, saving }) {
   const [form, setForm] = useState(() => initialPlan || emptyForm())
 
@@ -101,7 +108,7 @@ function PlanCard({ onCancelPlan, onConvert, onEdit, onStatus, plan, saving }) {
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3>{plan.title}</h3>
-          <p>{plan.category}{plan.targetDate ? ` / ${plan.targetDate}` : ''}</p>
+          <p>{plan.category}{plan.targetDate ? ` / ${formatPlanDate(plan.targetDate)}` : ''}</p>
         </div>
         <ContextMenu
           label={`Actions for ${plan.title}`}
