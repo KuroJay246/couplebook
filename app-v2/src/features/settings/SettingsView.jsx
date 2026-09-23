@@ -1,5 +1,6 @@
 import {
   Bell,
+  CalendarDays,
   HardDrive,
   HeartHandshake,
   Info,
@@ -12,6 +13,7 @@ import {
   UserRound,
 } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { PrimaryButton, SecondaryButton } from '../../components/ui/Button.jsx'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx'
 import { ErrorState } from '../../components/ui/ErrorState.jsx'
@@ -319,13 +321,17 @@ function ProfileSettingsSection() {
           <p className="cb-kicker">Relationship & Profiles</p>
           <h3 className="cb-page-title mt-2 text-2xl">Use Us for profile details</h3>
           <p className="cb-body-copy mt-2 text-sm">Partner names, birthdays, shared relationship dates, and favorites live on the Us page so Settings stays focused on configuration.</p>
+          <div className="mt-5 flex flex-wrap gap-3">
+            <PrimaryButton as={Link} to="/profile"><HeartHandshake className="size-4" />Open Us</PrimaryButton>
+            <SecondaryButton as={Link} to="/favorites"><Sparkles className="size-4" />Open Favorites</SecondaryButton>
+          </div>
         </div>
       </div>
     </Surface>
   )
 }
 
-function DatesSettingsSection() {
+function DatesSettingsSection({ model }) {
   return (
     <Surface className="cb-page-frame">
       <div className="flex items-start gap-3">
@@ -334,6 +340,21 @@ function DatesSettingsSection() {
           <p className="cb-kicker">Important Dates</p>
           <h3 className="cb-page-title mt-2 text-2xl">Dates are managed from Us</h3>
           <p className="cb-body-copy mt-2 text-sm">Birthdays are partner dates. The primary anniversary is a couple-level relationship date.</p>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            <ContentCard>
+              <p className="cb-kicker">Next date</p>
+              <p className="mt-2 text-sm font-semibold" style={{ color: 'var(--cb-text)' }}>{model.relationship?.nextImportantDate?.label || 'No date saved yet'}</p>
+              <p className="cb-body-copy mt-1 text-sm">{model.relationship?.nextImportantDate?.countdownLabel || 'Add birthdays and milestones from Us.'}</p>
+            </ContentCard>
+            <ContentCard>
+              <p className="cb-kicker">Primary anniversary</p>
+              <p className="mt-2 text-sm font-semibold" style={{ color: 'var(--cb-text)' }}>{model.relationship?.primaryAnniversary?.dateLabel || 'No relationship date saved'}</p>
+              <p className="cb-body-copy mt-1 text-sm">{model.relationship?.primaryAnniversary?.countdownLabel || 'Set the relationship date from Us.'}</p>
+            </ContentCard>
+          </div>
+          <div className="mt-5">
+            <PrimaryButton as={Link} to="/profile"><CalendarDays className="size-4" />Manage important dates</PrimaryButton>
+          </div>
         </div>
       </div>
     </Surface>
@@ -551,7 +572,7 @@ function SettingsCategoryPane({ activeCategory, form, googleLinkState, googleLin
     return <AccountSettingsSection googleLinkState={googleLinkState} googleLinked={googleLinked} model={model} onLinkGoogle={onLinkGoogle} onSignOut={onSignOut} />
   }
   if (activeCategory === 'profiles') return <ProfileSettingsSection />
-  if (activeCategory === 'dates') return <DatesSettingsSection />
+  if (activeCategory === 'dates') return <DatesSettingsSection model={model} />
   if (activeCategory === 'appearance') return <AppearanceSettingsSection form={form} model={model} onUpdateField={onUpdateField} />
   if (activeCategory === 'media') return <MediaSettingsSection media={model.media} />
   if (activeCategory === 'notifications') {

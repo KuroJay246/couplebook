@@ -46,7 +46,7 @@ test('dashboard adopts the faithful MemoryBook layout without placeholder fallba
 
   assert.match(dashboardSource, /cb-home-redesign/)
   assert.match(dashboardSource, /AlbumLead/)
-  assert.match(dashboardSource, /Private Album/)
+  assert.match(dashboardSource, /Our archive/)
   assert.match(dashboardSource, /Open Album/)
   assert.match(dashboardSource, /Open Us/)
   assert.match(dashboardSource, /cb-home-clock/)

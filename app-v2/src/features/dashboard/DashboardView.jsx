@@ -5,9 +5,9 @@ import { PrimaryButton, SecondaryButton } from '../../components/ui/Button.jsx'
 function AlbumLead() {
   return (
     <Link className="cb-home-lead has-media-reference" to="/gallery">
-      <span className="cb-home-lead-label">Private Album</span>
-      <span className="cb-home-lead-title">Photos and videos live here now.</span>
-      <span className="cb-home-lead-copy">Open protected Drive previews, playback, uploads, and cleanup from the shared Album.</span>
+      <span className="cb-home-lead-label">Our archive</span>
+      <span className="cb-home-lead-title">The moments we keep.</span>
+      <span className="cb-home-lead-copy">Open the shared album to revisit photos, videos, and the stories around them.</span>
     </Link>
   )
 }
