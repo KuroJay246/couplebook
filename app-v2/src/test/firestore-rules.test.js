@@ -428,6 +428,34 @@ test('active members can perform valid emulator writes', { skip: !hasEmulator },
     date: '2026-07-21',
     sections: [{ kind: 'paragraph', content: 'Fictional text' }],
   }))
+  await assertSucceeds(setDoc(doc(db, 'couples', ids.couple, 'specialMoments', 'confession'), {
+    schemaVersion: 1,
+    revision: 2,
+    title: 'Fictional confession update',
+    subtitle: 'Safe runtime content',
+    date: '',
+    sections: [{ kind: 'paragraph', content: 'Fictional text' }],
+    mediaSlots: [
+      {
+        id: 'closing-video',
+        kind: 'video',
+        label: 'Closing video',
+        mediaId: 'drive_confession_video_001',
+        provider: 'google-drive',
+        required: true,
+        status: 'mapped',
+      },
+      {
+        id: 'background-audio',
+        kind: 'audio',
+        label: 'Background audio',
+        mediaId: 'drive_confession_audio_001',
+        provider: 'google-drive',
+        required: false,
+        status: 'optional',
+      },
+    ],
+  }))
 
   const memberTwoDb = authed(ids.memberTwo)
   await assertSucceeds(updateDoc(doc(memberTwoDb, 'couples', ids.couple, 'profiles', ids.memberTwo), {
@@ -573,6 +601,23 @@ test('write rules reject unauthorized, cross-couple, partner-private, and malfor
     revision: 1,
     title: 'Unsupported',
     sections: [],
+  }))
+  await assertFails(setDoc(doc(db, 'couples', ids.couple, 'specialMoments', 'confession'), {
+    schemaVersion: 1,
+    revision: 2,
+    title: 'Unsafe confession media',
+    sections: [{ kind: 'paragraph', content: 'Safe text.' }],
+    mediaSlots: [
+      {
+        id: 'unsafe-slot',
+        kind: 'image',
+        label: 'Unsafe slot',
+        mediaId: 'drive_confession_image_001',
+        provider: 'google-drive',
+        status: 'mapped',
+        url: 'https://temporary.example/private.jpg',
+      },
+    ],
   }))
   await assertFails(setDoc(doc(db, 'couples', ids.couple, 'plans', 'bad_plan'), {
     schemaVersion: 1,

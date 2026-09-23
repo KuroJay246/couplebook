@@ -168,11 +168,15 @@ function normalizeMediaSlots(rawSlots, warnings, options = {}) {
     const note = rejectUnsafeText(rawSlot.note, warnings, 'Media slot note') || ''
     const safeUrl = rejectUnsafeText(rawSlot.url, warnings, 'Media slot url')
     const url = resolveBridgeAssetUrl(safeUrl, bridgeBaseUrl)
+    const provider = toTrimmedString(rawSlot.provider).toLowerCase()
+    const mediaId = rejectUnsafeText(rawSlot.mediaId, warnings, 'Media slot media id')
 
     return [{
       id,
       label,
       kind,
+      mediaId,
+      provider: provider === 'google-drive' ? provider : '',
       required: rawSlot.required === true,
       status: normalizedStatus,
       note,

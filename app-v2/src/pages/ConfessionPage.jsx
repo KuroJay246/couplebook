@@ -1,9 +1,12 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useAuth } from '../auth/useAuth.js'
 import { ErrorState } from '../components/ui/ErrorState.jsx'
 import { LoadingState } from '../components/ui/LoadingState.jsx'
 import { useConfessionOwnerBridge } from '../features/specialMoments/useConfessionOwnerBridge.js'
 import { useSpecialMomentContent } from '../features/specialMoments/useSpecialMomentContent.js'
+import { createObjectUrlRegistry } from '../services/objectUrlLifecycle.js'
+import { fetchMediaBlobViaTrustedBackend, isTrustedMediaBackendConfigured } from '../services/trustedMediaBackendClient.js'
 
 function splitRuntimeParagraphs(text) {
   const normalized = String(text || '').trim()
@@ -189,6 +192,73 @@ function ConfessionMedia({ slotMap }) {
   )
 }
 
+function useTrustedConfessionSlots(mediaSlots) {
+  const { approvedUser, user } = useAuth()
+  const [backendSlots, setBackendSlots] = useState({})
+  const registryRef = useRef(null)
+  if (registryRef.current == null) registryRef.current = createObjectUrlRegistry()
+
+  const slots = useMemo(() => (Array.isArray(mediaSlots) ? mediaSlots : []), [mediaSlots])
+  const slotKey = useMemo(
+    () => slots.map((slot) => `${slot.id}:${slot.mediaId || ''}:${slot.url || ''}`).join('|'),
+    [slots],
+  )
+
+  useEffect(() => () => registryRef.current.revokeAll(), [])
+
+  useEffect(() => {
+    if (!user || !approvedUser?.coupleId || !isTrustedMediaBackendConfigured()) return undefined
+    const backendSlots = slots.filter((slot) => slot?.provider === 'google-drive' && slot?.mediaId && !slot?.url)
+    if (!backendSlots.length) return undefined
+
+    let cancelled = false
+    const createdUrls = []
+
+    async function loadSlot(slot) {
+      try {
+        const blob = await fetchMediaBlobViaTrustedBackend({
+          coupleId: approvedUser.coupleId,
+          mediaId: slot.mediaId,
+          mode: slot.kind === 'image' ? 'thumbnail' : 'stream',
+          user,
+        })
+        if (cancelled) return
+        const url = registryRef.current.create(blob)
+        createdUrls.push(url)
+        setBackendSlots((current) => ({
+          ...current,
+          [slot.id]: {
+            ...slot,
+            status: 'mapped',
+            url,
+          },
+        }))
+      } catch {
+        if (cancelled) return
+        setBackendSlots((current) => ({
+          ...current,
+          [slot.id]: {
+            ...slot,
+            status: slot.required ? 'pending' : 'optional',
+            url: '',
+          },
+        }))
+      }
+    }
+
+    for (const slot of backendSlots) void loadSlot(slot)
+    return () => {
+      cancelled = true
+      for (const url of createdUrls) registryRef.current.revoke(url)
+    }
+  }, [approvedUser?.coupleId, slotKey, slots, user])
+
+  return useMemo(
+    () => Object.fromEntries(slots.map((slot) => [slot.id, slot.url ? slot : backendSlots[slot.id] || slot])),
+    [backendSlots, slots],
+  )
+}
+
 function ConfessionLetter({ letterText }) {
   if (letterText.length === 0) {
     return (
@@ -266,7 +336,7 @@ function ConfessionExperience({ model, ownerBridge, recoveryToolsEnabled }) {
   const [opened, setOpened] = useState(false)
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
-  const slotMap = Object.fromEntries((model.mediaSlots || []).map((slot) => [slot.id, slot]))
+  const slotMap = useTrustedConfessionSlots(model.mediaSlots || [])
   const validPasswords = new Set(['mara', 'bighead', 'big head', 'mimi', 'mia'])
 
   function unlockCard(event) {

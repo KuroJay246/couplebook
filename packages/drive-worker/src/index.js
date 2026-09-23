@@ -372,7 +372,7 @@ async function driveFileToMediaRecord(env, coupleId, file) {
     height: imageMetadata.height || videoMetadata.height ? Number(imageMetadata.height || videoMetadata.height) : null,
     hasThumbnail: file.hasThumbnail === true,
     mediaId: await mediaIdForDriveFile(file.id),
-    mediaType: mimeType.startsWith('video/') ? 'video' : 'image',
+    mediaType: mimeType.startsWith('video/') ? 'video' : mimeType.startsWith('audio/') ? 'audio' : 'image',
     mimeType,
     modifiedTime: file.modifiedTime || '',
     name: file.name || '',
@@ -387,7 +387,7 @@ async function listDriveRecords(env, coupleId) {
   const params = new URLSearchParams({
     fields: 'files(id,name,mimeType,size,createdTime,modifiedTime,hasThumbnail,imageMediaMetadata(width,height,time),videoMediaMetadata(width,height,durationMillis,time)),nextPageToken',
     pageSize: '1000',
-    q: `'${env.GOOGLE_DRIVE_FOLDER_ID}' in parents and trashed = false and (mimeType contains 'image/' or mimeType contains 'video/')`,
+    q: `'${env.GOOGLE_DRIVE_FOLDER_ID}' in parents and trashed = false and (mimeType contains 'image/' or mimeType contains 'video/' or mimeType contains 'audio/')`,
   })
   const response = await fetch(`https://www.googleapis.com/drive/v3/files?${params}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
@@ -746,6 +746,7 @@ export const internals = {
   corsHeaders,
   decryptJson,
   driveThumbnailUrl,
+  driveFileToMediaRecord,
   encryptJson,
   firestoreBatchWrite,
   firestoreDocumentName,

@@ -142,6 +142,25 @@ test('Drive file media IDs are deterministic and do not expose raw Drive IDs', a
   assert.doesNotMatch(first, /drive_file_private_123/)
 })
 
+test('Drive sync records classify audio without persisting temporary links', async () => {
+  const record = await internals.driveFileToMediaRecord({
+    GOOGLE_DRIVE_FOLDER_ID: '17Ar4UK5_puORz9TE1dijIk2-qHgh7oIa',
+  }, 'couple_alpha', {
+    id: '1AudioDriveFileStableId',
+    name: 'confession-audio.mp3',
+    mimeType: 'audio/mpeg',
+    size: '12345',
+    createdTime: '2026-09-22T12:00:00.000Z',
+    modifiedTime: '2026-09-22T12:00:00.000Z',
+    webContentLink: 'https://temporary.example/download',
+  })
+
+  assert.equal(record.mediaType, 'audio')
+  assert.equal(record.mimeType, 'audio/mpeg')
+  assert.equal(record.provider, 'google-drive')
+  assert.doesNotMatch(JSON.stringify(record), /webContentLink|temporary|accessToken|refreshToken/i)
+})
+
 test('Drive thumbnail helper requests transient thumbnail metadata without alt media', () => {
   const url = internals.driveThumbnailUrl('drive_file_private_123')
 

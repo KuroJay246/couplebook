@@ -16,7 +16,7 @@ Status: PASS
 Evidence:
 
 - Firestore project `couplebook-97830` uses the `(default)` STANDARD / FIRESTORE_NATIVE database.
-- `npm run rules:drift` confirmed local Firestore rules exactly match deployed ruleset `87c20a73-269a-4531-bd36-dc9cdf6dc085`.
+- `npm run rules:drift` confirmed local Firestore rules exactly match deployed ruleset `06830d05-793f-4a9d-a3d8-8f07e66a02c2`.
 - `npm --prefix app-v2 run test:rules` passed 16/16 emulator-backed rules tests with no skips after adding explicit `owner` and `partner` role coverage.
 - Role expansion is constrained by authenticated UID, approved active user document, matching `coupleId`, active membership document, and allowed role.
 - Added denial coverage proving role names alone do not grant access when the account is unapproved or belongs to another couple.
@@ -37,14 +37,18 @@ Evidence:
 
 - Authentic Confession source works locally through the private bridge.
 - Local browser proof confirmed entry gate, original writing, four images, video, and audio render from `127.0.0.1:3003`.
+- Implemented production-safe Confession media slots that can carry stable Google Drive media IDs without temporary URLs, OAuth data, object URLs, or local paths.
+- Confession runtime now resolves Drive-backed media slots through the trusted media backend for authenticated approved users and revokes generated object URLs on cleanup.
+- Firestore rules now validate optional special moment `mediaSlots` and reject URL-bearing slots; deployed ruleset `06830d05-793f-4a9d-a3d8-8f07e66a02c2` matches local rules.
+- Focused tests passed for special moment media slot normalization, Firestore write preservation of existing slots, Drive/media index audio classification, and Firestore rules validation.
 
 Defect:
 
-- Production/PWA Confession still must not depend on localhost, local files, or the private bridge.
+- Production/PWA Confession content still needs actual production Firestore media-slot population with real Drive-indexed `mediaId` values and browser proof with the local bridge disabled.
 
 Next implementation action:
 
-- Inventory Confession media against the Drive index and trusted media backend; move the authentic content/media references to an authenticated production-safe source without exposing the private mapping file.
+- Inventory Confession media against the Drive index and trusted media backend; populate the Firestore Confession document with stable Drive media IDs without exposing the private mapping file.
 
 ## Settings Functionality
 

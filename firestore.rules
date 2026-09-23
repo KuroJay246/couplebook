@@ -70,6 +70,7 @@ service cloud.firestore {
     //   subtitle: string, <=180
     //   date: string YYYY-MM-DD or empty
     //   sections: list <=8, validated structurally in app service
+    //   mediaSlots: optional list <=8 of stable Google Drive media references
     //
     // couples/{coupleId}/auditEvents/{auditId}
     //   schemaVersion: 1
@@ -445,7 +446,7 @@ service cloud.firestore {
 
     function isValidSpecialMoment(momentType) {
       return isApprovedMomentType(momentType)
-        && hasOnly(['schemaVersion', 'revision', 'title', 'subtitle', 'date', 'sections'])
+        && hasOnly(['schemaVersion', 'revision', 'title', 'subtitle', 'date', 'sections', 'mediaSlots'])
         && hasAll(['schemaVersion', 'revision', 'title', 'sections'])
         && request.resource.data.schemaVersion == 1
         && hasNextRevision()
@@ -453,7 +454,34 @@ service cloud.firestore {
         && (!('subtitle' in request.resource.data) || isSafeString(request.resource.data.subtitle, 180))
         && (!('date' in request.resource.data) || isDateOrEmpty(request.resource.data.date))
         && request.resource.data.sections is list
-        && request.resource.data.sections.size() <= 8;
+        && request.resource.data.sections.size() <= 8
+        && (!('mediaSlots' in request.resource.data) || isValidSpecialMomentMediaSlots(request.resource.data.mediaSlots));
+    }
+
+    function isValidSpecialMomentMediaSlot(slot) {
+      return slot is map
+        && slot.keys().hasOnly(['id', 'label', 'kind', 'required', 'status', 'note', 'mediaId', 'provider'])
+        && isRequiredSafeString(slot.id, 80)
+        && isSafeString(slot.label, 120)
+        && slot.kind in ['image', 'video', 'audio']
+        && (!('required' in slot) || slot.required is bool)
+        && (!('status' in slot) || slot.status in ['mapped', 'pending', 'optional'])
+        && (!('note' in slot) || isSafeString(slot.note, 240))
+        && (!('mediaId' in slot) || (isSafeString(slot.mediaId, 120) && slot.mediaId.matches('^[A-Za-z0-9_-]{1,120}$')))
+        && (!('provider' in slot) || slot.provider == 'google-drive');
+    }
+
+    function isValidSpecialMomentMediaSlots(slots) {
+      return slots is list
+        && slots.size() <= 8
+        && (!(slots.size() >= 1) || isValidSpecialMomentMediaSlot(slots[0]))
+        && (!(slots.size() >= 2) || isValidSpecialMomentMediaSlot(slots[1]))
+        && (!(slots.size() >= 3) || isValidSpecialMomentMediaSlot(slots[2]))
+        && (!(slots.size() >= 4) || isValidSpecialMomentMediaSlot(slots[3]))
+        && (!(slots.size() >= 5) || isValidSpecialMomentMediaSlot(slots[4]))
+        && (!(slots.size() >= 6) || isValidSpecialMomentMediaSlot(slots[5]))
+        && (!(slots.size() >= 7) || isValidSpecialMomentMediaSlot(slots[6]))
+        && (!(slots.size() >= 8) || isValidSpecialMomentMediaSlot(slots[7]));
     }
 
     function isValidAuditEvent(coupleId) {

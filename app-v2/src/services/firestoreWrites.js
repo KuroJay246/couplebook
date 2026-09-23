@@ -630,6 +630,7 @@ export async function acceptContract(context) {
 export async function saveSpecialMomentText(momentType, payload, context) {
   const { coupleId, createDoc, firestore, getDocument, uid } = await assertWriteContext(context)
   const reference = docRef(firestore, specialMomentPath(coupleId, momentType), createDoc)
+  const snapshot = await getDocument(reference)
   const nextRevision = await resolveNextRevision(reference, payload.revision, getDocument, 'Special page')
   const sections = Array.isArray(payload.sections) ? payload.sections : []
   const next = {
@@ -647,6 +648,8 @@ export async function saveSpecialMomentText(momentType, payload, context) {
       }
     }),
   }
+  const existingMediaSlots = snapshot.exists() && Array.isArray(snapshot.data().mediaSlots) ? snapshot.data().mediaSlots : []
+  if (existingMediaSlots.length > 0) next.mediaSlots = existingMediaSlots
   return writeDocumentWithAudit(reference, next, undefined, {
     coupleId,
     createDoc,

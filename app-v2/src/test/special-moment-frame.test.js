@@ -130,6 +130,43 @@ test('special moment media slots resolve local bridge asset URLs without exposin
   assert.doesNotMatch(JSON.stringify(payload), /OUR MEMORIES|C:\\|\/Users\//i)
 })
 
+test('special moment media slots can carry stable production media ids without temporary URLs', () => {
+  const payload = normalizeSpecialMomentPayload('confession', {
+    moment: {
+      type: 'confession',
+      title: 'Recovered confession',
+      sections: [{ id: 'note', kind: 'note', content: 'Recovered text.' }],
+    },
+    mediaSlots: [
+      {
+        id: 'closing-video',
+        kind: 'video',
+        label: 'Closing video',
+        mediaId: 'drive_confession_video_001',
+        provider: 'google-drive',
+        required: true,
+        status: 'mapped',
+      },
+      {
+        id: 'background-audio',
+        kind: 'audio',
+        label: 'Background audio',
+        mediaId: 'drive_confession_audio_001',
+        provider: 'google-drive',
+        required: false,
+        status: 'optional',
+      },
+    ],
+  })
+
+  assert.equal(payload.status, 'ready')
+  assert.equal(payload.data.mediaSlots[0].mediaId, 'drive_confession_video_001')
+  assert.equal(payload.data.mediaSlots[0].provider, 'google-drive')
+  assert.equal(payload.data.mediaSlots[1].kind, 'audio')
+  assert.equal(payload.data.mediaSlots[0].url, '')
+  assert.doesNotMatch(JSON.stringify(payload), /blob:|thumbnailLink|webContentLink|accessToken|refreshToken/i)
+})
+
 test('special moment bridge rejects production, non-local, traversal, and unapproved keys', async () => {
   const production = await readLegacySpecialMoment('birthday', {
     env: { VITE_ENABLE_LEGACY_LOCAL_BRIDGE: 'true', VITE_LEGACY_LOCAL_BASE_URL: 'http://127.0.0.1:3000', MODE: 'production' },

@@ -18,7 +18,7 @@ export const MEDIA_SYNC_STATUS = Object.freeze({
 
 const SAFE_DRIVE_ID = /^[A-Za-z0-9_-]{10,200}$/
 const SAFE_MEDIA_ID = /^[A-Za-z0-9_-]{1,120}$/
-const SUPPORTED_DRIVE_MEDIA_PREFIXES = Object.freeze(['image/', 'video/'])
+const SUPPORTED_DRIVE_MEDIA_PREFIXES = Object.freeze(['image/', 'video/', 'audio/'])
 const UNSAFE_PERSISTED_URL_KEYS = Object.freeze([
   'accessToken',
   'blobUrl',
@@ -44,6 +44,7 @@ function isSupportedDriveMedia(mimeType) {
 function mediaTypeFromMime(mimeType) {
   if (String(mimeType || '').startsWith('video/')) return 'video'
   if (String(mimeType || '').startsWith('image/')) return 'image'
+  if (String(mimeType || '').startsWith('audio/')) return 'audio'
   return ''
 }
 
@@ -171,7 +172,7 @@ export function normalizeMediaIndexRecord(id, data, warnings = []) {
   const driveFolderId = safeString(data.driveFolderId, 200)
   const mimeType = safeString(data.mimeType, 120)
   const mediaType = safeString(data.mediaType, 20) || mediaTypeFromMime(mimeType)
-  if (!SAFE_MEDIA_ID.test(mediaId) || !SAFE_DRIVE_ID.test(driveFileId) || !SAFE_DRIVE_ID.test(driveFolderId) || !isSupportedDriveMedia(mimeType) || !['image', 'video'].includes(mediaType)) {
+  if (!SAFE_MEDIA_ID.test(mediaId) || !SAFE_DRIVE_ID.test(driveFileId) || !SAFE_DRIVE_ID.test(driveFolderId) || !isSupportedDriveMedia(mimeType) || !['image', 'video', 'audio'].includes(mediaType)) {
     warnings.push('Media index record had invalid stable Drive metadata and was withheld.')
     return null
   }

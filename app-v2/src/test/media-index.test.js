@@ -86,17 +86,19 @@ test('Drive files become stable media index records without temporary URLs', () 
   assert.doesNotMatch(serialized, /temporary|thumbnailLink|webViewLink|accessToken|objectUrl|signedUrl/)
 })
 
-test('media index accepts Drive videos and HEIC images but rejects unsupported files', () => {
+test('media index accepts Drive videos HEIC images and audio but rejects unsupported files', () => {
   const records = buildMediaIndexRecordsFromDriveFiles([
     driveFile({ id: '1LE1Vc1ydOGOFD4j2JghZq_WHPjHsz5db', name: 'CB_VID_0035.mp4', mimeType: 'video/mp4', videoMediaMetadata: { width: '720', height: '1280', durationMillis: '5000' } }),
     driveFile({ id: '1dFhVXirho_suEdz35KtwAIuJdDgXT_Vi', name: 'CB_IMG_0073.heic', mimeType: 'image/heif' }),
+    driveFile({ id: '1AudioDriveFileStableId', name: 'confession-audio.mp3', mimeType: 'audio/mpeg' }),
     driveFile({ id: '1ignoredUnsupportedFileId', name: 'notes.txt', mimeType: 'text/plain' }),
   ], { coupleId: 'couple_alpha' })
 
-  assert.equal(records.length, 2)
+  assert.equal(records.length, 3)
   assert.equal(records[0].mediaType, 'video')
   assert.equal(records[0].durationMillis, 5000)
   assert.equal(records[1].mimeType, 'image/heif')
+  assert.equal(records[2].mediaType, 'audio')
 })
 
 test('media index normalizer rejects temporary URL and credential fields', () => {
