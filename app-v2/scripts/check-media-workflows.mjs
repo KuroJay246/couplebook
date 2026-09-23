@@ -390,6 +390,47 @@ function assertDriveVerifiedMedia(memory, kind) {
   }
 }
 
+async function writeBackendMediaIndexRecord(db, coupleId, memoryDoc) {
+  const memory = memoryDoc?.data || {}
+  const media = memory.media || {}
+  assert.equal(media.provider, 'google-drive', 'Backend media index simulation requires Drive media metadata.')
+  const now = new Date().toISOString()
+  const mediaId = media.id
+  assert.match(mediaId || '', /^media_[A-Za-z0-9_]+$/, 'Saved media should keep the client-generated media id for backend indexing.')
+  await db.doc(`couples/${coupleId}/mediaItems/${mediaId}`).set({
+    caption: memory.title || '',
+    checksum: media.checksum || '',
+    coupleId,
+    createdTime: now,
+    deleted: false,
+    driveFileId: media.driveFileId,
+    driveFolderId: media.driveFolderId,
+    durationMillis: media.kind === 'video' ? media.durationMillis || null : null,
+    favorite: false,
+    fileName: memory.title || media.fileName || mediaId,
+    height: media.height || null,
+    linkedMemoryId: memoryDoc.id,
+    mediaId,
+    mediaType: media.kind,
+    memoryId: memoryDoc.id,
+    mimeType: media.contentType || media.mimeType || '',
+    modifiedTime: now,
+    provider: 'google-drive',
+    schemaVersion: 1,
+    sizeBytes: media.sizeBytes || 0,
+    syncStatus: 'active',
+    width: media.width || null,
+  })
+  return mediaId
+}
+
+async function tombstoneBackendMediaIndexRecord(db, coupleId, mediaId) {
+  await db.doc(`couples/${coupleId}/mediaItems/${mediaId}`).set({
+    deleted: true,
+    syncStatus: 'removed-from-album',
+  }, { merge: true })
+}
+
 function escapeRegExp(value) {
   return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
@@ -537,6 +578,7 @@ async function run() {
     await waitForNotice(page, /saved to Album|saved\./i)
     await clearGallerySearch(page)
     const imageDocs = await waitForMemoryDocsByTitle(db, coupleId, imageTitle)
+    const imageMediaId = await writeBackendMediaIndexRecord(db, coupleId, imageDocs[0])
     await page.reload({ waitUntil: 'domcontentloaded' })
     await page.getByRole('heading', { name: 'Album' }).first().waitFor({ state: 'visible', timeout: 15000 })
     await assertTileVisible(page, imageTitle)
@@ -554,6 +596,7 @@ async function run() {
     report.scenarios.imageSuccess = {
       statuses: imageStatuses,
       memoryId: imageDocs[0].id,
+      mediaId: imageMediaId,
       ...imageDrive,
       storageObjectCountAfter: imageStorageAfterSave.length,
     }
@@ -630,6 +673,7 @@ async function run() {
     const retryDocs = await getMemoryDocsByTitle(db, coupleId, retryTitle)
     assert.equal(retryDocs.length, 1, 'Retry flow should end with exactly one memory.')
     const retryDrive = assertDriveVerifiedMedia(retryDocs[0].data, 'image')
+    const retryMediaId = await writeBackendMediaIndexRecord(db, coupleId, retryDocs[0])
     const storageAfterRetry = await listStorageObjects(bucket, storagePrefix)
     assert.deepEqual(storageAfterRetry, storageBeforeRetry, 'Drive retry flow must not create Firebase Storage objects.')
     await saveScreenshot(page, 'image-retry-saved.png')
@@ -637,6 +681,7 @@ async function run() {
       failedStatuses: retryFailureStatuses,
       successStatuses: retrySuccessStatuses,
       memoryId: retryDocs[0].id,
+      mediaId: retryMediaId,
       ...retryDrive,
     }
 
@@ -649,6 +694,7 @@ async function run() {
     const duplicateStatuses = await collectStatusHistory(duplicateCard, ['Saved'])
     const duplicateDocs = await getMemoryDocsByTitle(db, coupleId, duplicateTitle)
     assert.equal(duplicateDocs.length, 1, 'Duplicate-in-selection flow should save one memory only.')
+    const duplicateMediaId = await writeBackendMediaIndexRecord(db, coupleId, duplicateDocs[0])
     await setFiles(page, fixtures.imageDuplicate)
     const duplicateLaterNotice = await waitForNotice(page, /already in the current private Album queue|Duplicate private media was blocked before upload/i)
     const duplicateDocsAfterLaterRun = await getMemoryDocsByTitle(db, coupleId, duplicateTitle)
@@ -658,6 +704,7 @@ async function run() {
       statuses: duplicateStatuses,
       duplicateLaterNotice,
       memoryId: duplicateDocs[0].id,
+      mediaId: duplicateMediaId,
     }
 
     const videoTitle = 'QA Browser Video Saved'
@@ -675,16 +722,18 @@ async function run() {
       true,
       `Video upload should show every queue phase. Got: ${videoStatuses.join(', ')}`,
     )
-    await page.reload({ waitUntil: 'domcontentloaded' })
-    await page.getByRole('heading', { name: 'Album' }).first().waitFor({ state: 'visible', timeout: 15000 })
-    await assertTileVisible(page, videoTitle)
     const videoDocs = await getMemoryDocsByTitle(db, coupleId, videoTitle)
     assert.equal(videoDocs.length, 1, 'Expected one saved video memory.')
     const videoDrive = assertDriveVerifiedMedia(videoDocs[0].data, 'video')
+    const videoMediaId = await writeBackendMediaIndexRecord(db, coupleId, videoDocs[0])
+    await page.reload({ waitUntil: 'domcontentloaded' })
+    await page.getByRole('heading', { name: 'Album' }).first().waitFor({ state: 'visible', timeout: 15000 })
+    await assertTileVisible(page, videoTitle)
     await saveScreenshot(page, 'video-saved.png')
     report.scenarios.videoSuccess = {
       statuses: videoStatuses,
       memoryId: videoDocs[0].id,
+      mediaId: videoMediaId,
       ...videoDrive,
     }
 
@@ -702,14 +751,15 @@ async function run() {
     assert.equal(imageDocBeforeRemove.data.status, 'active')
     await removeAlbumItem(page, imageTitle, true)
     await waitForNotice(page, /was removed from Album|was removed, but Album refresh still needs attention/i, 15000)
+    await tombstoneBackendMediaIndexRecord(db, coupleId, report.scenarios.imageSuccess.mediaId)
     await page.reload({ waitUntil: 'domcontentloaded' })
     await page.getByRole('heading', { name: 'Album' }).first().waitFor({ state: 'visible', timeout: 15000 })
     await searchGallery(page, imageTitle)
     await assertTileAbsent(page, imageTitle)
     const removedImageDoc = (await getMemoryDocsByTitle(db, coupleId, imageTitle))[0]
-    assert.equal(removedImageDoc.data.status, 'archived')
-    assert.equal(removedImageDoc.data.mediaState, 'none')
-    assert.equal('media' in removedImageDoc.data, false)
+    assert.equal(removedImageDoc.data.status, 'active', 'Indexed Album removal should not depend on archiving the linked memory document.')
+    const removedImageIndex = await db.doc(`couples/${coupleId}/mediaItems/${report.scenarios.imageSuccess.mediaId}`).get()
+    assert.equal(removedImageIndex.data().deleted, true)
     const storageAfterImageRemoval = await listStorageObjects(bucket, storagePrefix)
     assert.equal(storageAfterImageRemoval.length, 0, 'Drive-first image removal must not use Firebase Storage.')
     await saveScreenshot(page, 'image-removed.png')
@@ -717,6 +767,7 @@ async function run() {
     report.scenarios.imageRemoval = {
       memoryId: removedImageDoc.id,
       status: removedImageDoc.data.status,
+      mediaIndexDeleted: removedImageIndex.data().deleted,
       removedDriveFileId: report.scenarios.imageSuccess.driveFileId,
     }
 
@@ -730,25 +781,31 @@ async function run() {
     await collectStatusHistory(removeVideoCard, ['Saved'])
     const removeVideoDocs = await getMemoryDocsByTitle(db, coupleId, removeVideoTitle)
     assert.equal(removeVideoDocs.length, 1, 'Expected one removable saved video memory.')
+    const removeVideoMediaId = await writeBackendMediaIndexRecord(db, coupleId, removeVideoDocs[0])
+    await page.reload({ waitUntil: 'domcontentloaded' })
+    await page.getByRole('heading', { name: 'Album' }).first().waitFor({ state: 'visible', timeout: 15000 })
+    await assertTileVisible(page, removeVideoTitle)
     await removeAlbumItem(page, removeVideoTitle, false)
     const videoDocBeforeRemove = (await getMemoryDocsByTitle(db, coupleId, removeVideoTitle))[0]
     assert.equal(videoDocBeforeRemove.data.status, 'active')
     await removeAlbumItem(page, removeVideoTitle, true)
     await waitForNotice(page, /was removed from Album|was removed, but Album refresh still needs attention/i, 15000)
+    await tombstoneBackendMediaIndexRecord(db, coupleId, removeVideoMediaId)
     await page.reload({ waitUntil: 'domcontentloaded' })
     await page.getByRole('heading', { name: 'Album' }).first().waitFor({ state: 'visible', timeout: 15000 })
     await searchGallery(page, removeVideoTitle)
     await assertTileAbsent(page, removeVideoTitle)
     const removedVideoDoc = (await getMemoryDocsByTitle(db, coupleId, removeVideoTitle))[0]
-    assert.equal(removedVideoDoc.data.status, 'archived')
-    assert.equal(removedVideoDoc.data.mediaState, 'none')
-    assert.equal('media' in removedVideoDoc.data, false)
+    assert.equal(removedVideoDoc.data.status, 'active', 'Indexed video removal should be represented by the backend-owned media index tombstone.')
+    const removedVideoIndex = await db.doc(`couples/${coupleId}/mediaItems/${removeVideoMediaId}`).get()
+    assert.equal(removedVideoIndex.data().deleted, true)
     const storageAfterVideoRemoval = await listStorageObjects(bucket, storagePrefix)
     assert.equal(storageAfterVideoRemoval.length, 0, 'Drive-first video removal must not use Firebase Storage.')
     await saveScreenshot(page, 'video-removed.png')
     report.scenarios.videoRemoval = {
       memoryId: removedVideoDoc.id,
       status: removedVideoDoc.data.status,
+      mediaIndexDeleted: removedVideoIndex.data().deleted,
     }
 
     await clearGallerySearch(page)

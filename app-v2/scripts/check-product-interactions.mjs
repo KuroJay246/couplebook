@@ -29,8 +29,8 @@ const VIEWPORTS = Object.freeze([
 
 const ROUTES = Object.freeze([
   { path: '/login', heading: 'Continue with Google', fixture: browserRegressionSignedOutFixture },
+  { path: '/maintenance', heading: /No update is active|update/i, fixture: browserRegressionSignedOutFixture, public: true },
   { path: '/dashboard', heading: /Home/, fixture: browserRegressionAuthorizedFixture },
-  { path: '/timeline', heading: /Our Story/, fixture: browserRegressionAuthorizedFixture, detailButton: 'View memory' },
   { path: '/gallery', heading: /Album/, fixture: browserRegressionAuthorizedFixture },
   { path: '/profile', heading: /Us/, fixture: browserRegressionAuthorizedFixture },
   { path: '/favorites', heading: /Favorite Things/, fixture: browserRegressionAuthorizedFixture },
@@ -40,9 +40,10 @@ const ROUTES = Object.freeze([
   { path: '/birthday', heading: /Birthday/, fixture: browserRegressionAuthorizedFixture },
   { path: '/valentine', heading: /Valentine/, fixture: browserRegressionAuthorizedFixture },
   { path: '/confession', heading: /Confession/, fixture: browserRegressionAuthorizedFixture },
+  { path: '/missing-route-for-product-qa', heading: /That page is not in the book/i, fixture: browserRegressionAuthorizedFixture },
 ])
 
-const READ_ONLY_WORKFLOW_ROUTES = new Set(['/timeline', '/profile', '/favorites', '/plans', '/settings', '/contract', '/birthday', '/valentine', '/confession'])
+const READ_ONLY_WORKFLOW_ROUTES = new Set(['/profile', '/favorites', '/plans', '/settings', '/contract', '/birthday', '/valentine', '/confession'])
 
 function log(message) {
   process.stdout.write(`${message}\n`)
@@ -216,7 +217,7 @@ async function collectInteractionMetrics(page) {
         type: element.getAttribute('type') || '',
         name: accessibleText(element),
       }))
-    const headings = [...document.querySelectorAll('main h1, main h2, main h3')]
+    const headings = [...document.querySelectorAll('main h1, main h2, main h3, .birthday-greeting, .valentine-card h1, .confession-password-screen h1, .confession-card h2')]
       .filter(isVisible)
       .map((element) => ({ tag: element.tagName.toLowerCase(), text: element.innerText.trim() }))
 
@@ -251,7 +252,7 @@ function assertInteractionMetrics(route, viewport, metrics) {
     assert.deepEqual(tinyTargets, [], `${viewport.name} ${route.path} should keep touch targets usable.`)
   }
 
-  if (viewport.mode === 'mobile' && route.path !== '/login') {
+  if (viewport.mode === 'mobile' && route.path !== '/login' && route.public !== true) {
     assert.equal(metrics.mobileNavVisible, true, `${viewport.name} ${route.path} should keep mobile navigation available.`)
   }
 }
@@ -313,9 +314,7 @@ async function assertDialogInteraction(page, route, viewport) {
       closeButtonCount: dialogElement?.querySelectorAll('button[aria-label*="Close"], .lightbox-close, .modal-close, .modal-footer button').length || 0,
     }
   }, dialogSelector)
-  if (route.path === '/timeline') {
-    assert.equal(state.activeInsideDialog, true, `${viewport.name} ${route.path} dialog should move focus inside the modal.`)
-  }
+  assert.equal(state.activeInsideDialog, true, `${viewport.name} ${route.path} dialog should move focus inside the modal.`)
   assert.equal(state.activeVisible, true, `${viewport.name} ${route.path} dialog focus target should be visible.`)
   assert.equal(state.mediaElements, 0, `${viewport.name} ${route.path} dialog should not render private media elements.`)
   assert.equal(state.closeButtonCount > 0, true, `${viewport.name} ${route.path} dialog should expose a close button.`)
@@ -327,7 +326,7 @@ async function assertDialogInteraction(page, route, viewport) {
 }
 
 async function assertMobileNavigation(page, route, viewport) {
-  if (viewport.mode !== 'mobile' || route.path === '/login') return null
+  if (viewport.mode !== 'mobile' || route.path === '/login' || route.public === true) return null
 
   const menuButton = page.getByRole('button', { name: 'Open all navigation' })
   await menuButton.click()

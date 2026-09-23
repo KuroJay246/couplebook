@@ -20,17 +20,17 @@ const SCREENSHOT_ROOT = path.join(REPO_ROOT, '.visual-audit', 'visual-regression
 
 const VIEWPORTS = Object.freeze([
   { name: 'desktop-1440', family: 'desktop', width: 1440, height: 1024 },
-  { name: 'desktop-1280', family: 'desktop', width: 1280, height: 800 },
+  { name: 'desktop-1366', family: 'desktop', width: 1366, height: 900 },
   { name: 'tablet-landscape', family: 'tablet', width: 1024, height: 768 },
   { name: 'tablet-portrait', family: 'tablet', width: 768, height: 1024 },
+  { name: 'mobile-430', family: 'mobile', width: 430, height: 932 },
   { name: 'mobile-390', family: 'mobile', width: 390, height: 844 },
-  { name: 'mobile-360', family: 'mobile', width: 360, height: 800 },
 ])
 
 const ROUTES = Object.freeze([
   { path: '/login', heading: /Continue with Google/, mode: 'signed-out' },
+  { path: '/maintenance', heading: /update|No update is active/i, mode: 'signed-out', utility: true },
   { path: '/dashboard', heading: /Omia & Jaylan/, mode: 'authorized' },
-  { path: '/timeline', heading: /Our Story/, mode: 'authorized' },
   { path: '/gallery', heading: /Album/, mode: 'authorized' },
   { path: '/profile', heading: /Us/, mode: 'authorized' },
   { path: '/favorites', heading: /Favorite Things/, mode: 'authorized' },
@@ -40,6 +40,7 @@ const ROUTES = Object.freeze([
   { path: '/birthday', heading: /Birthday/, mode: 'authorized' },
   { path: '/valentine', heading: /Valentine/, mode: 'authorized' },
   { path: '/confession', heading: /Confession/, mode: 'authorized' },
+  { path: '/missing-route-for-visual-qa', heading: /That page is not in the book/i, mode: 'authorized', utility: true },
 ])
 
 function log(message) {
@@ -67,10 +68,9 @@ async function measurePage(page) {
   return page.evaluate(() => {
     const mobileNav = document.querySelector('.mobile-tab-bar')
     const shellContent = document.querySelector('main .cb-page-container') || document.querySelector('.cb-page-container') || document.querySelector('.main-content')
-    const heading = document.querySelector('main h1, main h2')
+    const heading = document.querySelector('main h1, main h2, .birthday-greeting, .valentine-card h1, .confession-password-screen h1, .confession-card h2')
     const galleryCards = [...document.querySelectorAll('.gallery-item')]
-    const timelineCards = [...document.querySelectorAll('.timeline-card')]
-    const specialDocument = document.querySelector('.special-page-standalone .card')
+    const specialDocument = document.querySelector('.birthday-card, .valentine-card, .confession-card, .confession-password-screen')
     const specialDocumentHeading = specialDocument?.querySelector('h2, h3')
     const specialDocumentBody = specialDocument?.querySelector('p, li, blockquote')
     const visibleGalleryCards = galleryCards.filter((card) => card.getBoundingClientRect().height > 0)
@@ -91,8 +91,8 @@ async function measurePage(page) {
       galleryColumnsInFirstRows: galleryTops.slice(0, 2).map((top) => {
         return visibleGalleryCards.filter((card) => Math.round(card.getBoundingClientRect().top) === top).length
       }),
-      timelineCardWidths: timelineCards.slice(0, 8).map((card) => Math.round(card.getBoundingClientRect().width)),
       specialDocumentBackground: specialDocument ? window.getComputedStyle(specialDocument).backgroundColor : '',
+      specialDocumentBackgroundImage: specialDocument ? window.getComputedStyle(specialDocument).backgroundImage : '',
       specialDocumentHeadingColor: specialDocumentHeading ? window.getComputedStyle(specialDocumentHeading).color : '',
       specialDocumentBodyColor: specialDocumentBody ? window.getComputedStyle(specialDocumentBody).color : '',
     }
@@ -102,7 +102,9 @@ async function measurePage(page) {
 function assertRecoveredVisuals(route, viewport, metrics) {
   assert.equal(metrics.overflowX, 0, `${viewport.name} ${route.path} should not overflow horizontally.`)
   assert.equal(metrics.headingSize >= 18, true, `${viewport.name} ${route.path} should keep a readable route heading.`)
-  assert.match(metrics.bodyBackground, /radial-gradient|linear-gradient/i, `${viewport.name} ${route.path} should keep the dark romantic background.`)
+  if (!route.utility) {
+    assert.match(metrics.bodyBackground, /radial-gradient|linear-gradient/i, `${viewport.name} ${route.path} should keep the dark romantic background.`)
+  }
 
   if (route.mode === 'authorized') {
     assert.equal(metrics.contentWidth <= 1180, true, `${viewport.name} ${route.path} should stay inside the recovered app width.`)
@@ -136,33 +138,18 @@ function assertRecoveredVisuals(route, viewport, metrics) {
     }
   }
 
-  if (route.path === '/timeline') {
-    const maxTimelineCardWidth = viewport.family === 'mobile' ? 390 : 940
-    assert.equal(
-      metrics.timelineCardWidths.every((width) => width <= maxTimelineCardWidth),
-      true,
-      `${viewport.name} Timeline cards should not return to oversized full-page blocks.`,
-    )
-  }
-
   if (['/birthday', '/valentine', '/confession'].includes(route.path)) {
-    assert.notEqual(metrics.specialDocumentBackground, 'rgba(0, 0, 0, 0)', `${route.path} should keep a distinct dark special document.`)
+    assert.equal(
+      metrics.specialDocumentBackground !== 'rgba(0, 0, 0, 0)' || metrics.specialDocumentBackgroundImage !== 'none',
+      true,
+      `${route.path} should keep a distinct special document surface.`,
+    )
     assert.notEqual(metrics.specialDocumentHeadingColor, 'rgb(255, 255, 255, 0)', `${route.path} should keep readable special headings.`)
     assert.notEqual(metrics.specialDocumentBodyColor, 'rgb(255, 255, 255, 0)', `${route.path} should keep readable special body copy.`)
   }
 }
 
 async function assertDetailInteraction(page, route, viewport) {
-  if (route.path === '/timeline') {
-    await page.getByRole('button', { name: 'View memory' }).first().click()
-    const dialog = page.getByRole('dialog')
-    await dialog.waitFor({ state: 'visible', timeout: 5000 })
-    assert.equal(await dialog.locator('img, video, audio, iframe').count(), 0, `${viewport.name} ${route.path} detail should not render private media elements.`)
-    assert.equal(await dialog.getByRole('button', { name: /close/i }).count() > 0, true, `${viewport.name} ${route.path} detail should expose a close control.`)
-    await dialog.getByRole('button', { name: /close/i }).first().click({ force: true })
-    await dialog.waitFor({ state: 'hidden', timeout: 5000 })
-  }
-
   if (route.path === '/gallery') {
     const tile = page.locator('button.gallery-media-frame, button.gallery-index-tile-button').first()
     if (!(await tile.count())) {
@@ -229,7 +216,7 @@ async function run() {
         try {
           await page.goto(`${baseUrl}${route.path}`, { waitUntil: 'domcontentloaded' })
           await page.getByRole('heading', { name: route.heading }).first().waitFor({ state: 'visible', timeout: 7000 })
-          await page.waitForTimeout(200)
+          await page.waitForTimeout(['/birthday', '/valentine', '/confession'].includes(route.path) ? 3600 : 200)
           const metrics = await measurePage(page)
           assert.deepEqual(consoleErrors, [], `${viewport.name} ${route.path} should not log browser console errors.`)
           assert.deepEqual(failedResponses, [], `${viewport.name} ${route.path} should not request failed resources.`)

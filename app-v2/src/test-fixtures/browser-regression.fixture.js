@@ -1,6 +1,22 @@
 import { LEGACY_LOCAL_DEV_SOURCE, LEGACY_LOCAL_STORAGE_SOURCE } from '../data/adapterUtils.js'
 
-function specialMomentFixture(type, title) {
+const SPECIAL_MOMENT_SURFACE_COPY = Object.freeze({
+  birthday: Object.freeze({
+    title: 'Happy Birthday Omia My Love',
+    subtitle: 'With all my heart ♥',
+  }),
+  valentine: Object.freeze({
+    title: 'Omia,\nWill you be my Valentine?',
+    subtitle: '',
+  }),
+  confession: Object.freeze({
+    title: 'I need to tell you something ml 💌',
+    subtitle: 'To the girl who fills my heart, Omia 💗',
+  }),
+})
+
+function specialMomentFixture(type, title = '') {
+  const surfaceCopy = SPECIAL_MOMENT_SURFACE_COPY[type] || { title, subtitle: 'Fictional runtime content used only for browser regression.' }
   return Object.freeze({
     status: 'ready',
     source: LEGACY_LOCAL_DEV_SOURCE,
@@ -8,8 +24,8 @@ function specialMomentFixture(type, title) {
       status: 'ready',
       content: Object.freeze({
         type,
-        title,
-        subtitle: 'Fictional runtime content used only for browser regression.',
+        title: surfaceCopy.title || title,
+        subtitle: surfaceCopy.subtitle,
         date: '2026-06-01',
         sections: Object.freeze([
           Object.freeze({
@@ -270,9 +286,9 @@ export const browserRegressionAuthorizedFixture = Object.freeze({
           warnings: Object.freeze([]),
         }),
         specialMoments: Object.freeze({
-          birthday: specialMomentFixture('birthday', 'Fictional birthday runtime chapter'),
-          valentine: specialMomentFixture('valentine', 'Fictional Valentine runtime chapter'),
-          confession: specialMomentFixture('confession', 'Fictional confession runtime chapter'),
+          birthday: specialMomentFixture('birthday'),
+          valentine: specialMomentFixture('valentine'),
+          confession: specialMomentFixture('confession'),
         }),
       }),
       warnings: Object.freeze([]),

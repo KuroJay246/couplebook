@@ -7,17 +7,18 @@ function joinClasses(...values) {
 
 function SectionAction({ action }) {
   if (!action) return null
+  const actionClassName = `button inline-flex min-h-11 items-center justify-center px-4 ${action.tone === 'secondary' ? 'button-secondary' : 'button-primary'}`
 
   if (action.href) {
     return (
-      <Link className={`button ${action.tone === 'secondary' ? 'button-secondary' : 'button-primary'}`} to={action.href}>
+      <Link className={actionClassName} to={action.href}>
         {action.label}
       </Link>
     )
   }
 
   return (
-    <button className={`button ${action.tone === 'secondary' ? 'button-secondary' : 'button-primary'}`} onClick={action.onClick} type="button">
+    <button className={actionClassName} onClick={action.onClick} type="button">
       {action.label}
     </button>
   )

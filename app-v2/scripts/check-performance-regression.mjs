@@ -17,7 +17,6 @@ const OUTPUT_ROOT = path.join(REPO_ROOT, '.visual-audit', 'performance-current')
 
 const ROUTES = Object.freeze([
   { path: '/dashboard', heading: /Omia & Jaylan/ },
-  { path: '/timeline', heading: /Our Story/ },
   { path: '/gallery', heading: /Album/ },
   { path: '/profile', heading: /Us/ },
   { path: '/favorites', heading: /Favorite Things/ },
@@ -362,7 +361,6 @@ async function run() {
     const initialRoutes = await measureInitialRoutes(page, baseUrl)
     const routeTransitions = await measureRouteTransitions(page, baseUrl)
     const modalOpen = [
-      await measureDetailDialog(page, baseUrl, '/timeline', { name: 'View memory' }),
       await measureGalleryInteraction(page, baseUrl),
     ]
     const performanceState = await readPerformanceState(page)

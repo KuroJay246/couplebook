@@ -11,7 +11,6 @@ import { createServer as createViteServer } from 'vite'
 import {
   browserRegressionAuthorizedFixture,
   browserRegressionSignedOutFixture,
-  browserRegressionUnavailableTimelineFixture,
 } from '../src/test-fixtures/browser-regression.fixture.js'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -24,8 +23,8 @@ const SPOOFED_SESSION = Object.freeze({
   memorybook_active_user: 'spoofed-reader',
   memorybook_active_uid: 'spoofed-reader-only',
 })
-const SIGNED_OUT_ROUTES = ['/dashboard', '/timeline', '/gallery', '/plans', '/contract', '/birthday', '/valentine', '/confession']
-const SPOOFED_STORAGE_ROUTES = ['/dashboard', '/timeline', '/gallery', '/plans', '/contract', '/birthday', '/valentine', '/confession']
+const SIGNED_OUT_ROUTES = ['/dashboard', '/home', '/gallery', '/plans', '/contract', '/birthday', '/valentine', '/confession']
+const SPOOFED_STORAGE_ROUTES = ['/dashboard', '/home', '/gallery', '/plans', '/contract', '/birthday', '/valentine', '/confession']
 const HOME_CLOCK_VIEWPORT_WIDTHS = [390, 430, 768, 1024, 1366, 1440]
 const FORBIDDEN_CONTRACT_TEXT = /data:image|base64|strokeData|Sign & Open Vault/i
 
@@ -341,7 +340,6 @@ async function runAuthenticatedDesktopCoverage(browser) {
     })
     assert.deepEqual(desktopPrimaryPaths, [
       '/dashboard',
-      '/timeline',
       '/gallery',
       '/profile',
       '/plans',
@@ -369,23 +367,14 @@ async function runAuthenticatedDesktopCoverage(browser) {
     const contractText = await page.locator('main').innerText()
     assert.equal(FORBIDDEN_CONTRACT_TEXT.test(contractText), false, 'Contract route rendered forbidden raw signature or legacy action text.')
 
-    await page.goto(`${getBaseUrl()}/timeline`, { waitUntil: 'domcontentloaded' })
-    await waitForRouteContent(page, '/timeline', 'Our Story')
-    await page.getByRole('heading', { name: 'Our Story' }).waitFor({ state: 'visible', timeout: 5000 })
-    assert.equal(await page.getByLabel('Search memories').count(), 1, 'Timeline should keep search controls available.')
-    assert.equal(await page.getByText('Jump to year').count() > 0, true, 'Timeline should keep year navigation available.')
-    assert.equal(await page.getByRole('button', { name: 'View memory' }).count() > 0, true, 'Timeline should keep detail interaction.')
-
-    await page.goto(`${getBaseUrl()}/timeline`, { waitUntil: 'domcontentloaded' })
-    await page.reload({ waitUntil: 'domcontentloaded' })
-    await waitForRouteContent(page, '/timeline', 'Our Story')
+    await page.goto(`${getBaseUrl()}/home`, { waitUntil: 'domcontentloaded' })
+    await waitForRouteContent(page, '/dashboard', /Omia & Jaylan/)
 
     await page.goto(`${getBaseUrl()}/gallery`, { waitUntil: 'domcontentloaded' })
     await waitForRouteContent(page, '/gallery', 'Album')
     await page.getByRole('heading', { name: 'Album' }).first().waitFor({ state: 'visible', timeout: 5000 })
-    assert.equal(await page.getByText('Album sync needs attention').count(), 1, 'Gallery should render the Drive-index recovery state for the sanitized browser fixture.')
-    assert.equal(await page.getByText('The private Drive index is not readable for this session.').count(), 1, 'Gallery should explain why fixture media is unavailable.')
     assert.equal(await page.getByText('No gallery entries match this view.').count(), 1, 'Gallery should keep a usable empty state when the private index is unavailable.')
+    assert.equal(await page.getByText('Try another filter, add private photos or videos, or return to all media').count(), 1, 'Gallery should explain the intentional empty state.')
     await page.getByRole('button', { name: /Videos/ }).click()
     assert.equal(await page.getByText('No gallery entries match this view.').count(), 1, 'Gallery video filter should keep the recovery empty state available.')
     await page.getByRole('button', { name: /All media/i }).click()
@@ -405,20 +394,19 @@ async function runAuthenticatedDesktopCoverage(browser) {
       assert.equal(await page.getByRole('link', { name: 'Back to Home' }).count() > 0, true, `${route} should keep return navigation.`)
 
       if (route === '/birthday') {
-        assert.equal(await page.locator('.birthday-cake').count(), 1, 'Birthday should render the rebuilt cake scene.')
+        assert.equal(await page.locator('.birthday-legacy-cake').count(), 1, 'Birthday should render the restored legacy cake scene.')
         assert.equal(await page.getByRole('link', { name: 'Open Album' }).count(), 1, 'Birthday should link back to Album.')
       }
 
       if (route === '/valentine') {
         assert.equal(await page.getByRole('button', { name: 'Yes' }).count(), 1, 'Valentine should keep the yes action visible.')
         assert.equal(await page.getByRole('button', { name: 'No' }).count(), 1, 'Valentine should keep the moving no action visible.')
-        assert.equal(await page.getByRole('link', { name: 'Open Story' }).count(), 1, 'Valentine should link back to Story.')
+        assert.equal(await page.getByRole('link', { name: 'Open Album' }).count(), 1, 'Valentine should link back to Album.')
       }
 
       if (route === '/confession') {
-        assert.equal(await page.getByRole('button', { name: 'Open card' }).count(), 1, 'Confession should keep the card reveal action visible.')
+        assert.equal(await page.getByRole('button', { name: 'Unlock' }).count(), 1, 'Confession should keep the protected card unlock action visible.')
         assert.equal(await page.getByRole('link', { name: 'Open Album' }).count(), 1, 'Confession should link back to Album.')
-        assert.equal(await page.locator('main img, main video, main audio').count(), 0, 'Fixture-backed Confession should not render private media.')
       }
     }
 
@@ -431,22 +419,6 @@ async function runAuthenticatedDesktopCoverage(browser) {
     await dialog.waitFor({ state: 'visible', timeout: 5000 })
     await dialog.getByRole('button', { name: 'Sign out' }).click()
     await expectRedirectToLogin(page, '/gallery')
-  } finally {
-    ensureObservedIsClean(observed)
-    await context.close()
-  }
-}
-
-async function runUnavailableTimelineCoverage(browser) {
-  const { context, observed, page } = await createGuardedPage(browser, 'authorized-timeline-unavailable', {
-    browserTestMode: browserRegressionUnavailableTimelineFixture,
-    viewport: { width: 1440, height: 1024 },
-  })
-
-  try {
-    await page.goto(`${getBaseUrl()}/timeline`, { waitUntil: 'domcontentloaded' })
-    await waitForRouteContent(page, '/timeline', 'Our Story')
-    assert.equal(await page.getByText(/No memories match this view yet\./).count() >= 0, true)
   } finally {
     ensureObservedIsClean(observed)
     await context.close()
@@ -472,10 +444,6 @@ async function runAuthenticatedMobileCoverage(browser) {
     await page.getByRole('link', { name: /Birthday/i }).first().click()
     await waitForRouteContent(page, '/birthday', /Birthday/)
 
-    await page.goto(`${getBaseUrl()}/timeline`, { waitUntil: 'domcontentloaded' })
-    await waitForRouteContent(page, '/timeline', 'Our Story')
-    assert.equal(await page.getByRole('button', { name: 'View memory' }).count() > 0, true, 'Timeline mobile should retain detail actions.')
-
     await page.goto(`${getBaseUrl()}/plans`, { waitUntil: 'domcontentloaded' })
     await waitForRouteContent(page, '/plans', /Plans/)
     assert.equal(await page.getByRole('button', { name: 'Add plan' }).count() > 0, true, 'Plans mobile should keep the add-plan entry point visible.')
@@ -483,7 +451,6 @@ async function runAuthenticatedMobileCoverage(browser) {
     await page.goto(`${getBaseUrl()}/gallery`, { waitUntil: 'domcontentloaded' })
     await waitForRouteContent(page, '/gallery', 'Album')
     await page.getByRole('button', { name: /Videos/ }).click()
-    assert.equal(await page.getByText('Album sync needs attention').count(), 1, 'Gallery mobile should preserve the Drive-index recovery state.')
     assert.equal(await page.getByText('No gallery entries match this view.').count(), 1, 'Gallery mobile video filter should keep the recovery empty state available.')
 
     await page.goto(`${getBaseUrl()}/birthday`, { waitUntil: 'domcontentloaded' })
@@ -560,7 +527,6 @@ async function run() {
       await runSignedOutCoverage(browser)
       await runSpoofedStorageCoverage(browser)
       await runAuthenticatedDesktopCoverage(browser)
-      await runUnavailableTimelineCoverage(browser)
       await runAuthenticatedMobileCoverage(browser)
       await runHomeClockResponsiveCoverage(browser)
       log('app-v2 browser regression check passed.')

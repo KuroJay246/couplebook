@@ -25,6 +25,7 @@ import './styles/pages/more.css'
 import './styles/pages/contract.css'
 import './styles/pages/special-moments.css'
 import './styles/pages/media-upload.css'
+import './styles/pages/maintenance.css'
 import { registerServiceWorker } from './pwa/registerServiceWorker.js'
 
 registerServiceWorker()
