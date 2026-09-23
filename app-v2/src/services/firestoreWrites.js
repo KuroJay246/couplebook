@@ -660,7 +660,12 @@ export async function saveSpecialMomentText(momentType, payload, context) {
   const { coupleId, createDoc, firestore, getDocument, uid } = await assertWriteContext(context)
   const reference = docRef(firestore, specialMomentPath(coupleId, momentType), createDoc)
   const snapshot = await getDocument(reference)
-  const nextRevision = await resolveNextRevision(reference, payload.revision, getDocument, 'Special page')
+  const currentRevision = currentRevisionFromSnapshot(snapshot)
+  const normalizedExpectedRevision = normalizeRevision(payload.revision)
+  if (normalizedExpectedRevision !== null && normalizedExpectedRevision !== currentRevision) {
+    throw new Error('Special page changed in another session. Refresh and try again.')
+  }
+  const nextRevision = currentRevision + 1
   const sections = Array.isArray(payload.sections) ? payload.sections : []
   const next = {
     schemaVersion: 1,

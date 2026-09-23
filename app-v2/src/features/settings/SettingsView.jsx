@@ -426,19 +426,23 @@ function AppStorageSettingsSection({ model }) {
         </div>
       </div>
       <div className="mt-5 grid gap-3">
-        {storageItems.map((item) => (
-          <ContentCard key={item.key}>
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold" style={{ color: 'var(--cb-text)' }}>{item.label}</p>
-                <p className="cb-body-copy mt-2 text-sm">{item.summary}</p>
-              </div>
-              <StatusBadge>{item.statusLabel}</StatusBadge>
-            </div>
-          </ContentCard>
-        ))}
+        {storageItems.map((item) => <StorageItemCard key={item.key} item={item} />)}
       </div>
     </Surface>
+  )
+}
+
+function StorageItemCard({ item }) {
+  return (
+    <ContentCard>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold" style={{ color: 'var(--cb-text)' }}>{item.label}</p>
+          <p className="cb-body-copy mt-2 text-sm">{item.summary}</p>
+        </div>
+        <StatusBadge>{item.statusLabel}</StatusBadge>
+      </div>
+    </ContentCard>
   )
 }
 
