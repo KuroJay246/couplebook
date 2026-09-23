@@ -1,6 +1,8 @@
 import { readRuntimeEnv } from '../data/adapterUtils.js'
 import { COUPLE_BOOK_DRIVE_FOLDER_ID } from './googleDriveMediaProvider.js'
 
+const localMediaBlobs = new Map()
+
 function normalizeBackendUrl(value) {
   return String(value || '').trim().replace(/\/+$/, '')
 }
@@ -141,6 +143,7 @@ export async function uploadMediaViaTrustedBackend({ checksum, coupleId, file, m
       modifiedTime: now,
     }
     writeLocalDriveFiles([metadata, ...readLocalDriveFiles()])
+    localMediaBlobs.set(mediaId, file)
     return {
       coupleId,
       driveFileId,
@@ -204,6 +207,7 @@ export async function disconnectDriveViaTrustedBackend({ coupleId, user }) {
 export async function removeMediaViaTrustedBackend({ coupleId, deleteOriginal = false, mediaId, user }) {
   if (isLocalTrustedMediaTestHookEnabled()) {
     writeLocalDriveFiles(readLocalDriveFiles().filter((entry) => entry.id !== mediaId && entry.mediaId !== mediaId))
+    localMediaBlobs.delete(mediaId)
     return { coupleId, deleteOriginal, mediaId, ok: true }
   }
 
@@ -217,6 +221,11 @@ export async function removeMediaViaTrustedBackend({ coupleId, deleteOriginal = 
 
 export async function fetchMediaBlobViaTrustedBackend({ coupleId, mediaId, mode = 'thumbnail', user }) {
   const safeMode = mode === 'stream' ? 'stream' : 'thumbnail'
+  if (isLocalTrustedMediaTestHookEnabled()) {
+    const file = localMediaBlobs.get(mediaId)
+    if (file instanceof Blob) return file.slice(0, file.size, file.type || 'application/octet-stream')
+    return new Blob([], { type: 'application/octet-stream' })
+  }
   return fetchMediaBackendBlob(`/api/drive/media/${encodeURIComponent(mediaId)}/${safeMode}`, {
     body: { coupleId },
     user,

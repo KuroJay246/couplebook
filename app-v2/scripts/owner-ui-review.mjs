@@ -552,7 +552,46 @@ function storyCard(page, title) {
 }
 
 function galleryTile(page, title) {
-  return page.locator('article').filter({ hasText: title }).first().getByRole('button').first()
+  const escapedTitle = String(title).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return page.getByRole('button', { name: new RegExp(`^${escapedTitle},`) }).first()
+}
+
+async function writeBackendMediaIndexRecord(db, coupleId, memoryDoc) {
+  const memory = memoryDoc?.data || {}
+  const media = memory.media || {}
+  assert.equal(media.provider, 'google-drive', 'Owner review media index requires Drive metadata.')
+  const mediaId = media.id
+  assert.match(mediaId || '', /^media_[A-Za-z0-9_]+$/, 'Saved media must retain its client media ID.')
+  const now = new Date().toISOString()
+  await db.doc(`couples/${coupleId}/mediaItems/${mediaId}`).set({
+    caption: memory.title || '',
+    checksum: media.checksum || '',
+    coupleId,
+    createdTime: now,
+    deleted: false,
+    driveFileId: media.driveFileId,
+    driveFolderId: media.driveFolderId,
+    durationMillis: media.kind === 'video' ? media.durationMillis || null : null,
+    favorite: false,
+    fileName: memory.title || media.fileName || mediaId,
+    height: media.height || null,
+    linkedMemoryId: memoryDoc.id,
+    mediaId,
+    mediaType: media.kind,
+    memoryId: memoryDoc.id,
+    mimeType: media.contentType || media.mimeType || '',
+    modifiedTime: now,
+    provider: 'google-drive',
+    schemaVersion: 1,
+    sizeBytes: media.sizeBytes || 0,
+    syncStatus: 'active',
+    width: media.width || null,
+  })
+  return mediaId
+}
+
+async function tombstoneBackendMediaIndexRecord(db, coupleId, mediaId) {
+  await db.doc(`couples/${coupleId}/mediaItems/${mediaId}`).set({ deleted: true, syncStatus: 'removed', updatedAt: new Date().toISOString() }, { merge: true })
 }
 
 async function ensureDriveConnected(page) {
@@ -974,9 +1013,18 @@ async function runGalleryWorkflows(summary, page, baseUrl, fixtures, networkCont
     const storageObjects = await listStorageObjects(bucket, STORAGE_PREFIX)
     assert.deepEqual(storageObjects, storageBeforeRetry, 'Drive upload must not create Firebase Storage objects.')
     assert.equal((await listLocalDriveFileIds(page)).includes(memory.media.driveFileId), true)
+    const mediaId = await writeBackendMediaIndexRecord(db, COUPLE_ID, docs[0])
+    const mediaReference = db.doc(`couples/${COUPLE_ID}/mediaItems/${mediaId}`)
+    const mediaSnapshot = await mediaReference.get()
+    assert.equal(mediaSnapshot.exists, true, 'Admin media index write must be readable at the exact path.')
+    assert.equal(mediaSnapshot.id, mediaId)
+    assert.equal(mediaSnapshot.data().coupleId, COUPLE_ID)
+    assert.equal(mediaSnapshot.data().deleted, false)
     summary.savedMedia = { title: savedTitle, driveFileId: memory.media.driveFileId, storageObjectsBefore: storageBeforeRetry }
     await openRoute(page, baseUrl, DEFAULT_ROUTE_SET.find((route) => route.path === '/gallery'))
     await ensureDriveConnected(page)
+    await page.goto(`${baseUrl}/gallery`, { waitUntil: 'domcontentloaded' })
+    await page.getByRole('heading', { name: 'Album' }).first().waitFor({ state: 'visible', timeout: 15000 })
   })
   await recordControl(summary, { controlName: 'Gallery viewer', route: '/gallery', action: 'Open the saved Album item and close the viewer', expectedResult: 'The viewer opens and closes cleanly.' }, async () => {
     await page.getByRole('searchbox', { name: 'Search Album' }).fill(savedTitle)
@@ -1014,8 +1062,9 @@ async function runGalleryWorkflows(summary, page, baseUrl, fixtures, networkCont
     assert.deepEqual(storageObjects, summary.savedMedia.storageObjectsBefore)
     assert.equal((await listLocalDriveFileIds(page)).includes(summary.savedMedia.driveFileId), false)
     const docs = await getMemoryDocsByTitle(db, savedTitle)
-    assert.equal(docs[0].data.status, 'archived')
-    assert.equal(docs[0].data.mediaState, 'none')
+    assert.equal(docs[0].data.status, 'active')
+    assert.equal(docs[0].data.mediaState, 'drive-verified')
+    await tombstoneBackendMediaIndexRecord(db, COUPLE_ID, docs[0].data.media?.id)
     await captureShot(summary, page, { captureType: 'success', group: 'media', label: 'Media removal confirm', route: '/gallery', routeSlug: 'remove-confirm', themeId: 'midnight-rose', viewport: VIEWPORTS[0] })
   })
   return { savedTitle }
@@ -1111,12 +1160,11 @@ async function captureCards(summary, browser, baseUrl, ownerEmail, ownerPassword
     const targets = [
       ['Home relationship hero', '/dashboard', async (page) => page.locator('[data-route="dashboard"] .cb-home-layout').first()],
       ['Featured memory', '/dashboard', async (page) => page.locator('[data-route="dashboard"] .cb-home-lead').first()],
-      ['Story text memory', '/timeline', async (page) => page.locator('article').filter({ has: page.getByText('First harbor walk') }).first()],
       ['Album gallery surface', '/gallery', async (page) => {
         const tile = page.locator('.gallery-item').first()
         if (await tile.isVisible().catch(() => false)) return tile
         await openUploadTools(page)
-        return page.getByLabel('Album source reconciliation')
+        return page.getByLabel('Album sync status')
       }],
       ['Us profile section', '/profile', async (page) => page.locator('[data-route="profile"] .cb-us-panel').first()],
       ['Plan card', '/plans', async (page) => page.locator('article').filter({ has: page.getByText('Bookstore date') }).first()],

@@ -65,7 +65,8 @@
 }
 
 .cb-home-lead {
-  min-height: clamp(18rem, 34vw, 28rem);
+  align-self: start;
+  min-height: clamp(12rem, 22vw, 18rem);
   display: flex;
   flex-direction: column;
   justify-content: end;
