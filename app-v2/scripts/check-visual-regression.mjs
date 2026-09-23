@@ -17,6 +17,7 @@ const __dirname = path.dirname(__filename)
 const APP_ROOT = path.resolve(__dirname, '..')
 const REPO_ROOT = path.resolve(APP_ROOT, '..')
 const SCREENSHOT_ROOT = path.join(REPO_ROOT, '.visual-audit', 'visual-regression-current')
+const VISUAL_TEST_PORT = 5180
 
 const VIEWPORTS = Object.freeze([
   { name: 'desktop-1440', family: 'desktop', width: 1440, height: 1024 },
@@ -177,7 +178,8 @@ async function run() {
     server: {
       hmr: false,
       host: 'localhost',
-      port: 0,
+      port: VISUAL_TEST_PORT,
+      strictPort: true,
     },
   })
   await server.listen()
