@@ -57,7 +57,7 @@ test('gallery route uses the Drive-index Album feature hook and media view', asy
   assert.match(galleryViewSource, /gallery-media-library-grid/)
   assert.match(galleryViewSource, /gallery-index-tile/)
   assert.match(galleryViewSource, /drive-indexed/)
-  assert.match(galleryViewSource, /mediaTileAspectStyle/)
+  assert.doesNotMatch(galleryViewSource, /mediaTileAspectStyle/)
   assert.doesNotMatch(galleryViewSource, /Manage Media & Sync/)
   assert.doesNotMatch(galleryViewSource, /Album will not open a Google OAuth popup/)
   assert.doesNotMatch(galleryViewSource, /Shared media service/)

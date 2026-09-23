@@ -30,7 +30,7 @@ const FILTERS = [
   { key: 'photos', label: 'Photos' },
   { key: 'videos', label: 'Videos' },
   { key: 'favorites', label: 'Favorites' },
-  { key: 'unlinked', label: 'Unlinked' },
+  { key: 'unlinked', label: 'Not in a memory' },
 ]
 const MAX_THUMBNAIL_PRELOAD_ITEMS = 160
 const THUMBNAIL_PRELOAD_CONCURRENCY = 8
@@ -44,15 +44,6 @@ function galleryTileLabel(item) {
   ]
     .filter(Boolean)
     .join(', ')
-}
-
-function mediaTileAspectStyle(item) {
-  const width = Number(item.media.width)
-  const height = Number(item.media.height)
-  if (width > 0 && height > 0) {
-    return { aspectRatio: `${width} / ${height}` }
-  }
-  return { aspectRatio: item.media.kind === 'video' ? '16 / 9' : '4 / 3' }
 }
 
 function formatDuration(durationMillis) {
@@ -143,7 +134,6 @@ function IndexedGalleryTile({ item, onSelect, onToggleSelection, previewKind, pr
         aria-label={selectionMode ? `${selected ? 'Deselect' : 'Select'} ${galleryTileLabel(item)}` : galleryTileLabel(item)}
         className="gallery-index-tile-button"
         onClick={tileAction}
-        style={mediaTileAspectStyle(item)}
         type="button"
       >
         <GalleryTileMedia isIndexedDriveMedia previewError={previewError} previewKind={previewKind} previewPlaceholder={previewPlaceholder} previewUrl={previewUrl} />
@@ -164,7 +154,6 @@ function StandardGalleryTile({ duration, item, onSelect, onToggleSelection, prev
         aria-label={selectionMode ? `${selected ? 'Deselect' : 'Select'} ${galleryTileLabel(item)}` : galleryTileLabel(item)}
         className={`gallery-media-frame ${isVideo ? 'is-video' : item.media.kind === 'image' ? 'is-photo' : item.specialMoment.isSpecial ? 'is-special' : 'is-memory'}`}
         onClick={tileAction}
-        style={mediaTileAspectStyle(item)}
         type="button"
       >
         <div className="gallery-tile-art" aria-hidden="true">
