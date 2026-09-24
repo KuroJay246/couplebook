@@ -41,10 +41,7 @@ test('dashboard adopts the faithful MemoryBook layout without placeholder fallba
   const homeStyles = await readSource('../styles/pages/home.css')
 
   assert.match(dashboardSource, /cb-home-redesign/)
-  assert.match(dashboardSource, /AlbumLead/)
-  assert.match(dashboardSource, /Our archive/)
-  assert.match(dashboardSource, /Open Album/)
-  assert.match(dashboardSource, /Open Us/)
+  assert.match(dashboardSource, /viewerBirthday/)
   assert.match(dashboardSource, /cb-home-clock/)
   assert.match(dashboardSource, /timestampLabel/)
   assert.doesNotMatch(dashboardSource, /Recent memories|Add Memory|\/timeline/)

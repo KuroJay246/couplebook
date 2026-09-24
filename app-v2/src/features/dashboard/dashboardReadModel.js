@@ -115,11 +115,13 @@ function normalizeParticipants(profileSource, approvedUser) {
 
 function buildHeroSection({ approvedUser, participants, sourceState, now }) {
   const readerName = toTrimmedString(approvedUser?.profileName) || toTrimmedString(approvedUser?.username) || 'the two of you'
+  const coupleTitle = participants.map((participant) => participant.shortName).filter(Boolean).slice(0, 2).join(' & ') || readerName
   const participantCount = participants.length
   const unavailableCount = sourceState.totals.unavailable
   return {
     eyebrow: 'Private home',
     title: `Open to the page ${readerName} left waiting.`,
+    coupleTitle,
     description: 'Private photos, important dates, special moments, and plans in one warm place.',
     timestampLabel: formatClockLabel(now),
     dateLabel: formatLongDateLabel(now),
@@ -143,7 +145,12 @@ function filterAnniversaryParticipants(participants, settingsSource) {
   return participants
 }
 
-function buildMilestonesSection({ participants, settingsSource, now }) {
+function buildMilestonesSection({ approvedUser, participants, settingsSource, now }) {
+  const viewerNames = new Set([
+    approvedUser?.username,
+    approvedUser?.displayName,
+    approvedUser?.profileName,
+  ].map((value) => toTrimmedString(value).toLowerCase()).filter(Boolean))
   const anniversaryCards = filterAnniversaryParticipants(participants, settingsSource).flatMap((participant) => {
     if (!participant.joinedDate) return []
     const duration = calculateDurationSince(participant.joinedDate, now)
@@ -162,6 +169,7 @@ function buildMilestonesSection({ participants, settingsSource, now }) {
     return [{
       id: `${participant.username.toLowerCase()}-birthday`,
       label: `${participant.shortName}'s birthday`,
+      isViewer: [participant.username, participant.displayName, participant.shortName].some((value) => viewerNames.has(toTrimmedString(value).toLowerCase())),
       dateLabel: formatDateLabel(participant.birthday),
       countdownLabel: details.isToday ? 'Today' : `${details.days}d ${details.hours}h ${details.minutes}m`,
       ageLabel: details.nextAge ? `Turning ${details.nextAge}` : 'Birthday not available',
@@ -169,12 +177,15 @@ function buildMilestonesSection({ participants, settingsSource, now }) {
     }]
   })
 
+  const viewerBirthday = birthdayCards.find((card) => card.isViewer) || null
+
   return {
     eyebrow: 'Milestones',
     title: 'Dates worth holding close',
     description: 'Anniversaries and birthdays from Us.',
     anniversaryCards,
     birthdayCards,
+    viewerBirthday,
     hasContent: anniversaryCards.length > 0 || birthdayCards.length > 0,
     emptyState: {
       title: 'No important dates yet.',
@@ -282,7 +293,7 @@ export function buildDashboardReadModel({
   }
   const participants = normalizeParticipants(resolvedProfileSource, approvedUser)
   const sourceState = buildSourceStateSection(snapshotWithDomainSources)
-  const milestones = buildMilestonesSection({ participants, settingsSource: resolvedSettingsSource, now })
+  const milestones = buildMilestonesSection({ approvedUser, participants, settingsSource: resolvedSettingsSource, now })
   return {
     hero: buildHeroSection({ approvedUser, participants, sourceState, now }),
     todayInUs: buildTodayInUsSection({ milestones }),

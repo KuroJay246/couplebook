@@ -65,6 +65,7 @@ function getRouteItems(paths) {
 
 function SidebarContent({ collapsed = false, groups, onNavigate, onRequestSignOut, onToggleCollapsed }) {
   const { approvedUser, user } = useAuth()
+  const [photoFailed, setPhotoFailed] = useState(false)
   const displayName = surfaceDisplayName(approvedUser?.displayName || approvedUser?.username || user?.email) || 'Private reader'
 
   return (
@@ -139,15 +140,7 @@ function SidebarContent({ collapsed = false, groups, onNavigate, onRequestSignOu
       <div className="shrink-0 border-t p-3" style={{ borderColor: 'var(--cb-nav-border)' }}>
         <p className={collapsed ? 'sr-only' : 'cb-kicker px-3'}>{displayName}</p>
         <div className={`mt-2 flex items-center ${collapsed ? 'justify-center' : 'gap-3'} rounded-2xl px-2.5 py-2.5`} style={{ background: 'color-mix(in srgb, var(--cb-surface) 88%, transparent)' }}>
-          <div
-            className="grid size-9 shrink-0 place-items-center rounded-full text-xs font-bold uppercase"
-            style={{
-              background: 'color-mix(in srgb, var(--cb-accent-soft) 88%, transparent)',
-              color: 'var(--cb-text)',
-            }}
-          >
-            {(displayName || 'A').slice(0, 1)}
-          </div>
+          {user?.photoURL && !photoFailed ? <img alt="" className="size-9 shrink-0 rounded-full object-cover" onError={() => setPhotoFailed(true)} src={user.photoURL} /> : <div className="grid size-9 shrink-0 place-items-center rounded-full text-xs font-bold uppercase" style={{ background: 'color-mix(in srgb, var(--cb-accent-soft) 88%, transparent)', color: 'var(--cb-text)' }}>{(displayName || 'A').slice(0, 1)}</div>}
           <div className={collapsed ? 'sr-only' : 'min-w-0 flex-1'}>
             <p className="truncate text-xs font-semibold" style={{ color: 'var(--cb-text)' }}>Private access</p>
             <p className="truncate text-[10px]" style={{ color: 'var(--cb-text-muted)' }}>{user?.email}</p>

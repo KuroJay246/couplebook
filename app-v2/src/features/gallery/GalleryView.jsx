@@ -30,7 +30,6 @@ const FILTERS = [
   { key: 'photos', label: 'Photos' },
   { key: 'videos', label: 'Videos' },
   { key: 'favorites', label: 'Favorites' },
-  { key: 'unlinked', label: 'Not in a memory' },
 ]
 const MAX_THUMBNAIL_PRELOAD_ITEMS = 160
 const THUMBNAIL_PRELOAD_CONCURRENCY = 8
