@@ -138,7 +138,7 @@ function ThemeTile({ active, onSelect, theme }) {
   )
 }
 
-function NotificationSettingsSection({ notifications, onToggle, values }) {
+function NotificationSettingsSection({ notifications, onRequestPermission, onToggle, values }) {
   return (
     <Surface className="cb-page-frame">
       <div className="flex flex-col gap-4 border-b pb-4 sm:flex-row sm:items-start sm:justify-between" style={{ borderColor: 'var(--cb-border)' }}>
@@ -164,9 +164,10 @@ function NotificationSettingsSection({ notifications, onToggle, values }) {
       <InlineAlert
         className="mt-5"
         tone="info"
-        title="Permission is not requested automatically"
-        description={notifications?.backendBoundary}
+        title="Notifications stay on this device"
+        description="Couple Book can request browser permission for future in-app reminders while this site is open. Background push and scheduled alerts are not enabled."
       />
+      {notifications?.permission === 'default' ? <SecondaryButton className="mt-4" onClick={onRequestPermission}>Allow browser notifications</SecondaryButton> : null}
 
       <div className="mt-5 grid gap-4 lg:grid-cols-2">
         {(notifications?.categories || []).map((category) => (
@@ -549,13 +550,13 @@ function AdvancedSettingsSection({ model }) {
   )
 }
 
-function SettingsCategoryPane({ activeCategory, form, googleLinkState, googleLinked, model, onLinkGoogle, onSignOut, onToggleNotification, onUpdateField, user }) {
+function SettingsCategoryPane({ activeCategory, form, googleLinkState, googleLinked, model, notificationModel, onLinkGoogle, onRequestNotificationPermission, onSignOut, onToggleNotification, onUpdateField, user }) {
   if (activeCategory === 'account') {
     return <AccountSettingsSection googleLinkState={googleLinkState} googleLinked={googleLinked} model={model} onLinkGoogle={onLinkGoogle} onSignOut={onSignOut} user={user} />
   }
   if (activeCategory === 'appearance') return <AppearanceSettingsSection form={form} model={model} onUpdateField={onUpdateField} />
   if (activeCategory === 'notifications') {
-    return <NotificationSettingsSection notifications={model.notifications} onToggle={onToggleNotification} values={form.notifications} />
+    return <NotificationSettingsSection notifications={notificationModel} onRequestPermission={onRequestNotificationPermission} onToggle={onToggleNotification} values={form.notifications} />
   }
   if (activeCategory === 'privacy') {
     return <PrivacySettingsSection model={model} />
@@ -572,11 +573,21 @@ export function SettingsView({ compatibilityError, compatibilityState, model, on
   const [draft, setDraft] = useState({})
   const [signOutState, setSignOutState] = useState({ open: false, pending: false })
   const [googleLinkState, setGoogleLinkState] = useState({ kind: '', message: '', pending: false })
+  const [notificationPermission, setNotificationPermission] = useState(() => (typeof Notification !== 'undefined' ? Notification.permission : 'unsupported'))
   const [status, setStatus] = useState({ kind: '', message: '', saving: false })
   const [activeCategory, setActiveCategory] = useState('account')
   const form = useMemo(() => ({ ...loadedForm, ...draft, revision: loadedForm.revision }), [draft, loadedForm])
   const dirty = hasChanges(loadedForm, form)
   const googleLinked = isGoogleProviderLinked(user)
+  const notificationModel = useMemo(() => ({ ...model.notifications, permission: notificationPermission, permissionLabel: notificationPermission === 'granted' ? 'Allowed on this device' : notificationPermission === 'denied' ? 'Blocked by browser' : notificationPermission === 'unsupported' ? 'Not supported here' : 'Not requested', permissionTone: notificationPermission === 'granted' ? 'success' : notificationPermission === 'denied' ? 'error' : 'warning' }), [model.notifications, notificationPermission])
+
+  async function requestNotificationPermission() {
+    if (typeof Notification === 'undefined') {
+      setNotificationPermission('unsupported')
+      return
+    }
+    setNotificationPermission(await Notification.requestPermission())
+  }
 
   function updateField(key, value) {
     setDraft((current) => ({ ...current, [key]: value }))
@@ -678,7 +689,9 @@ export function SettingsView({ compatibilityError, compatibilityState, model, on
             googleLinkState={googleLinkState}
             googleLinked={googleLinked}
             model={model}
+            notificationModel={notificationModel}
             onLinkGoogle={handleLinkGoogle}
+            onRequestNotificationPermission={requestNotificationPermission}
             onSignOut={confirmSignOut}
             onToggleNotification={updateNotificationPreference}
             onUpdateField={updateField}
