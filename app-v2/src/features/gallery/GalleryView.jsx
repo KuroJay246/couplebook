@@ -24,6 +24,8 @@ import { groupGalleryItemsByDate, selectFilteredGalleryItems } from './gallerySe
 import { QUEUE_STATUS, queueStatusLabel, queueStatusTone } from './useMediaUploadQueue.js'
 import { useMediaUploadQueue } from './useMediaUploadQueue.js'
 import { useAuth } from '../../auth/useAuth.js'
+import { useFavoritesSource } from '../favorites/useFavoritesSource.js'
+import { useOwnerWrite } from '../editing/useOwnerWrite.js'
 
 const FILTERS = [
   { key: 'all', label: 'All media' },
@@ -255,18 +257,21 @@ function LightboxStage({ item, onLoadStream, streamStatus }) {
   )
 }
 
-function LightboxActions({ canStep, hasVerifiedPrivateMedia, item, onNext, onPrevious, onRemove }) {
+function LightboxActions({ canStep, hasVerifiedPrivateMedia, item, onFavorite, onNext, onPrevious, onRemove, favoriteSaving }) {
   return (
     <div className="flex flex-wrap gap-2">
       {canStep ? <SecondaryButton className="border-white/20 bg-white/5 text-white hover:bg-white/10" onClick={onPrevious}>Previous</SecondaryButton> : null}
       {canStep ? <SecondaryButton className="border-white/20 bg-white/5 text-white hover:bg-white/10" onClick={onNext}>Next</SecondaryButton> : null}
+      <SecondaryButton aria-pressed={item.media.favorite === true} className="border-white/20 bg-white/5 text-white hover:bg-white/10" disabled={favoriteSaving} onClick={() => onFavorite(item)}>
+        <Heart className="size-4" fill={item.media.favorite ? 'currentColor' : 'none'} />{item.media.favorite ? 'Favorited' : 'Favorite'}
+      </SecondaryButton>
       {hasVerifiedPrivateMedia ? <SecondaryButton className="border-white/20 bg-white/5 text-white hover:bg-white/10" onClick={() => onRemove(item)}>Remove</SecondaryButton> : null}
       {item.media.status === 'drive-indexed' ? <DangerButton onClick={() => onRemove(item, { deleteOriginal: true })}>Delete original</DangerButton> : null}
     </div>
   )
 }
 
-function GalleryLightbox({ item, items, onClose, onLoadStream, onNext, onPrevious, onRemove, streamStatus }) {
+function GalleryLightbox({ item, items, onClose, onFavorite, onLoadStream, onNext, onPrevious, onRemove, favoriteSaving, streamStatus }) {
   const titleId = useId()
   const onNextRef = useRef(onNext)
   const onPreviousRef = useRef(onPrevious)
@@ -319,7 +324,7 @@ function GalleryLightbox({ item, items, onClose, onLoadStream, onNext, onPreviou
             <h3 id={titleId}>{item.title}</h3>
             <p>{item.displayDate || ''}</p>
           </div>
-          <LightboxActions canStep={canStep} hasVerifiedPrivateMedia={hasVerifiedPrivateMedia} item={item} onNext={onNext} onPrevious={onPrevious} onRemove={onRemove} />
+          <LightboxActions canStep={canStep} favoriteSaving={favoriteSaving} hasVerifiedPrivateMedia={hasVerifiedPrivateMedia} item={item} onFavorite={onFavorite} onNext={onNext} onPrevious={onPrevious} onRemove={onRemove} />
         </div>
       </dialog>
     </div>,
@@ -650,18 +655,20 @@ function GalleryGrid({ grouped, onSelect, onToggleSelection, selectedKeys, selec
   )
 }
 
-function GalleryDialogs({ confirmRemoval, filtered, loadSelectedPreview, removeState, selectedItem, selectedItemWithPreview, selectedStreamStatus, setRemoveState, setSelectedItem, showNeighbor }) {
+function GalleryDialogs({ confirmRemoval, favoriteSaving, filtered, loadSelectedPreview, onFavorite, removeState, selectedItem, selectedItemWithPreview, selectedStreamStatus, setRemoveState, setSelectedItem, showNeighbor }) {
   return (
     <>
       <GalleryLightbox
         item={selectedItemWithPreview}
         items={filtered}
         onClose={() => setSelectedItem(null)}
+        onFavorite={onFavorite}
         onLoadStream={() => loadSelectedPreview(selectedItem, { force: true })}
         onNext={() => showNeighbor(1)}
         onPrevious={() => showNeighbor(-1)}
         onRemove={(item, options = {}) => setRemoveState({ deleteOriginal: options.deleteOriginal === true, item, pending: false })}
         streamStatus={selectedStreamStatus}
+        favoriteSaving={favoriteSaving}
       />
       <ConfirmDialog
         confirmLabel={removeState.deleteOriginal ? 'Delete original from Drive' : 'Remove from Album'}
@@ -867,6 +874,10 @@ function useGalleryModelState(model) {
 
 function GalleryReadyView({ model, onRefresh }) {
   const { approvedUser, user } = useAuth()
+  const { refresh: refreshFavorites, source: favoritesSource } = useFavoritesSource()
+  const writer = useOwnerWrite(onRefresh)
+  const [favoriteIds, setFavoriteIds] = useState(() => new Set())
+  const [favoriteSaving, setFavoriteSaving] = useState(false)
   const [filter, setFilter] = useState('all')
   const [year, setYear] = useState('all')
   const [search, setSearch] = useState('')
@@ -875,15 +886,38 @@ function GalleryReadyView({ model, onRefresh }) {
   const fileInputRef = useRef(null)
   const uploadQueue = useMediaUploadQueue(onRefresh, null)
   const { items, reconciliation, userFacingMediaWarning, years } = useGalleryModelState(model)
+  useEffect(() => {
+    const stored = favoritesSource?.data?.favoritesByUid?.[user?.uid]?.mediaIds
+    setFavoriteIds(new Set(Array.isArray(stored) ? stored : []))
+  }, [favoritesSource, user?.uid])
   const { loadSelectedPreview, previewUrls, streamStatus } = useGalleryTrustedPreviews({ approvedUser, items, selectedItem, user })
 
-  const itemsWithPreviews = useMemo(() => items.map((item) => withTrustedPreview(item, previewUrls)), [items, previewUrls])
+  const itemsWithPreviews = useMemo(() => items.map((item) => {
+    const mediaId = item.media?.id || item.mediaIndexId
+    return withTrustedPreview({ ...item, media: { ...item.media, favorite: favoriteIds.has(mediaId) } }, previewUrls)
+  }), [favoriteIds, items, previewUrls])
   const filtered = useMemo(() => selectFilteredGalleryItems(itemsWithPreviews, { filter, search, year }), [filter, itemsWithPreviews, search, year])
   const grouped = useMemo(() => groupGalleryItemsByDate(filtered), [filtered])
   const selectedItemWithPreview = useMemo(() => withTrustedPreview(selectedItem, previewUrls), [previewUrls, selectedItem])
   const selectedStreamStatus = getSelectedStreamStatus(selectedItemWithPreview, streamStatus)
   const { clearSelection, selectedCount, selectedKeys, selectionMode, showNeighbor, toggleItemSelection, toggleSelectionMode } = useGallerySelection({ filtered, selectedItem, setSelectedItem })
   const { confirmRemoval, removeState, setRemoveState } = useGalleryRemoval({ setSelectedItem, uploadQueue })
+  const onFavorite = useCallback(async (item) => {
+    const mediaId = item?.media?.id || item?.mediaIndexId
+    if (!mediaId || !writer.canWrite || favoriteSaving) return
+    const current = favoritesSource?.data?.favoritesByUid?.[user?.uid] || {}
+    const nextIds = new Set(favoriteIds)
+    if (nextIds.has(mediaId)) nextIds.delete(mediaId)
+    else nextIds.add(mediaId)
+    setFavoriteSaving(true)
+    try {
+      await writer.saveFavorites({ ...current, mediaIds: [...nextIds] })
+      setFavoriteIds(nextIds)
+      refreshFavorites()
+    } finally {
+      setFavoriteSaving(false)
+    }
+  }, [favoriteIds, favoriteSaving, favoritesSource, refreshFavorites, user?.uid, writer])
 
   return (
     <section className="space-y-5" data-route="gallery">
@@ -936,8 +970,10 @@ function GalleryReadyView({ model, onRefresh }) {
 
       <GalleryDialogs
         confirmRemoval={confirmRemoval}
+        favoriteSaving={favoriteSaving}
         filtered={filtered}
         loadSelectedPreview={loadSelectedPreview}
+        onFavorite={onFavorite}
         removeState={removeState}
         selectedItem={selectedItem}
         selectedItemWithPreview={selectedItemWithPreview}

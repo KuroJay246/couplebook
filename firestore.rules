@@ -259,7 +259,7 @@ service cloud.firestore {
 
     function isValidFavorites(uid) {
       return isOwnUser(uid)
-        && hasOnly(['schemaVersion', 'revision', 'food', 'songs', 'movies', 'places', 'memories', 'notes'])
+        && hasOnly(['schemaVersion', 'revision', 'food', 'songs', 'movies', 'places', 'memories', 'notes', 'mediaIds'])
         && request.resource.data.schemaVersion == 1
         && hasNextRevision()
         && (!('food' in request.resource.data) || isStringList(request.resource.data.food, 50))
@@ -267,7 +267,8 @@ service cloud.firestore {
         && (!('movies' in request.resource.data) || isStringList(request.resource.data.movies, 50))
         && (!('places' in request.resource.data) || isStringList(request.resource.data.places, 50))
         && (!('memories' in request.resource.data) || isStringList(request.resource.data.memories, 50))
-        && (!('notes' in request.resource.data) || isStringList(request.resource.data.notes, 50));
+        && (!('notes' in request.resource.data) || isStringList(request.resource.data.notes, 50))
+        && (!('mediaIds' in request.resource.data) || isStringList(request.resource.data.mediaIds, 500));
     }
 
     function isValidPrivateSettings(uid) {

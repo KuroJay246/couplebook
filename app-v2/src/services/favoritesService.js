@@ -23,13 +23,13 @@ export async function getFirestoreFavoritesByUid() {
   })
 }
 
-const FAVORITE_CATEGORIES = ['food', 'songs', 'movies', 'places', 'memories', 'notes']
+const FAVORITE_CATEGORIES = ['food', 'songs', 'movies', 'places', 'memories', 'notes', 'mediaIds']
 
 export function normalizeFirestoreFavorites(uid, data, warnings) {
   if (!requireSchemaVersion(data, warnings)) return null
   const favorites = {}
   for (const category of FAVORITE_CATEGORIES) {
-    favorites[category] = safeStringArray(data[category], 50, 120)
+    favorites[category] = safeStringArray(data[category], category === 'mediaIds' ? 500 : 50, 120)
   }
   return {
     uid,
@@ -61,27 +61,31 @@ export function firestoreFavoritesToCompatibility(result, profiles) {
   const profileEntries = profiles?.data?.entries || []
   const labelByUid = new Map(profileEntries.map((entry) => [entry.uid, normalizeOwnerLabel(entry, entry.uid)]))
   const favoritesByOwner = {}
+  const favoritesByUid = {}
   const participantOrder = []
   for (const entry of result.data?.entries || []) {
     const owner = labelByUid.get(entry.uid) || normalizePersonKey(entry.uid)
     participantOrder.push(owner)
+    const categories = {
+      food: entry.favorites?.food || [],
+      songs: entry.favorites?.songs || [],
+      movies: entry.favorites?.movies || [],
+      places: entry.favorites?.places || [],
+      memories: entry.favorites?.memories || [],
+      notes: entry.favorites?.notes || [],
+      mediaIds: entry.favorites?.mediaIds || [],
+    }
+    favoritesByUid[entry.uid] = { ...categories, revision: entry.revision }
     favoritesByOwner[owner] = {
       revision: Number.isInteger(entry.revision) && entry.revision > 0 ? entry.revision : 0,
-      categories: {
-        food: entry.favorites?.food || [],
-        songs: entry.favorites?.songs || [],
-        movies: entry.favorites?.movies || [],
-        places: entry.favorites?.places || [],
-        memories: entry.favorites?.memories || [],
-        notes: entry.favorites?.notes || [],
-      },
+      categories,
       unknownCategories: {},
     }
   }
   return createCompatibilityResult({
     status: participantOrder.length ? result.status : 'empty',
     source: FIRESTORE_SOURCE,
-    data: { favoritesByOwner, participantOrder, unknownTopLevelFields: {} },
+    data: { favoritesByOwner, favoritesByUid, participantOrder, unknownTopLevelFields: {} },
     warnings: result.warnings,
   })
 }

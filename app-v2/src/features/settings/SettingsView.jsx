@@ -251,7 +251,7 @@ function AccountSettingsSection({ googleLinkState, googleLinked, model, onLinkGo
           <div>
             <p className="cb-kicker">Account</p>
             <h3 className="cb-page-title mt-2 text-2xl">Your account</h3>
-            <p className="cb-body-copy mt-2 text-sm">Your signed-in account.</p>
+            <p className="cb-body-copy mt-2 text-sm">Approved account signed in for Couple Book.</p>
           </div>
         </div>
         <StatusBadge tone={googleLinked ? 'success' : 'warning'}>{googleLinked ? 'Google linked' : 'Password only'}</StatusBadge>

@@ -17,7 +17,7 @@ import {
   specialMomentPath,
 } from './firestorePaths.js'
 
-export const FAVORITE_WRITE_CATEGORIES = Object.freeze(['food', 'songs', 'movies', 'places', 'memories', 'notes'])
+export const FAVORITE_WRITE_CATEGORIES = Object.freeze(['food', 'songs', 'movies', 'places', 'memories', 'notes', 'mediaIds'])
 export const APPEARANCE_THEMES = Object.freeze(THEME_REGISTRY.map((theme) => theme.id))
 export const MEMORY_TYPES = Object.freeze(['ordinary', 'birthday', 'valentine', 'confession'])
 const IMPORTANT_DATE_TYPES = Object.freeze(['first-date', 'primary-anniversary', 'anniversary', 'milestone', 'custom'])
@@ -378,7 +378,8 @@ export async function saveOwnFavorites(payload, context) {
   const nextRevision = await resolveNextRevision(reference, payload.revision, getDocument, 'Favorites')
   const next = { schemaVersion: 1, revision: nextRevision }
   for (const category of FAVORITE_WRITE_CATEGORIES) {
-    next[category] = cleanStringList(payload[category], { label: category, maxItems: 50, maxLength: 120 })
+    if (category === 'mediaIds' && !Array.isArray(payload[category])) continue
+    next[category] = cleanStringList(payload[category], { label: category, maxItems: category === 'mediaIds' ? 500 : 50, maxLength: 120 })
   }
   return writeDocumentWithAudit(reference, next, undefined, {
     coupleId,
