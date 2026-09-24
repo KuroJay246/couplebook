@@ -40,6 +40,20 @@ export function ThemeProvider({ children }) {
   const [initialization, setInitialization] = useState('loading')
 
   useEffect(() => {
+    if (typeof document === 'undefined') return undefined
+    const preference = settingsSource?.data?.settings?.privacyToggles?.reducedMotion === true
+    const mediaQuery = typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+      ? window.matchMedia('(prefers-reduced-motion: reduce)')
+      : null
+    const applyMotionPreference = () => {
+      document.documentElement.dataset.reducedMotion = preference || mediaQuery?.matches ? 'true' : 'false'
+    }
+    applyMotionPreference()
+    mediaQuery?.addEventListener?.('change', applyMotionPreference)
+    return () => mediaQuery?.removeEventListener?.('change', applyMotionPreference)
+  }, [settingsSource])
+
+  useEffect(() => {
     applyTheme(activeTheme)
   }, [activeTheme])
 
