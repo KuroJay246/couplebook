@@ -26,6 +26,8 @@ export function useDashboardModel() {
   const { error: profileError, refresh: refreshProfile, source: profileSource, state: profileState } = useProfileSource()
   const { error: settingsError, refresh: refreshSettings, source: settingsSource, state: settingsState } = useSettingsSource()
   const [now, setNow] = useState(() => new Date())
+  const hasProfileEntries = Array.isArray(profileSource?.data?.participantOrder) && profileSource.data.participantOrder.length > 0
+  const perspectiveApprovedUser = profileState === 'loading' && !hasProfileEntries ? null : approvedUser
 
   useEffect(() => {
     let interval = 0
@@ -44,7 +46,7 @@ export function useDashboardModel() {
 
   return {
     model: buildDashboardReadModel({
-      approvedUser,
+      approvedUser: perspectiveApprovedUser,
       now,
       profileSource,
       routeMeta: protectedRouteMeta,
