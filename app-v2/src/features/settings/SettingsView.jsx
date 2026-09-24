@@ -380,12 +380,11 @@ function AppearanceSettingsSection({ form, model, onUpdateField }) {
       </div>
 
       <div className="mt-5 grid gap-4 lg:grid-cols-2">
-        <ToggleRow
-          checked={form.localOnlyMode}
-          description="Helpful when reviewing Couple Book on a trusted browser without changing the underlying auth boundary."
-          label="Keep private reads on this device"
-          onChange={(value) => onUpdateField('localOnlyMode', value)}
-        />
+        <ContentCard>
+          <p className="cb-kicker">Private reads</p>
+          <p className="mt-2 text-sm font-semibold" style={{ color: 'var(--cb-text)' }}>Private content always requires an approved session.</p>
+          <p className="cb-body-copy mt-2 text-sm">Couple Book does not treat browser storage as authentication or promise offline access to private media. Sign out before leaving a shared device.</p>
+        </ContentCard>
         <ToggleRow
           checked={form.reducedMotion}
           description="Use quieter transitions while preserving the Couple Book layout and route structure."
