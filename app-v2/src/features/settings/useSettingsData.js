@@ -4,7 +4,14 @@ import { buildSettingsReadModel } from './settingsReadModel.js'
 import { useSettingsSource } from './useSettingsSource.js'
 import { toUserFacingError } from '../../services/userFacingError.js'
 
-function combineState(states) {
+function hasUsableSettingsData(profileSource, settingsSource) {
+  const profileEntries = Array.isArray(profileSource?.data?.entries) ? profileSource.data.entries.length : 0
+  const hasSettings = Boolean(settingsSource?.data?.appearanceTheme || settingsSource?.data?.theme || settingsSource?.data?.privacy)
+  return profileEntries > 0 || hasSettings
+}
+
+function combineState(states, sources) {
+  if (hasUsableSettingsData(sources.profileSource, sources.settingsSource)) return 'ready'
   if (states.includes('error')) return 'error'
   if (states.includes('loading')) return 'loading'
   if (states.every((state) => state === 'empty')) return 'empty'
@@ -24,7 +31,7 @@ export function useSettingsData() {
       settingsSource,
     }),
     compatibilityError: profileError || settingsError ? toUserFacingError(profileError || settingsError, 'We could not load Settings right now. Try again.') : null,
-    compatibilityState: combineState([profileState, settingsState]),
+    compatibilityState: combineState([profileState, settingsState], { profileSource, settingsSource }),
     refreshCompatibility: () => {
       refreshProfile()
       refreshSettings()
